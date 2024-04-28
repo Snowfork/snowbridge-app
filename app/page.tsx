@@ -1,6 +1,6 @@
+import { TransferForm } from "@/components/transfer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Menubar, MenubarContent, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 
@@ -48,7 +48,7 @@ export default function Home() {
                 <div className="space-y-1">
                   <p>To Polkadot: <span className="text-green-700">Normal 10 min 5 secs</span></p>
                   <p>To Ethereum: <span className="text-red-700">Delayed 32 min 6 secs</span></p>
-                  <a>More</a>
+                  <a className="text-xs" href="/">See more</a>
                 </div>
               </div>
             </HoverCardContent>
@@ -56,7 +56,7 @@ export default function Home() {
         </div>
       </div>
       <div className="w-full max-w-5xl flex place-content-center">
-        <p className="border border-red-950">Form</p>
+        <TransferForm />
       </div>
       <div className="w-full max-w-5xl flex flex-col place-items-center text-sm">
         <div className="items-center">
