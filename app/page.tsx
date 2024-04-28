@@ -1,7 +1,5 @@
+import { BridgeStatus } from "@/components/bridgeStatus";
 import { TransferForm } from "@/components/transfer";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Menubar, MenubarContent, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 
 export default function Home() {
@@ -13,7 +11,7 @@ export default function Home() {
           <div className="flex items-center">
             <Menubar>
               <MenubarMenu>
-                <MenubarTrigger>Wallet</MenubarTrigger>
+                <MenubarTrigger>Connect Wallet</MenubarTrigger>
                 <MenubarContent>
                   <h1>Substrate:</h1>
                   <h1>0x0000</h1>
@@ -24,7 +22,7 @@ export default function Home() {
               </MenubarMenu>
               <MenubarMenu>
                 <MenubarContent>
-                  <h1>History</h1>
+                  <h1>Transfer History</h1>
                   <MenubarSeparator></MenubarSeparator>
                   <h1>GitHub</h1>
                   <h1>0x0000</h1>
@@ -35,24 +33,7 @@ export default function Home() {
           </div>
         </div>
         <div className="flex justify-center">
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Button variant="link">Bridge Status: <span className="text-red-600">Delayed</span></Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-auto">
-              <div className="flex place-items-center space-x-4">
-                <Avatar>
-                  <AvatarImage src="https://github.com/vercel.png" />
-                  <AvatarFallback>VC</AvatarFallback>
-                </Avatar>
-                <div className="space-y-1">
-                  <p>To Polkadot: <span className="text-green-700">Normal 10 min 5 secs</span></p>
-                  <p>To Ethereum: <span className="text-red-700">Delayed 32 min 6 secs</span></p>
-                  <a className="text-xs" href="/">See more</a>
-                </div>
-              </div>
-            </HoverCardContent>
-          </HoverCard>
+          <BridgeStatus />
         </div>
       </div>
       <div className="w-full max-w-5xl flex place-content-center">
