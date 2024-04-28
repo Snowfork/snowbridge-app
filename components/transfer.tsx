@@ -1,18 +1,36 @@
 "use client"
 
 import { FC } from "react";
-import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
+const onSubmit = (a: any) => {
+  alert(JSON.stringify(a))
+}
+
+const formSchema = z.object({
+  source: z.enum(["ethereum", "assethub"]),
+  destination: z.enum(["ethereum", "assethub"]),
+  token: z.enum(["weth"]),
+  amount: z.coerce.number().gt(0, "Must be greater than 0."),
+  beneficiary: z.string().regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
+})
+
 export const TransferForm: FC = () => {
-  let form = useForm()
-  const onSubmit = (a: any) => {
-    alert(JSON.stringify(a))
-  }
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      source: "ethereum",
+      destination: "assethub",
+      token: "weth",
+    },
+  })
   return (
     <Card className="w-auto">
       <CardHeader>
@@ -30,7 +48,7 @@ export const TransferForm: FC = () => {
                   <FormItem {...field}>
                     <FormLabel>Source</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} defaultValue="ethereum">
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a source" />
                         </SelectTrigger>
@@ -53,7 +71,7 @@ export const TransferForm: FC = () => {
                   <FormItem>
                     <FormLabel>Destination</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} defaultValue="assethub">
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger >
                           <SelectValue placeholder="Select a destination" />
                         </SelectTrigger>
@@ -88,12 +106,12 @@ export const TransferForm: FC = () => {
               <div className="w-1/3">
                 <FormField
                   control={form.control}
-                  name="amount"
+                  name="token"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="invisible">Token</FormLabel>
                       <FormControl>
-                        <Select defaultValue="weth">
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a source" />
                           </SelectTrigger>
