@@ -22,7 +22,9 @@ const formSchema = z.object({
   beneficiary: z.string().regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
 
-export const TransferForm: FC = () => {
+type TransferProps = { ethereumAccount: string | null }
+
+export const TransferForm: FC<TransferProps> = ({ ethereumAccount }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
