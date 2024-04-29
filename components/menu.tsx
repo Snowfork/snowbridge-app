@@ -2,20 +2,23 @@
 
 import { Menubar, MenubarContent, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
+import { useConnectPolkadotWallet as usePolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
+import { useEthereumWallet } from "@/hooks/useEthereumWallet";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
+import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom, walletNameAtom } from "@/store/polkadot";
 import { WalletSelect } from '@talismn/connect-components';
 import { useAtom, useAtomValue } from "jotai";
+import Link from "next/link";
 import { FC } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom } from "@/store/polkadot";
-import Link from "next/link";
-import { useConnectPolkadotWallet as usePolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
-import { useEthereumWallet } from "@/hooks/useEthereumWallet";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
-type MenuProps = { }
+const chainId = 11155111
+
+type MenuProps = {}
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom)
@@ -50,45 +53,70 @@ const PolkadotWalletDialog: FC = () => {
 export const Menu: FC<MenuProps> = ({ }) => {
   useEthereumWallet()
   usePolkadotWallet()
-  
+
   const ethereumAccount = useAtomValue(ethereumAccountAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
   const ethereumWalletAuthorized = useAtomValue(ethereumWalletAuthorizedAtom)
   const ethereumChainId = useAtomValue(ethereumChainIdAtom)
 
-  const switchEthereumNetwork = useSwitchEthereumNetwork(11155111)
+  const switchEthereumNetwork = useSwitchEthereumNetwork(chainId)
   const [connectToEthereumWallet, , error] = useConnectEthereumWallet()
 
   const EthereumWallet = () => {
     if (!ethereumAccount) {
       return (<Button onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
     }
+    if (ethereumChainId !== chainId) {
+      return (<>
+        <h1 className="font-semibold">Ethereum</h1>
+        <Button variant="destructive" onClick={switchEthereumNetwork}>Wrong Network</Button>
+      </>)
+    }
     return (<>
-      {ethereumChainId !== 11155111 ? <Button onClick={switchEthereumNetwork}>Change Network</Button> : (<><p>Chain Id:</p><pre>{ethereumChainId}</pre></>)}
-      <p>Ethereum Account:</p><pre>{ethereumAccount}</pre>
+      <h1 className="font-semibold">Ethereum</h1>
+      <div className="text-xs">
+        <p>Account:</p><Button className="w-full" variant="outline" onClick={() => alert('Change in wallet.')}>{ethereumAccount}</Button>
+      </div>
     </>)
   }
 
-  const polkadotAccount = useAtomValue(polkadotAccountAtom)
+  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom)
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
   const wallet = useAtomValue(walletAtom)
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom)
 
   const PolkadotWallet = () => {
     if (!polkadotAccount) {
-      return (<Button onClick={()=> setPolkadotWalletModalOpen(true)}>Connect Polkadot</Button>)
+      return (<Button onClick={() => setPolkadotWalletModalOpen(true)}>Connect Polkadot</Button>)
     }
-    return (<>
-      <p>Wallet:</p><pre>{wallet?.title}</pre>
-      <p>Substrate Account:</p><pre>{polkadotAccount.address}</pre>
-    </>)
+    return (
+      <div className="w-96">
+        <h1 className="font-semibold">Polkadot</h1>
+        <div className="text-xs">
+          <p>Name: {polkadotAccount.name}</p>
+          <p>Address: {polkadotAccount.address}</p>
+          <p>Wallet: <Button className="w-full" variant="outline" onClick={() => setPolkadotWalletModalOpen(true)}>{wallet?.title}</Button> </p>
+          <p>Account:</p>
+        </div>
+        <Select onValueChange={(v) => setPolkadotAccount(v)} defaultValue={polkadotAccount.address ?? "none"}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select an account" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {polkadotAccounts?.map(acc => (<SelectItem  key={acc.address} value={acc.address ?? "none"}><div>{acc.name}</div> {acc.address}</SelectItem>))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>)
   }
 
   return (
     <div className="flex items-center">
       <Menubar >
         <MenubarMenu>
-          <MenubarTrigger>Wallet</MenubarTrigger>
-          <MenubarContent className="text-sm">
+          <MenubarTrigger>Wallets</MenubarTrigger>
+          <MenubarContent>
             <EthereumWallet />
             <MenubarSeparator></MenubarSeparator>
             <PolkadotWallet />
