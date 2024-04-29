@@ -13,7 +13,6 @@ export const useEthereumWallet = () => {
   const [, setEthereumChainId] = useAtom(ethereumChainIdAtom)
 
   const [ethereumWalletAuthorized, setEthereumWalletAuthorized] = useAtom(ethereumWalletAuthorizedAtom)
-
   useEffect(() => {
     if (ethereumProvider != null) return
     const init = async (): Promise<void> => {
@@ -67,8 +66,8 @@ export const useEthereumWallet = () => {
     if (ethereumAccount != null) {
       setEthereumWalletAuthorized(true)
     }
-    if(ethereumAccount == null) {
+    if (ethereumWalletAuthorized && ethereumAccount == null) {
       setEthereumWalletAuthorized(false)
     }
-  }, [ethereumAccount, setEthereumWalletAuthorized])
+  }, [ethereumAccount, ethereumWalletAuthorized, setEthereumWalletAuthorized])
 }
