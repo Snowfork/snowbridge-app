@@ -1,8 +1,9 @@
+"use client"
 
 import { Menubar, MenubarContent, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
-import { EthereumProvider } from "@/store/ethereum";
+import { ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
 import { WalletSelect } from '@talismn/connect-components';
 import { useAtom, useAtomValue } from "jotai";
 import { FC } from "react";
@@ -10,13 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom } from "@/store/polkadot";
+import Link from "next/link";
+import { useConnectPolkadotWallet as usePolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
+import { useEthereumWallet } from "@/hooks/useEthereumWallet";
 
-type MenuProps = {
-  ethereumWalletAuthorized: boolean
-  ethereumProvider: EthereumProvider | null
-  ethereumAccount: string | null
-  ethereumChainId: number | null
-}
+type MenuProps = { }
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom)
@@ -48,7 +47,15 @@ const PolkadotWalletDialog: FC = () => {
   )
 }
 
-export const Menu: FC<MenuProps> = ({ ethereumAccount, ethereumChainId, ethereumProvider, ethereumWalletAuthorized}) => {
+export const Menu: FC<MenuProps> = ({ }) => {
+  useEthereumWallet()
+  usePolkadotWallet()
+  
+  const ethereumAccount = useAtomValue(ethereumAccountAtom)
+  const ethereumProvider = useAtomValue(ethersProviderAtom)
+  const ethereumWalletAuthorized = useAtomValue(ethereumWalletAuthorizedAtom)
+  const ethereumChainId = useAtomValue(ethereumChainIdAtom)
+
   const switchEthereumNetwork = useSwitchEthereumNetwork(11155111)
   const [connectToEthereumWallet, , error] = useConnectEthereumWallet()
 
@@ -89,14 +96,23 @@ export const Menu: FC<MenuProps> = ({ ethereumAccount, ethereumChainId, ethereum
         </MenubarMenu>
         <MenubarMenu>
           <MenubarContent>
-            <h1>Transfer History</h1>
-            <MenubarSeparator></MenubarSeparator>
-            <a className="flex place-items-center space-x-2" href="https://github.com/Snowfork/snowbridge">
+            <Link className="flex place-items-center space-x-4" href="/">
               <Avatar>
-                <AvatarImage src="icons8-github.svg" />
+                <AvatarImage className="w-[90px]" src="icons8-transfer-52.png" />
+                <AvatarFallback>T</AvatarFallback>
+              </Avatar><p>Transfer</p></Link>
+            <Link className="flex place-items-center space-x-4" href="/history">
+              <Avatar>
+                <AvatarImage className="w-[90px]" src="icons8-history-96.png" />
+                <AvatarFallback>H</AvatarFallback>
+              </Avatar><p>History</p></Link>
+            <MenubarSeparator></MenubarSeparator>
+            <Link className="flex place-items-center space-x-4" href="https://github.com/Snowfork/snowbridge">
+              <Avatar>
+                <AvatarImage className="w-[90px]" src="icons8-github.svg" />
                 <AvatarFallback>GH</AvatarFallback>
-              </Avatar>GitHub
-            </a>
+              </Avatar><p>GitHub</p>
+            </Link>
           </MenubarContent>
           <MenubarTrigger>More</MenubarTrigger>
         </MenubarMenu>
