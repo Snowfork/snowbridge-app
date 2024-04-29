@@ -34,7 +34,7 @@ export const TransferForm: FC<TransferProps> = ({ }) => {
     },
   })
   return (
-    <Card className="w-auto">
+    <Card className="w-auto md:w-2/3">
       <CardHeader>
         <CardTitle>Transfer</CardTitle>
         <CardDescription>Transfer tokens to Polkadot.</CardDescription>

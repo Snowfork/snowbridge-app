@@ -34,9 +34,6 @@ export default function RootLayout({
             {children}
           </div>
           <div className="w-full max-w-5xl flex flex-col place-items-center text-sm">
-            <div className="items-center">
-              Brought by Snowfork
-            </div>
             <p className="text-xs">Copyright © Snowfork 2024 (env: rococo_sepolia)</p>
           </div>
         </main>

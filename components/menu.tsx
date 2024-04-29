@@ -13,10 +13,13 @@ import Link from "next/link";
 import { FC } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const chainId = 11155111
+const trimAccount = (account: string): string => {
+  return account.substring(0, 6) + '...' + account.substring(account.length - 6);
+}
 
 type MenuProps = {}
 
@@ -75,7 +78,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
     return (<>
       <h1 className="font-semibold">Ethereum</h1>
       <div className="text-xs">
-        <p>Account:</p><Button className="w-full" variant="outline" onClick={() => alert('Change in wallet.')}>{ethereumAccount}</Button>
+        <p>Account:</p><Button className="w-full" variant="outline" onClick={() => alert('Change in wallet.')}>{trimAccount(ethereumAccount)}</Button>
       </div>
     </>)
   }
@@ -90,11 +93,11 @@ export const Menu: FC<MenuProps> = ({ }) => {
       return (<Button onClick={() => setPolkadotWalletModalOpen(true)}>Connect Polkadot</Button>)
     }
     return (
-      <div className="w-96">
+      <div className="w-60">
         <h1 className="font-semibold">Polkadot</h1>
         <div className="text-xs">
           <p>Name: {polkadotAccount.name}</p>
-          <p>Address: {polkadotAccount.address}</p>
+          <p>Address: {trimAccount(polkadotAccount.address)}</p>
           <p>Wallet: <Button className="w-full" variant="outline" onClick={() => setPolkadotWalletModalOpen(true)}>{wallet?.title}</Button> </p>
           <p>Account:</p>
         </div>
@@ -104,7 +107,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {polkadotAccounts?.map(acc => (<SelectItem  key={acc.address} value={acc.address ?? "none"}><div>{acc.name}</div> {acc.address}</SelectItem>))}
+              {polkadotAccounts?.map(acc => (<SelectItem key={acc.address} value={acc.address ?? "none"}><div>{acc.name}</div> {trimAccount(acc.address)}</SelectItem>))}
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -152,6 +155,8 @@ export const Menu: FC<MenuProps> = ({ }) => {
             <DialogDescription>
               Please install the Metamask extension and refresh the page.
             </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <Button
               variant="link"
               onClick={() => window.open('https://metamask.io/')}
@@ -166,7 +171,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
             >
               Refresh
             </Button>
-          </DialogHeader>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <PolkadotWalletDialog />
