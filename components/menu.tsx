@@ -66,7 +66,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
   const switchEthereumNetwork = useSwitchEthereumNetwork(chainId)
   const [connectToEthereumWallet, , error] = useConnectEthereumWallet()
 
-  if (ethereumChainId !== chainId) {
+  if (ethereumProvider && ethereumWalletAuthorized && ethereumChainId !== chainId) {
     toast.error("Wrong Ethereum network", {
       position: "bottom-center",
       closeButton: true,
