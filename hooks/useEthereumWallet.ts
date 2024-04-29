@@ -1,6 +1,6 @@
 "use client"
 
-import { EthereumProvider, ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from '@/store/common'
+import { EthereumProvider, ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from '@/store/ethereum'
 import { useAtom } from 'jotai'
 import { useEffect } from 'react'
 

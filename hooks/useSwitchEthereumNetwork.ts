@@ -1,4 +1,4 @@
-import { ethersProviderAtom } from '@/store/common'
+import { ethersProviderAtom } from '@/store/ethereum'
 import { useAtom } from "jotai"
 import { useCallback } from 'react'
 
