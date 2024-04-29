@@ -1,5 +1,6 @@
 import { BridgeStatus } from "@/components/bridgeStatus";
 import { Menu } from "@/components/menu";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import type { Metadata } from "next";
@@ -37,6 +38,7 @@ export default function RootLayout({
             <p className="text-xs">Copyright © Snowfork 2024 (env: rococo_sepolia)</p>
           </div>
         </main>
+        <Toaster />
       </body>
     </html>
   );

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { toast } from "sonner"
 
 const chainId = 11155111
 const trimAccount = (account: string): string => {
@@ -65,6 +66,19 @@ export const Menu: FC<MenuProps> = ({ }) => {
   const switchEthereumNetwork = useSwitchEthereumNetwork(chainId)
   const [connectToEthereumWallet, , error] = useConnectEthereumWallet()
 
+  if (ethereumChainId !== chainId) {
+    toast.error("Wrong Ethereum network", {
+      position: "bottom-center",
+      closeButton: true,
+      id: "switch_network",
+      important: true,
+      action: {
+        label: "Switch Network",
+        onClick: () => switchEthereumNetwork(),
+      },
+    })
+  }
+
   const EthereumWallet = () => {
     if (!ethereumAccount) {
       return (<Button onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
@@ -72,13 +86,21 @@ export const Menu: FC<MenuProps> = ({ }) => {
     if (ethereumChainId !== chainId) {
       return (<>
         <h1 className="font-semibold">Ethereum</h1>
-        <Button variant="destructive" onClick={switchEthereumNetwork}>Wrong Network</Button>
+        <Button className="w-full" variant="destructive" onClick={switchEthereumNetwork}>Switch Network</Button>
       </>)
     }
     return (<>
       <h1 className="font-semibold">Ethereum</h1>
       <div className="text-xs">
-        <p>Account:</p><Button className="w-full" variant="outline" onClick={() => alert('Change in wallet.')}>{trimAccount(ethereumAccount)}</Button>
+        <p>Account:</p><Button className="w-full" variant="outline" onClick={() => {
+          toast.info("Select account in wallet.", {
+            position: "bottom-center",
+            closeButton: true,
+            dismissible: true,
+            id: "wallet_select",
+            duration: 5000,
+          })
+        }}>{trimAccount(ethereumAccount)}</Button>
       </div>
     </>)
   }
