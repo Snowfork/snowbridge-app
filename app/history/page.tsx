@@ -10,13 +10,6 @@ import { useMemo, useState } from "react"
 const pageItems = 5
 type Transfer = { Id: number, Title: string }
 
-const transfers: Transfer[] = Array.apply(null, { length: 97 } as any).map(Number.call, Number).map(i => {
-  return {
-    Id: i as number,
-    Title: `Transfer On ${i}`
-  }
-})
-
 type TransferAction = "add" | "udpate" | "remove"
 type TransferUpdate = { action: TransferAction, transfer: Transfer }
 const transferReducer = (current: Transfer[], update: TransferUpdate) => {
@@ -54,7 +47,7 @@ export default function History() {
       </CardHeader>
       <CardContent>
         <Accordion type="multiple" className="w-full">
-          {pages[page].map(v => (
+          {pages[page]?.map(v => (
             <AccordionItem key={v.Id} value={v.Id.toString()}>
               <AccordionTrigger>{v.Title}</AccordionTrigger>
               <AccordionContent>
