@@ -8,7 +8,7 @@ import { atomWithStorage } from "jotai/utils"
 import { useMemo, useState } from "react"
 
 const pageItems = 5
-export type Transfer = { Id: number, Title: string }
+type Transfer = { Id: number, Title: string }
 
 const transfers: Transfer[] = Array.apply(null, { length: 97 } as any).map(Number.call, Number).map(i => {
   return {
@@ -17,14 +17,14 @@ const transfers: Transfer[] = Array.apply(null, { length: 97 } as any).map(Numbe
   }
 })
 
-export type TransferAction = "add" | "udpate" | "remove"
-export type TransferUpdate = { action: TransferAction, transfer: Transfer }
+type TransferAction = "add" | "udpate" | "remove"
+type TransferUpdate = { action: TransferAction, transfer: Transfer }
 const transferReducer = (current: Transfer[], update: TransferUpdate) => {
   return current
 }
 
-export const transfersStorageAtom = atomWithStorage<Transfer[]>("transfer_history", [])
-export const transfersAtom = atom(
+const transfersStorageAtom = atomWithStorage<Transfer[]>("transfer_history", [])
+const transfersAtom = atom(
   (get) => get(transfersStorageAtom),
   (get, set, action: TransferUpdate) => {
     set(transfersStorageAtom, transferReducer(get(transfersStorageAtom), action))
