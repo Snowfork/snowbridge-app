@@ -1,4 +1,5 @@
 import { BridgeStatus } from "@/components/bridgeStatus";
+import { Footer } from "@/components/footer";
 import { Menu } from "@/components/menu";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ export default function RootLayout({
             {children}
           </div>
           <div className="w-full max-w-5xl flex flex-col place-items-center text-sm">
-            <p className="text-xs">Copyright © Snowfork 2024 (env: rococo_sepolia)</p>
+            <Footer />
           </div>
         </main>
         <Toaster />

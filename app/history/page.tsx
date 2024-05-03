@@ -3,26 +3,11 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { atom, useAtomValue } from "jotai"
-import { atomWithStorage } from "jotai/utils"
+import { Transfer, transfersAtom } from "@/store/transferHistory"
+import { useAtomValue } from "jotai"
 import { useMemo, useState } from "react"
 
 const pageItems = 5
-type Transfer = { Id: number, Title: string }
-
-type TransferAction = "add" | "udpate" | "remove"
-type TransferUpdate = { action: TransferAction, transfer: Transfer }
-const transferReducer = (current: Transfer[], update: TransferUpdate) => {
-  return current
-}
-
-const transfersStorageAtom = atomWithStorage<Transfer[]>("transfer_history", [])
-const transfersAtom = atom(
-  (get) => get(transfersStorageAtom),
-  (get, set, action: TransferUpdate) => {
-    set(transfersStorageAtom, transferReducer(get(transfersStorageAtom), action))
-  }
-)
 
 export default function History() {
   let transfers = useAtomValue(transfersAtom)
@@ -40,7 +25,7 @@ export default function History() {
   const renderPages = pages.map((page, index) => { return { page, index } }).slice(start, end + 1)
 
   return (<>
-    <Card className="w-full md:w-2/3">
+    <Card className="w-full md:w-2/3 h-[460px]">
       <CardHeader>
         <CardTitle>History</CardTitle>
         <CardDescription>Transfers history.</CardDescription>

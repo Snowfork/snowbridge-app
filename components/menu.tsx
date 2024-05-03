@@ -2,20 +2,21 @@
 
 import { Menubar, MenubarContent, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { useConnectPolkadotWallet as usePolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
-import { useEthereumWallet } from "@/hooks/useEthereumWallet";
+import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
+import { useEthereumProvider } from "@/hooks/useEthereumProvider";
+import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
-import { ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
-import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom, walletNameAtom } from "@/store/polkadot";
+import { EthereumProvider, ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
+import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom } from "@/store/polkadot";
 import { WalletSelect } from '@talismn/connect-components';
 import { useAtom, useAtomValue } from "jotai";
 import Link from "next/link";
 import { FC } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { toast } from "sonner"
 
 const chainId = 11155111
 const trimAccount = (account: string): string => {
@@ -54,9 +55,52 @@ const PolkadotWalletDialog: FC = () => {
   )
 }
 
+const InstallMetamaskDialog: FC<{ walletAuthorized: boolean, provider: EthereumProvider | null }> = ({ walletAuthorized, provider }) => {
+  return (<Dialog open={walletAuthorized == false && provider === undefined}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Metamask Is Not Installed</DialogTitle>
+        <DialogDescription>
+          Please install the Metamask extension and refresh the page.
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button
+          variant="link"
+          onClick={() => window.open('https://metamask.io/')}
+        >
+          Install Metamask
+        </Button>
+        <Button
+          variant="link"
+          onClick={() => {
+            window.location.reload()
+          }}
+        >
+          Refresh
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>)
+}
+
+const LoadingDialog: FC<{ loading: boolean, title: string, message: string }> = ({ loading, title, message }) => {
+  return (<Dialog open={loading}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>
+          {message}
+        </DialogDescription>
+      </DialogHeader>
+    </DialogContent>
+  </Dialog>)
+}
+
 export const Menu: FC<MenuProps> = ({ }) => {
-  useEthereumWallet()
-  usePolkadotWallet()
+  useEthereumProvider()
+  useConnectPolkadotWallet()
+  const [_, contextLoading, contextError] = useSnowbridgeContext()
 
   const ethereumAccount = useAtomValue(ethereumAccountAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
@@ -64,7 +108,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
   const ethereumChainId = useAtomValue(ethereumChainIdAtom)
 
   const switchEthereumNetwork = useSwitchEthereumNetwork(chainId)
-  const [connectToEthereumWallet, , error] = useConnectEthereumWallet()
+  const [connectToEthereumWallet, ethereumLoading, ethereumError] = useConnectEthereumWallet()
 
   if (ethereumProvider && ethereumWalletAuthorized && ethereumChainId !== chainId) {
     toast.error("Wrong Ethereum network", {
@@ -81,7 +125,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
 
   const EthereumWallet = () => {
     if (!ethereumAccount) {
-      return (<Button onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
+      return (<Button className="w-full" onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
     }
     if (ethereumChainId !== chainId) {
       return (<>
@@ -170,32 +214,11 @@ export const Menu: FC<MenuProps> = ({ }) => {
           <MenubarTrigger>More</MenubarTrigger>
         </MenubarMenu>
       </Menubar>
-      <Dialog open={ethereumWalletAuthorized == false && ethereumProvider === undefined}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Metamask Is Not Installed</DialogTitle>
-            <DialogDescription>
-              Please install the Metamask extension and refresh the page.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="link"
-              onClick={() => window.open('https://metamask.io/')}
-            >
-              Install Metamask
-            </Button>
-            <Button
-              variant="link"
-              onClick={() => {
-                window.location.reload()
-              }}
-            >
-              Refresh
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <InstallMetamaskDialog provider={ethereumProvider} walletAuthorized={ethereumWalletAuthorized} />
+      <LoadingDialog key='l0' loading={contextLoading} title="Snowbridge" message="Connecting to Snowbridge." />
+      <LoadingDialog key='e0' loading={!contextLoading && contextError !== null} title="Connection Error" message={contextError || 'Unknown Error.'} />
+      <LoadingDialog key='l1' loading={ethereumLoading} title="Ethereum Wallet" message="Waiting for Ethereum wallet." />
+      <LoadingDialog key='e1' loading={!ethereumLoading && ethereumError !== null} title="Ethereum Wallet Error" message={ethereumError || 'Unknown Error.'} />
       <PolkadotWalletDialog />
     </div>)
 }

@@ -5,7 +5,7 @@ import { useAtom } from 'jotai'
 import { useEffect } from 'react'
 
 
-export const useEthereumWallet = () => {
+export const useEthereumProvider = () => {
   const [ethereumAccount] = useAtom(ethereumAccountAtom)
   const [ethereumProvider, setEthereumProvider] = useAtom(ethersProviderAtom)
 
@@ -42,7 +42,6 @@ export const useEthereumWallet = () => {
             setEthereumAccount(account ?? null)
           })
           .catch((error: any) => {
-            // User rejected
             if (error.code === 4001) {
               setEthereumWalletAuthorized(false)
             } else {
