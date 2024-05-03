@@ -29,13 +29,13 @@ export const useSnowbridgeContext = (): [Context | null, boolean, string | null]
         beefy: config.BEEFY_CONTRACT,
       },
     })
-      .then(context => { setContext(context) })
+      .then(context => { setLoading(false); setContext(context) })
       .catch(error => {
         let message = 'Unknown Error'
         if (error instanceof Error) message = error.message
+        setLoading(false)
         setError(message)
       })
-      .finally(() => { setLoading(false) })
   }, [setContext, setLoading, setError])
 
   return [context, loading, error]
