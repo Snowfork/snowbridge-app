@@ -6,25 +6,19 @@ import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
+import { trimAccount } from "@/lib/utils";
 import { EthereumProvider, ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom } from "@/store/polkadot";
+import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom } from "@/store/snowbridge";
 import { WalletSelect } from '@talismn/connect-components';
 import { useAtom, useAtomValue } from "jotai";
-import { Github, LucideAlertCircle, LucideBarChart, LucideGithub, LucideHistory, LucideLoaderCircle, LucideMenu, LucideMenuSquare, LucideSend, LucideWallet } from "lucide-react";
+import { Github, LucideAlertCircle, LucideBarChart, LucideHistory, LucideLoaderCircle, LucideMenu, LucideSend, LucideWallet } from "lucide-react";
 import Link from "next/link";
 import { FC } from "react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-
-const chainId = 11155111
-const trimAccount = (account: string): string => {
-  return account.substring(0, 6) + '...' + account.substring(account.length - 6);
-}
-
-type MenuProps = {}
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom)
@@ -102,7 +96,7 @@ const LoadingDialog: FC<{ open: boolean, title: string, message: string, error?:
   </Dialog>)
 }
 
-export const Menu: FC<MenuProps> = ({ }) => {
+export const Menu: FC = () => {
   useEthereumProvider()
   useConnectPolkadotWallet()
   const [_, contextLoading, contextError] = useSnowbridgeContext()
@@ -111,11 +105,14 @@ export const Menu: FC<MenuProps> = ({ }) => {
   const ethereumProvider = useAtomValue(ethersProviderAtom)
   const ethereumWalletAuthorized = useAtomValue(ethereumWalletAuthorizedAtom)
   const ethereumChainId = useAtomValue(ethereumChainIdAtom)
+  const snowbridgeContext = useAtomValue(snowbridgeContextAtom)
 
-  const switchEthereumNetwork = useSwitchEthereumNetwork(chainId)
+  const contextEthereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom)!
+
+  const switchEthereumNetwork = useSwitchEthereumNetwork(contextEthereumChainId)
   const [connectToEthereumWallet, ethereumLoading, ethereumError] = useConnectEthereumWallet()
 
-  if (ethereumProvider && ethereumWalletAuthorized && ethereumChainId !== chainId) {
+  if (ethereumProvider && ethereumWalletAuthorized && ethereumChainId !== contextEthereumChainId && snowbridgeContext !== null) {
     toast.error("Wrong Ethereum network", {
       position: "bottom-center",
       closeButton: true,
@@ -132,7 +129,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
     if (!ethereumAccount) {
       return (<Button className="w-full" onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
     }
-    if (ethereumChainId !== chainId) {
+    if (ethereumChainId !== contextEthereumChainId) {
       return (<>
         <h1 className="font-semibold">Ethereum</h1>
         <Button className="w-full" variant="destructive" onClick={switchEthereumNetwork}>Switch Network</Button>
@@ -205,14 +202,14 @@ export const Menu: FC<MenuProps> = ({ }) => {
         </MenubarMenu>
         <MenubarMenu>
           <MenubarTrigger><LucideWallet/><p className="pl-2 hidden md:flex">Wallets</p></MenubarTrigger>
-          <MenubarContent>
+          <MenubarContent align="center">
             <EthereumWallet />
             <MenubarSeparator></MenubarSeparator>
             <PolkadotWallet />
           </MenubarContent>
         </MenubarMenu>
         <MenubarMenu>
-          <MenubarContent align="end">
+          <MenubarContent align="center">
             <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={()=> window.open("https://github.com/Snowfork/snowbridge")}>
               <Github className="w-[40px] h-[40px]" /><p>GitHub</p>
             </Button>

@@ -5,5 +5,5 @@ import { useAtomValue } from "jotai"
 
 export function Footer() {
     const envName = useAtomValue(snowbridgeEnvNameAtom)
-    return (<p className="text-xs">Copyright © Snowfork 2024 (env: {envName})</p>)
+    return (<p className="text-xs py-2">Copyright © Snowfork 2024 (env: {envName})</p>)
 }

@@ -25,7 +25,7 @@ export default function RootLayout({
       <body className={cn(inter.className)}>
         <Provider>
           <main className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
-            <div className="w-full max-w-5xl gap-4 flex flex-col">
+            <div className="w-full max-w-5xl md:gap-4 flex flex-col">
               <div className="w-full place-items-center justify-between flex flex-col md:flex-row">
                 <h1 className="text-3xl font-semibold lg:text-4xl mb-4 lg:mb-0">Snowbridge</h1>
                 <Menu />

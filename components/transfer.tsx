@@ -1,17 +1,20 @@
 "use client"
 
-import { FC, useEffect, useMemo, useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { trimAccount } from "@/lib/utils";
+import { polkadotAccountsAtom } from "@/store/polkadot";
+import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { TransferSource } from "@snowbridge/api/dist/environment";
+import { useAtomValue } from "jotai";
+import { FC, useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { useAtomValue } from "jotai"
-import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { TransferSource } from "@snowbridge/api/dist/environment";
+import { Toggle } from "./ui/toggle";
 
 const onSubmit = (a: any) => {
   alert(JSON.stringify(a))
@@ -25,36 +28,78 @@ const formSchema = z.object({
   beneficiary: z.string().regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
 
-type TransferProps = {}
+export const BeneficiaryInput: FC<{ field: any, destination: TransferSource }> = ({ field, destination }) => {
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
+  const [beneficiaryFromWallet, setBeneficiaryFromWallet] = useState(true)
+  let input = (
+    <Input placeholder="0x0000000000000000000000000000000000000000" {...field} />
+  )
 
-export const TransferForm: FC<TransferProps> = ({ }) => {
+  const accounts: { key: string, name: string }[] = []
+  if (destination?.type === "substrate") {
+    polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '' } }).forEach(x => accounts.push(x))
+  }
+
+  if (beneficiaryFromWallet && accounts.length > 0) {
+    input = (
+      <Select onValueChange={field.onChange} value={field.value}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select a beneficiary" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {accounts.map((acc, i) => (
+              <SelectItem key={acc.key + "-" + i} value={acc.key}><div>{acc.name}</div><div>{trimAccount(acc.key, 18)}</div></SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>)
+  }
+
+  return (<>
+    {input}
+    <div className="flex justify-end">
+      <Toggle defaultPressed={false} pressed={!beneficiaryFromWallet} onPressedChange={(p) => setBeneficiaryFromWallet(!p)} className="text-xs">Input beneficiary manually.</Toggle>
+    </div>
+  </>)
+}
+
+export const TransferForm: FC = () => {
 
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
-  const [source, setSource] = useState(snowbridgeEnvironment.sources[0].id)
-  const [destinations, setDestinations] = useState<TransferSource[]>([])
   const tokens = Object.keys(snowbridgeEnvironment.erc20tokens)
 
-  useEffect(() => {
-    const newSource = snowbridgeEnvironment.sources.find(s => s.id == form.getValues().source)!
-    const newDestinations = snowbridgeEnvironment.sources.filter(s => newSource.destinationIds.find(d => d == s.id) !== undefined)
-    setDestinations(newDestinations)
-      if(newDestinations.find(d => d.id == form.getValues().destination) === undefined) {
-        form.setValue("destination", "")
-      }
-  }, [source, setDestinations])
+  const [source, setSource] = useState(snowbridgeEnvironment.sources[0])
+  const [destinations, setDestinations] = useState(source.destinationIds.map(d => snowbridgeEnvironment.sources.find(s => d === s.id)!))
+  const [destination, setDestination] = useState(destinations[0])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      source: snowbridgeEnvironment.sources[0].id,
-      destination: snowbridgeEnvironment.sources[0].destinationIds[0],
+      source: source.id,
+      destination: destination.id,
       token: tokens[0],
     },
   })
 
   const watchSource = form.watch("source")
-  useEffect(()=> setSource(watchSource), [watchSource])
+  const watchDestination = form.watch("destination")
 
+  useEffect(() => {
+    let newDestinations = destinations
+    if (source.id !== watchSource) {
+      console.log('new Source', source)
+      const newSource = snowbridgeEnvironment.sources.find(s => s.id == watchSource)!;
+      setSource(newSource)
+      newDestinations = newSource.destinationIds.map(d => snowbridgeEnvironment.sources.find(s => d === s.id)).filter(s => s !== undefined).map(s => s!)
+      setDestinations(newDestinations)
+    }
+    setDestination(newDestinations.find(d => d.id == watchDestination) ?? newDestinations[0])
+
+  }, [source, watchSource, watchDestination, setSource, setDestinations, setDestination])
+
+  console.log('AAA', form.getValues())
+  console.log('AAA', source, destination)
   return (
     <Card className="w-auto md:w-2/3">
       <CardHeader>
@@ -144,13 +189,13 @@ export const TransferForm: FC<TransferProps> = ({ }) => {
                           <SelectContent>
                             <SelectGroup>
                               {Object.keys(snowbridgeEnvironment.erc20tokens).map(tk => (
-                                <SelectItem value={tk} >{tk}</SelectItem>
+                                <SelectItem key={tk} value={tk} >{tk}</SelectItem>
                               ))}
                             </SelectGroup>
                           </SelectContent>
+                          <FormMessage />
                         </Select>
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )} />
               </div>
@@ -161,9 +206,9 @@ export const TransferForm: FC<TransferProps> = ({ }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Beneficiary</FormLabel>
-                  <FormDescription>SS58 or Hex address</FormDescription>
+                  <FormDescription>Receiver account on the destination.</FormDescription>
                   <FormControl>
-                    <Input placeholder="0x0000000000000000000000000000000000000000" {...field} />
+                    <BeneficiaryInput field={field} destination={destination} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
