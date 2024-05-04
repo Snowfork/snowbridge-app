@@ -39,7 +39,7 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferSource }> =
     polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => accounts.push(x))
   }
   if (destination.type === "ethereum" || destination.has20ByteAccounts) {
-    ethereumAccounts?.map(x => { return { key: x, name: x, type: destination.type } }).forEach(x => accounts.push(x))
+    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum"} }).forEach(x => accounts.push(x))
   }
 
   let input: JSX.Element
