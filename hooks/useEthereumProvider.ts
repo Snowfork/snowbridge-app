@@ -1,7 +1,7 @@
 "use client"
 
-import { EthereumProvider, ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from '@/store/ethereum'
-import { useAtom } from 'jotai'
+import { EthereumProvider, ethereumAccountAtom, ethereumAccountsAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from '@/store/ethereum'
+import { useAtom, useSetAtom } from 'jotai'
 import { useEffect } from 'react'
 
 
@@ -9,8 +9,9 @@ export const useEthereumProvider = () => {
   const [ethereumAccount] = useAtom(ethereumAccountAtom)
   const [ethereumProvider, setEthereumProvider] = useAtom(ethersProviderAtom)
 
-  const [, setEthereumAccount] = useAtom(ethereumAccountAtom)
-  const [, setEthereumChainId] = useAtom(ethereumChainIdAtom)
+  const setEthereumAccount = useSetAtom(ethereumAccountAtom)
+  const setEthereumAccounts = useSetAtom(ethereumAccountsAtom)
+  const setEthereumChainId = useSetAtom(ethereumChainIdAtom)
 
   const [ethereumWalletAuthorized, setEthereumWalletAuthorized] = useAtom(ethereumWalletAuthorizedAtom)
   useEffect(() => {
@@ -23,9 +24,9 @@ export const useEthereumProvider = () => {
       if (provider == null) return
       let ethereum = provider as any as EthereumProvider
       setEthereumProvider(ethereum)
-      const updateAccounts = (accounts: unknown): void => {
-        const account = (accounts as string[])[0]
-        setEthereumAccount(account ?? null)
+      const updateAccounts = (accounts: string[]): void => {
+        setEthereumAccount(accounts[0] ?? null)
+        setEthereumAccounts(accounts)
       }
       const updateChainId = (chainId: unknown): void => {
         setEthereumChainId(Number.parseInt(chainId as string, 16))
@@ -38,8 +39,8 @@ export const useEthereumProvider = () => {
         ethereum
           .request({ method: 'eth_requestAccounts' })
           .then((accounts: string[]) => {
-            const account = accounts[0]
-            setEthereumAccount(account ?? null)
+            setEthereumAccount(accounts[0] ?? null)
+            setEthereumAccounts(accounts)
           })
           .catch((error: any) => {
             if (error.code === 4001) {
@@ -57,6 +58,7 @@ export const useEthereumProvider = () => {
     ethereumWalletAuthorized,
     setEthereumProvider,
     setEthereumAccount,
+    setEthereumAccounts,
     setEthereumWalletAuthorized,
     setEthereumChainId
   ])

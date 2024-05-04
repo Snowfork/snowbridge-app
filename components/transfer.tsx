@@ -15,6 +15,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
+import { ethereumAccountsAtom } from "@/store/ethereum";
 
 const onSubmit = (a: any) => {
   alert(JSON.stringify(a))
@@ -30,30 +31,44 @@ const formSchema = z.object({
 
 export const BeneficiaryInput: FC<{ field: any, destination: TransferSource }> = ({ field, destination }) => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
+  const ethereumAccounts = useAtomValue(ethereumAccountsAtom)
   const [beneficiaryFromWallet, setBeneficiaryFromWallet] = useState(true)
-  let input = (
-    <Input placeholder="0x0000000000000000000000000000000000000000" {...field} />
-  )
 
-  const accounts: { key: string, name: string }[] = []
-  if (destination?.type === "substrate") {
-    polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '' } }).forEach(x => accounts.push(x))
+  const accounts: { key: string, name: string, type: "substrate" | "ethereum" }[] = []
+  if (destination.type === "substrate") {
+    polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => accounts.push(x))
+  }
+  if (destination.type === "ethereum") {
+    ethereumAccounts?.map(x => { return { key: x, name: x, type: destination.type } }).forEach(x => accounts.push(x))
   }
 
+  let input: JSX.Element
   if (beneficiaryFromWallet && accounts.length > 0) {
     input = (
-      <Select onValueChange={field.onChange} value={field.value}>
+      <Select key="controlled" onValueChange={field.onChange} value={field.value}>
         <SelectTrigger>
           <SelectValue placeholder="Select a beneficiary" />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            {accounts.map((acc, i) => (
-              <SelectItem key={acc.key + "-" + i} value={acc.key}><div>{acc.name}</div><div>{trimAccount(acc.key, 18)}</div></SelectItem>
-            ))}
+            {accounts.map((acc, i) =>
+              acc.type === "substrate"
+              ? (<SelectItem key={acc.key + "-" + i} value={acc.key}>
+                <div>{acc.name}</div> 
+                <div className="md:hidden flex">{trimAccount(acc.key, 18)}</div>
+                <div className="hidden md:flex">{acc.key}</div>
+                </SelectItem>)
+              : (<SelectItem key={acc.key + "-" + i} value={acc.key}>
+                <div className="md:hidden flex">{trimAccount(acc.name, 18)}</div>
+                <div className="hidden md:flex">{acc.name}</div>
+                </SelectItem>))}
           </SelectGroup>
         </SelectContent>
       </Select>)
+  } else {
+    return <></>
+    //input = (<Input key="plain" placeholder="0x0000000000000000000000000000000000000000" {...field} />)
+
   }
 
   return (<>
@@ -88,18 +103,17 @@ export const TransferForm: FC = () => {
   useEffect(() => {
     let newDestinations = destinations
     if (source.id !== watchSource) {
-      console.log('new Source', source)
       const newSource = snowbridgeEnvironment.sources.find(s => s.id == watchSource)!;
       setSource(newSource)
       newDestinations = newSource.destinationIds.map(d => snowbridgeEnvironment.sources.find(s => d === s.id)).filter(s => s !== undefined).map(s => s!)
       setDestinations(newDestinations)
     }
-    setDestination(newDestinations.find(d => d.id == watchDestination) ?? newDestinations[0])
-
+    const newDestination = newDestinations.find(d => d.id == watchDestination) ?? newDestinations[0]
+    setDestination(newDestination)
+    form.resetField("destination", { defaultValue: newDestination.id })
+    form.resetField("beneficiary", { defaultValue: "" })
   }, [source, watchSource, watchDestination, setSource, setDestinations, setDestination])
 
-  console.log('AAA', form.getValues())
-  console.log('AAA', source, destination)
   return (
     <Card className="w-auto md:w-2/3">
       <CardHeader>
