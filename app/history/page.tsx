@@ -42,7 +42,10 @@ export default function History() {
           ))}
         </Accordion>
         <br></br>
-        <Pagination>
+        <div className={"justify-self-center align-middle" + (transfers.length == 0 ? "": "hidden")}>
+        <p className="text-muted-foreground text-center">No history.</p>
+        </div>
+        <Pagination className={transfers.length == 0 ? "hidden": ""}>
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious onClick={() => setPage(Math.max(0, page - 1))} />
