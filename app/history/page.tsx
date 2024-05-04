@@ -7,14 +7,14 @@ import { Transfer, transfersAtom } from "@/store/transferHistory"
 import { useAtomValue } from "jotai"
 import { useMemo, useState } from "react"
 
-const pageItems = 5
+const ITEMS_PER_PAGE = 5
 
 export default function History() {
   let transfers = useAtomValue(transfersAtom)
   let pages = useMemo(() => {
     const pages: Transfer[][] = []
-    for (let i = 0; i < transfers.length; i += pageItems) {
-      pages.push(transfers.slice(i, i + pageItems));
+    for (let i = 0; i < transfers.length; i += ITEMS_PER_PAGE) {
+      pages.push(transfers.slice(i, i + ITEMS_PER_PAGE));
     }
     return pages
   }, [transfers])

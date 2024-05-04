@@ -212,7 +212,7 @@ export const Menu: FC<MenuProps> = ({ }) => {
           </MenubarContent>
         </MenubarMenu>
         <MenubarMenu>
-          <MenubarContent>
+          <MenubarContent align="end">
             <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={()=> window.open("https://github.com/Snowfork/snowbridge")}>
               <Github className="w-[40px] h-[40px]" /><p>GitHub</p>
             </Button>
