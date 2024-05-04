@@ -146,7 +146,7 @@ export const Menu: FC = () => {
             id: "wallet_select",
             duration: 5000,
           })
-        }}>{trimAccount(ethereumAccount)}</Button>
+        }}><pre className="inline">{trimAccount(ethereumAccount)}</pre></Button>
       </div>
     </>)
   }
@@ -165,7 +165,7 @@ export const Menu: FC = () => {
         <h1 className="font-semibold">Polkadot</h1>
         <div className="text-xs">
           <p>Name: {polkadotAccount.name}</p>
-          <p>Address: {trimAccount(polkadotAccount.address)}</p>
+          <p>Address: <pre className="inline">{trimAccount(polkadotAccount.address)}</pre></p>
           <p>Wallet: <Button className="w-full" variant="outline" onClick={() => setPolkadotWalletModalOpen(true)}>{wallet?.title}</Button> </p>
           <p>Account:</p>
         </div>
@@ -175,7 +175,7 @@ export const Menu: FC = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {polkadotAccounts?.map(acc => (<SelectItem key={acc.address} value={acc.address ?? "none"}><div>{acc.name}</div> {trimAccount(acc.address)}</SelectItem>))}
+              {polkadotAccounts?.map(acc => (<SelectItem key={acc.address} value={acc.address ?? "none"}><div>{acc.name}</div> <pre className="inline">{trimAccount(acc.address)}</pre></SelectItem>))}
             </SelectGroup>
           </SelectContent>
         </Select>

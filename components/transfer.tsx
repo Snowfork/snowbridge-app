@@ -38,37 +38,34 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferSource }> =
   if (destination.type === "substrate") {
     polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => accounts.push(x))
   }
-  if (destination.type === "ethereum") {
+  if (destination.type === "ethereum" || destination.has20ByteAccounts) {
     ethereumAccounts?.map(x => { return { key: x, name: x, type: destination.type } }).forEach(x => accounts.push(x))
   }
 
   let input: JSX.Element
   if (beneficiaryFromWallet && accounts.length > 0) {
-    input = (
-      <Select key="controlled" onValueChange={field.onChange} value={field.value}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select a beneficiary" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {accounts.map((acc, i) =>
-              acc.type === "substrate"
+    input = (<Select key="controlled" onValueChange={field.onChange} value={field.value}>
+      <SelectTrigger>
+        <SelectValue placeholder="Select a beneficiary" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {accounts.map((acc, i) =>
+            acc.type === "substrate"
               ? (<SelectItem key={acc.key + "-" + i} value={acc.key}>
-                <div>{acc.name}</div> 
-                <div className="md:hidden flex">{trimAccount(acc.key, 18)}</div>
-                <div className="hidden md:flex">{acc.key}</div>
-                </SelectItem>)
+                <div>{acc.name}</div>
+                <pre className="md:hidden inline">{trimAccount(acc.key, 18)}</pre>
+                <pre className="hidden md:inline">{acc.key}</pre>
+              </SelectItem>)
               : (<SelectItem key={acc.key + "-" + i} value={acc.key}>
-                <div className="md:hidden flex">{trimAccount(acc.name, 18)}</div>
-                <div className="hidden md:flex">{acc.name}</div>
-                </SelectItem>))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>)
+                <pre className="md:hidden inline">{trimAccount(acc.name, 18)}</pre>
+                <pre className="hidden md:inline">{acc.name}</pre>
+              </SelectItem>))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>)
   } else {
-    return <></>
-    //input = (<Input key="plain" placeholder="0x0000000000000000000000000000000000000000" {...field} />)
-
+    input = (<Input key="plain" placeholder="0x0000000000000000000000000000000000000000" {...field} />)
   }
 
   return (<>
@@ -94,6 +91,7 @@ export const TransferForm: FC = () => {
       source: source.id,
       destination: destination.id,
       token: tokens[0],
+      beneficiary: "",
     },
   })
 
