@@ -165,7 +165,7 @@ export const Menu: FC = () => {
         <h1 className="font-semibold">Polkadot</h1>
         <div className="text-xs">
           <p>Name: {polkadotAccount.name}</p>
-          <p>Address: <pre className="inline">{trimAccount(polkadotAccount.address)}</pre></p>
+          <p className="inline">Address: </p><pre className="inline">{trimAccount(polkadotAccount.address, 28)}</pre>
           <p>Wallet: <Button className="w-full" variant="outline" onClick={() => setPolkadotWalletModalOpen(true)}>{wallet?.title}</Button> </p>
           <p>Account:</p>
         </div>
