@@ -109,7 +109,6 @@ export const Menu: FC = () => {
 
   const contextEthereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom)!
 
-  console.log("AAAA", contextEthereumChainId)
   const switchEthereumNetwork = useSwitchEthereumNetwork(contextEthereumChainId)
   const [connectToEthereumWallet, ethereumLoading, ethereumError] = useConnectEthereumWallet()
 

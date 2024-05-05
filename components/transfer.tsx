@@ -17,6 +17,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { LucideAlertCircle } from "lucide-react";
 
 type FormData = {
   source: string;
@@ -33,6 +35,23 @@ const formSchema = z.object({
   amount: z.string().regex(/^[1-9][0-9]{0,37}$/, "Invalid amount"),
   beneficiary: z.string().min(1, "Select beneficiary.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
+
+const ErrorDialog: FC<{ title: string, description: string, errors: string[], dismiss: () => void }> = ({ title, errors, description, dismiss }) => {
+  return (<Dialog open={errors.length > 0} onOpenChange={(a) => { if (!a) dismiss() }}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription className="flex items-center py-2">
+          <LucideAlertCircle className="mx-2 text-destructive" />
+          {description}
+        </DialogDescription>
+      </DialogHeader>
+      <ol className="list-inside list-disc">
+        {errors.map((e, i) => (<li key={i}>{e}</li>))}
+      </ol>
+    </DialogContent>
+  </Dialog>)
+}
 
 export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }> = ({ field, destination }) => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
@@ -102,15 +121,15 @@ const onSubmit = (source: TransferLocation, destination: TransferLocation, setVa
           if (plan.failure) {
             let errors: string[] = []
             if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
-            if (!plan.failure.tokenIsValidERC20) errors.push(`Token '${data.token}' not a valid ERC20 token.`)
-            if (!plan.failure.tokenIsRegistered) errors.push(`Token '${data.token}' not registered with the Snowbridge gateway.`)
-            if (!plan.failure.foreignAssetExists) errors.push(`Token '${data.token}' not registered on Asset Hub.`)
+            if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
+            if (!plan.failure.tokenIsRegistered) errors.push(`Tokennot registered with the Snowbridge gateway.`)
+            if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
             if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
-            if (!plan.failure.canPayFee) errors.push('Cannot pay fee.')
+            if (!plan.failure.canPayFee) errors.push('Insufficient DOT to pay fees.')
             if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
             if (!plan.failure.parachainHasPalletXcm) errors.push('Source parachain does not have pallet-xcm.')
             if (!plan.failure.parachainKnownToContext) errors.push('Source parachain is not known to context.')
-            if (!plan.failure.hasAsset) errors.push('Source account does not have enough asset.')
+            if (!plan.failure.hasAsset) errors.push('Insufficient asset balance.')
             setValidationErrors(errors)
             return;
           }
@@ -128,16 +147,16 @@ const onSubmit = (source: TransferLocation, destination: TransferLocation, setVa
             let errors: string[] = []
             if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
             if (!plan.failure.channelOperational) errors.push('Channel to destination halted.')
-            if (!plan.failure.beneficiaryAccountExists) errors.push(`'${data.beneficiary}' does not exist on destination.`)
-            if (!plan.failure.tokenIsValidERC20) errors.push(`Token '${data.token}' not a valid ERC20 token.`)
-            if (!plan.failure.tokenIsRegistered) errors.push(`Token '${data.token}' not registered with the Snowbridge gateway.`)
-            if (!plan.failure.foreignAssetExists) errors.push(`Token '${data.token}' not registered on Asset Hub.`)
-            if (!plan.failure.hasToken) errors.push(`Source address '${await signer.getAddress()}' does not own token '${data.token}'.`)
-            if (!plan.failure.tokenSpendApproved) errors.push(`Source address '${await signer.getAddress()}' has not allowed Snowbridge gateway '${context.config.appContracts.gateway}' to spend token '${data.token}'.`)
+            if (!plan.failure.beneficiaryAccountExists) errors.push(`Beneficiary does not hold existential deposit on destination.`)
+            if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
+            if (!plan.failure.tokenIsRegistered) errors.push(`Token not registered with the Snowbridge gateway.`)
+            if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
+            if (!plan.failure.hasToken) errors.push(`Insufficient token enough balance.`)
+            if (!plan.failure.tokenSpendApproved) errors.push(`Snowbridge gateway needs to be approved to token spender.`)
             if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
-            if (!plan.failure.canPayFee) errors.push('Cannot pay fee.')
+            if (!plan.failure.canPayFee) errors.push('Insufficient ETH to pay fees.')
             if (!plan.failure.destinationChainExists) errors.push('Destination chain does not exist.')
-            if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set uo.')
+            if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
             setValidationErrors(errors)
             return;
           }
@@ -193,124 +212,131 @@ export const TransferForm: FC = () => {
   }, [source, watchSource, watchDestination, watchToken, setSource, setDestinations, setDestination, setToken])
 
   return (
-    <Card className="w-auto md:w-2/3">
-      <CardHeader>
-        <CardTitle>Transfer</CardTitle>
-        <CardDescription>Transfer tokens to Polkadot.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit(source, destination, setValidationErrors))} className="space-y-2">
-            <div className="grid grid-cols-2 space-x-2">
-              <FormField
-                control={form.control}
-                name="source"
-                render={({ field }) => (
-                  <FormItem {...field}>
-                    <FormLabel>Source</FormLabel>
-                    <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {snowbridgeEnvironment.locations.filter(s => s.destinationIds.length > 0).map(s => (
-                              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="destination"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Destination</FormLabel>
-                    <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger >
-                          <SelectValue placeholder="Select a destination" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {destinations.map(s => (
-                              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex space-x-2">
-              <div className="w-2/3">
+    <>
+      <Card className="w-auto md:w-2/3">
+        <CardHeader>
+          <CardTitle>Transfer</CardTitle>
+          <CardDescription>Transfer tokens to Polkadot.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit(source, destination, setValidationErrors))} className="space-y-2">
+              <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
-                  name="amount"
+                  name="source"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Amount</FormLabel>
-                      <FormControl>
-                        <Input type="string" placeholder="0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-              </div>
-              <div className="w-1/3">
-                <FormField
-                  control={form.control}
-                  name="token"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="invisible">Token</FormLabel>
+                    <FormItem {...field}>
+                      <FormLabel>Source</FormLabel>
                       <FormControl>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a token" />
+                            <SelectValue placeholder="Select a source" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {Object.entries(destination.erc20tokensReceivable).map(tk => (
-                                <SelectItem key={tk[1]} value={tk[1]} >{tk[0]}</SelectItem>
+                              {snowbridgeEnvironment.locations.filter(s => s.destinationIds.length > 0).map(s => (
+                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                               ))}
                             </SelectGroup>
                           </SelectContent>
-                          <FormMessage />
                         </Select>
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
-                  )} />
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="destination"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Destination</FormLabel>
+                      <FormControl>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger >
+                            <SelectValue placeholder="Select a destination" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {destinations.map(s => (
+                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
-            <FormField
-              control={form.control}
-              name="beneficiary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Beneficiary</FormLabel>
-                  <FormDescription>Receiver account on the destination.</FormDescription>
-                  <FormControl>
-                    <BeneficiaryInput field={field} destination={destination} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <br />
-            <Button className="w-full my-8" type="submit">Submit</Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+              <div className="flex space-x-2">
+                <div className="w-2/3">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Amount</FormLabel>
+                        <FormControl>
+                          <Input type="string" placeholder="0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                </div>
+                <div className="w-1/3">
+                  <FormField
+                    control={form.control}
+                    name="token"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="invisible">Token</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a token" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {Object.entries(destination.erc20tokensReceivable).map(tk => (
+                                  <SelectItem key={tk[1]} value={tk[1]} >{tk[0]}</SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                            <FormMessage />
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                </div>
+              </div>
+              <FormField
+                control={form.control}
+                name="beneficiary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Beneficiary</FormLabel>
+                    <FormDescription>Receiver account on the destination.</FormDescription>
+                    <FormControl>
+                      <BeneficiaryInput field={field} destination={destination} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <br />
+              <Button className="w-full my-8" type="submit">Submit</Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+      <ErrorDialog
+        title="Send Plan Failed"
+        description="Some preflight checks when planning the transfer have failed."
+        errors={validatonErrors}
+        dismiss={() => setValidationErrors([])} />
+    </>
   )
 }
