@@ -12,7 +12,7 @@ import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom,
 import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom } from "@/store/snowbridge";
 import { WalletSelect } from '@talismn/connect-components';
 import { useAtom, useAtomValue } from "jotai";
-import { Github, LucideAlertCircle, LucideBarChart, LucideHistory, LucideLoaderCircle, LucideMenu, LucideSend, LucideWallet } from "lucide-react";
+import { Github, LucideAlertCircle, LucideBarChart, LucideBook, LucideBookA, LucideBookPlus, LucideBookTemplate, LucideBookText, LucideBookType, LucideHistory, LucideLoaderCircle, LucideMenu, LucideSend, LucideWallet } from "lucide-react";
 import Link from "next/link";
 import { FC } from "react";
 import { toast } from "sonner";
@@ -212,6 +212,9 @@ export const Menu: FC = () => {
           <MenubarContent align="center">
             <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={()=> window.open("https://github.com/Snowfork/snowbridge")}>
               <Github className="w-[40px] h-[40px]" /><p>GitHub</p>
+            </Button>
+            <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={()=> window.open("https://docs.snowbridge.network/")}>
+              <LucideBookText className="w-[40px] h-[40px]" /><p>Docs</p>
             </Button>
           </MenubarContent>
           <MenubarTrigger><LucideMenu/><p className="pl-2 hidden md:flex">More</p></MenubarTrigger>

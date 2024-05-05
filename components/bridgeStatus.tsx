@@ -1,9 +1,9 @@
 "use client"
 
 import { FC } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Button } from "./ui/button"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card"
+import Link from "next/link"
 
 export const BridgeStatus: FC = () => {
   return (
@@ -20,7 +20,7 @@ export const BridgeStatus: FC = () => {
           <div className="space-y-1">
             <p>To Polkadot: <span className="text-green-700">Normal 10 min 5 secs</span></p>
             <p>To Ethereum: <span className="text-red-700">Delayed 32 min 6 secs</span></p>
-            <a className="text-xs" href="/">See more</a>
+            <Link className="text-xs" href="/status">See more</Link>
           </div>
         </div>
       </HoverCardContent>
