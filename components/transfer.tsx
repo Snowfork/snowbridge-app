@@ -4,7 +4,7 @@ import { trimAccount } from "@/lib/utils";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TransferSource } from "@snowbridge/api/dist/environment";
+import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { useAtomValue } from "jotai";
 import { FC, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -29,7 +29,7 @@ const formSchema = z.object({
   beneficiary: z.string().regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
 
-export const BeneficiaryInput: FC<{ field: any, destination: TransferSource }> = ({ field, destination }) => {
+export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }> = ({ field, destination }) => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom)
   const [beneficiaryFromWallet, setBeneficiaryFromWallet] = useState(true)
@@ -79,38 +79,44 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferSource }> =
 export const TransferForm: FC = () => {
 
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
-  const tokens = Object.keys(snowbridgeEnvironment.erc20tokens)
 
-  const [source, setSource] = useState(snowbridgeEnvironment.sources[0])
-  const [destinations, setDestinations] = useState(source.destinationIds.map(d => snowbridgeEnvironment.sources.find(s => d === s.id)!))
+  const [source, setSource] = useState(snowbridgeEnvironment.locations[0])
+  const [destinations, setDestinations] = useState(source.destinationIds.map(d => snowbridgeEnvironment.locations.find(s => d === s.id)!))
   const [destination, setDestination] = useState(destinations[0])
+
+  const tokens = Object.keys(destination.erc20tokensReceivable)
+  const [token, setToken] = useState(destination.erc20tokensReceivable[tokens[0]])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       source: source.id,
       destination: destination.id,
-      token: tokens[0],
+      token: token,
       beneficiary: "",
     },
   })
 
+  const watchToken = form.watch("token")
   const watchSource = form.watch("source")
   const watchDestination = form.watch("destination")
 
   useEffect(() => {
     let newDestinations = destinations
     if (source.id !== watchSource) {
-      const newSource = snowbridgeEnvironment.sources.find(s => s.id == watchSource)!;
+      const newSource = snowbridgeEnvironment.locations.find(s => s.id == watchSource)!;
       setSource(newSource)
-      newDestinations = newSource.destinationIds.map(d => snowbridgeEnvironment.sources.find(s => d === s.id)).filter(s => s !== undefined).map(s => s!)
+      newDestinations = newSource.destinationIds.map(d => snowbridgeEnvironment.locations.find(s => d === s.id)).filter(s => s !== undefined).map(s => s!)
       setDestinations(newDestinations)
     }
     const newDestination = newDestinations.find(d => d.id == watchDestination) ?? newDestinations[0]
     setDestination(newDestination)
+    const newTokens = Object.values(newDestination.erc20tokensReceivable)
+    const newToken = newTokens.find(x=> x == watchToken) ?? newTokens[0]
     form.resetField("destination", { defaultValue: newDestination.id })
     form.resetField("beneficiary", { defaultValue: "" })
-  }, [source, watchSource, watchDestination, setSource, setDestinations, setDestination])
+    form.resetField("token", { defaultValue: newToken })
+  }, [source, watchSource, watchDestination, watchToken, setSource, setDestinations, setDestination, setToken])
 
   return (
     <Card className="w-auto md:w-2/3">
@@ -135,7 +141,7 @@ export const TransferForm: FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {snowbridgeEnvironment.sources.filter(s => s.destinationIds.length > 0).map(s => (
+                            {snowbridgeEnvironment.locations.filter(s => s.destinationIds.length > 0).map(s => (
                               <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                             ))}
                           </SelectGroup>
@@ -196,12 +202,12 @@ export const TransferForm: FC = () => {
                       <FormControl>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a source" />
+                            <SelectValue placeholder="Select a token" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {Object.keys(snowbridgeEnvironment.erc20tokens).map(tk => (
-                                <SelectItem key={tk} value={tk} >{tk}</SelectItem>
+                              {Object.entries(destination.erc20tokensReceivable).map(tk => (
+                                <SelectItem key={tk[1]} value={tk[1]} >{tk[0]}</SelectItem>
                               ))}
                             </SelectGroup>
                           </SelectContent>
