@@ -109,10 +109,11 @@ export const Menu: FC = () => {
 
   const contextEthereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom)!
 
+  console.log("AAAA", contextEthereumChainId)
   const switchEthereumNetwork = useSwitchEthereumNetwork(contextEthereumChainId)
   const [connectToEthereumWallet, ethereumLoading, ethereumError] = useConnectEthereumWallet()
 
-  if (ethereumProvider && ethereumWalletAuthorized && ethereumChainId !== contextEthereumChainId && snowbridgeContext !== null) {
+  if (ethereumProvider && ethereumWalletAuthorized && contextEthereumChainId !== null && ethereumChainId !== contextEthereumChainId && snowbridgeContext !== null) {
     toast.error("Wrong Ethereum network", {
       position: "bottom-center",
       closeButton: true,

@@ -3,7 +3,6 @@ import { useAtom } from "jotai"
 import { useCallback } from 'react'
 
 export const useSwitchEthereumNetwork = (chainId: number): (() => Promise<void>) => {
-    //const [fromChain] = useAtom(fromChainAtom)
     const [ethereum] = useAtom(ethersProviderAtom)
   
     const switchNetwork = useCallback(async () => {
