@@ -1,12 +1,14 @@
 "use client"
 
-import { EthereumProvider, ethereumAccountAtom, ethereumAccountsAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from '@/store/ethereum'
+import { ethereumAccountAtom, ethereumAccountsAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom, windowEthereumAtom } from '@/store/ethereum'
+import { AbstractProvider, BrowserProvider, Eip1193Provider } from 'ethers'
 import { useAtom, useSetAtom } from 'jotai'
 import { useEffect } from 'react'
 
 
 export const useEthereumProvider = () => {
   const [ethereumAccount] = useAtom(ethereumAccountAtom)
+  const [windowEthereum, setWindowEthereum] = useAtom(windowEthereumAtom)
   const [ethereumProvider, setEthereumProvider] = useAtom(ethersProviderAtom)
 
   const setEthereumAccount = useSetAtom(ethereumAccountAtom)
@@ -20,10 +22,10 @@ export const useEthereumProvider = () => {
       const { default: detectEthereumProvider } = await import(
         '@metamask/detect-provider'
       )
-      const provider = await detectEthereumProvider({ silent: true })
+      const provider = await detectEthereumProvider<AbstractProvider & Eip1193Provider>({ silent: true })
       if (provider == null) return
-      let ethereum = provider as any as EthereumProvider
-      setEthereumProvider(ethereum)
+      setWindowEthereum(provider)
+      setEthereumProvider(new BrowserProvider(provider))
       const updateAccounts = (accounts: string[]): void => {
         setEthereumAccount(accounts[0] ?? null)
         setEthereumAccounts(accounts)
@@ -32,11 +34,11 @@ export const useEthereumProvider = () => {
         setEthereumChainId(Number.parseInt(chainId as string, 16))
       }
 
-      ethereum.on('accountsChanged', updateAccounts)
-      ethereum.on('chainChanged', updateChainId)
-      void ethereum.request({ method: 'eth_chainId' }).then(updateChainId)
+      provider.on('accountsChanged', updateAccounts)
+      provider.on('chainChanged', updateChainId)
+      void provider.request({ method: 'eth_chainId' }).then(updateChainId)
       if (ethereumWalletAuthorized) {
-        ethereum
+        provider
           .request({ method: 'eth_requestAccounts' })
           .then((accounts: string[]) => {
             setEthereumAccount(accounts[0] ?? null)

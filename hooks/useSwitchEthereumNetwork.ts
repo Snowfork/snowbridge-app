@@ -1,9 +1,9 @@
-import { ethersProviderAtom } from '@/store/ethereum'
-import { useAtom } from "jotai"
+import { ethersProviderAtom, windowEthereumAtom } from '@/store/ethereum'
+import { useAtomValue } from "jotai"
 import { useCallback } from 'react'
 
 export const useSwitchEthereumNetwork = (chainId: number): (() => Promise<void>) => {
-    const [ethereum] = useAtom(ethersProviderAtom)
+    const ethereum = useAtomValue(windowEthereumAtom)
   
     const switchNetwork = useCallback(async () => {
       if (ethereum == null) return
@@ -41,7 +41,7 @@ export const useSwitchEthereumNetwork = (chainId: number): (() => Promise<void>)
           })
         }
       }
-    }, [ethereum])
+    }, [ethereum, chainId])
   
     return switchNetwork
   }

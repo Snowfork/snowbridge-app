@@ -1,11 +1,11 @@
 "use client"
 
-import { ethereumAccountAtom, ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum"
-import { useAtom, useSetAtom } from "jotai"
+import { ethereumAccountAtom, ethereumAccountsAtom, windowEthereumAtom } from "@/store/ethereum"
+import { useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useState } from "react"
 
 export const useConnectEthereumWallet = (): ([() => Promise<void>, boolean, string | null]) => {
-  const [ethereumProvider] = useAtom(ethersProviderAtom)
+  const windowEthereum = useAtomValue(windowEthereumAtom)
   const setEthereumAccount = useSetAtom(ethereumAccountAtom)
   const setEthereumAccounts = useSetAtom(ethereumAccountsAtom)
 
@@ -13,12 +13,12 @@ export const useConnectEthereumWallet = (): ([() => Promise<void>, boolean, stri
   const [error, setError] = useState<string | null>(null)
 
   const connectWallet = useCallback(async () => {
-    if (ethereumProvider == null) {
+    if (windowEthereum == null) {
       return
     }
     setLoading(true)
     try {
-      const accounts: string[] = await ethereumProvider
+      const accounts: string[] = await windowEthereum
         .request({ method: 'eth_requestAccounts' })
 
       if (Array.isArray(accounts) && accounts.length > 0) {
@@ -36,6 +36,6 @@ export const useConnectEthereumWallet = (): ([() => Promise<void>, boolean, stri
     }
     setLoading(false)
 
-  }, [ethereumProvider, setEthereumAccount, setEthereumAccounts, setError, setLoading])
+  }, [windowEthereum, setEthereumAccount, setEthereumAccounts, setError, setLoading])
   return [connectWallet, loading, error]
 }

@@ -7,7 +7,7 @@ import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { trimAccount } from "@/lib/utils";
-import { EthereumProvider, ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
+import { ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom } from "@/store/snowbridge";
 import { WalletSelect } from '@talismn/connect-components';
@@ -50,7 +50,7 @@ const PolkadotWalletDialog: FC = () => {
   )
 }
 
-const InstallMetamaskDialog: FC<{ walletAuthorized: boolean, provider: EthereumProvider | null }> = ({ walletAuthorized, provider }) => {
+const InstallMetamaskDialog: FC<{ walletAuthorized: boolean, provider: any }> = ({ walletAuthorized, provider }) => {
   return (<Dialog open={walletAuthorized == false && provider === undefined}>
     <DialogContent>
       <DialogHeader>
@@ -130,7 +130,7 @@ export const Menu: FC = () => {
     if (!ethereumAccount) {
       return (<Button className="w-full" onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
     }
-    if (ethereumChainId !== contextEthereumChainId) {
+    if (contextEthereumChainId !== null && ethereumChainId !== contextEthereumChainId) {
       return (<>
         <h1 className="font-semibold">Ethereum</h1>
         <Button className="w-full" variant="destructive" onClick={switchEthereumNetwork}>Switch Network</Button>
