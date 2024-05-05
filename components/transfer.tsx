@@ -4,7 +4,7 @@ import { trimAccount } from "@/lib/utils";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TransferLocation } from "@snowbridge/api/dist/environment";
+import { SourceType, TransferLocation } from "@snowbridge/api/dist/environment";
 import { useAtomValue } from "jotai";
 import { FC, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -26,7 +26,7 @@ const formSchema = z.object({
   destination: z.string().min(1, "Select destination."),
   token: z.string().min(1, "Select token."),
   amount: z.coerce.number().gt(0, "Must be greater than 0."),
-  beneficiary: z.string().regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
+  beneficiary: z.string().min(1, "Select beneficiary.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
 
 export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }> = ({ field, destination }) => {
@@ -39,7 +39,7 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }>
     polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => accounts.push(x))
   }
   if (destination.type === "ethereum" || destination.has20ByteAccounts) {
-    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum"} }).forEach(x => accounts.push(x))
+    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum" as SourceType} }).forEach(x => accounts.push(x))
   }
 
   let input: JSX.Element
@@ -94,6 +94,7 @@ export const TransferForm: FC = () => {
       destination: destination.id,
       token: token,
       beneficiary: "",
+      amount: 0,
     },
   })
 
