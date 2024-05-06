@@ -1,14 +1,14 @@
 "use client"
 
-import { trimAccount } from "@/lib/utils";
+import { formatNumber, trimAccount } from "@/lib/utils";
 import { ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toEthereum, toPolkadot } from "@snowbridge/api";
+import { Context, toEthereum, toPolkadot } from "@snowbridge/api";
 import { SourceType, TransferLocation } from "@snowbridge/api/dist/environment";
 import { useAtomValue } from "jotai";
-import { Dispatch, FC, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, FC, SetStateAction, useEffect, useReducer, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "./ui/button";
@@ -100,76 +100,84 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }>
   </>)
 }
 
-const onSubmit = (source: TransferLocation, destination: TransferLocation, setValidationErrors: Dispatch<SetStateAction<string[]>>): ((data: FormData) => Promise<void>) => {
-  const context = useAtomValue(snowbridgeContextAtom)
+const onSubmit = (context: Context | null, source: TransferLocation, destination: TransferLocation, setValidationErrors: Dispatch<SetStateAction<string[]>>): ((data: FormData) => Promise<void>) => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
   return async (data) => {
-    if (source.id !== data.source) throw Error(`Invalid form state: source mismatch ${source.id} and ${data.source}.`)
-    if (destination.id !== data.destination) throw Error(`Invalid form state: source mismatch ${destination.id} and ${data.destination}.`)
-    if (context === null) throw Error(`Context not connected.`)
+    try {
+      if (source.id !== data.source) throw Error(`Invalid form state: source mismatch ${source.id} and ${data.source}.`)
+      if (destination.id !== data.destination) throw Error(`Invalid form state: source mismatch ${destination.id} and ${data.destination}.`)
+      if (context === null) throw Error(`Context not connected.`)
 
-    switch (source.type) {
-      case "substrate":
-        {
-          if (destination.type !== "ethereum") throw Error(`Invalid form state: destination type mismatch.`)
-          if (source.paraInfo === undefined) throw Error(`Invalid form state: source does not have parachain info.`)
-          if (polkadotAccount === null) throw Error(`Wallet not connected.`)
-          const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.signer }
-          const plan = await toEthereum.validateSend(context, walletSigner as any, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
-          console.log(plan)
-          if (plan.failure) {
-            let errors: string[] = []
-            if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
-            if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
-            if (!plan.failure.tokenIsRegistered) errors.push(`Tokennot registered with the Snowbridge gateway.`)
-            if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
-            if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
-            if (!plan.failure.canPayFee) errors.push('Insufficient DOT to pay fees.')
-            if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
-            if (!plan.failure.parachainHasPalletXcm) errors.push('Source parachain does not have pallet-xcm.')
-            if (!plan.failure.parachainKnownToContext) errors.push('Source parachain is not known to context.')
-            if (!plan.failure.hasAsset) errors.push('Insufficient asset balance.')
-            setValidationErrors(errors)
-            return;
+      switch (source.type) {
+        case "substrate":
+          {
+            if (destination.type !== "ethereum") throw Error(`Invalid form state: destination type mismatch.`)
+            if (source.paraInfo === undefined) throw Error(`Invalid form state: source does not have parachain info.`)
+            if (polkadotAccount === null) throw Error(`Wallet not connected.`)
+            const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.signer }
+            const plan = await toEthereum.validateSend(context, walletSigner as any, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
+            console.log(plan)
+            if (plan.failure) {
+              let errors: string[] = []
+              if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
+              if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
+              if (!plan.failure.tokenIsRegistered) errors.push(`Tokennot registered with the Snowbridge gateway.`)
+              if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
+              if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
+              if (!plan.failure.canPayFee) errors.push('Insufficient DOT to pay fees.')
+              if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
+              if (!plan.failure.parachainHasPalletXcm) errors.push('Source parachain does not have pallet-xcm.')
+              if (!plan.failure.parachainKnownToContext) errors.push('Source parachain is not known to context.')
+              if (!plan.failure.hasAsset) errors.push('Insufficient asset balance.')
+              setValidationErrors(errors)
+              return;
+            }
+            break;
           }
-          break;
-        }
-      case "ethereum":
-        {
-          if (destination.type !== "substrate") throw Error(`Invalid form state: destination type mismatch.`)
-          if (destination.paraInfo === undefined) throw Error(`Invalid form state: destination does not have parachain id.`)
-          if (ethereumProvider === null) throw Error(`Wallet not connected.`)
-          const signer = await ethereumProvider.getSigner()
-          const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, BigInt(data.amount), destination.paraInfo.destinationFeeDOT)
-          console.log(plan)
-          if (plan.failure) {
-            let errors: string[] = []
-            if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
-            if (!plan.failure.channelOperational) errors.push('Channel to destination halted.')
-            if (!plan.failure.beneficiaryAccountExists) errors.push(`Beneficiary does not hold existential deposit on destination.`)
-            if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
-            if (!plan.failure.tokenIsRegistered) errors.push(`Token not registered with the Snowbridge gateway.`)
-            if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
-            if (!plan.failure.hasToken) errors.push(`Insufficient token enough balance.`)
-            if (!plan.failure.tokenSpendApproved) errors.push(`Snowbridge gateway needs to be approved to token spender.`)
-            if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
-            if (!plan.failure.canPayFee) errors.push('Insufficient ETH to pay fees.')
-            if (!plan.failure.destinationChainExists) errors.push('Destination chain does not exist.')
-            if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
-            setValidationErrors(errors)
-            return;
+        case "ethereum":
+          {
+            if (destination.type !== "substrate") throw Error(`Invalid form state: destination type mismatch.`)
+            if (destination.paraInfo === undefined) throw Error(`Invalid form state: destination does not have parachain id.`)
+            if (ethereumProvider === null) throw Error(`Wallet not connected.`)
+            const signer = await ethereumProvider.getSigner()
+            const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, BigInt(data.amount), destination.paraInfo.destinationFeeDOT)
+            console.log(plan)
+            if (plan.failure) {
+              let errors: string[] = []
+              if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
+              if (!plan.failure.channelOperational) errors.push('Channel to destination halted.')
+              if (!plan.failure.beneficiaryAccountExists) errors.push(`Beneficiary does not hold existential deposit on destination.`)
+              if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
+              if (!plan.failure.tokenIsRegistered) errors.push(`Token not registered with the Snowbridge gateway.`)
+              if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
+              if (!plan.failure.hasToken) errors.push(`Insufficient token enough balance.`)
+              if (!plan.failure.tokenSpendApproved) errors.push(`Snowbridge gateway needs to be approved to token spender.`)
+              if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
+              if (!plan.failure.canPayFee) errors.push('Insufficient ETH to pay fees.')
+              if (!plan.failure.destinationChainExists) errors.push('Destination chain does not exist.')
+              if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
+              setValidationErrors(errors)
+              return;
+            }
+            break;
           }
-          break;
-        }
-      default:
-        throw Error(`Invalid form state: cannot infer source type.`)
+        default:
+          throw Error(`Invalid form state: cannot infer source type.`)
+      }
+    } catch (err) {
+      let errorMessage = 'Unknown error.'
+      if (err instanceof Error) {
+        errorMessage = `${err.name}: ${err.message}`
+      }
+      setValidationErrors([errorMessage])
     }
   }
 }
 
 export const TransferForm: FC = () => {
-  const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
+  const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom)
+  const context = useAtomValue(snowbridgeContextAtom)
 
   const [validatonErrors, setValidationErrors] = useState<string[]>([])
   const [source, setSource] = useState(snowbridgeEnvironment.locations[0])
@@ -178,6 +186,7 @@ export const TransferForm: FC = () => {
 
   const tokens = Object.keys(destination.erc20tokensReceivable)
   const [token, setToken] = useState(destination.erc20tokensReceivable[tokens[0]])
+  const [feeDisplay, setFeeDisplay] = useState<string>("unknown")
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -189,6 +198,51 @@ export const TransferForm: FC = () => {
       amount: "0",
     },
   })
+
+  useEffect(()=> {
+    if(context == null) return
+    switch(source.type) {
+      case "substrate": {
+        toEthereum.getSendFee(context)
+          .then(fee => {
+            setFeeDisplay(formatNumber(fee, source.paraInfo?.decimals) + " DOT")
+          })
+          .catch(err => {
+            let message = 'Could not get transaction fee.'
+            if(err instanceof Error) {
+              message = `Could not get transaction fee: ${err.name}: ${err.message}.`
+            }
+            setFeeDisplay("unknown")
+            setValidationErrors([message])
+          })
+        break;
+      }
+      case "ethereum": {
+        if(destination.paraInfo === undefined) {
+          setFeeDisplay("unknown")
+          setValidationErrors(["Destination fee is not configured."])
+          break;
+        }
+
+        toPolkadot.getSendFee(context, token, destination.paraInfo.paraId, destination.paraInfo.destinationFeeDOT)
+        .then(fee => {
+          setFeeDisplay(formatNumber(fee, 18) + " ETH")
+        })
+        .catch(err => {
+          let message = 'Could not get transaction fee.'
+          if(err instanceof Error) {
+            message = `Could not get transaction fee: ${err.name}: ${err.message}.`
+          }
+          setFeeDisplay("unknown")
+          setValidationErrors([message])
+        })
+
+        break;
+      }
+      default:
+        setValidationErrors(['Could not get transaction fee.'])
+    }
+  }, [context, source, destination, token, setFeeDisplay, setValidationErrors])
 
   const watchToken = form.watch("token")
   const watchSource = form.watch("source")
@@ -220,7 +274,7 @@ export const TransferForm: FC = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit(source, destination, setValidationErrors))} className="space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setValidationErrors))} className="space-y-2">
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
@@ -312,6 +366,7 @@ export const TransferForm: FC = () => {
                     )} />
                 </div>
               </div>
+              <div className="text-xs text-right text-muted-foreground px-1">Fee: {feeDisplay}</div>
               <FormField
                 control={form.control}
                 name="beneficiary"
