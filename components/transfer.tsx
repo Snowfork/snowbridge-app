@@ -19,6 +19,10 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Toggle } from "./ui/toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { LucideAlertCircle } from "lucide-react";
+import { SendValidationError } from "@snowbridge/api/dist/toPolkadot";
+
+export type GeneralValidationError = { code: null, message: string }
+type ValidationError = SendValidationError | GeneralValidationError
 
 type FormData = {
   source: string;
@@ -36,7 +40,7 @@ const formSchema = z.object({
   beneficiary: z.string().min(1, "Select beneficiary.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
 
-const ErrorDialog: FC<{ title: string, description: string, errors: string[], dismiss: () => void }> = ({ title, errors, description, dismiss }) => {
+const ErrorDialog: FC<{ title: string, description: string, errors: ValidationError[], dismiss: () => void }> = ({ title, errors, description, dismiss }) => {
   return (<Dialog open={errors.length > 0} onOpenChange={(a) => { if (!a) dismiss() }}>
     <DialogContent>
       <DialogHeader>
@@ -47,7 +51,7 @@ const ErrorDialog: FC<{ title: string, description: string, errors: string[], di
         </DialogDescription>
       </DialogHeader>
       <ol className="list-inside list-disc">
-        {errors.map((e, i) => (<li key={i}>{e}</li>))}
+        {errors.map((e, i) => (<li key={i}>{e.message}</li>))}
       </ol>
     </DialogContent>
   </Dialog>)
@@ -100,7 +104,7 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }>
   </>)
 }
 
-const onSubmit = (context: Context | null, source: TransferLocation, destination: TransferLocation, setValidationErrors: Dispatch<SetStateAction<string[]>>): ((data: FormData) => Promise<void>) => {
+const onSubmit = (context: Context | null, source: TransferLocation, destination: TransferLocation, setValidationErrors: Dispatch<SetStateAction<ValidationError[]>>): ((data: FormData) => Promise<void>) => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
   return async (data) => {
@@ -130,7 +134,7 @@ const onSubmit = (context: Context | null, source: TransferLocation, destination
               if (!plan.failure.parachainHasPalletXcm) errors.push('Source parachain does not have pallet-xcm.')
               if (!plan.failure.parachainKnownToContext) errors.push('Source parachain is not known to context.')
               if (!plan.failure.hasAsset) errors.push('Insufficient asset balance.')
-              setValidationErrors(errors)
+              setValidationErrors(errors.map(e => { return { code: null, message: e } }))
               return;
             }
             break;
@@ -144,20 +148,7 @@ const onSubmit = (context: Context | null, source: TransferLocation, destination
             const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, BigInt(data.amount), destination.paraInfo.destinationFeeDOT)
             console.log(plan)
             if (plan.failure) {
-              let errors: string[] = []
-              if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
-              if (!plan.failure.channelOperational) errors.push('Channel to destination halted.')
-              if (!plan.failure.beneficiaryAccountExists) errors.push(`Beneficiary does not hold existential deposit on destination.`)
-              if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
-              if (!plan.failure.tokenIsRegistered) errors.push(`Token not registered with the Snowbridge gateway.`)
-              if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
-              if (!plan.failure.hasToken) errors.push(`Insufficient token enough balance.`)
-              if (!plan.failure.tokenSpendApproved) errors.push(`Snowbridge gateway needs to be approved to token spender.`)
-              if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
-              if (!plan.failure.canPayFee) errors.push('Insufficient ETH to pay fees.')
-              if (!plan.failure.destinationChainExists) errors.push('Destination chain does not exist.')
-              if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
-              setValidationErrors(errors)
+              setValidationErrors(plan.failure.errors)
               return;
             }
             break;
@@ -170,7 +161,7 @@ const onSubmit = (context: Context | null, source: TransferLocation, destination
       if (err instanceof Error) {
         errorMessage = `${err.name}: ${err.message}`
       }
-      setValidationErrors([errorMessage])
+      setValidationErrors([{ code: null, message: errorMessage }])
     }
   }
 }
@@ -179,7 +170,7 @@ export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom)
   const context = useAtomValue(snowbridgeContextAtom)
 
-  const [validatonErrors, setValidationErrors] = useState<string[]>([])
+  const [validatonErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [source, setSource] = useState(snowbridgeEnvironment.locations[0])
   const [destinations, setDestinations] = useState(source.destinationIds.map(d => snowbridgeEnvironment.locations.find(s => d === s.id)!))
   const [destination, setDestination] = useState(destinations[0])
@@ -199,9 +190,9 @@ export const TransferForm: FC = () => {
     },
   })
 
-  useEffect(()=> {
-    if(context == null) return
-    switch(source.type) {
+  useEffect(() => {
+    if (context == null) return
+    switch (source.type) {
       case "substrate": {
         toEthereum.getSendFee(context)
           .then(fee => {
@@ -209,38 +200,38 @@ export const TransferForm: FC = () => {
           })
           .catch(err => {
             let message = 'Could not get transaction fee.'
-            if(err instanceof Error) {
+            if (err instanceof Error) {
               message = `Could not get transaction fee: ${err.name}: ${err.message}.`
             }
             setFeeDisplay("unknown")
-            setValidationErrors([message])
+            setValidationErrors([{ code: null, message }])
           })
         break;
       }
       case "ethereum": {
-        if(destination.paraInfo === undefined) {
+        if (destination.paraInfo === undefined) {
           setFeeDisplay("unknown")
-          setValidationErrors(["Destination fee is not configured."])
+          setValidationErrors([{ code: null, message: "Destination fee is not configured."}])
           break;
         }
 
         toPolkadot.getSendFee(context, token, destination.paraInfo.paraId, destination.paraInfo.destinationFeeDOT)
-        .then(fee => {
-          setFeeDisplay(formatNumber(fee, 18) + " ETH")
-        })
-        .catch(err => {
-          let message = 'Could not get transaction fee.'
-          if(err instanceof Error) {
-            message = `Could not get transaction fee: ${err.name}: ${err.message}.`
-          }
-          setFeeDisplay("unknown")
-          setValidationErrors([message])
-        })
+          .then(fee => {
+            setFeeDisplay(formatNumber(fee, 18) + " ETH")
+          })
+          .catch(err => {
+            let message = 'Could not get transaction fee.'
+            if (err instanceof Error) {
+              message = `Could not get transaction fee: ${err.name}: ${err.message}.`
+            }
+            setFeeDisplay("unknown")
+            setValidationErrors([{ code: null, message }])
+          })
 
         break;
       }
       default:
-        setValidationErrors(['Could not get transaction fee.'])
+        setValidationErrors([{ code: null, message: 'Could not get transaction fee.'}])
     }
   }, [context, source, destination, token, setFeeDisplay, setValidationErrors])
 
