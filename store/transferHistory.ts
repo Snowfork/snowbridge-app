@@ -1,7 +1,7 @@
 import { atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 
-export type Transfer = { Id: number, Title: string }
+export type Transfer = { id: number, title: string, data: any }
 
 export type TransferAction = "add" | "udpate" | "remove"
 export type TransferUpdate = { action: TransferAction, transfer: Transfer }

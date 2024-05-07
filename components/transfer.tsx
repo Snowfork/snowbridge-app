@@ -4,9 +4,11 @@ import { formatNumber, trimAccount } from "@/lib/utils";
 import { ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { transfersAtom } from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
-import { useAtomValue } from "jotai";
+import { BrowserProvider } from "ethers";
+import { useAtom, useAtomValue } from "jotai";
 import { LucideAlertCircle, LucideLoaderCircle } from "lucide-react";
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -19,10 +21,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
-import { BrowserProvider } from "ethers";
 
-export type GeneralValidationError = { code: null, message: string }
-type ValidationError = toPolkadot.SendValidationError | GeneralValidationError
+type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError 
 
 type FormData = {
   source: string;
@@ -47,7 +47,7 @@ const doApproveSpend = async (context: Context | null, ethereumProvider: Browser
   const response = await toPolkadot.approveTokenSpend(context, signer, token, amount)
 
   console.log("approval response", response)
-  const receipt = await response.wait(1)
+  const receipt = await response.wait(2)
   console.log("approval receipt", receipt)
   if (receipt?.status === 1) { // check success
     throw Error('Token spend approval failed.')
@@ -179,16 +179,24 @@ export const BeneficiaryInput: FC<{ field: any, destination: environment.Transfe
   </>)
 }
 
-const onSubmit = (context: Context | null, source: environment.TransferLocation, destination: environment.TransferLocation, setError: Dispatch<SetStateAction<ErrorInfo | null>>): ((data: FormData) => Promise<void>) => {
+const onSubmit = (
+  context: Context | null,
+  source: environment.TransferLocation,
+  destination: environment.TransferLocation,
+  setError: Dispatch<SetStateAction<ErrorInfo | null>>,
+  setBusyMessage: Dispatch<SetStateAction<string>>,
+): ((data: FormData) => Promise<void>) => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
-  //TODO: Use effect
+  const [transfers, setTransfer] = useAtom(transfersAtom)
+
   return async (data) => {
     try {
       if (source.id !== data.source) throw Error(`Invalid form state: source mismatch ${source.id} and ${data.source}.`)
       if (destination.id !== data.destination) throw Error(`Invalid form state: source mismatch ${destination.id} and ${data.destination}.`)
       if (context === null) throw Error(`Context not connected.`)
 
+      setBusyMessage("Sending")
       switch (source.type) {
         case "substrate":
           {
@@ -199,9 +207,14 @@ const onSubmit = (context: Context | null, source: environment.TransferLocation,
             const plan = await toEthereum.validateSend(context, walletSigner as any, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
             console.log(plan)
             if (plan.failure) {
+              setBusyMessage("")
               setError({ title: "Send Plan Failed", description: "Some preflight checks failed when planning the transfer.", errors: plan.failure.errors })
               return;
             }
+
+            const result = await toEthereum.send(context, walletSigner as any, plan)
+            console.log(result)
+            setTransfer({ action: "add", transfer: { id: transfers.length + 1, title: "transfer to eth", data: result } })
             break;
           }
         case "ethereum":
@@ -213,20 +226,23 @@ const onSubmit = (context: Context | null, source: environment.TransferLocation,
             const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, BigInt(data.amount), destination.paraInfo.destinationFeeDOT)
             console.log(plan)
             if (plan.failure) {
+              setBusyMessage("")
               setError({ title: "Send Plan Failed", description: "Some preflight checks failed when planning the transfer.", errors: plan.failure.errors })
               return;
             }
+
+            const result = await toPolkadot.send(context, signer, plan)
+            console.log(result)
+            setTransfer({ action: "add", transfer: { id: transfers.length + 1, title: "transfer to polkadot", data: result } })
             break;
           }
         default:
           throw Error(`Invalid form state: cannot infer source type.`)
       }
-    } catch (err) {
-      let errorMessage = 'Unknown error.'
-      if (err instanceof Error) {
-        errorMessage = `${err.name}: ${err.message}`
-      }
-      setError({ title: "Send Error", description: "Unknown error occured while trying to send transaction.", errors: [] })
+      setBusyMessage("")
+    } catch (err: any) {
+      setBusyMessage("")
+      setError({ title: "Send Error", description: `Error occured while trying to send transaction. Reason: ${err.reason || 'Unknown'}`, errors: [] })
     }
   }
 }
@@ -360,12 +376,9 @@ export const TransferForm: FC = () => {
         important: true,
       })
     }
-    catch (err: unknown) {
+    catch (err: any) {
       console.error(err)
-      let errorMessage = 'Action Failed: reason: Unknown Error'
-      if (err instanceof Error) {
-        errorMessage = `Action Failed: reason: ${err.message}`
-      }
+      const errorMessage = `Action Failed: reason: ${err.reason || err.message}`
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
@@ -387,7 +400,7 @@ export const TransferForm: FC = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError))} className="space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage))} className="space-y-2">
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
