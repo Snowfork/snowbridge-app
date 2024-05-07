@@ -5,24 +5,24 @@ import { ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Context, toEthereum, toPolkadot } from "@snowbridge/api";
-import { SourceType, TransferLocation } from "@snowbridge/api/dist/environment";
+import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
-import { Dispatch, FC, SetStateAction, useEffect, useReducer, useState } from "react";
+import { LucideAlertCircle, LucideLoaderCircle } from "lucide-react";
+import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { LucideAlertCircle } from "lucide-react";
-import { SendValidationError } from "@snowbridge/api/dist/toPolkadot";
+import { BrowserProvider } from "ethers";
 
 export type GeneralValidationError = { code: null, message: string }
-type ValidationError = SendValidationError | GeneralValidationError
+type ValidationError = toPolkadot.SendValidationError | GeneralValidationError
 
 type FormData = {
   source: string;
@@ -40,24 +40,99 @@ const formSchema = z.object({
   beneficiary: z.string().min(1, "Select beneficiary.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
 
-const ErrorDialog: FC<{ title: string, description: string, errors: ValidationError[], dismiss: () => void }> = ({ title, errors, description, dismiss }) => {
-  return (<Dialog open={errors.length > 0} onOpenChange={(a) => { if (!a) dismiss() }}>
+const doApproveSpend = async (context: Context | null, ethereumProvider: BrowserProvider | null, token: string, amount: bigint): Promise<void> => {
+  if (context == null || ethereumProvider == null) return;
+
+  const signer = await ethereumProvider.getSigner()
+  const response = await toPolkadot.approveTokenSpend(context, signer, token, amount)
+
+  console.log("approval response", response)
+  const receipt = await response.wait(1)
+  console.log("approval receipt", receipt)
+  if (receipt?.status === 1) { // check success
+    throw Error('Token spend approval failed.')
+  }
+}
+
+const doDepositAndApproveWeth = async (context: Context | null, ethereumProvider: BrowserProvider | null, token: string, amount: bigint): Promise<void> => {
+  if (context == null || ethereumProvider == null) return;
+
+  const signer = await ethereumProvider.getSigner()
+  const response = await toPolkadot.depositWeth(context, signer, token, amount)
+  console.log("deposit response", response)
+  const receipt = await response.wait(1)
+  console.log("depoist receipt", receipt)
+  if (receipt?.status === 1) { // check success
+    throw Error('Token deposit failed.')
+  }
+
+  return doApproveSpend(context, ethereumProvider, token, amount)
+};
+
+const BusyDialog: FC<{
+  description: string,
+  dismiss?: () => void,
+}> = ({ description, dismiss }) => {
+  return (<Dialog open={description?.length > 0} onOpenChange={(a) => { if (!a && dismiss) dismiss() }}>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{title}</DialogTitle>
+        <DialogTitle>Busy</DialogTitle>
         <DialogDescription className="flex items-center py-2">
-          <LucideAlertCircle className="mx-2 text-destructive" />
+          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
           {description}
         </DialogDescription>
       </DialogHeader>
-      <ol className="list-inside list-disc">
-        {errors.map((e, i) => (<li key={i}>{e.message}</li>))}
-      </ol>
     </DialogContent>
   </Dialog>)
 }
 
-export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }> = ({ field, destination }) => {
+type ErrorInfo = {
+  title: string,
+  description: string,
+  errors: ValidationError[],
+}
+
+const ErrorDialog: FC<{
+  info: ErrorInfo | null
+  formData: FormData,
+  destination: environment.TransferLocation,
+  onDepositAndApproveWeth: () => Promise<void>,
+  onApproveSpend: () => Promise<void>,
+  dismiss: () => void,
+}> = ({ info, formData, destination, dismiss, onDepositAndApproveWeth, onApproveSpend }) => {
+
+  const fixAction = (error: ValidationError): JSX.Element => {
+    const token = Object.entries(destination.erc20tokensReceivable).find(kv => kv[1] == formData.token)
+
+    if (error.code === toPolkadot.SendValidationCode.InsufficientToken && token !== undefined && token[0] === "WETH") {
+      return (<Button className="text-blue-600 py-0 h-auto" variant="link" onClick={onDepositAndApproveWeth}>Fix</Button>)
+    }
+    if (error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved) {
+      return (<Button className="text-blue-600 py-0 h-auto" variant="link" onClick={onApproveSpend}>Fix</Button>)
+    }
+    return (<></>)
+  }
+  let errorList = (<></>)
+  if ((info?.errors.length || 0) > 0) {
+    errorList = (<ol className="list-inside list-disc">
+      {info?.errors.map((e, i) => (<li key={i}>{e.message}{fixAction(e)}</li>))}
+    </ol>)
+  }
+  return (<Dialog open={info !== null} onOpenChange={(a) => { if (!a) dismiss() }}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{info?.title}</DialogTitle>
+        <DialogDescription className="flex items-center py-2">
+          <LucideAlertCircle className="mx-2 text-destructive" />
+          {info?.description}
+        </DialogDescription>
+        {errorList}
+      </DialogHeader>
+    </DialogContent>
+  </Dialog>)
+}
+
+export const BeneficiaryInput: FC<{ field: any, destination: environment.TransferLocation }> = ({ field, destination }) => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom)
   const [beneficiaryFromWallet, setBeneficiaryFromWallet] = useState(true)
@@ -67,7 +142,7 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }>
     polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => accounts.push(x))
   }
   if (destination.type === "ethereum" || destination.paraInfo?.has20ByteAccounts === true) {
-    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum" as SourceType } }).forEach(x => accounts.push(x))
+    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum" as environment.SourceType } }).forEach(x => accounts.push(x))
   }
 
   let input: JSX.Element
@@ -104,9 +179,10 @@ export const BeneficiaryInput: FC<{ field: any, destination: TransferLocation }>
   </>)
 }
 
-const onSubmit = (context: Context | null, source: TransferLocation, destination: TransferLocation, setValidationErrors: Dispatch<SetStateAction<ValidationError[]>>): ((data: FormData) => Promise<void>) => {
+const onSubmit = (context: Context | null, source: environment.TransferLocation, destination: environment.TransferLocation, setError: Dispatch<SetStateAction<ErrorInfo | null>>): ((data: FormData) => Promise<void>) => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
+  //TODO: Use effect
   return async (data) => {
     try {
       if (source.id !== data.source) throw Error(`Invalid form state: source mismatch ${source.id} and ${data.source}.`)
@@ -123,18 +199,7 @@ const onSubmit = (context: Context | null, source: TransferLocation, destination
             const plan = await toEthereum.validateSend(context, walletSigner as any, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
             console.log(plan)
             if (plan.failure) {
-              let errors: string[] = []
-              if (!plan.failure.bridgeOperational) errors.push('Bridge halted.')
-              if (!plan.failure.tokenIsValidERC20) errors.push(`Token not a valid ERC20 token.`)
-              if (!plan.failure.tokenIsRegistered) errors.push(`Tokennot registered with the Snowbridge gateway.`)
-              if (!plan.failure.foreignAssetExists) errors.push(`Token not registered on Asset Hub.`)
-              if (!plan.failure.lightClientLatencyIsAcceptable) errors.push('Light client is too far behind.')
-              if (!plan.failure.canPayFee) errors.push('Insufficient DOT to pay fees.')
-              if (!plan.failure.hrmpChannelSetup) errors.push('HRMP channel is not set up.')
-              if (!plan.failure.parachainHasPalletXcm) errors.push('Source parachain does not have pallet-xcm.')
-              if (!plan.failure.parachainKnownToContext) errors.push('Source parachain is not known to context.')
-              if (!plan.failure.hasAsset) errors.push('Insufficient asset balance.')
-              setValidationErrors(errors.map(e => { return { code: null, message: e } }))
+              setError({ title: "Send Plan Failed", description: "Some preflight checks failed when planning the transfer.", errors: plan.failure.errors })
               return;
             }
             break;
@@ -148,7 +213,7 @@ const onSubmit = (context: Context | null, source: TransferLocation, destination
             const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, BigInt(data.amount), destination.paraInfo.destinationFeeDOT)
             console.log(plan)
             if (plan.failure) {
-              setValidationErrors(plan.failure.errors)
+              setError({ title: "Send Plan Failed", description: "Some preflight checks failed when planning the transfer.", errors: plan.failure.errors })
               return;
             }
             break;
@@ -161,7 +226,7 @@ const onSubmit = (context: Context | null, source: TransferLocation, destination
       if (err instanceof Error) {
         errorMessage = `${err.name}: ${err.message}`
       }
-      setValidationErrors([{ code: null, message: errorMessage }])
+      setError({ title: "Send Error", description: "Unknown error occured while trying to send transaction.", errors: [] })
     }
   }
 }
@@ -169,8 +234,10 @@ const onSubmit = (context: Context | null, source: TransferLocation, destination
 export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom)
   const context = useAtomValue(snowbridgeContextAtom)
+  const ethereumProvider = useAtomValue(ethersProviderAtom)
 
-  const [validatonErrors, setValidationErrors] = useState<ValidationError[]>([])
+  const [error, setError] = useState<ErrorInfo | null>(null)
+  const [busyMessage, setBusyMessage] = useState("")
   const [source, setSource] = useState(snowbridgeEnvironment.locations[0])
   const [destinations, setDestinations] = useState(source.destinationIds.map(d => snowbridgeEnvironment.locations.find(s => d === s.id)!))
   const [destination, setDestination] = useState(destinations[0])
@@ -199,19 +266,16 @@ export const TransferForm: FC = () => {
             setFeeDisplay(formatNumber(fee, source.paraInfo?.decimals) + " DOT")
           })
           .catch(err => {
-            let message = 'Could not get transaction fee.'
-            if (err instanceof Error) {
-              message = `Could not get transaction fee: ${err.name}: ${err.message}.`
-            }
+            console.error(err)
             setFeeDisplay("unknown")
-            setValidationErrors([{ code: null, message }])
+            setError({ title: "Error", description: "Could not fetch transfer fee.", errors: [] })
           })
         break;
       }
       case "ethereum": {
         if (destination.paraInfo === undefined) {
           setFeeDisplay("unknown")
-          setValidationErrors([{ code: null, message: "Destination fee is not configured."}])
+          setError({ title: "Error", description: "Destination fee is not configured.", errors: [] })
           break;
         }
 
@@ -220,20 +284,17 @@ export const TransferForm: FC = () => {
             setFeeDisplay(formatNumber(fee, 18) + " ETH")
           })
           .catch(err => {
-            let message = 'Could not get transaction fee.'
-            if (err instanceof Error) {
-              message = `Could not get transaction fee: ${err.name}: ${err.message}.`
-            }
+            console.error(err)
             setFeeDisplay("unknown")
-            setValidationErrors([{ code: null, message }])
+            setError({ title: "Error", description: "Could not fetch transfer fee.", errors: [] })
           })
 
         break;
       }
       default:
-        setValidationErrors([{ code: null, message: 'Could not get transaction fee.'}])
+        setError({ title: "Error", description: "Could not fetch transfer fee.", errors: [] })
     }
-  }, [context, source, destination, token, setFeeDisplay, setValidationErrors])
+  }, [context, source, destination, token, setFeeDisplay, setError])
 
   const watchToken = form.watch("token")
   const watchSource = form.watch("source")
@@ -256,16 +317,77 @@ export const TransferForm: FC = () => {
     form.resetField("token", { defaultValue: newToken })
   }, [source, watchSource, watchDestination, watchToken, setSource, setDestinations, setDestination, setToken])
 
+  const depositAndApproveWeth = useCallback(async () => {
+    const toastTitle = "Deposit and Approve Token Spend"
+    setBusyMessage("Depositing and approving spend...")
+    try {
+      const formData = form.getValues()
+      await doDepositAndApproveWeth(context, ethereumProvider, formData.token, BigInt(formData.amount))
+      toast.info(toastTitle, {
+        position: "bottom-center",
+        closeButton: true,
+        id: "deposit_approval_result",
+        description: 'Token spend approval was succesful.',
+        important: true,
+      })
+    }
+    catch (err: any) {
+      console.error(JSON.stringify(err, null, 2))
+      const errorMessage = `Action Failed: reason: ${err.reason}`
+      toast.error(toastTitle, {
+        position: "bottom-center",
+        closeButton: true,
+        duration: 20000,
+        id: "deposit_approval_result",
+        description: errorMessage,
+        important: true,
+      })
+    }
+    finally { setBusyMessage(""); setError(null) }
+  }, [context, ethereumProvider, form, setBusyMessage, setError])
+
+  const approveSpend = useCallback(async () => {
+    const toastTitle = "Approve Token Spend"
+    setBusyMessage("Approving spend...")
+    try {
+      const formData = form.getValues()
+      await doApproveSpend(context, ethereumProvider, formData.token, BigInt(formData.amount))
+      toast.info(toastTitle, {
+        position: "bottom-center",
+        closeButton: true,
+        id: "approval_result",
+        description: 'Token spend approval was succesful.',
+        important: true,
+      })
+    }
+    catch (err: unknown) {
+      console.error(err)
+      let errorMessage = 'Action Failed: reason: Unknown Error'
+      if (err instanceof Error) {
+        errorMessage = `Action Failed: reason: ${err.message}`
+      }
+      toast.error(toastTitle, {
+        position: "bottom-center",
+        closeButton: true,
+        duration: 20000,
+        id: "approval_result",
+        description: errorMessage,
+        important: true,
+      })
+    }
+    finally { setBusyMessage(""); setError(null) }
+  }, [context, ethereumProvider, form, setBusyMessage, setError])
+
   return (
     <>
       <Card className="w-auto md:w-2/3">
         <CardHeader>
           <CardTitle>Transfer</CardTitle>
-          <CardDescription>Transfer tokens to Polkadot.</CardDescription>
+          <CardDescription className="hidden md:flex">Transfer tokens between Ethereum and Polkadot parachains.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setValidationErrors))} className="space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError))} className="space-y-2">
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
@@ -364,7 +486,7 @@ export const TransferForm: FC = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Beneficiary</FormLabel>
-                    <FormDescription>Receiver account on the destination.</FormDescription>
+                    <FormDescription className="hidden md:flex">Receiver account on the destination.</FormDescription>
                     <FormControl>
                       <BeneficiaryInput field={field} destination={destination} />
                     </FormControl>
@@ -378,11 +500,14 @@ export const TransferForm: FC = () => {
           </Form>
         </CardContent>
       </Card>
+      <BusyDialog description={busyMessage} />
       <ErrorDialog
-        title="Send Plan Failed"
-        description="Some preflight checks when planning the transfer have failed."
-        errors={validatonErrors}
-        dismiss={() => setValidationErrors([])} />
+        info={error}
+        formData={form.getValues()}
+        destination={destination}
+        onDepositAndApproveWeth={depositAndApproveWeth}
+        onApproveSpend={approveSpend}
+        dismiss={() => setError(null)} />
     </>
   )
 }
