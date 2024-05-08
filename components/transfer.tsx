@@ -4,7 +4,7 @@ import { formatNumber, trimAccount } from "@/lib/utils";
 import { ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { transfersAtom } from "@/store/transferHistory";
+import { Transfer, TransferUpdate, transfersAtom, FormData, TransferStatus } from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { BrowserProvider } from "ethers";
@@ -21,16 +21,9 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
+import { WalletAccount } from "@talismn/connect-wallets";
 
-type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError 
-
-type FormData = {
-  source: string;
-  destination: string;
-  token: string;
-  amount: string;
-  beneficiary: string;
-}
+type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
 
 const formSchema = z.object({
   source: z.string().min(1, "Select source."),
@@ -47,9 +40,9 @@ const doApproveSpend = async (context: Context | null, ethereumProvider: Browser
   const response = await toPolkadot.approveTokenSpend(context, signer, token, amount)
 
   console.log("approval response", response)
-  const receipt = await response.wait(2)
+  const receipt = await response.wait()
   console.log("approval receipt", receipt)
-  if (receipt?.status === 1) { // check success
+  if (receipt?.status === 0) { // check success
     throw Error('Token spend approval failed.')
   }
 }
@@ -60,13 +53,13 @@ const doDepositAndApproveWeth = async (context: Context | null, ethereumProvider
   const signer = await ethereumProvider.getSigner()
   const response = await toPolkadot.depositWeth(context, signer, token, amount)
   console.log("deposit response", response)
-  const receipt = await response.wait(1)
+  const receipt = await response.wait()
   console.log("depoist receipt", receipt)
-  if (receipt?.status === 1) { // check success
+  if (receipt?.status === 0) { // check success
     throw Error('Token deposit failed.')
   }
 
-  return doApproveSpend(context, ethereumProvider, token, amount)
+  return await doApproveSpend(context, ethereumProvider, token, amount)
 };
 
 const BusyDialog: FC<{
@@ -92,6 +85,11 @@ type ErrorInfo = {
   errors: ValidationError[],
 }
 
+const tokenName = (erc20tokensReceivable: { [name: string]: string }, formData: FormData): string | undefined => {
+  const token = Object.entries(erc20tokensReceivable).find(kv => kv[1] == formData.token)
+  return token !== undefined ? token[0] : undefined
+}
+
 const ErrorDialog: FC<{
   info: ErrorInfo | null
   formData: FormData,
@@ -102,7 +100,7 @@ const ErrorDialog: FC<{
 }> = ({ info, formData, destination, dismiss, onDepositAndApproveWeth, onApproveSpend }) => {
 
   const fixAction = (error: ValidationError): JSX.Element => {
-    const token = Object.entries(destination.erc20tokensReceivable).find(kv => kv[1] == formData.token)
+    const token = tokenName(destination.erc20tokensReceivable, formData)
 
     if (error.code === toPolkadot.SendValidationCode.InsufficientToken && token !== undefined && token[0] === "WETH") {
       return (<Button className="text-blue-600 py-0 h-auto" variant="link" onClick={onDepositAndApproveWeth}>Fix</Button>)
@@ -185,11 +183,10 @@ const onSubmit = (
   destination: environment.TransferLocation,
   setError: Dispatch<SetStateAction<ErrorInfo | null>>,
   setBusyMessage: Dispatch<SetStateAction<string>>,
+  polkadotAccount: WalletAccount | null,
+  ethereumProvider: BrowserProvider | null,
+  [transfers, setTransfer]: [Transfer[], ((_: TransferUpdate) => void)],
 ): ((data: FormData) => Promise<void>) => {
-  const polkadotAccount = useAtomValue(polkadotAccountAtom)
-  const ethereumProvider = useAtomValue(ethersProviderAtom)
-  const [transfers, setTransfer] = useAtom(transfersAtom)
-
   return async (data) => {
     try {
       if (source.id !== data.source) throw Error(`Invalid form state: source mismatch ${source.id} and ${data.source}.`)
@@ -214,7 +211,7 @@ const onSubmit = (
 
             const result = await toEthereum.send(context, walletSigner as any, plan)
             console.log(result)
-            setTransfer({ action: "add", transfer: { id: transfers.length + 1, title: "transfer to eth", data: result } })
+            setTransfer({ action: "add", transfer: { id: crypto.randomUUID(), when: new Date().toISOString(), status: TransferStatus.InProgress, tokenName: tokenName(destination.erc20tokensReceivable, data) ?? "unknown", form: data, data: result } })
             break;
           }
         case "ethereum":
@@ -233,16 +230,24 @@ const onSubmit = (
 
             const result = await toPolkadot.send(context, signer, plan)
             console.log(result)
-            setTransfer({ action: "add", transfer: { id: transfers.length + 1, title: "transfer to polkadot", data: result } })
+            setTransfer({ action: "add", transfer: { id: crypto.randomUUID(), when: new Date().toISOString(), status: TransferStatus.InProgress, tokenName: tokenName(destination.erc20tokensReceivable, data) ?? "unknown", form: data, data: result } })
             break;
           }
         default:
           throw Error(`Invalid form state: cannot infer source type.`)
       }
+      toast.info("Transfer Successful", {
+        position: "bottom-center",
+        closeButton: true,
+        id: "transfer_success",
+        description: 'Token transfer was succesfully initiated.',
+        important: true,
+      })
       setBusyMessage("")
     } catch (err: any) {
+      console.error(err)
       setBusyMessage("")
-      setError({ title: "Send Error", description: `Error occured while trying to send transaction. Reason: ${err.reason || 'Unknown'}`, errors: [] })
+      setError({ title: "Send Error", description: `Error occured while trying to send transaction. Reason: ${err.reason || err.message}`, errors: [] })
     }
   }
 }
@@ -251,6 +256,9 @@ export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom)
   const context = useAtomValue(snowbridgeContextAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
+  const polkadotAccount = useAtomValue(polkadotAccountAtom)
+  const transferHistory = useAtom(transfersAtom)
+
 
   const [error, setError] = useState<ErrorInfo | null>(null)
   const [busyMessage, setBusyMessage] = useState("")
@@ -331,7 +339,7 @@ export const TransferForm: FC = () => {
     form.resetField("destination", { defaultValue: newDestination.id })
     form.resetField("beneficiary", { defaultValue: "" })
     form.resetField("token", { defaultValue: newToken })
-  }, [source, watchSource, watchDestination, watchToken, setSource, setDestinations, setDestination, setToken])
+  }, [form, source, destinations, watchSource, snowbridgeEnvironment, watchDestination, watchToken, setSource, setDestinations, setDestination, setToken])
 
   const depositAndApproveWeth = useCallback(async () => {
     const toastTitle = "Deposit and Approve Token Spend"
@@ -348,8 +356,8 @@ export const TransferForm: FC = () => {
       })
     }
     catch (err: any) {
-      console.error(JSON.stringify(err, null, 2))
-      const errorMessage = `Action Failed: reason: ${err.reason}`
+      console.error(err)
+      const errorMessage = `Action Failed: reason: ${err.reason || err.message}`
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
@@ -400,7 +408,7 @@ export const TransferForm: FC = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage))} className="space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage, polkadotAccount, ethereumProvider, transferHistory))} className="space-y-2">
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}

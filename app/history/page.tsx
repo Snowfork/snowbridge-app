@@ -33,8 +33,8 @@ export default function History() {
       <CardContent>
         <Accordion type="multiple" className="w-full">
           {pages[page]?.map(v => (
-            <AccordionItem key={v.Id} value={v.Id.toString()}>
-              <AccordionTrigger>{v.Title}</AccordionTrigger>
+            <AccordionItem key={v.id} value={v.id.toString()}>
+              <AccordionTrigger>{v.title}</AccordionTrigger>
               <AccordionContent>
                 Yes. It adheres to the WAI-ARIA design pattern.
               </AccordionContent>
