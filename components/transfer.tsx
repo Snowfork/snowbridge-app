@@ -104,7 +104,7 @@ const ErrorDialog: FC<{
   const fixAction = (error: ValidationError): JSX.Element => {
     const token = tokenName(destination.erc20tokensReceivable, formData)
 
-    if (error.code === toPolkadot.SendValidationCode.InsufficientToken && token !== undefined && token[0] === "WETH") {
+    if (error.code === toPolkadot.SendValidationCode.InsufficientToken && token === "WETH") {
       return (<Button className="text-blue-600 py-0 h-auto" variant="link" onClick={onDepositAndApproveWeth}>Fix</Button>)
     }
     if (error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved) {
