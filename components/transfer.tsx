@@ -306,6 +306,7 @@ export const TransferForm: FC = () => {
       case "substrate": {
         toEthereum.getSendFee(context)
           .then(fee => {
+            console.log('abc',fee)
             setFeeDisplay(formatNumber(fee, source.paraInfo?.decimals) + " DOT")
           })
           .catch(err => {
@@ -324,7 +325,8 @@ export const TransferForm: FC = () => {
 
         toPolkadot.getSendFee(context, token, destination.paraInfo.paraId, destination.paraInfo.destinationFeeDOT)
           .then(fee => {
-            setFeeDisplay(formatNumber(fee, 18) + " ETH")
+            console.log('abc',fee)
+            setFeeDisplay(formatNumber(fee, 18, 9) + " ETH")
           })
           .catch(err => {
             console.error(err)
