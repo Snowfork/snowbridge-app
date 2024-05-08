@@ -14,6 +14,6 @@ export const trimAccount = (account: string, chars: number = 12): string => {
   return account.substring(0, keepChars) + '...' + account.substring(account.length - keepChars)
 }
 
-export const formatNumber = (val: bigint, decimals: number = 18): string => {
-  return (Number(val) / Math.pow(10, decimals)).toFixed(6)
+export const formatNumber = (val: bigint, decimals: number = 18, displayDecimals: number = 6): string => {
+  return (Number(val) / Math.pow(10, decimals)).toFixed(displayDecimals)
 }

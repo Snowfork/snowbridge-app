@@ -4,14 +4,16 @@ import { formatNumber, trimAccount } from "@/lib/utils";
 import { ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { Transfer, TransferUpdate, transfersAtom, FormData, TransferStatus } from "@/store/transferHistory";
+import { FormData, Transfer, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
+import { WalletAccount } from "@talismn/connect-wallets";
 import { BrowserProvider } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideAlertCircle, LucideLoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { UseFormReturn, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "./ui/button";
@@ -21,8 +23,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
-import { WalletAccount } from "@talismn/connect-wallets";
 
+type AppRouter = ReturnType<typeof useRouter>
 type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
 
 const formSchema = z.object({
@@ -186,6 +188,8 @@ const onSubmit = (
   polkadotAccount: WalletAccount | null,
   ethereumProvider: BrowserProvider | null,
   [transfers, setTransfer]: [Transfer[], ((_: TransferUpdate) => void)],
+  appRouter: AppRouter,
+  form: UseFormReturn<any>
 ): ((data: FormData) => Promise<void>) => {
   return async (data) => {
     try {
@@ -194,6 +198,7 @@ const onSubmit = (
       if (context === null) throw Error(`Context not connected.`)
 
       setBusyMessage("Sending")
+      const transferId = crypto.randomUUID()
       switch (source.type) {
         case "substrate":
           {
@@ -211,7 +216,7 @@ const onSubmit = (
 
             const result = await toEthereum.send(context, walletSigner as any, plan)
             console.log(result)
-            setTransfer({ action: "add", transfer: { id: crypto.randomUUID(), when: new Date().toISOString(), status: TransferStatus.InProgress, tokenName: tokenName(destination.erc20tokensReceivable, data) ?? "unknown", form: data, data: result } })
+            setTransfer({ action: "add", transfer: { id: transferId, when: new Date().toISOString(), status: TransferStatus.InProgress, tokenName: tokenName(destination.erc20tokensReceivable, data) ?? "unknown", form: data, data: result } })
             break;
           }
         case "ethereum":
@@ -230,18 +235,27 @@ const onSubmit = (
 
             const result = await toPolkadot.send(context, signer, plan)
             console.log(result)
-            setTransfer({ action: "add", transfer: { id: crypto.randomUUID(), when: new Date().toISOString(), status: TransferStatus.InProgress, tokenName: tokenName(destination.erc20tokensReceivable, data) ?? "unknown", form: data, data: result } })
+            setTransfer({ action: "add", transfer: { id: transferId, when: new Date().toISOString(), status: TransferStatus.InProgress, tokenName: tokenName(destination.erc20tokensReceivable, data) ?? "unknown", form: data, data: result } })
             break;
           }
         default:
           throw Error(`Invalid form state: cannot infer source type.`)
       }
+      form.reset()
+      const transferUrl = `/history#${transferId}`
+      appRouter.prefetch(transferUrl)
       toast.info("Transfer Successful", {
         position: "bottom-center",
         closeButton: true,
         id: "transfer_success",
         description: 'Token transfer was succesfully initiated.',
         important: true,
+        action: {
+          label: "View",
+          onClick: () => {
+            appRouter.push(transferUrl)
+          },
+        },
       })
       setBusyMessage("")
     } catch (err: any) {
@@ -258,7 +272,7 @@ export const TransferForm: FC = () => {
   const ethereumProvider = useAtomValue(ethersProviderAtom)
   const polkadotAccount = useAtomValue(polkadotAccountAtom)
   const transferHistory = useAtom(transfersAtom)
-
+  const router = useRouter()
 
   const [error, setError] = useState<ErrorInfo | null>(null)
   const [busyMessage, setBusyMessage] = useState("")
@@ -408,7 +422,7 @@ export const TransferForm: FC = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage, polkadotAccount, ethereumProvider, transferHistory))} className="space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage, polkadotAccount, ethereumProvider, transferHistory, router, form))} className="space-y-2">
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
