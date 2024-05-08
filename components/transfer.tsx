@@ -260,8 +260,13 @@ const onSubmit = (
       setBusyMessage("")
     } catch (err: any) {
       console.error(err)
+      console.log()
+      let reason = 'unknonwn'
+      if(err)  {
+        reason = err.reason || err.message
+      }
       setBusyMessage("")
-      setError({ title: "Send Error", description: `Error occured while trying to send transaction. Reason: ${err.reason || err.message}`, errors: [] })
+      setError({ title: "Send Error", description: `Error occured while trying to send transaction. Reason: ${reason}`, errors: [] })
     }
   }
 }
