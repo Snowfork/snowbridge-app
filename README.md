@@ -1,5 +1,7 @@
 # Snowbridge App
 
+Perform token transfers using Snowbridge.
+
 ## Getting Started
 
 Set the environment in the `.env` file. Use:
