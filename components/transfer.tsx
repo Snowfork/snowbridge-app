@@ -23,6 +23,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
+import { Signer } from "@polkadot/api/types";
 
 type AppRouter = ReturnType<typeof useRouter>
 type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
@@ -187,7 +188,7 @@ const onSubmit = (
   setBusyMessage: Dispatch<SetStateAction<string>>,
   polkadotAccount: WalletAccount | null,
   ethereumProvider: BrowserProvider | null,
-  [transfers, setTransfer]: [Transfer[], ((_: TransferUpdate) => void)],
+  [_, setTransfer]: [Transfer[], ((_: TransferUpdate) => void)],
   appRouter: AppRouter,
   form: UseFormReturn<any>
 ): ((data: FormData) => Promise<void>) => {
@@ -205,8 +206,8 @@ const onSubmit = (
             if (destination.type !== "ethereum") throw Error(`Invalid form state: destination type mismatch.`)
             if (source.paraInfo === undefined) throw Error(`Invalid form state: source does not have parachain info.`)
             if (polkadotAccount === null) throw Error(`Wallet not connected.`)
-            const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.signer }
-            const plan = await toEthereum.validateSend(context, walletSigner as any, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
+            const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.wallet! as Signer }
+            const plan = await toEthereum.validateSend(context, walletSigner, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
             console.log(plan)
             if (plan.failure) {
               setBusyMessage("")
@@ -214,7 +215,7 @@ const onSubmit = (
               return;
             }
 
-            const result = await toEthereum.send(context, walletSigner as any, plan)
+            const result = await toEthereum.send(context, walletSigner, plan)
             console.log(result)
             setTransfer({ action: "add", transfer: { id: transferId, when: new Date().toISOString(), status: TransferStatus.InProgress, tokenName: tokenName(destination.erc20tokensReceivable, data) ?? "unknown", form: data, data: result } })
             break;
@@ -306,7 +307,6 @@ export const TransferForm: FC = () => {
       case "substrate": {
         toEthereum.getSendFee(context)
           .then(fee => {
-            console.log('abc',fee)
             setFeeDisplay(formatNumber(fee, source.paraInfo?.decimals) + " DOT")
           })
           .catch(err => {
@@ -325,7 +325,6 @@ export const TransferForm: FC = () => {
 
         toPolkadot.getSendFee(context, token, destination.paraInfo.paraId, destination.paraInfo.destinationFeeDOT)
           .then(fee => {
-            console.log('abc',fee)
             setFeeDisplay(formatNumber(fee, 18, 9) + " ETH")
           })
           .catch(err => {
