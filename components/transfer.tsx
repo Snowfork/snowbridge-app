@@ -26,6 +26,8 @@ import { Toggle } from "./ui/toggle";
 import { Signer } from "@polkadot/api/types";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 
+const ALLOW_MANUAL_BENIEFICIARY_INPUT = false
+
 type AppRouter = ReturnType<typeof useRouter>
 type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
 
@@ -139,7 +141,7 @@ export const BeneficiaryInput: FC<{ field: any, destination: environment.Transfe
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom)
   const [beneficiaryFromWallet, setBeneficiaryFromWallet] = useState(true)
 
-  const accounts: { key: string, name: string, type: "substrate" | "ethereum" }[] = []
+  let accounts: { key: string, name: string, type: "substrate" | "ethereum" }[] = []
   if (destination.type === "substrate") {
     polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => accounts.push(x))
   }
@@ -148,7 +150,7 @@ export const BeneficiaryInput: FC<{ field: any, destination: environment.Transfe
   }
 
   let input: JSX.Element
-  if (beneficiaryFromWallet && accounts.length > 0) {
+  if (!ALLOW_MANUAL_BENIEFICIARY_INPUT || (beneficiaryFromWallet && accounts.length > 0)) {
     input = (<Select key="controlled" onValueChange={field.onChange} value={field.value}>
       <SelectTrigger>
         <SelectValue placeholder="Select a beneficiary" />
@@ -175,7 +177,7 @@ export const BeneficiaryInput: FC<{ field: any, destination: environment.Transfe
 
   return (<>
     {input}
-    <div className="flex justify-end">
+    <div className={"flex justify-end " + (ALLOW_MANUAL_BENIEFICIARY_INPUT ? "" : "hidden")}>
       <Toggle defaultPressed={false} pressed={!beneficiaryFromWallet} onPressedChange={(p) => setBeneficiaryFromWallet(!p)} className="text-xs">Input beneficiary manually.</Toggle>
     </div>
   </>)
