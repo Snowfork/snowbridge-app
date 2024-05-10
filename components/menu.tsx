@@ -6,13 +6,14 @@ import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
+import { useTrackHistory } from "@/hooks/useTrackHistory";
 import { trimAccount } from "@/lib/utils";
 import { ethereumAccountAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom } from "@/store/snowbridge";
 import { WalletSelect } from '@talismn/connect-components';
 import { useAtom, useAtomValue } from "jotai";
-import { Github, LucideAlertCircle, LucideBarChart, LucideBook, LucideBookA, LucideBookPlus, LucideBookTemplate, LucideBookText, LucideBookType, LucideHistory, LucideLoaderCircle, LucideMenu, LucideSend, LucideWallet } from "lucide-react";
+import { Github, LucideAlertCircle, LucideBarChart, LucideBookText, LucideHistory, LucideLoaderCircle, LucideMenu, LucideSend, LucideWallet } from "lucide-react";
 import Link from "next/link";
 import { FC } from "react";
 import { toast } from "sonner";
@@ -87,7 +88,7 @@ const LoadingDialog: FC<{ open: boolean, title: string, message: string, error?:
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription className="flex items-center">
           <>
-            {error === true ? (<LucideAlertCircle className="mx-1 text-destructive"  />) : (<LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />)}
+            {error === true ? (<LucideAlertCircle className="mx-1 text-destructive" />) : (<LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />)}
           </>
           {message}
         </DialogDescription>
@@ -100,6 +101,7 @@ export const Menu: FC = () => {
   useEthereumProvider()
   useConnectPolkadotWallet()
   const [_, contextLoading, contextError] = useSnowbridgeContext()
+  useTrackHistory()
 
   const ethereumAccount = useAtomValue(ethereumAccountAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
@@ -187,21 +189,21 @@ export const Menu: FC = () => {
       <Menubar >
         <MenubarMenu>
           <MenubarTrigger>
-            <Link href="/" className="flex items-center"><LucideSend/><p className="pl-2 hidden md:flex">Transfer</p></Link>
+            <Link href="/" className="flex items-center"><LucideSend /><p className="pl-2 hidden md:flex">Transfer</p></Link>
           </MenubarTrigger>
         </MenubarMenu>
         <MenubarMenu>
           <MenubarTrigger>
-            <Link href="/status" className="flex items-center"><LucideBarChart/><p className="pl-2 hidden md:flex">Status</p></Link>
+            <Link href="/status" className="flex items-center"><LucideBarChart /><p className="pl-2 hidden md:flex">Status</p></Link>
           </MenubarTrigger>
         </MenubarMenu>
         <MenubarMenu>
           <MenubarTrigger>
-            <Link href="/history" className="flex items-center"><LucideHistory/><p className="pl-2 hidden md:flex">History</p></Link>
+            <Link href="/history" className="flex items-center"><LucideHistory /><p className="pl-2 hidden md:flex">History</p></Link>
           </MenubarTrigger>
         </MenubarMenu>
         <MenubarMenu>
-          <MenubarTrigger><LucideWallet/><p className="pl-2 hidden md:flex">Wallets</p></MenubarTrigger>
+          <MenubarTrigger><LucideWallet /><p className="pl-2 hidden md:flex">Wallets</p></MenubarTrigger>
           <MenubarContent align="center">
             <EthereumWallet />
             <MenubarSeparator></MenubarSeparator>
@@ -210,14 +212,14 @@ export const Menu: FC = () => {
         </MenubarMenu>
         <MenubarMenu>
           <MenubarContent align="center">
-            <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={()=> window.open("https://github.com/Snowfork/snowbridge")}>
+            <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={() => window.open("https://github.com/Snowfork/snowbridge")}>
               <Github className="w-[40px] h-[40px]" /><p>GitHub</p>
             </Button>
-            <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={()=> window.open("https://docs.snowbridge.network/")}>
+            <Button className="flex items-center justify-start w-auto h-auto" variant="link" onClick={() => window.open("https://docs.snowbridge.network/")}>
               <LucideBookText className="w-[40px] h-[40px]" /><p>Docs</p>
             </Button>
           </MenubarContent>
-          <MenubarTrigger><LucideMenu/><p className="pl-2 hidden md:flex">More</p></MenubarTrigger>
+          <MenubarTrigger><LucideMenu /><p className="pl-2 hidden md:flex">More</p></MenubarTrigger>
         </MenubarMenu>
       </Menubar>
       <InstallMetamaskDialog provider={ethereumProvider} walletAuthorized={ethereumWalletAuthorized} />

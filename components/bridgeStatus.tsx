@@ -9,12 +9,12 @@ import { useAtomValue } from "jotai"
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
 import { formatTime } from "@/lib/utils"
 
-const ACCEPTABLE_BRIDGE_LATENCY = 28800
+const ACCEPTABLE_BRIDGE_LATENCY = 28800 // 8 hours
 
 const StatusCard = () => {
   const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom)
   const context = useAtomValue(snowbridgeContextAtom)
-  const bridgeStatus = useBridgeStatus(snowbridgeEnv, context)
+  const { data: bridgeStatus } = useBridgeStatus(snowbridgeEnv, context)
 
   if (bridgeStatus == null) return (<Loading />)
 
