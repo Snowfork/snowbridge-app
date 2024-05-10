@@ -8,6 +8,7 @@ import { useBridgeStatus } from "@/hooks/useBridgeStatus"
 import { useAtomValue } from "jotai"
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
 import { formatTime } from "@/lib/utils"
+import { usePathname } from "next/navigation"
 
 const ACCEPTABLE_BRIDGE_LATENCY = 28800 // 8 hours
 
@@ -15,6 +16,7 @@ const StatusCard = () => {
   const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom)
   const context = useAtomValue(snowbridgeContextAtom)
   const { data: bridgeStatus } = useBridgeStatus(snowbridgeEnv, context)
+  const pathname = usePathname()
 
   if (bridgeStatus == null) return (<Loading />)
 
@@ -44,7 +46,7 @@ const StatusCard = () => {
 
   return (<HoverCard openDelay={100}>
     <HoverCardTrigger asChild>
-      <div className="text-primary underline-offset-4 hover:underline text-sm">Bridge Status: <span className={overallStyle}>{overallStatus}</span></div>
+      <div className={"text-primary underline-offset-4 hover:underline text-sm " + (pathname.toLowerCase().trim() === '/status' ? "invisible": "visible")}>Bridge Status: <span className={overallStyle}>{overallStatus}</span></div>
     </HoverCardTrigger>
     <HoverCardContent className="w-auto">
       <div className="flex place-items-center space-x-4">

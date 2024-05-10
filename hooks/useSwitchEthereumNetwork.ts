@@ -1,4 +1,4 @@
-import { ethersProviderAtom, windowEthereumAtom } from '@/store/ethereum'
+import { windowEthereumAtom } from '@/store/ethereum'
 import { useAtomValue } from "jotai"
 import { useCallback } from 'react'
 

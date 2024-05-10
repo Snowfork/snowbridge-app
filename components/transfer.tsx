@@ -1,9 +1,9 @@
 "use client"
 
 import { formatNumber, trimAccount } from "@/lib/utils";
-import { ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
+import { ethereumAccountsAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
-import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { FormData, Transfer, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
@@ -24,6 +24,7 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { Signer } from "@polkadot/api/types";
+import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 
 type AppRouter = ReturnType<typeof useRouter>
 type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
@@ -279,6 +280,12 @@ export const TransferForm: FC = () => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom)
   const transferHistory = useAtom(transfersAtom)
   const router = useRouter()
+
+  const contextEthereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom)!
+  const ethereumWalletAuthorized = useAtomValue(ethereumWalletAuthorizedAtom)
+  const switchEthereumNetwork = useSwitchEthereumNetwork(contextEthereumChainId)
+  const ethereumChainId = useAtomValue(ethereumChainIdAtom)
+  const switchNetwork = ethereumProvider && ethereumWalletAuthorized && contextEthereumChainId !== null && ethereumChainId !== contextEthereumChainId && context !== null;
 
   const [error, setError] = useState<ErrorInfo | null>(null)
   const [busyMessage, setBusyMessage] = useState("")
@@ -536,7 +543,8 @@ export const TransferForm: FC = () => {
                 )}
               />
               <br />
-              <Button className="w-full my-8" type="submit">Submit</Button>
+              <Button className={"w-full my-8 " + (switchNetwork ? "hidden": "")} type="submit">Submit</Button>
+              <Button variant="destructive" className={"w-full my-8 " + (!switchNetwork ? "hidden": "")} type="button" onClick={switchEthereumNetwork}>Switch Network</Button>
             </form>
           </Form>
         </CardContent>
