@@ -206,7 +206,7 @@ const onSubmit = (
             if (destination.type !== "ethereum") throw Error(`Invalid form state: destination type mismatch.`)
             if (source.paraInfo === undefined) throw Error(`Invalid form state: source does not have parachain info.`)
             if (polkadotAccount === null) throw Error(`Wallet not connected.`)
-            const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.wallet! as Signer }
+            const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.signer! as Signer }
             const plan = await toEthereum.validateSend(context, walletSigner, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
             console.log(plan)
             if (plan.failure) {

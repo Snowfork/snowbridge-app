@@ -19,7 +19,13 @@ export type Transfer = { id: string, status: TransferStatus, when: string, token
 export type TransferAction = "add" | "udpate" | "remove"
 export type TransferUpdate = { action: TransferAction, transfer: Transfer }
 
-const stripDataBigInts = (data: unknown) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v))
+const stripDataBigInts = (data: unknown) => JSON.parse(JSON.stringify(data, (_, v) => {
+  switch (typeof v) {
+    case "bigint":
+      return v.toString()
+  }
+  return v
+}))
 
 const transfersStorageAtom = atomWithStorage<Transfer[]>("transfer_history", [])
 const transferReducer = (current: Transfer[], update: TransferUpdate) => {
