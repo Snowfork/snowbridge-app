@@ -23,7 +23,6 @@ const transferDetail = (v: Transfer): JSX.Element => {
 export default function History() {
   const transfers = useAtomValue(transfersAtom)
   const [selectedItem, setSelectedItem] = useState<string|null>(null)
-  const [selectedIndex, setSelectedIndex] = useState(0)
   const [page, setPage] = useState(0)
   const params = useParams();
   const router = useRouter();
@@ -43,11 +42,10 @@ export default function History() {
       if (transfers[i].id === hash) {
         setSelectedItem(transfers[i].id)
         setPage(Math.floor(i/ITEMS_PER_PAGE))
-        setSelectedIndex(i)
         break;
       }
     }
-  }, [params, setSelectedItem,setSelectedIndex, transfers]);
+  }, [params, setSelectedItem, transfers]);
 
   const start = Math.max(0, page - 2)
   const end = Math.min(pages.length - 1, page + 2)

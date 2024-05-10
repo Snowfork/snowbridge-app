@@ -2,13 +2,13 @@
 
 import { ethereumAccountAtom, ethereumAccountsAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom, windowEthereumAtom } from '@/store/ethereum'
 import { AbstractProvider, BrowserProvider, Eip1193Provider } from 'ethers'
-import { useAtom, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect } from 'react'
 
 
 export const useEthereumProvider = () => {
-  const [ethereumAccount] = useAtom(ethereumAccountAtom)
-  const [windowEthereum, setWindowEthereum] = useAtom(windowEthereumAtom)
+  const ethereumAccount = useAtomValue(ethereumAccountAtom)
+  const setWindowEthereum = useSetAtom(windowEthereumAtom)
   const [ethereumProvider, setEthereumProvider] = useAtom(ethersProviderAtom)
 
   const setEthereumAccount = useSetAtom(ethereumAccountAtom)
