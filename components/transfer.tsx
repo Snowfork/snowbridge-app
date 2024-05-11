@@ -1,32 +1,31 @@
 "use client"
 
 import { formatNumber, trimAccount } from "@/lib/utils";
-import { ethereumAccountsAtom, ethereumChainIdAtom, ethereumWalletAuthorizedAtom, ethersProviderAtom } from "@/store/ethereum";
+import { ethereumAccountAtom, ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { FormData, Transfer, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
+import { FormData, TransferHistory, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Signer } from "@polkadot/api/types";
 import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { BrowserProvider } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideAlertCircle, LucideLoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from "react";
 import { UseFormReturn, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { BusyDialog } from "./busyDialog";
+import { ErrorDialog } from "./errorDialog";
+import { SelectedEthereumWallet } from "./selectedEthereumAccount";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
-import { Signer } from "@polkadot/api/types";
-import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
-
-const ALLOW_MANUAL_BENIEFICIARY_INPUT = false
+import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
 
 type AppRouter = ReturnType<typeof useRouter>
 type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
@@ -35,8 +34,9 @@ const formSchema = z.object({
   source: z.string().min(1, "Select source."),
   destination: z.string().min(1, "Select destination."),
   token: z.string().min(1, "Select token."),
-  amount: z.string().regex(/^[1-9][0-9]{0,37}$/, "Invalid amount"),
+  amount: z.string().regex(/^([1-9][0-9]{0,37})|([0-9][0-9]{0,37}.?[0-9]{0,37})$/, "Invalid amount"),
   beneficiary: z.string().min(1, "Select beneficiary.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
+  sourceAccount: z.string().min(1, "Select source account.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
 
 const doApproveSpend = async (context: Context | null, ethereumProvider: BrowserProvider | null, token: string, amount: bigint): Promise<void> => {
@@ -68,23 +68,6 @@ const doDepositAndApproveWeth = async (context: Context | null, ethereumProvider
   return await doApproveSpend(context, ethereumProvider, token, amount)
 };
 
-const BusyDialog: FC<{
-  description: string,
-  dismiss?: () => void,
-}> = ({ description, dismiss }) => {
-  return (<Dialog open={description?.length > 0} onOpenChange={(a) => { if (!a && dismiss) dismiss() }}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Busy</DialogTitle>
-        <DialogDescription className="flex items-center py-2">
-          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-          {description}
-        </DialogDescription>
-      </DialogHeader>
-    </DialogContent>
-  </Dialog>)
-}
-
 type ErrorInfo = {
   title: string,
   description: string,
@@ -96,7 +79,7 @@ const tokenName = (erc20tokensReceivable: { [name: string]: string }, formData: 
   return token !== undefined ? token[0] : undefined
 }
 
-const ErrorDialog: FC<{
+const SendErrorDialog: FC<{
   info: ErrorInfo | null
   formData: FormData,
   destination: environment.TransferLocation,
@@ -122,38 +105,23 @@ const ErrorDialog: FC<{
       {info?.errors.map((e, i) => (<li key={i}>{e.message}{fixAction(e)}</li>))}
     </ol>)
   }
-  return (<Dialog open={info !== null} onOpenChange={(a) => { if (!a) dismiss() }}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>{info?.title}</DialogTitle>
-        <DialogDescription className="flex items-center py-2">
-          <LucideAlertCircle className="mx-2 text-destructive" />
-          {info?.description}
-        </DialogDescription>
-        {errorList}
-      </DialogHeader>
-    </DialogContent>
-  </Dialog>)
+
+  return (<ErrorDialog open={info !== null} dismiss={dismiss} title={info?.title ?? 'Error'} description={info?.description ?? 'Unknown Error'}>{errorList}</ErrorDialog>)
 }
 
-export const BeneficiaryInput: FC<{ field: any, destination: environment.TransferLocation }> = ({ field, destination }) => {
-  const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
-  const ethereumAccounts = useAtomValue(ethereumAccountsAtom)
-  const [beneficiaryFromWallet, setBeneficiaryFromWallet] = useState(true)
-
-  let accounts: { key: string, name: string, type: "substrate" | "ethereum" }[] = []
-  if (destination.type === "substrate") {
-    polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => accounts.push(x))
-  }
-  if (destination.type === "ethereum" || destination.paraInfo?.has20ByteAccounts === true) {
-    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum" as environment.SourceType } }).forEach(x => accounts.push(x))
-  }
-
+export type AccountInfo = { key: string, name: string, type: "substrate" | "ethereum" }
+export type SelectAccountProps = {
+  field: any,
+  allowManualInput: boolean,
+  accounts: AccountInfo[]
+}
+export const SelectAccount: FC<SelectAccountProps> = ({ field, allowManualInput, accounts }) => {
+  const [accountFromWallet, setBeneficiaryFromWallet] = useState(true)
   let input: JSX.Element
-  if (!ALLOW_MANUAL_BENIEFICIARY_INPUT || (beneficiaryFromWallet && accounts.length > 0)) {
+  if (!allowManualInput || (accountFromWallet && accounts.length > 0)) {
     input = (<Select key="controlled" onValueChange={field.onChange} value={field.value}>
       <SelectTrigger>
-        <SelectValue placeholder="Select a beneficiary" />
+        <SelectValue placeholder="Select account" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -177,8 +145,8 @@ export const BeneficiaryInput: FC<{ field: any, destination: environment.Transfe
 
   return (<>
     {input}
-    <div className={"flex justify-end " + (ALLOW_MANUAL_BENIEFICIARY_INPUT ? "" : "hidden")}>
-      <Toggle defaultPressed={false} pressed={!beneficiaryFromWallet} onPressedChange={(p) => setBeneficiaryFromWallet(!p)} className="text-xs">Input beneficiary manually.</Toggle>
+    <div className={"flex justify-end " + (allowManualInput ? "" : "hidden")}>
+      <Toggle defaultPressed={false} pressed={!accountFromWallet} onPressedChange={(p) => setBeneficiaryFromWallet(!p)} className="text-xs">Input account manually.</Toggle>
     </div>
   </>)
 }
@@ -190,8 +158,9 @@ const onSubmit = (
   setError: Dispatch<SetStateAction<ErrorInfo | null>>,
   setBusyMessage: Dispatch<SetStateAction<string>>,
   polkadotAccount: WalletAccount | null,
+  ethereumAccount: string|null,
   ethereumProvider: BrowserProvider | null,
-  [_, setTransfer]: [Transfer[], ((_: TransferUpdate) => void)],
+  [_, setTransfer]: [TransferHistory, ((_: TransferUpdate) => void)],
   appRouter: AppRouter,
   form: UseFormReturn<any>
 ): ((data: FormData) => Promise<void>) => {
@@ -209,6 +178,7 @@ const onSubmit = (
             if (destination.type !== "ethereum") throw Error(`Invalid form state: destination type mismatch.`)
             if (source.paraInfo === undefined) throw Error(`Invalid form state: source does not have parachain info.`)
             if (polkadotAccount === null) throw Error(`Wallet not connected.`)
+            if (polkadotAccount.address !== data.sourceAccount) throw Error(`Source account mismatch.`)
             const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.signer! as Signer }
             const plan = await toEthereum.validateSend(context, walletSigner, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
             console.log(plan)
@@ -228,7 +198,10 @@ const onSubmit = (
             if (destination.type !== "substrate") throw Error(`Invalid form state: destination type mismatch.`)
             if (destination.paraInfo === undefined) throw Error(`Invalid form state: destination does not have parachain id.`)
             if (ethereumProvider === null) throw Error(`Wallet not connected.`)
+            if (ethereumAccount === null) throw Error(`Wallet account not selected.`)
+            if (ethereumAccount !== data.sourceAccount) throw Error(`Selected account does not match source data.`)
             const signer = await ethereumProvider.getSigner()
+            if (signer.address.toLowerCase() !== data.sourceAccount.toLowerCase()) throw Error(`Source account mismatch.`)
             const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, BigInt(data.amount), destination.paraInfo.destinationFeeDOT)
             console.log(plan)
             if (plan.failure) {
@@ -266,7 +239,7 @@ const onSubmit = (
       console.error(err)
       console.log()
       let reason = 'unknonwn'
-      if(err)  {
+      if (err) {
         reason = err.reason || err.message
       }
       setBusyMessage("")
@@ -279,19 +252,18 @@ export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom)
   const context = useAtomValue(snowbridgeContextAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
-  const polkadotAccount = useAtomValue(polkadotAccountAtom)
   const transferHistory = useAtom(transfersAtom)
   const router = useRouter()
 
-  const contextEthereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom)!
-  const ethereumWalletAuthorized = useAtomValue(ethereumWalletAuthorizedAtom)
-  const switchEthereumNetwork = useSwitchEthereumNetwork(contextEthereumChainId)
-  const ethereumChainId = useAtomValue(ethereumChainIdAtom)
-  const switchNetwork = ethereumProvider && ethereumWalletAuthorized && contextEthereumChainId !== null && ethereumChainId !== contextEthereumChainId && context !== null;
+  const polkadotAccount = useAtomValue(polkadotAccountAtom)
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
+  const ethereumAccount = useAtomValue(ethereumAccountAtom)
+  const ethereumAccounts = useAtomValue(ethereumAccountsAtom)
 
   const [error, setError] = useState<ErrorInfo | null>(null)
   const [busyMessage, setBusyMessage] = useState("")
   const [source, setSource] = useState(snowbridgeEnvironment.locations[0])
+  const [sourceAccount, setSourceAccount] = useState<string>()
   const [destinations, setDestinations] = useState(source.destinationIds.map(d => snowbridgeEnvironment.locations.find(s => d === s.id)!))
   const [destination, setDestination] = useState(destinations[0])
 
@@ -306,6 +278,7 @@ export const TransferForm: FC = () => {
       destination: destination.id,
       token: token,
       beneficiary: "",
+      sourceAccount: sourceAccount,
       amount: "0",
     },
   })
@@ -370,6 +343,13 @@ export const TransferForm: FC = () => {
     form.resetField("token", { defaultValue: newToken })
   }, [form, source, destinations, watchSource, snowbridgeEnvironment, watchDestination, watchToken, setSource, setDestinations, setDestination, setToken])
 
+  const watchSourceAccount = form.watch("sourceAccount")
+  useEffect(()=> {
+    const newSourceAccount = source.type == "ethereum" ? (ethereumAccount ?? undefined) : polkadotAccount?.address 
+    setSourceAccount(newSourceAccount)
+    form.resetField("sourceAccount", { defaultValue: newSourceAccount })
+  }, [form, watchSourceAccount, source, ethereumAccount, polkadotAccount, setSourceAccount])
+
   const depositAndApproveWeth = useCallback(async () => {
     const toastTitle = "Deposit and Approve Token Spend"
     setBusyMessage("Depositing and approving spend...")
@@ -428,6 +408,22 @@ export const TransferForm: FC = () => {
     finally { setBusyMessage(""); setError(null) }
   }, [context, ethereumProvider, form, setBusyMessage, setError])
 
+  const sources: AccountInfo[] = []
+  if (source.type === "substrate") {
+    polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: source.type } }).forEach(x => sources.push(x))
+  }
+  if (source.type === "ethereum" || source.paraInfo?.has20ByteAccounts === true) {
+    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum" as environment.SourceType } }).forEach(x => sources.push(x))
+  }
+
+  const beneficiaries: AccountInfo[] = []
+  if (destination.type === "substrate") {
+    polkadotAccounts?.map(x => { return { key: x.address, name: x.name || '', type: destination.type } }).forEach(x => beneficiaries.push(x))
+  }
+  if (destination.type === "ethereum" || destination.paraInfo?.has20ByteAccounts === true) {
+    ethereumAccounts?.map(x => { return { key: x, name: x, type: "ethereum" as environment.SourceType } }).forEach(x => beneficiaries.push(x))
+  }
+
   return (
     <>
       <Card className="w-auto md:w-2/3">
@@ -437,7 +433,7 @@ export const TransferForm: FC = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage, polkadotAccount, ethereumProvider, transferHistory, router, form))} className="space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage, polkadotAccount, ethereumAccount, ethereumProvider, transferHistory, router, form))} className="space-y-2">
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
@@ -488,6 +484,41 @@ export const TransferForm: FC = () => {
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="sourceAccount"
+                render={({ field }) => (
+                  <FormItem {...field}>
+                    <FormLabel>Source Account</FormLabel>
+                    <FormDescription className="hidden md:flex">Account on the source.</FormDescription>
+                    <FormControl>
+                      <>
+                        {source.type == "ethereum" ? (
+                          <SelectedEthereumWallet />
+                        ) : (
+                          <SelectedPolkadotAccount />
+                        )}
+                        <div className="text-xs text-right text-muted-foreground px-1">Balance: {feeDisplay}</div>
+                      </>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="beneficiary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Beneficiary</FormLabel>
+                    <FormDescription className="hidden md:flex">Receiver account on the destination.</FormDescription>
+                    <FormControl>
+                      <SelectAccount accounts={beneficiaries} field={field} allowManualInput={false} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="flex space-x-2">
                 <div className="w-2/3">
                   <FormField
@@ -530,29 +561,14 @@ export const TransferForm: FC = () => {
                 </div>
               </div>
               <div className="text-xs text-right text-muted-foreground px-1">Fee: {feeDisplay}</div>
-              <FormField
-                control={form.control}
-                name="beneficiary"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Beneficiary</FormLabel>
-                    <FormDescription className="hidden md:flex">Receiver account on the destination.</FormDescription>
-                    <FormControl>
-                      <BeneficiaryInput field={field} destination={destination} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <br />
-              <Button className={"w-full my-8 " + (switchNetwork ? "hidden": "")} type="submit">Submit</Button>
-              <Button variant="destructive" className={"w-full my-8 " + (!switchNetwork ? "hidden": "")} type="button" onClick={switchEthereumNetwork}>Switch Network</Button>
+              <Button className="w-full my-8" type="submit">Submit</Button>
             </form>
           </Form>
         </CardContent>
       </Card>
-      <BusyDialog description={busyMessage} />
-      <ErrorDialog
+      <BusyDialog open={busyMessage !== ""} description={busyMessage} />
+      <SendErrorDialog
         info={error}
         formData={form.getValues()}
         destination={destination}

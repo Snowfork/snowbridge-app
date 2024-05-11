@@ -21,7 +21,9 @@ const transferDetail = (v: Transfer): JSX.Element => {
 }
 
 export default function History() {
-  const transfers = useAtomValue(transfersAtom)
+  const transferHistory = useAtomValue(transfersAtom)
+  const transfers = transferHistory.pending.concat(transferHistory.complete)
+  useEffect(()=> console.log('Transfer History Updated'), [transferHistory])
   const [selectedItem, setSelectedItem] = useState<string|null>(null)
   const [page, setPage] = useState(0)
   const params = useParams();

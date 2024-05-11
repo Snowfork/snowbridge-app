@@ -2,11 +2,12 @@ import { atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 
 export type FormData = {
-  source: string;
-  destination: string;
-  token: string;
-  amount: string;
-  beneficiary: string;
+  source: string
+  sourceAccount: string
+  destination: string
+  token: string
+  amount: string
+  beneficiary: string
 }
 
 export enum TransferStatus {
@@ -19,6 +20,14 @@ export type Transfer = { id: string, status: TransferStatus, when: string, token
 export type TransferAction = "add" | "udpate" | "remove"
 export type TransferUpdate = { action: TransferAction, transfer: Transfer }
 
+const TRANSFER_HISTORY_VERSION = 1
+
+export type TransferHistory = {
+  version: number
+  pending: Transfer[]
+  complete: Transfer[]
+}
+
 const stripDataBigInts = (data: unknown) => JSON.parse(JSON.stringify(data, (_, v) => {
   switch (typeof v) {
     case "bigint":
@@ -27,28 +36,34 @@ const stripDataBigInts = (data: unknown) => JSON.parse(JSON.stringify(data, (_, 
   return v
 }))
 
-const transfersStorageAtom = atomWithStorage<Transfer[]>("transfer_history", [])
-const transferReducer = (current: Transfer[], update: TransferUpdate) => {
+const transfersStorageAtom = atomWithStorage<TransferHistory>("transfer_history", { version: TRANSFER_HISTORY_VERSION,  pending:[], complete:[] })
+const transferReducer = (current: TransferHistory, update: TransferUpdate) => {
   let updated = current;
+  if(current.version !== TRANSFER_HISTORY_VERSION) {
+    updated = { version: TRANSFER_HISTORY_VERSION, pending: [], complete: []}
+  }
 
   switch (update.action) {
     case "add": {
       update.transfer.data = stripDataBigInts(update.transfer.data)
-      updated.push(update.transfer)
+      updated.pending.push(update.transfer)
       break;
     }
     case "udpate": {
-      updated = current.filter(t => t.id !== update.transfer.id)
+      updated.pending = current.pending.filter(t => t.id !== update.transfer.id)
       update.transfer.data = stripDataBigInts(update.transfer.data)
-      updated.push(update.transfer)
+      updated.pending.push(update.transfer)
       break;
     }
     case "remove": {
-      updated = current.filter(t => t.id !== update.transfer.id)
+      updated.pending = current.pending.filter(t => t.id !== update.transfer.id)
+      updated.complete = current.complete.filter(t => t.id !== update.transfer.id)
       break;
     }
   }
-  return updated.sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime());
+  updated.pending.sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime());
+  updated.complete.sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime());
+  return updated
 }
 
 

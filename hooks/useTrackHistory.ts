@@ -1,5 +1,5 @@
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { Transfer, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
+import { Transfer, TransferHistory, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
 import { Context, toEthereum, toPolkadot } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import { useAtom, useAtomValue } from "jotai";
@@ -7,11 +7,11 @@ import { useEffect } from "react";
 
 const TRACK_HISTORY_REFRESH_TIMER_INTERVAL = 1 * 1000 * 60 // 1 minute
 
-const trackHistory = async (context: Context, env: SnowbridgeEnvironment, transfers: Transfer[], reducer: (update: TransferUpdate) => void) => {
+const trackHistory = async (context: Context, env: SnowbridgeEnvironment, transfers: TransferHistory, reducer: (update: TransferUpdate) => void) => {
     console.log('Track History Running')
 
     let updates = 0
-    for (const transfer of transfers) {
+    for (const transfer of transfers.pending) {
         console.log('Tracking transaction ', transfer.id)
         if (transfer.status !== TransferStatus.InProgress) { continue }
         const destination = env.locations.find(loc => loc.id == transfer.form.destination);
