@@ -101,8 +101,10 @@ const StatusCard = () => {
             <hr className="py-2" />
             <Table >
               <TableHeader>
-                <TableHead>Account</TableHead>
-                <TableHead>Balance</TableHead>
+                <TableRow>
+                  <TableHead>Account</TableHead>
+                  <TableHead>Balance</TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody>
                 {status.relayers.map((acc, i) => <AccountRow key={i} account={acc} />)}
@@ -115,8 +117,10 @@ const StatusCard = () => {
             <hr className="py-2" />
             <Table>
               <TableHeader>
-                <TableHead>Account</TableHead>
-                <TableHead>Balance</TableHead>
+                <TableRow>
+                  <TableHead>Account</TableHead>
+                  <TableHead>Balance</TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody>
                 {status.accounts.map((acc, i) => <AccountRow key={i} account={acc} />)}
