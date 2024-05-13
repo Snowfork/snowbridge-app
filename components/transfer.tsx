@@ -1,15 +1,16 @@
 "use client"
 
-import { formatNumber, trimAccount } from "@/lib/utils";
+import { trimAccount } from "@/lib/utils";
 import { ethereumAccountAtom, ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
-import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { assetHubNativeTokenAtom, snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { FormData, TransferHistory, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Signer } from "@polkadot/api/types";
-import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
+import { Context, assets, environment, toEthereum, toPolkadot } from "@snowbridge/api";
+import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { WalletAccount } from "@talismn/connect-wallets";
-import { BrowserProvider, formatUnits } from "ethers";
+import { BrowserProvider, formatUnits, parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
 import { useRouter } from "next/navigation";
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from "react";
@@ -19,17 +20,21 @@ import { z } from "zod";
 import { BusyDialog } from "./busyDialog";
 import { ErrorDialog } from "./errorDialog";
 import { SelectedEthereumWallet } from "./selectedEthereumAccount";
+import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
-import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
-import useSWR from "swr";
 
 type AppRouter = ReturnType<typeof useRouter>
 type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
+type ERC20Metadata = {
+  name: string
+  symbol: string
+  decimals: bigint
+}
 
 const formSchema = z.object({
   source: z.string().min(1, "Select source."),
@@ -39,6 +44,44 @@ const formSchema = z.object({
   beneficiary: z.string().min(1, "Select beneficiary.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
   sourceAccount: z.string().min(1, "Select source account.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
+
+const getTokenBalance = async (context: Context, token: string, ethereumChainId: bigint, source: TransferLocation, sourceAccount: string): Promise<{
+  balance: bigint
+  gatewayAllowance?: bigint
+}> => {
+  switch (source.type) {
+    case "substrate": {
+      if (source.paraInfo?.paraId === undefined) {
+        throw Error(`ParaId not configured for source ${source.name}.`)
+      }
+      const parachain = context.polkadot.api.parachains[source.paraInfo?.paraId] ?? context.polkadot.api.assetHub
+      const location = assets.erc20TokenToAssetLocation(parachain.registry, ethereumChainId, token)
+      const balance = await assets.palletAssetsBalance(parachain, location, sourceAccount, "foreignAssets")
+      return { balance: balance ?? 0n, gatewayAllowance: undefined }
+    }
+    case "ethereum": {
+      return await assets.assetErc20Balance(context, token, sourceAccount)
+    }
+    default:
+      throw Error(`Unknown source type ${source.type}.`)
+  }
+}
+
+const updateBalance = (context: Context, ethereumChainId: number, source: TransferLocation, sourceAccount: string, token: string, tokenMetadata: ERC20Metadata, setBalanceDisplay: (_: string) => void, setError: (_: ErrorInfo | null) => void) => {
+  getTokenBalance(context, token, BigInt(ethereumChainId), source, sourceAccount)
+    .then(result => {
+      let allowance = ""
+      if (result.gatewayAllowance !== undefined) {
+        allowance = ` (Allowance: ${Number(formatUnits(result.gatewayAllowance, tokenMetadata.decimals))} ${tokenMetadata.symbol})`
+      }
+      setBalanceDisplay(`${Number(formatUnits(result.balance, tokenMetadata.decimals))} ${tokenMetadata.symbol} ${allowance}`)
+    })
+    .catch(err => {
+      console.error(err)
+      setBalanceDisplay("unknown")
+      setError({ title: "Error", description: `Could not fetch asset balance: ${err.message}`, errors: [] })
+    })
+}
 
 const doApproveSpend = async (context: Context | null, ethereumProvider: BrowserProvider | null, token: string, amount: bigint): Promise<void> => {
   if (context == null || ethereumProvider == null) return;
@@ -78,6 +121,10 @@ type ErrorInfo = {
 const tokenName = (erc20tokensReceivable: { [name: string]: string }, formData: FormData): string | undefined => {
   const token = Object.entries(erc20tokensReceivable).find(kv => kv[1] == formData.token)
   return token !== undefined ? token[0] : undefined
+}
+
+const parseAmount = (decimals: string, metadata: ERC20Metadata): bigint => {
+  return parseUnits(decimals, metadata.decimals)
 }
 
 const SendErrorDialog: FC<{
@@ -159,8 +206,9 @@ const onSubmit = (
   setError: Dispatch<SetStateAction<ErrorInfo | null>>,
   setBusyMessage: Dispatch<SetStateAction<string>>,
   polkadotAccount: WalletAccount | null,
-  ethereumAccount: string|null,
+  ethereumAccount: string | null,
   ethereumProvider: BrowserProvider | null,
+  tokenMetadata: ERC20Metadata | null,
   [_, setTransfer]: [TransferHistory, ((_: TransferUpdate) => void)],
   appRouter: AppRouter,
   form: UseFormReturn<any>
@@ -170,6 +218,13 @@ const onSubmit = (
       if (source.id !== data.source) throw Error(`Invalid form state: source mismatch ${source.id} and ${data.source}.`)
       if (destination.id !== data.destination) throw Error(`Invalid form state: source mismatch ${destination.id} and ${data.destination}.`)
       if (context === null) throw Error(`Context not connected.`)
+      if (tokenMetadata == null) throw Error(`No erc20 token metadata.`)
+
+      const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata)
+      if (amountInSmallestUnit === 0n) {
+        form.setError("amount", { message: "Amount must be greater than 0." })
+        return
+      }
 
       setBusyMessage("Sending")
       const transferId = crypto.randomUUID()
@@ -181,7 +236,7 @@ const onSubmit = (
             if (polkadotAccount === null) throw Error(`Wallet not connected.`)
             if (polkadotAccount.address !== data.sourceAccount) throw Error(`Source account mismatch.`)
             const walletSigner = { address: polkadotAccount.address, signer: polkadotAccount.signer! as Signer }
-            const plan = await toEthereum.validateSend(context, walletSigner, source.paraInfo.paraId, data.beneficiary, data.token, BigInt(data.amount))
+            const plan = await toEthereum.validateSend(context, walletSigner, source.paraInfo.paraId, data.beneficiary, data.token, amountInSmallestUnit)
             console.log(plan)
             if (plan.failure) {
               setBusyMessage("")
@@ -203,7 +258,7 @@ const onSubmit = (
             if (ethereumAccount !== data.sourceAccount) throw Error(`Selected account does not match source data.`)
             const signer = await ethereumProvider.getSigner()
             if (signer.address.toLowerCase() !== data.sourceAccount.toLowerCase()) throw Error(`Source account mismatch.`)
-            const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, BigInt(data.amount), destination.paraInfo.destinationFeeDOT)
+            const plan = await toPolkadot.validateSend(context, signer, data.beneficiary, data.token, destination.paraInfo.paraId, amountInSmallestUnit, destination.paraInfo.destinationFeeDOT)
             console.log(plan)
             if (plan.failure) {
               setBusyMessage("")
@@ -238,7 +293,6 @@ const onSubmit = (
       setBusyMessage("")
     } catch (err: any) {
       console.error(err)
-      console.log()
       let reason = 'unknonwn'
       if (err) {
         reason = err.reason || err.message
@@ -251,7 +305,9 @@ const onSubmit = (
 
 export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom)
+  const ethereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom)
   const context = useAtomValue(snowbridgeContextAtom)
+  const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom)
   const ethereumProvider = useAtomValue(ethersProviderAtom)
   const transferHistory = useAtom(transfersAtom)
   const router = useRouter()
@@ -270,6 +326,7 @@ export const TransferForm: FC = () => {
 
   const tokens = Object.keys(destination.erc20tokensReceivable)
   const [token, setToken] = useState(destination.erc20tokensReceivable[tokens[0]])
+  const [tokenMetadata, setTokenMetadata] = useState<ERC20Metadata | null>(null)
   const [feeDisplay, setFeeDisplay] = useState<string>("unknown")
   const [balanceDisplay, setBalanceDisplay] = useState<string>("unknown")
 
@@ -285,37 +342,6 @@ export const TransferForm: FC = () => {
     },
   })
 
-  useEffect(()=> {
-    if (context == null) return
-    switch (source.type) {
-      case "substrate": {
-        //toEthereum.getBalance(context, token)
-        //  .then(balance => {
-        //    setBalanceDisplay(formatUnits(balance, balance_decimals) + " " + balance_symbol)
-        //  })
-        //  .catch(err => {
-        //    console.error(err)
-        //    setBalanceDisplay("unknown")
-        //    setError({ title: "Error", description: "Could not fetch balance.", errors: [] })
-        //  })
-        break;
-      }
-      case "ethereum": {
-        //toPolkadot.getBalance(context, token)
-        //  .then(balance => {
-        //    setBalanceDisplay(formatUnits(balance, balance_decimals) + " " + balance_symbol)
-        //  })
-        //  .catch(err => {
-        //    console.error(err)
-        //    setBalanceDisplay("unknown")
-        //    setError({ title: "Error", description: "Could not fetch asset balance.", errors: [] })
-        //  })
-        break;
-      }
-      default:
-        setError({ title: "Error", description: "Could not fetch asset balance.", errors: [] })
-    }
-  }, [context, source, token, setBalanceDisplay, setError])
 
   useEffect(() => {
     if (context == null) return
@@ -323,7 +349,7 @@ export const TransferForm: FC = () => {
       case "substrate": {
         toEthereum.getSendFee(context)
           .then(fee => {
-            setFeeDisplay(formatUnits(fee, source.paraInfo?.decimals) + " DOT")
+            setFeeDisplay(formatUnits(fee, assetHubNativeToken?.tokenDecimal) + " " + assetHubNativeToken?.tokenSymbol)
           })
           .catch(err => {
             console.error(err)
@@ -353,7 +379,7 @@ export const TransferForm: FC = () => {
       default:
         setError({ title: "Error", description: "Could not fetch transfer fee.", errors: [] })
     }
-  }, [context, source, destination, token, setFeeDisplay, setError])
+  }, [context, source, destination, token, setFeeDisplay, setError, assetHubNativeToken])
 
   const watchToken = form.watch("token")
   const watchSource = form.watch("source")
@@ -369,26 +395,45 @@ export const TransferForm: FC = () => {
     }
     const newDestination = newDestinations.find(d => d.id == watchDestination) ?? newDestinations[0]
     setDestination(newDestination)
-    const newTokens = Object.values(newDestination.erc20tokensReceivable)
-    const newToken = newTokens.find(x => x == watchToken) ?? newTokens[0]
     form.resetField("destination", { defaultValue: newDestination.id })
     form.resetField("beneficiary", { defaultValue: "" })
+
+    const newTokens = Object.values(newDestination.erc20tokensReceivable)
+    const newToken = newTokens.find(x => x == watchToken) ?? newTokens[0]
+    setToken(newToken)
     form.resetField("token", { defaultValue: newToken })
   }, [form, source, destinations, watchSource, snowbridgeEnvironment, watchDestination, watchToken, setSource, setDestinations, setDestination, setToken])
 
+  useEffect(() => {
+    if (context == null) return
+    assets.assetErc20Metadata(context, token).then(metadata => {
+      setTokenMetadata(metadata)
+    })
+      .catch(err => {
+        console.error(err)
+        setTokenMetadata(null)
+        setError({ title: "Error", description: `Could not fetch ERC20 token metadata: ${err.message}`, errors: [] })
+      })
+  }, [context, token, setTokenMetadata])
+
   const watchSourceAccount = form.watch("sourceAccount")
-  useEffect(()=> {
-    const newSourceAccount = source.type == "ethereum" ? (ethereumAccount ?? undefined) : polkadotAccount?.address 
+
+  useEffect(() => {
+    const newSourceAccount = source.type == "ethereum" ? (ethereumAccount ?? undefined) : polkadotAccount?.address
     setSourceAccount(newSourceAccount)
     form.resetField("sourceAccount", { defaultValue: newSourceAccount })
-  }, [form, watchSourceAccount, source, ethereumAccount, polkadotAccount, setSourceAccount])
+
+    if (context == null || newSourceAccount === undefined || ethereumChainId == null || token === "" || tokenMetadata == null) return
+    updateBalance(context, ethereumChainId, source, newSourceAccount, token, tokenMetadata, setBalanceDisplay, setError)
+  }, [form, watchSourceAccount, source, ethereumAccount, polkadotAccount, setSourceAccount, ethereumChainId, tokenMetadata])
 
   const depositAndApproveWeth = useCallback(async () => {
+    if (tokenMetadata == null || context == null || ethereumChainId == null || sourceAccount == undefined) return
     const toastTitle = "Deposit and Approve Token Spend"
     setBusyMessage("Depositing and approving spend...")
     try {
       const formData = form.getValues()
-      await doDepositAndApproveWeth(context, ethereumProvider, formData.token, BigInt(formData.amount))
+      await doDepositAndApproveWeth(context, ethereumProvider, formData.token, parseAmount(formData.amount, tokenMetadata))
       toast.info(toastTitle, {
         position: "bottom-center",
         closeButton: true,
@@ -396,6 +441,7 @@ export const TransferForm: FC = () => {
         description: 'Token spend approval was succesful.',
         important: true,
       })
+      updateBalance(context, ethereumChainId, source, sourceAccount, token, tokenMetadata, setBalanceDisplay, setError)
     }
     catch (err: any) {
       console.error(err)
@@ -410,14 +456,15 @@ export const TransferForm: FC = () => {
       })
     }
     finally { setBusyMessage(""); setError(null) }
-  }, [context, ethereumProvider, form, setBusyMessage, setError])
+  }, [context, ethereumProvider, form, setBusyMessage, setError, tokenMetadata, sourceAccount, setBalanceDisplay, token, ethereumChainId, source])
 
   const approveSpend = useCallback(async () => {
+    if (tokenMetadata == null || context == null || ethereumChainId == null || sourceAccount == undefined) return
     const toastTitle = "Approve Token Spend"
     setBusyMessage("Approving spend...")
     try {
       const formData = form.getValues()
-      await doApproveSpend(context, ethereumProvider, formData.token, BigInt(formData.amount))
+      await doApproveSpend(context, ethereumProvider, formData.token, parseAmount(formData.amount, tokenMetadata))
       toast.info(toastTitle, {
         position: "bottom-center",
         closeButton: true,
@@ -425,6 +472,7 @@ export const TransferForm: FC = () => {
         description: 'Token spend approval was succesful.',
         important: true,
       })
+      updateBalance(context, ethereumChainId, source, sourceAccount, token, tokenMetadata, setBalanceDisplay, setError)
     }
     catch (err: any) {
       console.error(err)
@@ -439,7 +487,7 @@ export const TransferForm: FC = () => {
       })
     }
     finally { setBusyMessage(""); setError(null) }
-  }, [context, ethereumProvider, form, setBusyMessage, setError])
+  }, [context, ethereumProvider, form, setBusyMessage, setError, sourceAccount, setBalanceDisplay, token, ethereumChainId, source, tokenMetadata])
 
   const sources: AccountInfo[] = []
   if (source.type === "substrate") {
@@ -466,7 +514,7 @@ export const TransferForm: FC = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage, polkadotAccount, ethereumAccount, ethereumProvider, transferHistory, router, form))} className="space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit(context, source, destination, setError, setBusyMessage, polkadotAccount, ethereumAccount, ethereumProvider, tokenMetadata, transferHistory, router, form))} className="space-y-2">
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
@@ -531,7 +579,11 @@ export const TransferForm: FC = () => {
                         ) : (
                           <SelectedPolkadotAccount />
                         )}
-                        <div className="text-xs text-right text-muted-foreground px-1">Balance: {balanceDisplay}</div>
+                        <div className={"text-xs text-right text-muted-foreground px-1 " +
+                          ((source.type == "ethereum" && ethereumAccount !== null || source.type == "substrate" && polkadotAccount !== null)
+                            ? " visible"
+                            : " hidden")
+                        }>Balance: {balanceDisplay}</div>
                       </>
                     </FormControl>
                     <FormMessage />

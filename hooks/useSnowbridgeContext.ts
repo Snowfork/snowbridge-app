@@ -1,5 +1,5 @@
-import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
-import { Context, contextFactory } from '@snowbridge/api'
+import { assetHubNativeTokenAtom, snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
+import { Context, assets, contextFactory } from '@snowbridge/api'
 import { Config } from "@snowbridge/api/dist/environment"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useEffect, useState } from "react"
@@ -24,12 +24,14 @@ const connectSnowbridgeContext = async (config: Config) => {
   })
 
   const chainId: number = Number((await context.ethereum.api.getNetwork()).chainId.toString())
-  return { context, chainId }
+  const assetHubNativeToken = await assets.parachainNativeToken(context.polkadot.api.assetHub)
+  return { context, chainId, assetHubNativeToken }
 }
 
 export const useSnowbridgeContext = (): [Context | null, boolean, string | null] => {
   const [context, setContext] = useAtom(snowbridgeContextAtom)
   const setChainId = useSetAtom(snowbridgeContextEthChainIdAtom)
+  const setAssetHubNativeToken = useSetAtom(assetHubNativeTokenAtom)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +41,12 @@ export const useSnowbridgeContext = (): [Context | null, boolean, string | null]
   useEffect(() => {
     setLoading(true)
     connectSnowbridgeContext(config)
-      .then(result => { setLoading(false); setContext(result.context); setChainId(result.chainId) })
+      .then(result => {
+        setLoading(false);
+        setContext(result.context);
+        setChainId(result.chainId);
+        setAssetHubNativeToken(result.assetHubNativeToken)
+      })
       .catch(error => {
         let message = 'Unknown Error'
         if (error instanceof Error) message = error.message

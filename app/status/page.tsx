@@ -18,11 +18,11 @@ const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   switch (account.type) {
     case "ethereum":
       symbol = "ETH"
-      amount = formatUnits(account.balance, 'ether')
+      amount = Number(formatUnits(account.balance, 'ether')).toFixed(6)
       break;
     case "substrate":
       symbol = "DOT"
-      amount = formatUnits(account.balance, 12)
+      amount = Number(formatUnits(account.balance, 12)).toFixed(6)
       break;
   }
   return (<TableRow >
@@ -45,7 +45,6 @@ const StatusCard = () => {
   const overallStyle = status.summary.overallStatus === "Normal" ? "text-green-700 font-semibold" : "text-red-700 font-semibold"
   if (status == null) return (<Loading />)
 
-  console.log(hash)
   return (
     <Card className="w-[360px] md:w-2/3">
       <CardHeader>
