@@ -5,9 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus"
 import { useWindowHash } from "@/hooks/useWindowHash"
-import { formatNumber, formatTime } from "@/lib/utils"
-import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
-import { formatUnits } from "ethers"
+import { formatBalance, formatTime } from "@/lib/utils"
+import { assetHubNativeTokenAtom, snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
 import { useAtomValue } from "jotai"
 import { LucideLoaderCircle } from "lucide-react"
 import { FC, Suspense } from "react"
@@ -15,14 +14,15 @@ import { FC, Suspense } from "react"
 const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   let amount = "0"
   let symbol = "ETH"
+  const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom)
   switch (account.type) {
     case "ethereum":
       symbol = "ETH"
-      amount = formatNumber(formatUnits(account.balance, 'ether'))
+      amount = formatBalance(account.balance, 18)
       break;
     case "substrate":
-      symbol = "DOT"
-      amount = formatNumber(formatUnits(account.balance, 12))
+      symbol = assetHubNativeToken?.tokenSymbol ?? "DOT"
+      amount = formatBalance(account.balance, assetHubNativeToken?.tokenDecimal ?? 10)
       break;
   }
   return (<TableRow >

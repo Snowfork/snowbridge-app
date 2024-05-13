@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { Big, roundDown } from 'big.js'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -13,13 +14,14 @@ export const trimAccount = (account: string, chars: number = 12): string => {
   return account.substring(0, keepChars) + '...' + account.substring(account.length - keepChars)
 }
 
-export const formatNumber = (number: string, displayDecimals: number = 6): string => {
-  let val = Number(number).toFixed(displayDecimals)
-  if(val.includes('.')) {
-    val = val.replace(/\.0+$/,'').replace(/0+$/,'')
-    if(val === '') val = '0'
-  }
-  return val
+export const formatBalance = (number: bigint, decimals: number, displayDecimals: number = 6): string => {
+  const value = new Big(number.toString()).div(new Big(10).pow(decimals))
+
+  let zerosRemoved = value.toFixed(displayDecimals, roundDown).replace(/(\.0+)$/,'').replace(/(0+)$/,'')
+  if(zerosRemoved === '') zerosRemoved = '0'
+  if(zerosRemoved !== '0') return zerosRemoved
+
+  return formatBalance(number, decimals, decimals)
 }
 
 export const formatTime = (time: number): string => {

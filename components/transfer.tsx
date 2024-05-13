@@ -1,6 +1,6 @@
 "use client"
 
-import { formatNumber, trimAccount } from "@/lib/utils";
+import { formatBalance, trimAccount } from "@/lib/utils";
 import { ethereumAccountAtom, ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { assetHubNativeTokenAtom, snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
@@ -72,9 +72,9 @@ const updateBalance = (context: Context, ethereumChainId: number, source: Transf
     .then(result => {
       let allowance = ""
       if (result.gatewayAllowance !== undefined) {
-        allowance = ` (Allowance: ${formatNumber(formatUnits(result.gatewayAllowance, tokenMetadata.decimals))} ${tokenMetadata.symbol})`
+        allowance = ` (Allowance: ${formatBalance(result.gatewayAllowance ?? 0n, Number(tokenMetadata.decimals))} ${tokenMetadata.symbol})`
       }
-      setBalanceDisplay(`${formatNumber(formatUnits(result.balance, tokenMetadata.decimals))} ${tokenMetadata.symbol} ${allowance}`)
+      setBalanceDisplay(`${formatBalance(result.balance, Number(tokenMetadata.decimals))} ${tokenMetadata.symbol} ${allowance}`)
     })
     .catch(err => {
       console.error(err)
@@ -349,7 +349,7 @@ export const TransferForm: FC = () => {
       case "substrate": {
         toEthereum.getSendFee(context)
           .then(fee => {
-            setFeeDisplay(formatUnits(fee, assetHubNativeToken?.tokenDecimal) + " " + assetHubNativeToken?.tokenSymbol)
+            setFeeDisplay(formatBalance(fee, assetHubNativeToken?.tokenDecimal ?? 0) + " " + assetHubNativeToken?.tokenSymbol)
           })
           .catch(err => {
             console.error(err)
@@ -367,7 +367,7 @@ export const TransferForm: FC = () => {
 
         toPolkadot.getSendFee(context, token, destination.paraInfo.paraId, destination.paraInfo.destinationFeeDOT)
           .then(fee => {
-            setFeeDisplay(formatUnits(fee, 18) + " ETH")
+            setFeeDisplay(formatBalance(fee, 18) + " ETH")
           })
           .catch(err => {
             console.error(err)
