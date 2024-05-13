@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus"
 import { useWindowHash } from "@/hooks/useWindowHash"
-import { formatTime } from "@/lib/utils"
+import { formatNumber, formatTime } from "@/lib/utils"
 import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
 import { formatUnits } from "ethers"
 import { useAtomValue } from "jotai"
@@ -18,11 +18,11 @@ const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   switch (account.type) {
     case "ethereum":
       symbol = "ETH"
-      amount = Number(formatUnits(account.balance, 'ether')).toFixed(6)
+      amount = formatNumber(formatUnits(account.balance, 'ether'))
       break;
     case "substrate":
       symbol = "DOT"
-      amount = Number(formatUnits(account.balance, 12)).toFixed(6)
+      amount = formatNumber(formatUnits(account.balance, 12))
       break;
   }
   return (<TableRow >

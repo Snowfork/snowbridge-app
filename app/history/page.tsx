@@ -3,7 +3,6 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { formatNumber } from "@/lib/utils"
 import { Transfer, TransferStatus, transfersAtom } from "@/store/transferHistory"
 import { useAtomValue } from "jotai"
 import { useParams, useRouter } from "next/navigation"
@@ -13,7 +12,7 @@ const ITEMS_PER_PAGE = 5
 
 const transferTitle = (v: Transfer): JSX.Element => {
   const when = new Date(v.when)
-  return <p>{formatNumber(BigInt(v.form.amount)) + " " + v.tokenName + " from " + v.form.source + " to " + v.form.destination + " on " + when.toLocaleString()}</p>
+  return <p>{((v.form.amount)) + " " + v.tokenName + " from " + v.form.source + " to " + v.form.destination + " on " + when.toLocaleString()}</p>
 }
 
 const transferDetail = (v: Transfer): JSX.Element => {

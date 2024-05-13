@@ -1,6 +1,6 @@
 "use client"
 
-import { trimAccount } from "@/lib/utils";
+import { formatNumber, trimAccount } from "@/lib/utils";
 import { ethereumAccountAtom, ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { assetHubNativeTokenAtom, snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
@@ -72,9 +72,9 @@ const updateBalance = (context: Context, ethereumChainId: number, source: Transf
     .then(result => {
       let allowance = ""
       if (result.gatewayAllowance !== undefined) {
-        allowance = ` (Allowance: ${Number(formatUnits(result.gatewayAllowance, tokenMetadata.decimals))} ${tokenMetadata.symbol})`
+        allowance = ` (Allowance: ${formatNumber(formatUnits(result.gatewayAllowance, tokenMetadata.decimals))} ${tokenMetadata.symbol})`
       }
-      setBalanceDisplay(`${Number(formatUnits(result.balance, tokenMetadata.decimals))} ${tokenMetadata.symbol} ${allowance}`)
+      setBalanceDisplay(`${formatNumber(formatUnits(result.balance, tokenMetadata.decimals))} ${tokenMetadata.symbol} ${allowance}`)
     })
     .catch(err => {
       console.error(err)
