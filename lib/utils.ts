@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { Big, roundDown } from 'big.js'
+import { Big } from 'big.js'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -17,7 +17,7 @@ export const trimAccount = (account: string, chars: number = 12): string => {
 export const formatBalance = (number: bigint, decimals: number, displayDecimals: number = 6): string => {
   const value = new Big(number.toString()).div(new Big(10).pow(decimals))
 
-  let zerosRemoved = value.toFixed(displayDecimals, roundDown).replace(/(\.0+)$/,'').replace(/(0+)$/,'')
+  let zerosRemoved = value.toFixed(displayDecimals, 0).replace(/(\.0+)$/,'').replace(/(0+)$/,'')
   if(zerosRemoved === '') zerosRemoved = '0'
   if(zerosRemoved !== '0') return zerosRemoved
 

@@ -46,7 +46,8 @@ export default function History() {
         break;
       }
     }
-  }, [params, setSelectedItem, transfers]);
+  }, [params, setSelectedItem, transfers, setPage]);
+
 
   const start = Math.max(0, page - 2)
   const end = Math.min(pages.length - 1, page + 2)
@@ -76,21 +77,21 @@ export default function History() {
         <Pagination className={transfers.length == 0 ? "hidden" : ""}>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious onClick={() => setPage(Math.max(0, page - 1))} />
+              <PaginationPrevious onClick={() => router.push('#'+pages[Math.max(0, page - 1)][0].id)} />
             </PaginationItem>
             <PaginationItem>
-              <PaginationLink onClick={() => setPage(0)} >First</PaginationLink>
+              <PaginationLink onClick={() => router.push('#'+pages[0][0].id)} >First</PaginationLink>
             </PaginationItem>
             {renderPages.map(({ index }) => (
               <PaginationItem key={index + 1}>
-                <PaginationLink isActive={page == index} onClick={() => setPage(index)}>{index + 1}</PaginationLink>
+                <PaginationLink isActive={page == index} onClick={() => router.push('#'+pages[index][0].id)}>{index + 1}</PaginationLink>
               </PaginationItem>
             ))}
             <PaginationItem>
-              <PaginationLink onClick={() => setPage(pages.length - 1)} >Last</PaginationLink>
+              <PaginationLink onClick={() => router.push('#'+pages[pages.length-1][0].id)} >Last</PaginationLink>
             </PaginationItem>
             <PaginationItem>
-              <PaginationNext onClick={() => setPage(Math.min(pages.length - 1, page + 1))} />
+              <PaginationNext onClick={() => router.push('#'+pages[Math.min(pages.length - 1, page + 1)][0].id)} />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
