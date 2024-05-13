@@ -1,6 +1,6 @@
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet"
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork"
-import { trimAccount } from "@/lib/utils"
+import { cn, trimAccount } from "@/lib/utils"
 import { ethereumAccountAtom, ethereumChainIdAtom } from "@/store/ethereum"
 import { snowbridgeContextEthChainIdAtom } from "@/store/snowbridge"
 import { useAtomValue } from "jotai"
@@ -8,8 +8,13 @@ import { Button } from "./ui/button"
 import { toast } from "sonner"
 import { BusyDialog } from "./busyDialog"
 import { ErrorDialog } from "./errorDialog"
+import { FC } from "react"
 
-export const SelectedEthereumWallet = () => {
+export type SelectedEthereumWalletProps = { 
+    className?: string 
+    walletChars?: number
+}
+export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({ className, walletChars }) => {
     const ethereumAccount = useAtomValue(ethereumAccountAtom)
     const [connectToEthereumWallet, ethereumLoading, ethereumError] = useConnectEthereumWallet()
     const ethereumChainId = useAtomValue(ethereumChainIdAtom)
@@ -17,7 +22,7 @@ export const SelectedEthereumWallet = () => {
     const switchEthereumNetwork = useSwitchEthereumNetwork(contextEthereumChainId)
 
     if (!ethereumAccount) {
-        return (<Button className="w-full" type="button" onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
+        return (<Button className="w-full" type="button" variant="link" onClick={connectToEthereumWallet}>Connect Ethereum</Button>)
     }
     if (contextEthereumChainId !== null && ethereumChainId !== contextEthereumChainId) {
         return (<>
@@ -25,16 +30,14 @@ export const SelectedEthereumWallet = () => {
         </>)
     }
     return (<>
-        <div className="text-xs">
-            <Button type="button" className="w-full" variant="outline" onClick={() => {
-                toast.info("Select account in wallet.", {
-                    position: "bottom-center",
-                    closeButton: true,
-                    dismissible: true,
-                    id: "wallet_select",
-                })
-            }}><pre className="inline md:hidden">{trimAccount(ethereumAccount)}</pre><pre className="hidden md:inline truncate text-ellipsis">{ethereumAccount}</pre></Button>
-        </div>
+        <div className={cn("hover:underline hover:cursor-pointer overflow-clip text-ellipsis", className)} onClick={() => {
+            toast.info("Select account in wallet.", {
+                position: "bottom-center",
+                closeButton: true,
+                dismissible: true,
+                id: "wallet_select",
+            })
+        }}><pre className="inline md:hidden">{trimAccount(ethereumAccount, walletChars??26)}</pre><pre className="w-auto hidden md:inline">{ethereumAccount}</pre></div>
         <BusyDialog open={ethereumLoading} title="Ethereum Wallet" description="Waiting for Ethereum wallet..." />
         <ErrorDialog open={!ethereumLoading && ethereumError !== null} title="Ethereum Wallet Error" description={ethereumError || 'Unknown Error.'} />
     </>)

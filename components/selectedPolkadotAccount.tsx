@@ -11,7 +11,7 @@ export const SelectedPolkadotAccount: FC = () => {
     const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom)
     const polkadotAccounts = useAtomValue(polkadotAccountsAtom)
     if (!polkadotAccount) {
-        return (<Button className="w-full" onClick={() => setPolkadotWalletModalOpen(true)}>Connect Polkadot</Button>)
+        return (<Button variant="link" className="w-full" onClick={() => setPolkadotWalletModalOpen(true)}>Connect Polkadot</Button>)
     }
     return (
         <Select onValueChange={(v) => setPolkadotAccount(v)} value={polkadotAccount.address}>

@@ -3,13 +3,13 @@
 import { formatNumber, trimAccount } from "@/lib/utils";
 import { ethereumAccountAtom, ethereumAccountsAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
-import { snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { snowbridgeContextAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { FormData, TransferHistory, TransferStatus, TransferUpdate, transfersAtom } from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Signer } from "@polkadot/api/types";
 import { Context, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, formatUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
 import { useRouter } from "next/navigation";
 import { Dispatch, FC, SetStateAction, useCallback, useEffect, useState } from "react";
@@ -26,6 +26,7 @@ import { Input } from "./ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
+import useSWR from "swr";
 
 type AppRouter = ReturnType<typeof useRouter>
 type ValidationError = toPolkadot.SendValidationError | toEthereum.SendValidationError
@@ -34,7 +35,7 @@ const formSchema = z.object({
   source: z.string().min(1, "Select source."),
   destination: z.string().min(1, "Select destination."),
   token: z.string().min(1, "Select token."),
-  amount: z.string().regex(/^([1-9][0-9]{0,37})|([0-9][0-9]{0,37}.?[0-9]{0,37})$/, "Invalid amount"),
+  amount: z.string().regex(/^([1-9][0-9]{0,37})|([0-9]{0,37}\.+[0-9]{0,18})$/, "Invalid amount"),
   beneficiary: z.string().min(1, "Select beneficiary.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
   sourceAccount: z.string().min(1, "Select source account.").regex(/^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/, "Invalid address format."),
 })
@@ -270,6 +271,7 @@ export const TransferForm: FC = () => {
   const tokens = Object.keys(destination.erc20tokensReceivable)
   const [token, setToken] = useState(destination.erc20tokensReceivable[tokens[0]])
   const [feeDisplay, setFeeDisplay] = useState<string>("unknown")
+  const [balanceDisplay, setBalanceDisplay] = useState<string>("unknown")
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -279,9 +281,41 @@ export const TransferForm: FC = () => {
       token: token,
       beneficiary: "",
       sourceAccount: sourceAccount,
-      amount: "0",
+      amount: "0.0",
     },
   })
+
+  useEffect(()=> {
+    if (context == null) return
+    switch (source.type) {
+      case "substrate": {
+        //toEthereum.getBalance(context, token)
+        //  .then(balance => {
+        //    setBalanceDisplay(formatUnits(balance, balance_decimals) + " " + balance_symbol)
+        //  })
+        //  .catch(err => {
+        //    console.error(err)
+        //    setBalanceDisplay("unknown")
+        //    setError({ title: "Error", description: "Could not fetch balance.", errors: [] })
+        //  })
+        break;
+      }
+      case "ethereum": {
+        //toPolkadot.getBalance(context, token)
+        //  .then(balance => {
+        //    setBalanceDisplay(formatUnits(balance, balance_decimals) + " " + balance_symbol)
+        //  })
+        //  .catch(err => {
+        //    console.error(err)
+        //    setBalanceDisplay("unknown")
+        //    setError({ title: "Error", description: "Could not fetch asset balance.", errors: [] })
+        //  })
+        break;
+      }
+      default:
+        setError({ title: "Error", description: "Could not fetch asset balance.", errors: [] })
+    }
+  }, [context, source, token, setBalanceDisplay, setError])
 
   useEffect(() => {
     if (context == null) return
@@ -289,7 +323,7 @@ export const TransferForm: FC = () => {
       case "substrate": {
         toEthereum.getSendFee(context)
           .then(fee => {
-            setFeeDisplay(formatNumber(fee, source.paraInfo?.decimals) + " DOT")
+            setFeeDisplay(formatUnits(fee, source.paraInfo?.decimals) + " DOT")
           })
           .catch(err => {
             console.error(err)
@@ -307,14 +341,13 @@ export const TransferForm: FC = () => {
 
         toPolkadot.getSendFee(context, token, destination.paraInfo.paraId, destination.paraInfo.destinationFeeDOT)
           .then(fee => {
-            setFeeDisplay(formatNumber(fee, 18, 9) + " ETH")
+            setFeeDisplay(formatUnits(fee, 18) + " ETH")
           })
           .catch(err => {
             console.error(err)
             setFeeDisplay("unknown")
             setError({ title: "Error", description: "Could not fetch transfer fee.", errors: [] })
           })
-
         break;
       }
       default:
@@ -498,7 +531,7 @@ export const TransferForm: FC = () => {
                         ) : (
                           <SelectedPolkadotAccount />
                         )}
-                        <div className="text-xs text-right text-muted-foreground px-1">Balance: {feeDisplay}</div>
+                        <div className="text-xs text-right text-muted-foreground px-1">Balance: {balanceDisplay}</div>
                       </>
                     </FormControl>
                     <FormMessage />
@@ -528,7 +561,7 @@ export const TransferForm: FC = () => {
                       <FormItem>
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
-                          <Input type="string" placeholder="0" {...field} />
+                          <Input type="string" placeholder="0.0" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

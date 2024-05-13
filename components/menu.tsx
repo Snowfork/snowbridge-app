@@ -98,7 +98,7 @@ export const Menu: FC = () => {
     }
     return (
       <>
-        <h1 className="font-semibold">Polkadot</h1>
+        <h1 className="font-semibold py-2">Polkadot</h1>
         <div className="text-xs">
           <p>Name: {polkadotAccount.name}</p>
           <p className="inline">Address: </p><pre className="inline">{trimAccount(polkadotAccount.address, 28)}</pre>
@@ -131,8 +131,8 @@ export const Menu: FC = () => {
           <MenubarTrigger><LucideWallet /><p className="pl-2 hidden md:flex">Wallets</p></MenubarTrigger>
           <MenubarContent align="center">
             <div className="w-60">
-            <h1 className="font-semibold">Ethereum</h1>
-            <SelectedEthereumWallet />
+            <h1 className="font-semibold py-2">Ethereum</h1>
+            <SelectedEthereumWallet className="text-sm" walletChars={24}/>
             <MenubarSeparator></MenubarSeparator>
             <PolkadotWallet />
             </div>

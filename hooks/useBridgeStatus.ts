@@ -7,15 +7,31 @@ import useSWR from "swr"
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment"
 
 export const REFRESH_INTERVAL: number = 5 * 60 * 1000 // 5 minutes
+const ACCEPTABLE_BRIDGE_LATENCY = 28800 // 8 hours
 
 export interface AccountInfo { name: string, type: 'ethereum' | 'substrate', account: string, balance: bigint }
 
+type StatusValue =  "Normal" | "Halted" | "Delayed"
 export type BridgeStatus = {
   statusInfo: status.BridgeStatusInfo,
   channelStatusInfos: { name: string, status: status.ChannelStatusInfo }[]
   assetHubChannel: status.ChannelStatusInfo
   relayers: AccountInfo[]
   accounts: AccountInfo[]
+  summary: {
+    toPolkadot: {
+      lightClientLatencyIsAcceptable: boolean;
+      bridgeOperational: boolean;
+      channelOperational: boolean;
+    }
+    toPolkadotOperatingMode: StatusValue
+    toEthereum: {
+      bridgeOperational: boolean;
+      lightClientLatencyIsAcceptable: boolean;
+    }
+    toEthereumOperatingMode: StatusValue
+    overallStatus: StatusValue
+  }
 }
 
 const fetchStatus = async ([env, context]: [SnowbridgeEnvironment, Context | null]): Promise<BridgeStatus | null> => {
@@ -60,8 +76,35 @@ const fetchStatus = async ([env, context]: [SnowbridgeEnvironment, Context | nul
       }
       relayers.push({ name: relayer.name, account: relayer.account, balance: balance, type: relayer.type })
     }
+    const toPolkadot = {
+      lightClientLatencyIsAcceptable: bridgeStatusInfo.toPolkadot.latencySeconds < ACCEPTABLE_BRIDGE_LATENCY,
+      bridgeOperational: bridgeStatusInfo.toPolkadot.operatingMode.outbound === 'Normal' && bridgeStatusInfo.toPolkadot.operatingMode.beacon === 'Normal',
+      channelOperational: assethub.toPolkadot.operatingMode.outbound === 'Normal',
+    }
+    const toPolkadotOperatingMode =
+      !toPolkadot.bridgeOperational || !toPolkadot.channelOperational ? "Halted"
+        : !toPolkadot.lightClientLatencyIsAcceptable ? "Delayed"
+          : "Normal"
+
+    const toEthereum = {
+      bridgeOperational: bridgeStatusInfo.toEthereum.operatingMode.outbound === 'Normal',
+      lightClientLatencyIsAcceptable: bridgeStatusInfo.toEthereum.latencySeconds < ACCEPTABLE_BRIDGE_LATENCY,
+    }
+    const toEthereumOperatingMode = !toEthereum.bridgeOperational ? "Halted" : !toEthereum.lightClientLatencyIsAcceptable ? "Delayed" : "Normal"
+
+    let overallStatus: StatusValue = toEthereumOperatingMode
+    if (toEthereumOperatingMode === "Normal") {
+      overallStatus = toPolkadotOperatingMode;
+    }
 
     return {
+      summary: {
+        toPolkadot,
+        toPolkadotOperatingMode,
+        toEthereum,
+        toEthereumOperatingMode,
+        overallStatus
+      },
       statusInfo: bridgeStatusInfo,
       assetHubChannel: assethub,
       channelStatusInfos: [
