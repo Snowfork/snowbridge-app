@@ -17,17 +17,16 @@ export const trimAccount = (account: string, chars: number = 12): string => {
 export const formatBalance = (number: bigint, decimals: number, displayDecimals: number = 6): string => {
   const replaceZeros = (str: string): string =>  {
     const newStr = str.replace(/(\.0+)$/,'').replace(/(0+)$/,'')
-    if (newStr === '') return '0'
-    return newStr
+    if (newStr !== '') return newStr
+    return '0'
   }
 
   const value = new Big(number.toString()).div(new Big(10).pow(decimals))
 
-  let zerosRemoved = replaceZeros(value.toFixed(displayDecimals, 0))
+  const zerosRemoved = replaceZeros(value.toFixed(displayDecimals, 0))
   if(zerosRemoved !== '0') return zerosRemoved
 
-  zerosRemoved = replaceZeros(value.toFixed(decimals, 0))
-  return zerosRemoved
+  return replaceZeros(value.toFixed(decimals, 0))
 }
 
 export const formatTime = (time: number): string => {
