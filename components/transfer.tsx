@@ -425,7 +425,7 @@ export const TransferForm: FC = () => {
 
     if (context == null || newSourceAccount === undefined || ethereumChainId == null || token === "" || tokenMetadata == null) return
     updateBalance(context, ethereumChainId, source, newSourceAccount, token, tokenMetadata, setBalanceDisplay, setError)
-  }, [form, watchSourceAccount, source, ethereumAccount, polkadotAccount, setSourceAccount, ethereumChainId, tokenMetadata])
+  }, [form, watchSourceAccount, source, ethereumAccount, polkadotAccount, setSourceAccount, token, context, ethereumChainId, tokenMetadata])
 
   const depositAndApproveWeth = useCallback(async () => {
     if (tokenMetadata == null || context == null || ethereumChainId == null || sourceAccount == undefined) return
