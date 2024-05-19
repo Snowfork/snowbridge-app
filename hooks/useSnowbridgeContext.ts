@@ -1,14 +1,21 @@
-import { assetHubNativeTokenAtom, snowbridgeContextAtom, snowbridgeContextEthChainIdAtom, snowbridgeEnvironmentAtom } from "@/store/snowbridge"
-import { Context, assets, contextFactory } from '@snowbridge/api'
-import { Config } from "@snowbridge/api/dist/environment"
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import { useEffect, useState } from "react"
-
+import {
+  assetHubNativeTokenAtom,
+  snowbridgeContextAtom,
+  snowbridgeContextEthChainIdAtom,
+  snowbridgeEnvironmentAtom,
+} from "@/store/snowbridge";
+import { Context, assets, contextFactory } from "@snowbridge/api";
+import { Config } from "@snowbridge/api/dist/environment";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useEffect, useState } from "react";
 
 const connectSnowbridgeContext = async (config: Config) => {
-  const k = process.env.NEXT_PUBLIC_ALCHEMY_KEY || ''
+  const k = process.env.NEXT_PUBLIC_ALCHEMY_KEY || "";
   const context = await contextFactory({
-    ethereum: { execution_url: config.ETHEREUM_WS_API(k), beacon_url: config.BEACON_HTTP_API },
+    ethereum: {
+      execution_url: config.ETHEREUM_WS_API(k),
+      beacon_url: config.BEACON_HTTP_API,
+    },
     polkadot: {
       url: {
         bridgeHub: config.BRIDGE_HUB_WS_URL,
@@ -21,39 +28,54 @@ const connectSnowbridgeContext = async (config: Config) => {
       gateway: config.GATEWAY_CONTRACT,
       beefy: config.BEEFY_CONTRACT,
     },
-  })
+  });
 
-  const chainId: number = Number((await context.ethereum.api.getNetwork()).chainId.toString())
-  const assetHubNativeToken = await assets.parachainNativeToken(context.polkadot.api.assetHub)
-  return { context, chainId, assetHubNativeToken }
-}
+  const chainId: number = Number(
+    (await context.ethereum.api.getNetwork()).chainId.toString(),
+  );
+  const assetHubNativeToken = await assets.parachainNativeToken(
+    context.polkadot.api.assetHub,
+  );
+  return { context, chainId, assetHubNativeToken };
+};
 
-export const useSnowbridgeContext = (): [Context | null, boolean, string | null] => {
-  const [context, setContext] = useAtom(snowbridgeContextAtom)
-  const setChainId = useSetAtom(snowbridgeContextEthChainIdAtom)
-  const setAssetHubNativeToken = useSetAtom(assetHubNativeTokenAtom)
+export const useSnowbridgeContext = (): [
+  Context | null,
+  boolean,
+  string | null,
+] => {
+  const [context, setContext] = useAtom(snowbridgeContextAtom);
+  const setChainId = useSetAtom(snowbridgeContextEthChainIdAtom);
+  const setAssetHubNativeToken = useSetAtom(assetHubNativeTokenAtom);
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const { config } = useAtomValue(snowbridgeEnvironmentAtom)
+  const { config } = useAtomValue(snowbridgeEnvironmentAtom);
 
   useEffect(() => {
-    setLoading(true)
+    setLoading(true);
     connectSnowbridgeContext(config)
-      .then(result => {
+      .then((result) => {
         setLoading(false);
         setContext(result.context);
         setChainId(result.chainId);
-        setAssetHubNativeToken(result.assetHubNativeToken)
+        setAssetHubNativeToken(result.assetHubNativeToken);
       })
-      .catch(error => {
-        let message = 'Unknown Error'
-        if (error instanceof Error) message = error.message
-        setLoading(false)
-        setError(message)
-      })
-  }, [setContext, setLoading, setError])
+      .catch((error) => {
+        let message = "Unknown Error";
+        if (error instanceof Error) message = error.message;
+        setLoading(false);
+        setError(message);
+      });
+  }, [
+    config,
+    setAssetHubNativeToken,
+    setChainId,
+    setContext,
+    setError,
+    setLoading,
+  ]);
 
-  return [context, loading, error]
-}
+  return [context, loading, error];
+};
