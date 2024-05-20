@@ -35,8 +35,9 @@ export default function RootLayout({
           <main className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
             <div className="w-full max-w-5xl md:gap-4 flex flex-col">
               <div className="w-full place-items-center justify-between flex flex-col md:flex-row">
-                <div className="flex mb-4 lg:mb-0 ">
+                <div className="flex mb-4 lg:mb-0">
                   <Image
+                    className="mb-2"
                     src="/icon.svg"
                     width={32}
                     height={32}
