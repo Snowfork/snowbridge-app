@@ -61,7 +61,7 @@ const trackHistory = async (
     } catch (err) {
       console.error("Error tracking transaction ", err);
       transfer.errorCount++;
-      if (transfer.errorCount > 0) {
+      if (transfer.errorCount > 2) {
         transfer.status = TransferStatus.Failed;
       }
     }
