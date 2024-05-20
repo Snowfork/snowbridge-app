@@ -12,14 +12,18 @@ import { Context, toEthereum, toPolkadot } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect } from "react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-const TRACK_HISTORY_REFRESH_TIMER_INTERVAL = 1 * 1000 * 60; // 1 minute
+const TRACK_HISTORY_REFRESH_TIMER_INTERVAL = 3 * 1000 * 60; // 3 minute
 
 const trackHistory = async (
   context: Context,
   env: SnowbridgeEnvironment,
   transfers: TransferHistory,
   reducer: (update: TransferUpdate) => void,
+  appRouter: AppRouterInstance,
 ) => {
   console.log("Track History Running");
 
@@ -63,8 +67,21 @@ const trackHistory = async (
     }
     console.log("Tracking transaction complete ", transfer.id);
     if (status === "success") {
-      // TODO: check error and set error
       transfer.status = TransferStatus.Complete;
+      const transferUrl = `/history#${transfer.id}`;
+      toast.info("Transfer Progress Updated", {
+        position: "bottom-center",
+        closeButton: true,
+        id: "transfer_success",
+        description: "Token transfer was succesfully initiated.",
+        important: true,
+        action: {
+          label: "View",
+          onClick: () => {
+            appRouter.push(transferUrl);
+          },
+        },
+      });
     }
     reducer({ action: "udpate", transfer });
   }
@@ -74,16 +91,24 @@ export const useTrackHistory = () => {
   const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const [transfers, transferReducer] = useAtom(transfersAtom);
+  const appRouter = useRouter();
   useEffect(() => {
     if (context == null) return;
     console.log("Track History Installed");
     const intervalId = setInterval(
-      () => trackHistory(context, snowbridgeEnv, transfers, transferReducer),
+      () =>
+        trackHistory(
+          context,
+          snowbridgeEnv,
+          transfers,
+          transferReducer,
+          appRouter,
+        ),
       TRACK_HISTORY_REFRESH_TIMER_INTERVAL,
     );
     return () => {
       console.log("Track History Uninstalled");
       clearInterval(intervalId);
     };
-  }, [context, transfers, transferReducer, snowbridgeEnv]);
+  }, [context, transfers, transferReducer, snowbridgeEnv, appRouter]);
 };

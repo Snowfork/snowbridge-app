@@ -120,7 +120,13 @@ const transferDetail = (
       <ul className="list-inside list-disc">
         {links.map((link, i) => (
           <li key={i}>
-            {link.text} <a href={link.url}>(view)</a>
+            {link.text}{" "}
+            <span
+              className="text-sm underline cursor-pointer"
+              onClick={() => window.open(link.url)}
+            >
+              (view)
+            </span>
           </li>
         ))}
       </ul>
