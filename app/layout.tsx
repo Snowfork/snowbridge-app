@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { Provider } from "jotai";
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -13,6 +14,12 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Snowbridge",
   description: "The Ethereum Polkadot bridge.",
+  icons: [
+    {
+      rel: "icon",
+      url: "/app/icon.svg",
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -27,7 +34,17 @@ export default function RootLayout({
           <main className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
             <div className="w-full max-w-5xl md:gap-4 flex flex-col">
               <div className="w-full place-items-center justify-between flex flex-col md:flex-row">
-                <h1 className="text-3xl font-semibold lg:text-4xl mb-4 lg:mb-0">Snowbridge</h1>
+                <div className="flex mb-4 lg:mb-0 ">
+                  <Image
+                    src="/icon.svg"
+                    width={32}
+                    height={32}
+                    alt="Smiling bridge"
+                  />
+                  <h1 className="text-3xl font-semibold lg:text-4xl px-2">
+                    Snowbridge
+                  </h1>
+                </div>
                 <Menu />
               </div>
               <div className="flex justify-center">

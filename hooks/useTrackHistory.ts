@@ -3,7 +3,6 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import {
-  Transfer,
   TransferHistory,
   TransferStatus,
   TransferUpdate,
@@ -24,12 +23,7 @@ const trackHistory = async (
 ) => {
   console.log("Track History Running");
 
-  let updates = 0;
   for (const transfer of transfers.pending) {
-    console.log("Tracking transaction ", transfer.id);
-    if (transfer.status !== TransferStatus.InProgress) {
-      continue;
-    }
     const destination = env.locations.find(
       (loc) => loc.id == transfer.form.destination,
     );
@@ -37,6 +31,7 @@ const trackHistory = async (
       console.log("cannot find destination ", transfer.form.destination);
       continue;
     }
+    console.log("Tracking transaction ", transfer.id, destination.type);
     let status = "pending";
     try {
       switch (destination.type) {
@@ -61,18 +56,18 @@ const trackHistory = async (
       }
     } catch (err) {
       console.error("Error tracking transaction ", err);
-      transfer.status = TransferStatus.Failed;
+      transfer.errorCount++;
+      if (transfer.errorCount > 0) {
+        transfer.status = TransferStatus.Failed;
+      }
     }
     console.log("Tracking transaction complete ", transfer.id);
     if (status === "success") {
       // TODO: check error and set error
       transfer.status = TransferStatus.Complete;
     }
-    updates++;
     reducer({ action: "udpate", transfer });
   }
-  // force update to kick off the timer again.
-  if (updates == 0) reducer({ action: "remove", transfer: { id: "" } as any });
 };
 
 export const useTrackHistory = () => {
@@ -82,7 +77,7 @@ export const useTrackHistory = () => {
   useEffect(() => {
     if (context == null) return;
     console.log("Track History Installed");
-    const intervalId = setTimeout(
+    const intervalId = setInterval(
       () => trackHistory(context, snowbridgeEnv, transfers, transferReducer),
       TRACK_HISTORY_REFRESH_TIMER_INTERVAL,
     );
