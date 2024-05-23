@@ -298,6 +298,23 @@ const SendErrorDialog: FC<{
         </Button>
       );
     }
+    if (
+      error.code === toPolkadot.SendValidationCode.BeneficiaryAccountMissing
+    ) {
+      return (
+        <Button
+          className="text-blue-600 py-0 h-auto"
+          variant="link"
+          onClick={() => {
+            window.open(
+              "https://support.polkadot.network/support/solutions/articles/65000181800-what-is-statemint-and-statemine-and-how-do-i-use-them-#Sufficient-and-non-sufficient-assets",
+            );
+          }}
+        >
+          Help
+        </Button>
+      );
+    }
     return <></>;
   };
   let errorList = <></>;
