@@ -22,44 +22,49 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Transfer, useTransferHistory } from "@/hooks/useTransferHistory";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import {
-  Transfer,
-  TransferStatus,
-  transfersAtom,
-} from "@/store/transferHistory";
-import { toEthereum, toPolkadot } from "@snowbridge/api";
+import { encodeAddress } from "@polkadot/util-crypto";
+import { toEthereum, toPolkadot, history } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import { useAtomValue } from "jotai";
+import { LucideLoaderCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 const ITEMS_PER_PAGE = 5;
 
 const getEnvDetail = (transfer: Transfer, env: SnowbridgeEnvironment) => {
   const destination = env.locations.find(
-    (loc) => loc.id == transfer.form.destination,
+    (loc) => loc.paraInfo?.paraId === transfer.info.destinationParachain,
   );
-  const source = env.locations.find((loc) => loc.id == transfer.form.source);
+  return destination;
+};
 
-  return { destination, source };
+const getTokenName = (transfer: Transfer, env: SnowbridgeEnvironment) => {
+  const destination = env.locations.find(
+    (loc) => loc.paraInfo?.paraId === transfer.info.destinationParachain,
+  );
+  const tokens = destination?.erc20tokensReceivable ?? {};
+  return Object.keys(tokens).find(
+    (k) => tokens[k].toLowerCase() === transfer.info.tokenAddress.toLowerCase(),
+  );
 };
 
 const transferTitle = (
   transfer: Transfer,
   env: SnowbridgeEnvironment,
 ): JSX.Element => {
-  const { destination, source } = getEnvDetail(transfer, env);
-  const when = new Date(transfer.when);
+  const destination = getEnvDetail(transfer, env);
+  const tokenName = getTokenName(transfer, env);
+  const when = new Date(transfer.info.when);
   return (
     <p>
-      {transfer.form.amount +
+      {transfer.info.amount +
         " " +
-        transfer.tokenName +
-        " from " +
-        source?.name +
+        (tokenName ?? "unknown") +
         " to " +
-        destination?.name +
+        (destination?.name ?? "unknown") +
         " on " +
         when.toLocaleString()}
     </p>
@@ -70,53 +75,62 @@ const transferDetail = (
   transfer: Transfer,
   env: SnowbridgeEnvironment,
 ): JSX.Element => {
-  const { source, destination } = getEnvDetail(transfer, env);
+  const destination = getEnvDetail(transfer, env);
   const links: { text: string; url: string }[] = [];
-  if (destination?.type == "ethereum") {
-    const result = transfer.data as toEthereum.SendResult;
-    const sourceParachain = result.success?.sourceParachain?.blockHash;
-    if (sourceParachain) {
-      links.push({ text: `Submitted to source ${source?.name}`, url: "" });
-    }
-    if (result.success?.assetHub.blockHash) {
-      links.push({ text: "Submitted to Asset Hub", url: "" });
-    }
-    if (result.success?.bridgeHub.messageAcceptedAtHash) {
-      links.push({ text: "Message Accepted on Bridge Hub", url: "" });
-    }
-    if (result.success?.ethereum.beefyBlockHash) {
-      links.push({
-        text: "Message included by light client on Ethereum",
-        url: "",
-      });
-    }
-    if (result.success?.ethereum.transferBlockHash) {
-      links.push({ text: "Message dispatched on Ethereum", url: "" });
-    }
-  }
-  if (destination?.type == "substrate") {
-    const result = transfer.data as toPolkadot.SendResult;
-    if (result.success?.ethereum.blockHash) {
-      links.push({ text: "Submitted to Gateway", url: "" });
-    }
-    if (result.success?.bridgeHub.beaconUpdate) {
-      links.push({ text: "Included by light client on Bridge Hub", url: "" });
-    }
-    if (result.success?.bridgeHub.messageReceivedBlockHash) {
-      links.push({ text: "Message dispatched on Bridge Hub", url: "" });
-    }
-    if (result.success?.assetHub.messageQueueProcessedAt) {
-      links.push({ text: "Message received on Asset Hub", url: "" });
-    }
-    if (result.success?.destinationParachain?.messageQueueProcessedAt) {
-      links.push({ text: `Message received on ${destination?.name}`, url: "" });
-    }
+  //if (destination?.type == "ethereum") {
+  //  const result = transfer as history.ToEthereumTransferResult;
+  //  const sourceParachain = result.success?.sourceParachain?.blockHash;
+  //  if (sourceParachain) {
+  //    links.push({ text: `Submitted to source ${source?.name}`, url: "" });
+  //  }
+  //  if (result.success?.assetHub.blockHash) {
+  //    links.push({ text: "Submitted to Asset Hub", url: "" });
+  //  }
+  //  if (result.success?.bridgeHub.messageAcceptedAtHash) {
+  //    links.push({ text: "Message Accepted on Bridge Hub", url: "" });
+  //  }
+  //  if (result.success?.ethereum.beefyBlockHash) {
+  //    links.push({
+  //      text: "Message included by light client on Ethereum",
+  //      url: "",
+  //    });
+  //  }
+  //  if (result.success?.ethereum.transferBlockHash) {
+  //    links.push({ text: "Message dispatched on Ethereum", url: "" });
+  //  }
+  //}
+  //if (destination?.type == "substrate") {
+  //  const result = transfer as history.ToPolkadotTransferResult;
+  //  if (result.success?.ethereum.blockHash) {
+  //    links.push({ text: "Submitted to Gateway", url: "" });
+  //  }
+  //  if (result.success?.bridgeHub.beaconUpdate) {
+  //    links.push({ text: "Included by light client on Bridge Hub", url: "" });
+  //  }
+  //  if (result.success?.bridgeHub.messageReceivedBlockHash) {
+  //    links.push({ text: "Message dispatched on Bridge Hub", url: "" });
+  //  }
+  //  if (result.success?.assetHub.messageQueueProcessedAt) {
+  //    links.push({ text: "Message received on Asset Hub", url: "" });
+  //  }
+  //  if (result.success?.destinationParachain?.messageQueueProcessedAt) {
+  //    links.push({ text: `Message received on ${destination?.name}`, url: "" });
+  //  }
+  //}
+
+  let beneficiary = transfer.info.beneficiaryAddress;
+  if (beneficiary.length === 66) {
+    beneficiary = encodeAddress(
+      transfer.info.beneficiaryAddress,
+      destination?.paraInfo?.ss58Format,
+    );
   }
   return (
     <div className="flex-col">
       <Badge variant="outline" className="p-2 m-2">
-        {TransferStatus[transfer.status]}
+        {history.TransferStatus[transfer.status]}
       </Badge>
+      <p>Transfer to beneficiary {beneficiary}</p>
       <ul className="list-inside list-disc">
         {links.map((link, i) => (
           <li key={i}>
@@ -135,10 +149,9 @@ const transferDetail = (
 };
 
 export default function History() {
-  const transferHistory = useAtomValue(transfersAtom);
   const env = useAtomValue(snowbridgeEnvironmentAtom);
+  const { data: transfers, mutate } = useTransferHistory();
 
-  const transfers = transferHistory.pending.concat(transferHistory.complete);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const params = useParams();
@@ -146,6 +159,7 @@ export default function History() {
 
   let pages = useMemo(() => {
     const pages: Transfer[][] = [];
+    if (transfers === null) return pages;
     for (let i = 0; i < transfers.length; i += ITEMS_PER_PAGE) {
       pages.push(transfers.slice(i, i + ITEMS_PER_PAGE));
     }
@@ -153,7 +167,8 @@ export default function History() {
   }, [transfers]);
 
   useEffect(() => {
-    if (transfers.length > 0) setSelectedItem(transfers[0].id);
+    if (transfers === null) return;
+    //if (transfers.length > 0) setSelectedItem(transfers[0].id);
     const hash = window.location.hash.replace("#", "");
     for (let i = 0; i < transfers.length; ++i) {
       if (transfers[i].id === hash) {
@@ -164,6 +179,8 @@ export default function History() {
     }
   }, [params, setSelectedItem, transfers, setPage]);
 
+  if (transfers == null) return <Loading />;
+
   const start = Math.max(0, page - 2);
   const end = Math.min(pages.length - 1, page + 2);
   const renderPages = pages
@@ -173,7 +190,7 @@ export default function History() {
     .slice(start, end + 1);
 
   return (
-    <>
+    <Suspense fallback={<Loading />}>
       <Card className="w-full md:w-2/3 min-h-[460px]">
         <CardHeader>
           <CardTitle>History</CardTitle>
@@ -252,6 +269,15 @@ export default function History() {
           </Pagination>
         </CardContent>
       </Card>
-    </>
+    </Suspense>
   );
 }
+
+const Loading = () => {
+  return (
+    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
+      Fetching Transfer History{" "}
+      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+    </div>
+  );
+};

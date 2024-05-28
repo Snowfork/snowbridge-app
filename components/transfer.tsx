@@ -13,13 +13,6 @@ import {
   snowbridgeContextEthChainIdAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import {
-  FormData,
-  TransferHistory,
-  TransferStatus,
-  TransferUpdate,
-  transfersAtom,
-} from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Signer } from "@polkadot/api/types";
 import {
@@ -31,7 +24,7 @@ import {
 } from "@snowbridge/api";
 import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { WalletAccount } from "@talismn/connect-wallets";
-import { BrowserProvider, formatUnits, parseUnits } from "ethers";
+import { BrowserProvider, parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
 import { useRouter } from "next/navigation";
 import {
@@ -76,6 +69,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
+import { useTransferHistory } from "@/hooks/useTransferHistory";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -239,6 +233,15 @@ type ErrorInfo = {
   title: string;
   description: string;
   errors: ValidationError[];
+};
+
+type FormData = {
+  source: string;
+  sourceAccount: string;
+  destination: string;
+  token: string;
+  amount: string;
+  beneficiary: string;
 };
 
 const tokenName = (
@@ -431,7 +434,6 @@ const onSubmit = (
   ethereumAccount: string | null,
   ethereumProvider: BrowserProvider | null,
   tokenMetadata: ERC20Metadata | null,
-  [_, setTransfer]: [TransferHistory, (_: TransferUpdate) => void],
   appRouter: AppRouter,
   form: UseFormReturn<any>,
 ): ((data: FormData) => Promise<void>) => {
@@ -493,19 +495,7 @@ const onSubmit = (
 
           const result = await toEthereum.send(context, walletSigner, plan);
           console.log(result);
-          setTransfer({
-            action: "add",
-            transfer: {
-              id: transferId,
-              when: new Date().toISOString(),
-              status: TransferStatus.InProgress,
-              errorCount: 0,
-              tokenName:
-                tokenName(destination.erc20tokensReceivable, data) ?? "unknown",
-              form: data,
-              data: result,
-            },
-          });
+
           break;
         }
         case "ethereum": {
@@ -531,6 +521,7 @@ const onSubmit = (
             destination.paraInfo.paraId,
             amountInSmallestUnit,
             destination.paraInfo.destinationFeeDOT,
+            { maxConsumers: destination.paraInfo.maxConsumers },
           );
           console.log(plan);
           if (plan.failure) {
@@ -546,19 +537,6 @@ const onSubmit = (
 
           const result = await toPolkadot.send(context, signer, plan);
           console.log(result);
-          setTransfer({
-            action: "add",
-            transfer: {
-              id: transferId,
-              when: new Date().toISOString(),
-              status: TransferStatus.InProgress,
-              errorCount: 0,
-              tokenName:
-                tokenName(destination.erc20tokensReceivable, data) ?? "unknown",
-              form: data,
-              data: result,
-            },
-          });
           break;
         }
         default:
@@ -603,13 +581,14 @@ export const TransferForm: FC = () => {
   const context = useAtomValue(snowbridgeContextAtom);
   const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
-  const transferHistory = useAtom(transfersAtom);
   const router = useRouter();
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
+
+  const { mutate } = useTransferHistory();
 
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
@@ -1007,7 +986,6 @@ export const TransferForm: FC = () => {
                   ethereumAccount,
                   ethereumProvider,
                   tokenMetadata,
-                  transferHistory,
                   router,
                   form,
                 ),

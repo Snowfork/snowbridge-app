@@ -10,7 +10,6 @@ import {
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
-import { useTrackHistory } from "@/hooks/useTrackHistory";
 import { trimAccount } from "@/lib/utils";
 import {
   ethereumWalletAuthorizedAtom,
@@ -117,7 +116,6 @@ const InstallMetamaskDialog: FC<{
 export const Menu: FC = () => {
   useEthereumProvider();
   useConnectPolkadotWallet();
-  useTrackHistory();
   const [_, contextLoading, contextError] = useSnowbridgeContext();
 
   const ethereumProvider = useAtomValue(ethersProviderAtom);

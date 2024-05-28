@@ -18,6 +18,7 @@ Create an `.env.local` to set the Alchemy key.
 
 ```env
 NEXT_PUBLIC_ALCHEMY_KEY=...
+NEXT_PUBLIC_SUBSCAN_KEY=...
 ```
 
 Run the development server:
@@ -27,4 +28,3 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
