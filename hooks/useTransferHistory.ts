@@ -10,7 +10,7 @@ export const REFRESH_INTERVAL: number = 15 * 60 * 1000; // 15 minutes
 
 export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
 export const ETHEREUM_HISTORY_BLOCKS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
-export const POLKADOT_BLOCK_TIME_SECONDS = 12;
+export const POLKADOT_BLOCK_TIME_SECONDS = 9;
 export const POLKADOT_HISTORY_BLOCKS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
 
 export type Transfer =
