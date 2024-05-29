@@ -220,7 +220,7 @@ const transferTitle = (
       : null;
   if (metaData !== null) {
     amount = formatBalance(
-      parseUnits(transfer.info.amount, metaData.decimals),
+      parseUnits(transfer.info.amount, 0),
       Number(metaData.decimals),
     );
     tokenName = metaData.symbol;
@@ -231,6 +231,7 @@ const transferTitle = (
       : history.TransferStatus.Pending == transfer.status
         ? ""
         : "bg-secondary";
+
   return (
     <div className="grid grid-cols-5 justify-stretch w-full">
       <Badge
@@ -239,7 +240,7 @@ const transferTitle = (
       >
         {history.TransferStatus[transfer.status]}
       </Badge>
-      <p className="col-span-4 place-self-start">
+      <p className="col-span-4 place-self-start text-left">
         {amount +
           " " +
           (tokenName ?? "unknown") +
