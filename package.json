@@ -26,7 +26,7 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toggle": "^1.0.3",
-    "@snowbridge/api": "^0.1.5",
+    "@snowbridge/api": "^0.1.6",
     "@talismn/connect-components": "^1.1.8",
     "@talismn/connect-wallets": "^1.2.5",
     "@types/big.js": "^6.2.2",

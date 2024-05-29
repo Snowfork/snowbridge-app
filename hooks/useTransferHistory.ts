@@ -8,6 +8,11 @@ import useSWR from "swr";
 
 export const REFRESH_INTERVAL: number = 15 * 60 * 1000; // 15 minutes
 
+export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
+export const ETHEREUM_HISTORY_BLOCKS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
+export const POLKADOT_BLOCK_TIME_SECONDS = 12;
+export const POLKADOT_HISTORY_BLOCKS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
+
 export type Transfer =
   | history.ToEthereumTransferResult
   | history.ToPolkadotTransferResult;
@@ -20,12 +25,10 @@ const fetchTranferHistory = async ([env, context]: [
   if (!env.config.SUBSCAN_API) return [];
   const k = process.env.NEXT_PUBLIC_SUBSCAN_KEY || "";
 
-  const ethBlockTimeSeconds = 12;
-  const polkadotBlockTimeSeconds = 9;
   const ethereumSearchPeriodBlocks =
-    (60 * 60 * 24 * 7 * 2) / ethBlockTimeSeconds; // 2 Weeks
+    ETHEREUM_HISTORY_BLOCKS / ETHEREUM_BLOCK_TIME_SECONDS;
   const polkadotSearchPeriodBlocks =
-    (60 * 60 * 24 * 7 * 2) / polkadotBlockTimeSeconds; // 2 Weeks
+    POLKADOT_HISTORY_BLOCKS / POLKADOT_BLOCK_TIME_SECONDS;
 
   const assetHubScan = subscan.createApi(
     env.config.SUBSCAN_API.ASSET_HUB_URL,
