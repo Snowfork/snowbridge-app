@@ -17,7 +17,7 @@ const fetchTranferHistory = async ([env, context]: [
   Context | null,
 ]): Promise<Transfer[] | null> => {
   if (!context) return null;
-  if (!env.config.SUBSCAN_API) return null;
+  if (!env.config.SUBSCAN_API) return [];
   const k = process.env.NEXT_PUBLIC_SUBSCAN_KEY || "";
 
   const ethBlockTimeSeconds = 12;
@@ -102,7 +102,7 @@ const fetchTranferHistory = async ([env, context]: [
 export const useTransferHistory = () => {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
-  return useSWR([env, context], fetchTranferHistory, {
+  return useSWR([env, context, "history"], fetchTranferHistory, {
     refreshInterval: REFRESH_INTERVAL,
     revalidateOnFocus: false,
     revalidateOnMount: false,

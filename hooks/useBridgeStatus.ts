@@ -201,7 +201,7 @@ export const useBridgeStatus = (
   env: SnowbridgeEnvironment,
   context: Context | null,
 ) => {
-  return useSWR([env, context], fetchStatus, {
+  return useSWR([env, context, "bridgeStatus"], fetchStatus, {
     refreshInterval: REFRESH_INTERVAL,
     revalidateOnFocus: false,
     revalidateOnMount: false,

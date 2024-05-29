@@ -8,6 +8,7 @@ import {
 } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
+  assetErc20MetaDataAtom,
   assetHubNativeTokenAtom,
   snowbridgeContextAtom,
   snowbridgeContextEthChainIdAtom,
@@ -22,7 +23,6 @@ import {
   toEthereum,
   toPolkadot,
 } from "@snowbridge/api";
-import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { BrowserProvider, parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
@@ -75,11 +75,6 @@ type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
   | toPolkadot.SendValidationError
   | toEthereum.SendValidationError;
-type ERC20Metadata = {
-  name: string;
-  symbol: string;
-  decimals: bigint;
-};
 
 const formSchema = z.object({
   source: z.string().min(1, "Select source."),
@@ -111,7 +106,7 @@ const getTokenBalance = async (
   context: Context,
   token: string,
   ethereumChainId: bigint,
-  source: TransferLocation,
+  source: environment.TransferLocation,
   sourceAccount: string,
 ): Promise<{
   balance: bigint;
@@ -149,10 +144,10 @@ const getTokenBalance = async (
 const updateBalance = (
   context: Context,
   ethereumChainId: number,
-  source: TransferLocation,
+  source: environment.TransferLocation,
   sourceAccount: string,
   token: string,
-  tokenMetadata: ERC20Metadata,
+  tokenMetadata: assets.ERC20Metadata,
   setBalanceDisplay: (_: string) => void,
   setError: (_: ErrorInfo | null) => void,
 ) => {
@@ -254,7 +249,10 @@ const tokenName = (
   return token !== undefined ? token[0] : undefined;
 };
 
-const parseAmount = (decimals: string, metadata: ERC20Metadata): bigint => {
+const parseAmount = (
+  decimals: string,
+  metadata: assets.ERC20Metadata,
+): bigint => {
   return parseUnits(decimals, metadata.decimals);
 };
 
@@ -433,7 +431,7 @@ const onSubmit = (
   polkadotAccount: WalletAccount | null,
   ethereumAccount: string | null,
   ethereumProvider: BrowserProvider | null,
-  tokenMetadata: ERC20Metadata | null,
+  tokenMetadata: assets.ERC20Metadata | null,
   appRouter: AppRouter,
   form: UseFormReturn<any>,
 ): ((data: FormData) => Promise<void>) => {
@@ -580,6 +578,7 @@ export const TransferForm: FC = () => {
   const ethereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom);
+  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const router = useRouter();
 
@@ -605,9 +604,8 @@ export const TransferForm: FC = () => {
   const [token, setToken] = useState(
     destination.erc20tokensReceivable[tokens[0]],
   );
-  const [tokenMetadata, setTokenMetadata] = useState<ERC20Metadata | null>(
-    null,
-  );
+  const [tokenMetadata, setTokenMetadata] =
+    useState<assets.ERC20Metadata | null>(null);
   const [feeDisplay, setFeeDisplay] = useState<string>("unknown");
   const [balanceDisplay, setBalanceDisplay] = useState<string>("unknown");
 
@@ -740,6 +738,11 @@ export const TransferForm: FC = () => {
 
   useEffect(() => {
     if (context == null) return;
+    if (assetErc20MetaData !== null && assetErc20MetaData[token]) {
+      setTokenMetadata(assetErc20MetaData[token]);
+      return;
+    }
+
     assets
       .assetErc20Metadata(context, token)
       .then((metadata) => {
@@ -754,7 +757,7 @@ export const TransferForm: FC = () => {
           errors: [],
         });
       });
-  }, [context, token, setTokenMetadata]);
+  }, [context, token, setTokenMetadata, assetErc20MetaData]);
 
   const watchSourceAccount = form.watch("sourceAccount");
 

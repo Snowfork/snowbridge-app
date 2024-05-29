@@ -1,15 +1,18 @@
 import {
+  assetErc20MetaDataAtom,
   assetHubNativeTokenAtom,
   snowbridgeContextAtom,
   snowbridgeContextEthChainIdAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import { Context, assets, contextFactory } from "@snowbridge/api";
-import { Config } from "@snowbridge/api/dist/environment";
+import { Context, assets, contextFactory, environment } from "@snowbridge/api";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 
-const connectSnowbridgeContext = async (config: Config) => {
+const connectSnowbridgeContext = async ({
+  config,
+  locations,
+}: environment.SnowbridgeEnvironment) => {
   const k = process.env.NEXT_PUBLIC_ALCHEMY_KEY || "";
   const context = await contextFactory({
     ethereum: {
@@ -30,13 +33,34 @@ const connectSnowbridgeContext = async (config: Config) => {
     },
   });
 
-  const chainId: number = Number(
-    (await context.ethereum.api.getNetwork()).chainId.toString(),
-  );
-  const assetHubNativeToken = await assets.parachainNativeToken(
-    context.polkadot.api.assetHub,
-  );
-  return { context, chainId, assetHubNativeToken };
+  const tokens = [
+    ...new Set(
+      locations
+        .flatMap((l) => Object.values(l.erc20tokensReceivable))
+        .map((l) => l.toLowerCase()),
+    ),
+  ];
+  const [network, assetHubNativeToken, assetMetadataList] = await Promise.all([
+    context.ethereum.api.getNetwork(),
+    assets.parachainNativeToken(context.polkadot.api.assetHub),
+    Promise.all(
+      tokens.map((t) =>
+        assets
+          .assetErc20Metadata(context, t)
+          .then((m) => ({ token: t, metadata: m })),
+      ),
+    ),
+  ]);
+
+  const assetMetadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
+  assetMetadataList.forEach((am) => (assetMetadata[am.token] = am.metadata));
+
+  return {
+    context,
+    chainId: Number(network.chainId.toString()),
+    assetHubNativeToken,
+    assetMetadata,
+  };
 };
 
 export const useSnowbridgeContext = (): [
@@ -47,20 +71,22 @@ export const useSnowbridgeContext = (): [
   const [context, setContext] = useAtom(snowbridgeContextAtom);
   const setChainId = useSetAtom(snowbridgeContextEthChainIdAtom);
   const setAssetHubNativeToken = useSetAtom(assetHubNativeTokenAtom);
+  const setAssetErc20MetaData = useSetAtom(assetErc20MetaDataAtom);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { config } = useAtomValue(snowbridgeEnvironmentAtom);
+  const env = useAtomValue(snowbridgeEnvironmentAtom);
 
   useEffect(() => {
     setLoading(true);
-    connectSnowbridgeContext(config)
+    connectSnowbridgeContext(env)
       .then((result) => {
         setLoading(false);
         setContext(result.context);
         setChainId(result.chainId);
         setAssetHubNativeToken(result.assetHubNativeToken);
+        setAssetErc20MetaData(result.assetMetadata);
       })
       .catch((error) => {
         let message = "Unknown Error";
@@ -69,8 +95,9 @@ export const useSnowbridgeContext = (): [
         setError(message);
       });
   }, [
-    config,
+    env,
     setAssetHubNativeToken,
+    setAssetErc20MetaData,
     setChainId,
     setContext,
     setError,
