@@ -2,6 +2,7 @@ import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
+import { Transfer } from "@/store/transferHistory";
 import { Context, environment, history, subscan } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
@@ -12,10 +13,6 @@ export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
 export const ETHEREUM_HISTORY_BLOCKS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
 export const POLKADOT_BLOCK_TIME_SECONDS = 9;
 export const POLKADOT_HISTORY_BLOCKS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
-
-export type Transfer =
-  | history.ToEthereumTransferResult
-  | history.ToPolkadotTransferResult;
 
 const fetchTranferHistory = async ([env, context]: [
   environment.SnowbridgeEnvironment,

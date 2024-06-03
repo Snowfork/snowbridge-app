@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { formatBalance, trimAccount } from "@/lib/utils";
 import {
   ethereumAccountAtom,
@@ -14,18 +15,24 @@ import {
   snowbridgeContextEthChainIdAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
+import {
+  PendingTransferAction,
+  Transfer,
+  transfersPendingLocalAtom,
+} from "@/store/transferHistory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Signer } from "@polkadot/api/types";
 import {
   Context,
   assets,
   environment,
+  history,
   toEthereum,
   toPolkadot,
 } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { BrowserProvider, parseUnits } from "ethers";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { useRouter } from "next/navigation";
 import {
   Dispatch,
@@ -69,7 +76,6 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
-import { useTransferHistory } from "@/hooks/useTransferHistory";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -434,6 +440,8 @@ const onSubmit = (
   tokenMetadata: assets.ERC20Metadata | null,
   appRouter: AppRouter,
   form: UseFormReturn<any>,
+  refreshHistory: () => void,
+  addPendingTransaction: (_: PendingTransferAction) => void,
 ): ((data: FormData) => Promise<void>) => {
   return async (data) => {
     try {
@@ -455,7 +463,8 @@ const onSubmit = (
       }
 
       setBusyMessage("Sending");
-      const transferId = crypto.randomUUID();
+      let messageId: string;
+      let transfer: Transfer;
       switch (source.type) {
         case "substrate": {
           if (destination.type !== "ethereum")
@@ -492,8 +501,53 @@ const onSubmit = (
           }
 
           const result = await toEthereum.send(context, walletSigner, plan);
-          console.log(result);
+          messageId = result.success?.messageId || "";
+          transfer = {
+            id: messageId,
+            status: history.TransferStatus.Pending,
+            info: {
+              amount: amountInSmallestUnit.toString(),
+              sourceAddress: data.sourceAccount,
+              beneficiaryAddress: data.beneficiary,
+              tokenAddress: data.token,
+              when: new Date(),
+            },
+            submitted: {
+              block_hash:
+                result.success?.sourceParachain?.blockHash ??
+                result.success?.assetHub.blockHash ??
+                "",
+              block_num:
+                result.success?.sourceParachain?.blockNumber ??
+                result.success?.assetHub.blockNumber ??
+                0,
+              block_timestamp: 0,
+              messageId: messageId,
+              account_id: data.source,
+              bridgeHubMessageId: "",
+              extrinsic_hash:
+                result.success?.sourceParachain?.txHash ??
+                result.success?.assetHub.txHash ??
+                "",
+              extrinsic_index:
+                result.success?.sourceParachain !== undefined
+                  ? result.success.sourceParachain.blockNumber.toString() +
+                    "-" +
+                    result.success.sourceParachain.txIndex.toString()
+                  : result.success?.assetHub !== undefined
+                    ? result.success?.assetHub?.blockNumber.toString() +
+                      "-" +
+                      result.success?.assetHub.txIndex.toString()
+                    : "unknown",
 
+              relayChain: {
+                block_hash: result.success?.relayChain.submittedAtHash ?? "",
+                block_num: 0,
+              },
+              success: true,
+            },
+          };
+          console.log(result);
           break;
         }
         case "ethereum": {
@@ -534,6 +588,31 @@ const onSubmit = (
           }
 
           const result = await toPolkadot.send(context, signer, plan);
+          messageId = result.success?.messageId || "";
+          transfer = {
+            id: messageId,
+            status: history.TransferStatus.Pending,
+            info: {
+              amount: amountInSmallestUnit.toString(),
+              sourceAddress: data.sourceAccount,
+              beneficiaryAddress: data.beneficiary,
+              tokenAddress: data.token,
+              when: new Date(),
+              destinationParachain: destination.paraInfo.paraId,
+              destinationFee: destination.paraInfo.destinationFeeDOT.toString(),
+            },
+            submitted: {
+              blockHash: result.success?.ethereum.blockHash ?? "",
+              blockNumber: result.success?.ethereum.blockNumber ?? 0,
+              channelId: "",
+              messageId: messageId,
+              logIndex: 0,
+              transactionIndex: 0,
+              transactionHash: result.success?.ethereum.transactionHash ?? "",
+              nonce: 0,
+              parentBeaconSlot: 0,
+            },
+          };
           console.log(result);
           break;
         }
@@ -541,11 +620,17 @@ const onSubmit = (
           throw Error(`Invalid form state: cannot infer source type.`);
       }
       form.reset();
-      const transferUrl = `/history#${transferId}`;
+      const transferUrl = `/history#${messageId}`;
       appRouter.prefetch(transferUrl);
+      addPendingTransaction({
+        kind: "add",
+        transfer,
+      });
+      refreshHistory();
       toast.info("Transfer Successful", {
         position: "bottom-center",
         closeButton: true,
+        duration: 60000,
         id: "transfer_success",
         description: "Token transfer was succesfully initiated.",
         important: true,
@@ -587,8 +672,9 @@ export const TransferForm: FC = () => {
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
 
-  const { mutate } = useTransferHistory();
+  const { mutate: refreshHistory } = useTransferHistory();
 
+  const transfersPendingLocal = useSetAtom(transfersPendingLocalAtom);
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
   const [source, setSource] = useState(snowbridgeEnvironment.locations[0]);
@@ -991,6 +1077,8 @@ export const TransferForm: FC = () => {
                   tokenMetadata,
                   router,
                   form,
+                  refreshHistory,
+                  transfersPendingLocal,
                 ),
               )}
               className="space-y-2"

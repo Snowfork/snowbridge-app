@@ -23,19 +23,24 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Transfer, useTransferHistory } from "@/hooks/useTransferHistory";
+import { useTransferHistory } from "@/hooks/useTransferHistory";
+import { cn, formatBalance } from "@/lib/utils";
 import {
   assetErc20MetaDataAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
+import {
+  Transfer,
+  transferHistoryCacheAtom,
+  transfersPendingLocalAtom,
+} from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
-import { history, environment, assets } from "@snowbridge/api";
-import { useAtomValue } from "jotai";
-import { LucideLoaderCircle } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { assets, environment, history } from "@snowbridge/api";
 import { parseUnits } from "ethers";
-import { cn, formatBalance } from "@/lib/utils";
+import { useAtom, useAtomValue } from "jotai";
+import { LucideLoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 const ITEMS_PER_PAGE = 5;
 const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
@@ -347,36 +352,80 @@ const transferDetail = (
 export default function History() {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom) ?? {};
+
+  const [transferHistoryCache, setTransferHistoryCache] = useAtom(
+    transferHistoryCacheAtom,
+  );
+  const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
+    transfersPendingLocalAtom,
+  );
   const { data: transfers, mutate } = useTransferHistory();
+  useEffect(() => {
+    if (transfers === null) return;
+    setTransferHistoryCache(transfers);
+  }, [transfers, setTransferHistoryCache]);
+
+  useEffect(() => {
+    for (let i = 0; i < transfersPendingLocal.length; ++i) {
+      if (
+        transferHistoryCache.find(
+          (h) =>
+            h.id.toLowerCase() === transfersPendingLocal[i].id.toLowerCase(),
+        )
+      ) {
+        setTransfersPendingLocal({
+          kind: "remove",
+          transfer: transfersPendingLocal[i],
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transferHistoryCache, setTransfersPendingLocal]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const params = useParams();
   const router = useRouter();
 
-  let pages = useMemo(() => {
+  const pages = useMemo(() => {
+    const allTransfers = [...transferHistoryCache];
+    for (const pending of transfersPendingLocal.toReversed()) {
+      if (allTransfers.find((t) => t.id === pending.id)) {
+        continue;
+      }
+      allTransfers.unshift(pending);
+    }
+    if (allTransfers.length == 0) {
+      return null;
+    }
     const pages: Transfer[][] = [];
-    if (transfers === null) return pages;
-    for (let i = 0; i < transfers.length; i += ITEMS_PER_PAGE) {
-      pages.push(transfers.slice(i, i + ITEMS_PER_PAGE));
+    for (let i = 0; i < allTransfers.length; i += ITEMS_PER_PAGE) {
+      pages.push(allTransfers.slice(i, i + ITEMS_PER_PAGE));
     }
     return pages;
-  }, [transfers]);
+  }, [transferHistoryCache, transfersPendingLocal]);
 
-  useEffect(() => {
-    if (transfers === null) return;
-    //if (transfers.length > 0) setSelectedItem(transfers[0].id);
+  useMemo(() => {
+    if (pages === null || pages.length == 0) {
+      setPage(0);
+      setSelectedItem(null);
+      return;
+    }
     const hash = window.location.hash.replace("#", "");
-    for (let i = 0; i < transfers.length; ++i) {
-      if (transfers[i].id === hash) {
-        setSelectedItem(transfers[i].id);
-        setPage(Math.floor(i / ITEMS_PER_PAGE));
-        break;
+    for (let p = 0; p < pages.length; p++) {
+      for (let t = 0; t < pages[p].length; t++) {
+        if (pages[p][t].id === hash) {
+          setPage(p);
+          setSelectedItem(pages[p][t].id);
+          return;
+        }
       }
     }
-  }, [params, setSelectedItem, transfers, setPage]);
+    setPage(0);
+    setSelectedItem(pages[0].length > 0 ? pages[0][0].id : null);
+    return;
+  }, [pages, setSelectedItem, setPage]);
 
-  if (transfers == null) return <Loading />;
+  if (pages == null) return <Loading />;
 
   const start = Math.max(0, page - 2);
   const end = Math.min(pages.length - 1, page + 2);
@@ -399,6 +448,7 @@ export default function History() {
             className="w-full"
             value={selectedItem ?? undefined}
             onValueChange={(v) => {
+              setSelectedItem(v);
               router.push("#" + v);
             }}
           >
@@ -415,23 +465,34 @@ export default function History() {
           <div
             className={
               "justify-self-center align-middle " +
-              (transfers.length > 0 ? "hidden" : "")
+              (transferHistoryCache.length > 0 ? "hidden" : "")
             }
           >
             <p className="text-muted-foreground text-center">No history.</p>
           </div>
-          <Pagination className={transfers.length == 0 ? "hidden" : ""}>
+          <Pagination
+            className={transferHistoryCache.length == 0 ? "hidden" : ""}
+          >
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
-                  onClick={() =>
-                    router.push("#" + pages[Math.max(0, page - 1)][0].id)
-                  }
+                  onClick={() => {
+                    const p = Math.max(0, page - 1);
+                    const id = pages[p][0].id;
+                    router.push("#" + id);
+                    setPage(p);
+                    setSelectedItem(id);
+                  }}
                 />
               </PaginationItem>
               <PaginationItem>
                 <PaginationLink
-                  onClick={() => router.push("#" + pages[0][0].id)}
+                  onClick={() => {
+                    const id = pages[0][0].id;
+                    router.push("#" + id);
+                    setPage(0);
+                    setSelectedItem(id);
+                  }}
                 >
                   First
                 </PaginationLink>
@@ -440,7 +501,12 @@ export default function History() {
                 <PaginationItem key={index + 1}>
                   <PaginationLink
                     isActive={page == index}
-                    onClick={() => router.push("#" + pages[index][0].id)}
+                    onClick={() => {
+                      const id = pages[index][0].id;
+                      router.push("#" + id);
+                      setPage(index);
+                      setSelectedItem(id);
+                    }}
                   >
                     {index + 1}
                   </PaginationLink>
@@ -448,20 +514,26 @@ export default function History() {
               ))}
               <PaginationItem>
                 <PaginationLink
-                  onClick={() =>
-                    router.push("#" + pages[pages.length - 1][0].id)
-                  }
+                  onClick={() => {
+                    const p = pages.length - 1;
+                    const id = pages[p][0].id;
+                    router.push("#" + id);
+                    setPage(p);
+                    setSelectedItem(id);
+                  }}
                 >
                   Last
                 </PaginationLink>
               </PaginationItem>
               <PaginationItem>
                 <PaginationNext
-                  onClick={() =>
-                    router.push(
-                      "#" + pages[Math.min(pages.length - 1, page + 1)][0].id,
-                    )
-                  }
+                  onClick={() => {
+                    const p = Math.min(pages.length - 1, page + 1);
+                    const id = pages[p][0].id;
+                    router.push("#" + id);
+                    setPage(p);
+                    setSelectedItem(id);
+                  }}
                 />
               </PaginationItem>
             </PaginationContent>
