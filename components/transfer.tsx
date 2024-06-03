@@ -622,6 +622,7 @@ const onSubmit = (
       form.reset();
       const transferUrl = `/history#${messageId}`;
       appRouter.prefetch(transferUrl);
+      transfer.isWalletTransaction = true;
       addPendingTransaction({
         kind: "add",
         transfer,

@@ -42,6 +42,7 @@ import {
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assets, environment, history } from "@snowbridge/api";
+import { WalletAccount } from "@talismn/connect-wallets";
 import { parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
 import {
@@ -65,6 +66,26 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     subscan_ah: "https://assethub-polkadot.subscan.io/",
     subscan_bh: "https://bridgehub-polkadot.subscan.io/",
   },
+};
+
+const isWalletTransaction = (
+  polkadotAccounts: WalletAccount[] | null,
+  ethereumAccounts: string[] | null,
+  sourceAddress: string,
+  beneficiaryAddress: string,
+): boolean => {
+  const polkadotAccount = (polkadotAccounts ?? []).find(
+    (acc) =>
+      beneficiaryAddress.trim().toLowerCase() ===
+        acc.address.trim().toLowerCase() ||
+      sourceAddress.trim().toLowerCase() == acc.address.trim().toLowerCase(),
+  );
+  const ethereumAccount = (ethereumAccounts ?? []).find(
+    (acc) =>
+      beneficiaryAddress.trim().toLowerCase() === acc.trim().toLowerCase() ||
+      sourceAddress.trim().toLowerCase() == acc.trim().toLowerCase(),
+  );
+  return polkadotAccount !== undefined || ethereumAccount !== undefined;
 };
 
 const getEnvDetail = (
@@ -433,22 +454,12 @@ export default function History() {
       allTransfers.push(pending);
     }
     for (const transfer of transferHistoryCache) {
-      const polkadotAccount = (polkadotAccounts ?? []).find(
-        (acc) =>
-          transfer.info.beneficiaryAddress.trim().toLowerCase() ===
-            acc.address.trim().toLowerCase() ||
-          transfer.info.sourceAddress.trim().toLowerCase() ==
-            acc.address.trim().toLowerCase(),
+      transfer.isWalletTransaction = isWalletTransaction(
+        polkadotAccounts,
+        ethereumAccounts,
+        transfer.info.sourceAddress,
+        transfer.info.beneficiaryAddress,
       );
-      const ethereumAccount = (ethereumAccounts ?? []).find(
-        (acc) =>
-          transfer.info.beneficiaryAddress.trim().toLowerCase() ===
-            acc.trim().toLowerCase() ||
-          transfer.info.sourceAddress.trim().toLowerCase() ==
-            acc.trim().toLowerCase(),
-      );
-      transfer.isWalletTransaction =
-        polkadotAccount !== undefined || ethereumAccount !== undefined;
       if (!showGlobal && !transfer.isWalletTransaction) continue;
 
       allTransfers.push(transfer);
