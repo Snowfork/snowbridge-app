@@ -25,7 +25,7 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
-import { LucideLoaderCircle } from "lucide-react";
+import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { FC, Suspense } from "react";
 
 const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
@@ -63,7 +63,14 @@ const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
 const StatusCard = () => {
   const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
-  const { data: status, mutate } = useBridgeStatus(snowbridgeEnv, context);
+  const {
+    data: status,
+    mutate,
+    isLoading: isStatusLoading,
+    isValidating: isStatusValidating,
+  } = useBridgeStatus(snowbridgeEnv, context);
+
+  const isRefreshing = isStatusLoading || isStatusValidating;
   const hash = useWindowHash();
   const diagnostic = hash === "diagnostic";
 
@@ -92,6 +99,19 @@ const StatusCard = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="flex w-full">
+          <Button
+            variant="link"
+            size="sm"
+            disabled={isRefreshing}
+            onClick={() => mutate()}
+          >
+            <div className="flex gap-2 place-items-center">
+              <LucideRefreshCw />
+              <p>{isRefreshing ? "Refreshing" : "Refresh"}</p>
+            </div>
+          </Button>
+        </div>
         <div className="grid grid-cols-2 justify-start pb-2">
           <h1 className="text-2xl font-semibold col-span-2 py-2">Summary</h1>
           <hr className="col-span-2 py-2" />
@@ -231,8 +251,6 @@ const StatusCard = () => {
             </Table>
           </div>
         </div>
-        <br />
-        <Button onClick={() => mutate()}>Refresh</Button>
       </CardContent>
     </Card>
   );

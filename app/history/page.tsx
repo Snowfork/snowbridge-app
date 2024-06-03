@@ -23,7 +23,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Toggle } from "@/components/ui/toggle";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
+import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn, formatBalance } from "@/lib/utils";
 import {
   assetErc20MetaDataAtom,
@@ -32,13 +34,14 @@ import {
 import {
   Transfer,
   transferHistoryCacheAtom,
+  transferHistoryShowGlobal,
   transfersPendingLocalAtom,
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assets, environment, history } from "@snowbridge/api";
 import { parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideLoaderCircle } from "lucide-react";
+import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
@@ -359,7 +362,19 @@ export default function History() {
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
   );
-  const { data: transfers, mutate } = useTransferHistory();
+  const {
+    data: transfers,
+    mutate,
+    isLoading: isTransfersLoading,
+    isValidating: isTransfersValidating,
+    error: transfersError,
+  } = useTransferHistory();
+  const isRefreshing = isTransfersLoading || isTransfersValidating;
+
+  const [showGlobal, setShowGlobal] = useAtom(transferHistoryShowGlobal);
+
+  const hashItem = useWindowHash();
+
   useEffect(() => {
     if (transfers === null) return;
     setTransferHistoryCache(transfers);
@@ -379,6 +394,7 @@ export default function History() {
         });
       }
     }
+    // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transferHistoryCache, setTransfersPendingLocal]);
 
@@ -387,12 +403,15 @@ export default function History() {
   const router = useRouter();
 
   const pages = useMemo(() => {
-    const allTransfers = [...transferHistoryCache];
+    let allTransfers = [...transferHistoryCache];
     for (const pending of transfersPendingLocal.toReversed()) {
       if (allTransfers.find((t) => t.id === pending.id)) {
         continue;
       }
       allTransfers.unshift(pending);
+    }
+    if (!showGlobal) {
+      allTransfers = allTransfers.filter((t) => true);
     }
     if (allTransfers.length == 0) {
       return null;
@@ -402,7 +421,7 @@ export default function History() {
       pages.push(allTransfers.slice(i, i + ITEMS_PER_PAGE));
     }
     return pages;
-  }, [transferHistoryCache, transfersPendingLocal]);
+  }, [showGlobal, transferHistoryCache, transfersPendingLocal]);
 
   useMemo(() => {
     if (pages === null || pages.length == 0) {
@@ -410,10 +429,14 @@ export default function History() {
       setSelectedItem(null);
       return;
     }
-    const hash = window.location.hash.replace("#", "");
+    if (hashItem === null || hashItem.trim().length === 0) {
+      setPage(0);
+      setSelectedItem(null);
+    }
+
     for (let p = 0; p < pages.length; p++) {
       for (let t = 0; t < pages[p].length; t++) {
-        if (pages[p][t].id === hash) {
+        if (pages[p][t].id === hashItem) {
           setPage(p);
           setSelectedItem(pages[p][t].id);
           return;
@@ -421,9 +444,9 @@ export default function History() {
       }
     }
     setPage(0);
-    setSelectedItem(pages[0].length > 0 ? pages[0][0].id : null);
+    setSelectedItem(null);
     return;
-  }, [pages, setSelectedItem, setPage]);
+  }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (pages == null) return <Loading />;
 
@@ -440,9 +463,38 @@ export default function History() {
       <Card className="w-full md:w-2/3 min-h-[460px]">
         <CardHeader>
           <CardTitle>History</CardTitle>
-          <CardDescription>Transfers history.</CardDescription>
+          <CardDescription>
+            {showGlobal
+              ? "Global transfer history for the past two weeks."
+              : "My tranfer history for the past two weeks."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex w-full">
+            <Button
+              variant="link"
+              size="sm"
+              disabled={isRefreshing}
+              onClick={() => mutate()}
+            >
+              <div className="flex gap-2 place-items-center">
+                <LucideRefreshCw />
+                <p>{isRefreshing ? "Refreshing" : "Refresh"}</p>
+              </div>
+            </Button>
+            <Toggle
+              className="flex gap-2"
+              defaultPressed={false}
+              pressed={showGlobal}
+              onPressedChange={(p) => setShowGlobal(p)}
+              size="sm"
+            >
+              <div className="flex gap-2 place-items-center">
+                <LucideGlobe />
+                <p>Show global Transfers</p>
+              </div>
+            </Toggle>
+          </div>
           <Accordion
             type="single"
             className="w-full"
@@ -465,33 +517,27 @@ export default function History() {
           <div
             className={
               "justify-self-center align-middle " +
-              (transferHistoryCache.length > 0 ? "hidden" : "")
+              (pages.length > 0 ? "hidden" : "")
             }
           >
             <p className="text-muted-foreground text-center">No history.</p>
           </div>
-          <Pagination
-            className={transferHistoryCache.length == 0 ? "hidden" : ""}
-          >
+          <Pagination className={pages.length == 0 ? "hidden" : ""}>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => {
                     const p = Math.max(0, page - 1);
-                    const id = pages[p][0].id;
-                    router.push("#" + id);
                     setPage(p);
-                    setSelectedItem(id);
+                    setSelectedItem(null);
                   }}
                 />
               </PaginationItem>
               <PaginationItem>
                 <PaginationLink
                   onClick={() => {
-                    const id = pages[0][0].id;
-                    router.push("#" + id);
                     setPage(0);
-                    setSelectedItem(id);
+                    setSelectedItem(null);
                   }}
                 >
                   First
@@ -502,10 +548,8 @@ export default function History() {
                   <PaginationLink
                     isActive={page == index}
                     onClick={() => {
-                      const id = pages[index][0].id;
-                      router.push("#" + id);
                       setPage(index);
-                      setSelectedItem(id);
+                      setSelectedItem(null);
                     }}
                   >
                     {index + 1}
@@ -516,10 +560,8 @@ export default function History() {
                 <PaginationLink
                   onClick={() => {
                     const p = pages.length - 1;
-                    const id = pages[p][0].id;
-                    router.push("#" + id);
                     setPage(p);
-                    setSelectedItem(id);
+                    setSelectedItem(null);
                   }}
                 >
                   Last
@@ -529,18 +571,13 @@ export default function History() {
                 <PaginationNext
                   onClick={() => {
                     const p = Math.min(pages.length - 1, page + 1);
-                    const id = pages[p][0].id;
-                    router.push("#" + id);
                     setPage(p);
-                    setSelectedItem(id);
+                    setSelectedItem(null);
                   }}
                 />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-          <div className="flex w-full place-content-center pt-2">
-            <Button onClick={() => mutate()}>Refresh</Button>
-          </div>
         </CardContent>
       </Card>
     </Suspense>

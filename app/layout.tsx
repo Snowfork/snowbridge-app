@@ -6,9 +6,8 @@ import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { Provider } from "jotai";
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Inter } from "next/font/google";
-import { TermsOfUse } from "@/components/termsOfUse";
+import Image from "next/image";
 
 const inter = Inter({ subsets: ["latin"] });
 
