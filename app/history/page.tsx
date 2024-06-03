@@ -1,5 +1,6 @@
 "use client";
 
+import { ErrorDialog } from "@/components/errorDialog";
 import {
   Accordion,
   AccordionContent,
@@ -370,6 +371,15 @@ export default function History() {
     error: transfersError,
   } = useTransferHistory();
   const isRefreshing = isTransfersLoading || isTransfersValidating;
+  const [transfersErrorMessage, setTransfersErrorMessage] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (transfersError) {
+      setTransfersErrorMessage(transfersError.message ?? "Unknown Error");
+    }
+  }, [transfersError, setTransfersErrorMessage]);
 
   const [showGlobal, setShowGlobal] = useAtom(transferHistoryShowGlobal);
 
@@ -580,6 +590,12 @@ export default function History() {
           </Pagination>
         </CardContent>
       </Card>
+      <ErrorDialog
+        open={!isRefreshing && transfersErrorMessage !== null}
+        title="Error Fetching History"
+        description={transfersErrorMessage ?? "Unknown Error."}
+        dismiss={() => setTransfersErrorMessage(null)}
+      />
     </Suspense>
   );
 }
