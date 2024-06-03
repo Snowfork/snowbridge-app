@@ -112,7 +112,7 @@ const StatusCard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex w-full">
+          <div className="flex w-full pb-3">
             <Button
               variant="link"
               size="sm"
@@ -125,6 +125,7 @@ const StatusCard = () => {
               </div>
             </Button>
           </div>
+          <hr />
           <div className="grid grid-cols-2 justify-start pb-2">
             <h1 className="text-2xl font-semibold col-span-2 py-2">Summary</h1>
             <hr className="col-span-2 py-2" />

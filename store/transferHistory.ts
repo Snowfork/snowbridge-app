@@ -2,9 +2,10 @@ import { history } from "@snowbridge/api";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
-export type Transfer =
+export type Transfer = (
   | history.ToEthereumTransferResult
-  | history.ToPolkadotTransferResult;
+  | history.ToPolkadotTransferResult
+) & { isWalletTransaction?: boolean };
 
 const transfersPendingLocalStorageAtom = atomWithStorage<Transfer[]>(
   "transfers_pending_local",

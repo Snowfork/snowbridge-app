@@ -28,6 +28,8 @@ import { Toggle } from "@/components/ui/toggle";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn, formatBalance } from "@/lib/utils";
+import { ethereumAccountsAtom } from "@/store/ethereum";
+import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
   snowbridgeEnvironmentAtom,
@@ -42,7 +44,12 @@ import { encodeAddress } from "@polkadot/util-crypto";
 import { assets, environment, history } from "@snowbridge/api";
 import { parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
+import {
+  LucideGlobe,
+  LucideLoaderCircle,
+  LucideRefreshCw,
+  LucideWallet,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
@@ -242,14 +249,17 @@ const transferTitle = (
         : "bg-secondary";
 
   return (
-    <div className="grid grid-cols-5 justify-stretch w-full">
+    <div className="grid grid-cols-8 justify-stretch w-full">
       <Badge
         variant="outline"
         className={cn("px-4 mr-2 col-span-1 place-self-center", badgeStyle)}
       >
         {history.TransferStatus[transfer.status]}
       </Badge>
-      <p className="col-span-4 place-self-start text-left">
+      <div className="flex px-4 mr-2 col-span-1 w-full place-content-center">
+        {transfer.isWalletTransaction ? <LucideWallet /> : <LucideGlobe />}
+      </div>
+      <p className="col-span-6 place-self-start text-left">
         {amount +
           " " +
           (tokenName ?? "unknown") +
@@ -356,6 +366,8 @@ const transferDetail = (
 export default function History() {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom) ?? {};
+  const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
   const [transferHistoryCache, setTransferHistoryCache] = useAtom(
     transferHistoryCacheAtom,
@@ -413,25 +425,46 @@ export default function History() {
   const router = useRouter();
 
   const pages = useMemo(() => {
-    let allTransfers = [...transferHistoryCache];
-    for (const pending of transfersPendingLocal.toReversed()) {
-      if (allTransfers.find((t) => t.id === pending.id)) {
+    const allTransfers: Transfer[] = [];
+    for (const pending of transfersPendingLocal) {
+      if (transferHistoryCache.find((t) => t.id === pending.id)) {
         continue;
       }
-      allTransfers.unshift(pending);
+      allTransfers.push(pending);
     }
-    if (!showGlobal) {
-      allTransfers = allTransfers.filter((t) => true);
-    }
-    if (allTransfers.length == 0) {
-      return null;
+    for (const transfer of transferHistoryCache) {
+      const polkadotAccount = (polkadotAccounts ?? []).find(
+        (acc) =>
+          transfer.info.beneficiaryAddress.trim().toLowerCase() ===
+            acc.address.trim().toLowerCase() ||
+          transfer.info.sourceAddress.trim().toLowerCase() ==
+            acc.address.trim().toLowerCase(),
+      );
+      const ethereumAccount = (ethereumAccounts ?? []).find(
+        (acc) =>
+          transfer.info.beneficiaryAddress.trim().toLowerCase() ===
+            acc.trim().toLowerCase() ||
+          transfer.info.sourceAddress.trim().toLowerCase() ==
+            acc.trim().toLowerCase(),
+      );
+      transfer.isWalletTransaction =
+        polkadotAccount !== undefined || ethereumAccount !== undefined;
+      if (!showGlobal && !transfer.isWalletTransaction) continue;
+
+      allTransfers.push(transfer);
     }
     const pages: Transfer[][] = [];
     for (let i = 0; i < allTransfers.length; i += ITEMS_PER_PAGE) {
       pages.push(allTransfers.slice(i, i + ITEMS_PER_PAGE));
     }
     return pages;
-  }, [showGlobal, transferHistoryCache, transfersPendingLocal]);
+  }, [
+    showGlobal,
+    transferHistoryCache,
+    transfersPendingLocal,
+    ethereumAccounts,
+    polkadotAccounts,
+  ]);
 
   useMemo(() => {
     if (pages === null || pages.length == 0) {
@@ -458,7 +491,7 @@ export default function History() {
     return;
   }, [pages, setSelectedItem, setPage, hashItem]);
 
-  if (pages == null) return <Loading />;
+  if (pages.length === 0 && isRefreshing) return <Loading />;
 
   const start = Math.max(0, page - 2);
   const end = Math.min(pages.length - 1, page + 2);
@@ -480,7 +513,7 @@ export default function History() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex w-full">
+          <div className="flex w-full pb-4">
             <Button
               variant="link"
               size="sm"
@@ -505,6 +538,7 @@ export default function History() {
               </div>
             </Toggle>
           </div>
+          <hr />
           <Accordion
             type="single"
             className="w-full"
