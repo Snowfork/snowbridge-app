@@ -53,13 +53,16 @@ const connectSnowbridgeContext = async (
       tokens.map((t) =>
         assets
           .assetErc20Metadata(context, t)
-          .then((m) => ({ token: t, metadata: m })),
+          .then((m) => ({ token: t, metadata: m }))
+          .catch((_) => null),
       ),
     ),
   ]);
 
   const assetMetadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
-  assetMetadataList.forEach((am) => (assetMetadata[am.token] = am.metadata));
+  assetMetadataList
+    .filter((am) => am !== null)
+    .forEach((am) => (assetMetadata[am!.token] = am!.metadata));
 
   return {
     context,
