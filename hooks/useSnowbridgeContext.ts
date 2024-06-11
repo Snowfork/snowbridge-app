@@ -8,30 +8,36 @@ import {
 import { Context, assets, contextFactory, environment } from "@snowbridge/api";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
+import { AbstractProvider } from "ethers";
+import { ethersProviderAtom } from "@/store/ethereum";
 
-const connectSnowbridgeContext = async ({
-  config,
-  locations,
-}: environment.SnowbridgeEnvironment) => {
-  const k = process.env.NEXT_PUBLIC_ALCHEMY_KEY || "";
-  const context = await contextFactory({
-    ethereum: {
-      execution_url: config.ETHEREUM_WS_API(k),
-      beacon_url: config.BEACON_HTTP_API,
-    },
-    polkadot: {
-      url: {
-        bridgeHub: config.BRIDGE_HUB_WS_URL,
-        assetHub: config.ASSET_HUB_WS_URL,
-        relaychain: config.RELAY_CHAIN_WS_URL,
-        parachains: config.PARACHAINS,
+const connectSnowbridgeContext = async (
+  { config, locations }: environment.SnowbridgeEnvironment,
+  ethereumProvider: AbstractProvider,
+) => {
+  const context = await contextFactory(
+    {
+      ethereum: {
+        execution_url: "badurl",
+        beacon_url: config.BEACON_HTTP_API,
+      },
+      polkadot: {
+        url: {
+          bridgeHub: config.BRIDGE_HUB_WS_URL,
+          assetHub: config.ASSET_HUB_WS_URL,
+          relaychain: config.RELAY_CHAIN_WS_URL,
+          parachains: config.PARACHAINS,
+        },
+      },
+      appContracts: {
+        gateway: config.GATEWAY_CONTRACT,
+        beefy: config.BEEFY_CONTRACT,
       },
     },
-    appContracts: {
-      gateway: config.GATEWAY_CONTRACT,
-      beefy: config.BEEFY_CONTRACT,
+    {
+      ethereum: ethereumProvider,
     },
-  });
+  );
 
   const tokens = [
     ...new Set(
@@ -73,14 +79,18 @@ export const useSnowbridgeContext = (): [
   const setAssetHubNativeToken = useSetAtom(assetHubNativeTokenAtom);
   const setAssetErc20MetaData = useSetAtom(assetErc20MetaDataAtom);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const ethereumProvider = useAtomValue(ethersProviderAtom);
   const env = useAtomValue(snowbridgeEnvironmentAtom);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
+    if (ethereumProvider === null) {
+      return;
+    }
     setLoading(true);
-    connectSnowbridgeContext(env)
+    connectSnowbridgeContext(env, ethereumProvider)
       .then((result) => {
         setLoading(false);
         setContext(result.context);
@@ -102,6 +112,7 @@ export const useSnowbridgeContext = (): [
     setContext,
     setError,
     setLoading,
+    ethereumProvider,
   ]);
 
   return [context, loading, error];

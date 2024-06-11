@@ -8,6 +8,7 @@ import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
 export const REFRESH_INTERVAL: number = 15 * 60 * 1000; // 15 minutes
+export const SKIP_LIGHT_CLIENT_UPDATES: boolean = true;
 
 export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
 export const ETHEREUM_HISTORY_BLOCKS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
@@ -70,6 +71,7 @@ const fetchTranferHistory = async ([env, context]: [
         toBlock: ethNowBlock.number,
       },
     },
+    SKIP_LIGHT_CLIENT_UPDATES,
   );
 
   const toPolkadot = await history.toPolkadotHistory(
@@ -92,6 +94,7 @@ const fetchTranferHistory = async ([env, context]: [
         toBlock: ethNowBlock.number,
       },
     },
+    SKIP_LIGHT_CLIENT_UPDATES,
   );
 
   const transfers = [...toEthereum, ...toPolkadot];
@@ -104,9 +107,9 @@ export const useTransferHistory = () => {
   const context = useAtomValue(snowbridgeContextAtom);
   return useSWR([env, context, "history"], fetchTranferHistory, {
     refreshInterval: REFRESH_INTERVAL,
-    revalidateOnFocus: false,
-    revalidateOnMount: false,
     suspense: true,
     fallbackData: null,
+    revalidateOnFocus: false,
+    revalidateOnMount: false,
   });
 };

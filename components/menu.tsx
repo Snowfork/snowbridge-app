@@ -34,7 +34,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { FC } from "react";
-import { BusyDialog } from "./busyDialog";
 import { ErrorDialog } from "./errorDialog";
 import { SelectedEthereumWallet } from "./selectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
@@ -233,11 +232,6 @@ export const Menu: FC = () => {
       <InstallMetamaskDialog
         provider={ethereumProvider}
         walletAuthorized={ethereumWalletAuthorized}
-      />
-      <BusyDialog
-        open={contextLoading}
-        title="Snowbridge"
-        description="Connecting to Snowbridge..."
       />
       <ErrorDialog
         open={!contextLoading && contextError !== null}

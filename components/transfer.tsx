@@ -462,7 +462,7 @@ const onSubmit = (
         return;
       }
 
-      setBusyMessage("Sending");
+      setBusyMessage("Validating...");
       let messageId: string;
       let transfer: Transfer;
       switch (source.type) {
@@ -500,6 +500,7 @@ const onSubmit = (
             return;
           }
 
+          setBusyMessage("Sending...");
           const result = await toEthereum.send(context, walletSigner, plan);
           messageId = result.success?.messageId || "";
           transfer = {
@@ -587,6 +588,7 @@ const onSubmit = (
             return;
           }
 
+          setBusyMessage("Sending...");
           const result = await toPolkadot.send(context, signer, plan);
           messageId = result.success?.messageId || "";
           transfer = {
@@ -1255,8 +1257,12 @@ export const TransferForm: FC = () => {
                 Fee: {feeDisplay}
               </div>
               <br />
-              <Button className="w-full my-8" type="submit">
-                Submit
+              <Button
+                disabled={context === null}
+                className="w-full my-8"
+                type="submit"
+              >
+                {context === null ? "Connecting..." : "Submit"}
               </Button>
             </form>
           </Form>

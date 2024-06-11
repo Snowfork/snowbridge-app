@@ -32,6 +32,7 @@ import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
+  snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import {
@@ -389,6 +390,7 @@ export default function History() {
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom) ?? {};
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const context = useAtomValue(snowbridgeContextAtom);
 
   const [transferHistoryCache, setTransferHistoryCache] = useAtom(
     transferHistoryCacheAtom,
@@ -502,7 +504,8 @@ export default function History() {
     return;
   }, [pages, setSelectedItem, setPage, hashItem]);
 
-  if (pages.length === 0 && isRefreshing) return <Loading />;
+  if (context === null || (pages.length === 0 && isTransfersLoading))
+    return <Loading />;
 
   const start = Math.max(0, page - 2);
   const end = Math.min(pages.length - 1, page + 2);
