@@ -76,7 +76,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
-import { LucideConstruction, LucideHardHat } from "lucide-react";
+import { LucideHardHat } from "lucide-react";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -662,8 +662,8 @@ const onSubmit = (
   };
 };
 
-export async function TransferComponent() {
-  const maintenance = process.env.SHOW_MAINTENANCE ?? false;
+export const TransferComponent: FC = () => {
+  const maintenance = process.env.NEXT_PUBLIC_SHOW_MAINTENANCE ?? false;
   if (maintenance)
     return (
       <div className="flex-col gap-2">
@@ -674,7 +674,7 @@ export async function TransferComponent() {
       </div>
     );
   return <TransferForm />;
-}
+};
 
 export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
