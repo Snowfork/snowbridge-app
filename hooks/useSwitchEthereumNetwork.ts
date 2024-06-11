@@ -1,47 +1,56 @@
-import { windowEthereumAtom } from '@/store/ethereum'
-import { useAtomValue } from "jotai"
-import { useCallback } from 'react'
+import { ethereumChainIdAtom, windowEthereumAtom } from "@/store/ethereum";
+import { snowbridgeContextEthChainIdAtom } from "@/store/snowbridge";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useCallback } from "react";
 
-export const useSwitchEthereumNetwork = (chainId: number): (() => Promise<void>) => {
-    const ethereum = useAtomValue(windowEthereumAtom)
-  
-    const switchNetwork = useCallback(async () => {
-      if (ethereum == null) return
-      const chainIdHex = `0x${chainId.toString(16)}`
-      try {
+export const useSwitchEthereumNetwork = (
+  chainId: number,
+): (() => Promise<void>) => {
+  const ethereum = useAtomValue(windowEthereumAtom);
+  const setContextChainId = useSetAtom(snowbridgeContextEthChainIdAtom);
+  const setChainId = useSetAtom(ethereumChainIdAtom);
+
+  const switchNetwork = useCallback(async () => {
+    if (ethereum == null) return;
+    const chainIdHex = `0x${chainId.toString(16)}`;
+    try {
+      await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: chainIdHex }],
+      });
+      const network = await ethereum.getNetwork();
+      const chainId = Number(network!.chainId.toString());
+      setChainId(chainId);
+      setContextChainId(chainId);
+    } catch (switchError) {
+      if ((switchError as { code: number }).code === 4902) {
         await ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{chainId: chainIdHex}],
-        })
-      } catch (switchError) {
-        if ((switchError as {code: number}).code === 4902) {
-          await ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [
-                {
-                    "chainId": chainIdHex,
-                    // "chainName": "Gnosis",
-                    // "rpcUrls": [
-                    //   "https://rpc.gnosischain.com"
-                    // ],
-                    // "iconUrls": [
-                    //   "https://xdaichain.com/fake/example/url/xdai.svg",
-                    //   "https://xdaichain.com/fake/example/url/xdai.png"
-                    // ],
-                    // "nativeCurrency": {
-                    //   "name": "XDAI",
-                    //   "symbol": "XDAI",
-                    //   "decimals": 18
-                    // },
-                    // "blockExplorerUrls": [
-                    //   "https://blockscout.com/poa/xdai/"
-                    // ]
-                  }
-            ],
-          })
-        }
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: chainIdHex,
+              // "chainName": "Gnosis",
+              // "rpcUrls": [
+              //   "https://rpc.gnosischain.com"
+              // ],
+              // "iconUrls": [
+              //   "https://xdaichain.com/fake/example/url/xdai.svg",
+              //   "https://xdaichain.com/fake/example/url/xdai.png"
+              // ],
+              // "nativeCurrency": {
+              //   "name": "XDAI",
+              //   "symbol": "XDAI",
+              //   "decimals": 18
+              // },
+              // "blockExplorerUrls": [
+              //   "https://blockscout.com/poa/xdai/"
+              // ]
+            },
+          ],
+        });
       }
-    }, [ethereum, chainId])
-  
-    return switchNetwork
-  }
+    }
+  }, [ethereum, chainId]);
+
+  return switchNetwork;
+};

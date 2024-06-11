@@ -25,10 +25,11 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
+import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn, formatBalance } from "@/lib/utils";
-import { ethereumAccountsAtom } from "@/store/ethereum";
+import { ethereumAccountsAtom, ethereumChainIdAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
@@ -391,6 +392,8 @@ export default function History() {
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const context = useAtomValue(snowbridgeContextAtom);
+  const switchEthereumNetwork = useSwitchEthereumNetwork(env.ethChainId);
+  const ethereumChainId = useAtomValue(ethereumChainIdAtom);
 
   const [transferHistoryCache, setTransferHistoryCache] = useAtom(
     transferHistoryCacheAtom,
@@ -504,6 +507,13 @@ export default function History() {
     return;
   }, [pages, setSelectedItem, setPage, hashItem]);
 
+  if (context !== null && env.ethChainId !== ethereumChainId) {
+    return (
+      <Button variant="destructive" onClick={switchEthereumNetwork}>
+        Switch Network
+      </Button>
+    );
+  }
   if (context === null || (pages.length === 0 && isTransfersLoading))
     return <Loading />;
 

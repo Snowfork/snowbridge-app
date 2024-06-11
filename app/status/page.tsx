@@ -18,8 +18,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus";
+import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { formatBalance, formatTime } from "@/lib/utils";
+import { ethereumChainIdAtom } from "@/store/ethereum";
 import {
   assetHubNativeTokenAtom,
   snowbridgeContextAtom,
@@ -76,6 +78,10 @@ const StatusCard = () => {
   const [statusErrorMessage, setStatusErrorMessage] = useState<string | null>(
     null,
   );
+  const switchEthereumNetwork = useSwitchEthereumNetwork(
+    snowbridgeEnv.ethChainId,
+  );
+  const ethereumChainId = useAtomValue(ethereumChainIdAtom);
 
   useEffect(() => {
     if (statusError) {
@@ -86,6 +92,13 @@ const StatusCard = () => {
   const hash = useWindowHash();
   const diagnostic = hash === "diagnostic";
 
+  if (context !== null && snowbridgeEnv.ethChainId !== ethereumChainId) {
+    return (
+      <Button variant="destructive" onClick={switchEthereumNetwork}>
+        Switch Network
+      </Button>
+    );
+  }
   if (status == null) return <Loading />;
 
   const toPolkadotStyle =
@@ -290,6 +303,7 @@ const StatusCard = () => {
 const Loading = () => {
   return (
     <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
+      Fetching Bridge Status{" "}
       <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
     </div>
   );
