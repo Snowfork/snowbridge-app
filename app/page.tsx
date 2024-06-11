@@ -1,7 +1,5 @@
-import { TransferForm } from "@/components/transfer";
+import { TransferComponent } from "@/components/transfer";
 
 export default function Home() {
-  return (
-        <TransferForm />
-  );
+  return <TransferComponent />;
 }

@@ -76,6 +76,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
+import { LucideHardHat } from "lucide-react";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -659,6 +660,20 @@ const onSubmit = (
       });
     }
   };
+};
+
+export const TransferComponent: FC = () => {
+  const maintenance = process.env.NEXT_PUBLIC_SHOW_MAINTENANCE ?? false;
+  if (maintenance)
+    return (
+      <div className="flex-col gap-2">
+        <div className="flex justify-center">
+          <LucideHardHat />
+        </div>
+        <p>Under Maintenance: Check back soon!</p>
+      </div>
+    );
+  return <TransferForm />;
 };
 
 export const TransferForm: FC = () => {
