@@ -662,8 +662,8 @@ const onSubmit = (
   };
 };
 
-export const TransferComponent: FC = () => {
-  const maintenance = process.env.SHOW_MAINTENANCE ?? true;
+export async function TransferComponent() {
+  const maintenance = process.env.SHOW_MAINTENANCE ?? false;
   if (maintenance)
     return (
       <div className="flex-col gap-2">
@@ -674,7 +674,7 @@ export const TransferComponent: FC = () => {
       </div>
     );
   return <TransferForm />;
-};
+}
 
 export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
