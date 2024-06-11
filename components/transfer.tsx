@@ -664,7 +664,10 @@ const onSubmit = (
 
 export const TransferComponent: FC = () => {
   const maintenance =
-    process.env.NEXT_PUBLIC_SHOW_MAINTENANCE == "true" ?? false;
+    (process.env.NEXT_PUBLIC_SHOW_MAINTENANCE ?? "false")
+      .toLowerCase()
+      .trim() === "true";
+
   if (maintenance)
     return (
       <div className="flex-col gap-2">
