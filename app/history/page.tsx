@@ -156,7 +156,7 @@ const getExplorerLinks = (
     }
     if (ethTransfer.bridgeHubChannelDelivered) {
       links.push({
-        text: "Message delivered to Snowbrigde Message Queue",
+        text: "Message delivered to Snowbridge Message Queue",
         url: subscanEventLink(
           urls["subscan_bh"],
           ethTransfer.bridgeHubChannelDelivered.event_index,
@@ -521,7 +521,7 @@ export default function History() {
           <CardDescription>
             {showGlobal
               ? "Global transfer history for the past two weeks."
-              : "My tranfer history for the past two weeks."}
+              : "My transfer history for the past two weeks."}
           </CardDescription>
         </CardHeader>
         <CardContent>
