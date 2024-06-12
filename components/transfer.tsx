@@ -5,6 +5,7 @@ import { formatBalance, trimAccount } from "@/lib/utils";
 import {
   ethereumAccountAtom,
   ethereumAccountsAtom,
+  ethereumChainIdAtom,
   ethersProviderAtom,
 } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
@@ -12,7 +13,6 @@ import {
   assetErc20MetaDataAtom,
   assetHubNativeTokenAtom,
   snowbridgeContextAtom,
-  snowbridgeContextEthChainIdAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import {
@@ -682,7 +682,7 @@ export const TransferComponent: FC = () => {
 
 export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
-  const ethereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom);
+  const ethereumChainId = useAtomValue(ethereumChainIdAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);

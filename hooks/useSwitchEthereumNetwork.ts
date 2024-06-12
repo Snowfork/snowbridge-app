@@ -1,27 +1,26 @@
 import { ethereumChainIdAtom, windowEthereumAtom } from "@/store/ethereum";
-import { snowbridgeContextEthChainIdAtom } from "@/store/snowbridge";
-import { useAtomValue, useSetAtom } from "jotai";
+import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
-export const useSwitchEthereumNetwork = (
-  chainId: number,
-): (() => Promise<void>) => {
+export const useSwitchEthereumNetwork = (): {
+  shouldSwitchNetwork: boolean;
+  switchNetwork: () => Promise<void>;
+} => {
+  const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom);
   const ethereum = useAtomValue(windowEthereumAtom);
-  const setContextChainId = useSetAtom(snowbridgeContextEthChainIdAtom);
-  const setChainId = useSetAtom(ethereumChainIdAtom);
+  const providerChainID = useAtomValue(ethereumChainIdAtom);
+  const envChainId = snowbridgeEnv.ethChainId;
+  const shouldSwitchNetwork = providerChainID !== envChainId;
 
   const switchNetwork = useCallback(async () => {
-    if (ethereum == null) return;
-    const chainIdHex = `0x${chainId.toString(16)}`;
+    if (!shouldSwitchNetwork || ethereum === null) return;
+    const chainIdHex = `0x${envChainId.toString(16)}`;
     try {
       await ethereum.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: chainIdHex }],
       });
-      const network = await ethereum.getNetwork();
-      const chainId = Number(network!.chainId.toString());
-      setChainId(chainId);
-      setContextChainId(chainId);
     } catch (switchError) {
       if ((switchError as { code: number }).code === 4902) {
         await ethereum.request({
@@ -50,7 +49,10 @@ export const useSwitchEthereumNetwork = (
         });
       }
     }
-  }, [ethereum, chainId]);
+  }, [shouldSwitchNetwork, ethereum, envChainId]);
 
-  return switchNetwork;
+  return {
+    shouldSwitchNetwork,
+    switchNetwork,
+  };
 };

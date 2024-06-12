@@ -18,15 +18,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus";
-import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { formatBalance, formatTime } from "@/lib/utils";
-import { ethereumChainIdAtom } from "@/store/ethereum";
-import {
-  assetHubNativeTokenAtom,
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { assetHubNativeTokenAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { FC, Suspense, useEffect, useState } from "react";
@@ -64,24 +58,18 @@ const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
 };
 
 const StatusCard = () => {
-  const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom);
-  const context = useAtomValue(snowbridgeContextAtom);
   const {
     data: status,
     mutate,
     isLoading: isStatusLoading,
     isValidating: isStatusValidating,
     error: statusError,
-  } = useBridgeStatus(snowbridgeEnv, context);
+  } = useBridgeStatus();
 
   const isRefreshing = isStatusLoading || isStatusValidating;
   const [statusErrorMessage, setStatusErrorMessage] = useState<string | null>(
     null,
   );
-  const switchEthereumNetwork = useSwitchEthereumNetwork(
-    snowbridgeEnv.ethChainId,
-  );
-  const ethereumChainId = useAtomValue(ethereumChainIdAtom);
 
   useEffect(() => {
     if (statusError) {
@@ -92,13 +80,6 @@ const StatusCard = () => {
   const hash = useWindowHash();
   const diagnostic = hash === "diagnostic";
 
-  if (context !== null && snowbridgeEnv.ethChainId !== ethereumChainId) {
-    return (
-      <Button variant="destructive" onClick={switchEthereumNetwork}>
-        Switch Network
-      </Button>
-    );
-  }
   if (status == null) return <Loading />;
 
   const toPolkadotStyle =

@@ -1,4 +1,5 @@
 import { BridgeStatus } from "@/components/bridgeStatus";
+import { ContextComponent } from "@/components/contextComponent";
 import { Footer } from "@/components/footer";
 import { Menu } from "@/components/menu";
 import { Toaster } from "@/components/ui/sonner";
@@ -53,7 +54,7 @@ export default function RootLayout({
               </div>
             </div>
             <div className="w-full max-w-5xl flex place-content-center">
-              {children}
+              <ContextComponent>{children}</ContextComponent>
             </div>
             <div className="w-full max-w-5xl flex flex-col place-items-center text-sm">
               <Footer />

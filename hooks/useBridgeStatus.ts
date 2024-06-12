@@ -5,6 +5,12 @@ import { u8aToHex } from "@polkadot/util";
 import { status, Context, utils } from "@snowbridge/api";
 import useSWR from "swr";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
+import { useAtomValue } from "jotai";
+import {
+  snowbridgeContextAtom,
+  snowbridgeEnvironmentAtom,
+} from "@/store/snowbridge";
+import { ethereumChainIdAtom } from "@/store/ethereum";
 
 export const REFRESH_INTERVAL: number = 5 * 60 * 1000; // 5 minutes
 const ACCEPTABLE_BRIDGE_LATENCY = 28800; // 8 hours
@@ -39,44 +45,56 @@ export type BridgeStatus = {
   };
 };
 
-const fetchStatus = async ([env, context]: [
+const fetchStatus = async ([env, context, chainId]: [
   SnowbridgeEnvironment,
   Context | null,
+  number | null,
 ]): Promise<BridgeStatus | null> => {
   try {
-    if (context === null) return null;
-
     const { config } = env;
 
+    if (context === null) return null;
+    if (chainId === null) return null;
+    if (chainId !== env.ethChainId) return null;
+
     console.log("Refreshing bridge status.");
-
-    const bridgeStatusInfo = await status.bridgeStatusInfo(context);
-    const assethub = await status.channelStatusInfo(
-      context,
-      utils.paraIdToChannelId(config.ASSET_HUB_PARAID),
-    );
-    const primaryGov = await status.channelStatusInfo(
-      context,
-      config.PRIMARY_GOVERNANCE_CHANNEL_ID,
-    );
-    const secondaryGov = await status.channelStatusInfo(
-      context,
-      config.SECONDARY_GOVERNANCE_CHANNEL_ID,
-    );
-
-    const accounts: AccountInfo[] = [];
     const assetHubSovereignAddress = utils.paraIdToSovereignAccount(
       "sibl",
       config.ASSET_HUB_PARAID,
     );
+    const bridgeHubAgentId = u8aToHex(blake2AsU8a("0x00", 256));
+
+    const [
+      bridgeStatusInfo,
+      assethub,
+      primaryGov,
+      secondaryGov,
+      assetHubSovereignAccountCodec,
+      assetHubAgentAddress,
+      bridgeHubAgentAddress,
+    ] = await Promise.all([
+      status.bridgeStatusInfo(context),
+      status.channelStatusInfo(
+        context,
+        utils.paraIdToChannelId(config.ASSET_HUB_PARAID),
+      ),
+      status.channelStatusInfo(context, config.PRIMARY_GOVERNANCE_CHANNEL_ID),
+      status.channelStatusInfo(context, config.SECONDARY_GOVERNANCE_CHANNEL_ID),
+      context.polkadot.api.bridgeHub.query.system.account(
+        assetHubSovereignAddress,
+      ),
+      context.ethereum.contracts.gateway.agentOf(
+        utils.paraIdToAgentId(
+          context.polkadot.api.bridgeHub.registry,
+          config.ASSET_HUB_PARAID,
+        ),
+      ),
+      context.ethereum.contracts.gateway.agentOf(bridgeHubAgentId),
+    ]);
+
+    const accounts: AccountInfo[] = [];
     const assetHubSovereignBalance = BigInt(
-      (
-        (
-          await context.polkadot.api.bridgeHub.query.system.account(
-            assetHubSovereignAddress,
-          )
-        ).toPrimitive() as any
-      ).data.free,
+      (assetHubSovereignAccountCodec.toPrimitive() as any).data.free,
     );
     accounts.push({
       name: "Asset Hub Sovereign",
@@ -85,28 +103,45 @@ const fetchStatus = async ([env, context]: [
       balance: assetHubSovereignBalance,
     });
 
-    const assetHubAgentAddress =
-      await context.ethereum.contracts.gateway.agentOf(
-        utils.paraIdToAgentId(
-          context.polkadot.api.bridgeHub.registry,
-          config.ASSET_HUB_PARAID,
+    const [assetHubAgentBalance, bridgeHubAgentBalance, relayers] =
+      await Promise.all([
+        context.ethereum.api.getBalance(assetHubAgentAddress),
+        context.ethereum.api.getBalance(bridgeHubAgentAddress),
+        Promise.all(
+          config.RELAYERS.filter((r) => r.type == "ethereum").map(async (r) => {
+            let balance = 0n;
+            switch (r.type) {
+              case "ethereum":
+                balance = await context.ethereum.api.getBalance(r.account);
+                break;
+              case "substrate":
+                balance = BigInt(
+                  (
+                    (
+                      await context.polkadot.api.bridgeHub.query.system.account(
+                        r.account,
+                      )
+                    ).toPrimitive() as any
+                  ).data.free,
+                );
+                break;
+            }
+            return {
+              name: r.name,
+              account: r.account,
+              balance: balance,
+              type: r.type,
+            };
+          }),
         ),
-      );
-    const assetHubAgentBalance =
-      await context.ethereum.api.getBalance(assetHubAgentAddress);
+      ]);
+
     accounts.push({
       name: "Asset Hub Agent",
       type: "ethereum",
       account: assetHubAgentAddress,
       balance: assetHubAgentBalance,
     });
-
-    const bridgeHubAgentId = u8aToHex(blake2AsU8a("0x00", 256));
-    let bridgeHubAgentAddress =
-      await context.ethereum.contracts.gateway.agentOf(bridgeHubAgentId);
-    let bridgeHubAgentBalance = await context.ethereum.api.getBalance(
-      bridgeHubAgentAddress,
-    );
     accounts.push({
       name: "Bridge Hub Agent",
       type: "ethereum",
@@ -114,32 +149,6 @@ const fetchStatus = async ([env, context]: [
       balance: bridgeHubAgentBalance,
     });
 
-    const relayers: AccountInfo[] = [];
-    for (const relayer of config.RELAYERS) {
-      let balance = 0n;
-      switch (relayer.type) {
-        case "ethereum":
-          balance = await context.ethereum.api.getBalance(relayer.account);
-          break;
-        case "substrate":
-          balance = BigInt(
-            (
-              (
-                await context.polkadot.api.bridgeHub.query.system.account(
-                  relayer.account,
-                )
-              ).toPrimitive() as any
-            ).data.free,
-          );
-          break;
-      }
-      relayers.push({
-        name: relayer.name,
-        account: relayer.account,
-        balance: balance,
-        type: relayer.type,
-      });
-    }
     const toPolkadot = {
       lightClientLatencyIsAcceptable:
         bridgeStatusInfo.toPolkadot.latencySeconds < ACCEPTABLE_BRIDGE_LATENCY,
@@ -197,11 +206,11 @@ const fetchStatus = async ([env, context]: [
   }
 };
 
-export const useBridgeStatus = (
-  env: SnowbridgeEnvironment,
-  context: Context | null,
-) => {
-  return useSWR([env, context, "bridgeStatus"], fetchStatus, {
+export const useBridgeStatus = () => {
+  const env = useAtomValue(snowbridgeEnvironmentAtom);
+  const context = useAtomValue(snowbridgeContextAtom);
+  const chainId = useAtomValue(ethereumChainIdAtom);
+  return useSWR([env, context, chainId, "bridgeStatus"], fetchStatus, {
     refreshInterval: REFRESH_INTERVAL,
     revalidateOnFocus: false,
     revalidateOnMount: false,

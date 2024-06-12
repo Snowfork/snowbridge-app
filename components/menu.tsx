@@ -8,7 +8,10 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
-import { useEthereumProvider } from "@/hooks/useEthereumProvider";
+import {
+  getEthereumProvider,
+  useEthereumProvider,
+} from "@/hooks/useEthereumProvider";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { trimAccount } from "@/lib/utils";
 import {
@@ -33,7 +36,7 @@ import {
   LucideWallet,
 } from "lucide-react";
 import Link from "next/link";
-import { FC } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
 import { ErrorDialog } from "./errorDialog";
 import { SelectedEthereumWallet } from "./selectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
@@ -47,6 +50,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { TermsOfUse } from "./termsOfUse";
+import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
@@ -78,12 +82,13 @@ const PolkadotWalletDialog: FC = () => {
   );
 };
 
-const InstallMetamaskDialog: FC<{
-  walletAuthorized: boolean;
-  provider: any;
-}> = ({ walletAuthorized, provider }) => {
+const InstallMetamaskDialog: FC = () => {
+  let [show, setShow] = useState(false);
+  useEffect(() => {
+    getEthereumProvider().then((p) => setShow(p === null));
+  });
   return (
-    <Dialog open={walletAuthorized == false && provider === undefined}>
+    <Dialog open={show}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Metamask Is Not Installed</DialogTitle>
@@ -117,8 +122,6 @@ export const Menu: FC = () => {
   useConnectPolkadotWallet();
   const [_, contextLoading, contextError] = useSnowbridgeContext();
 
-  const ethereumProvider = useAtomValue(ethersProviderAtom);
-  const ethereumWalletAuthorized = useAtomValue(ethereumWalletAuthorizedAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
 
@@ -129,6 +132,7 @@ export const Menu: FC = () => {
       return (
         <Button
           className="w-full"
+          variant="link"
           onClick={() => setPolkadotWalletModalOpen(true)}
         >
           Connect Polkadot
@@ -157,6 +161,15 @@ export const Menu: FC = () => {
           <p>Account:</p>
         </div>
         <SelectedPolkadotAccount />
+      </>
+    );
+  };
+
+  const EthereumWallet = () => {
+    return (
+      <>
+        <h1 className="font-semibold py-2">Ethereum</h1>
+        <SelectedEthereumWallet className="text-sm" walletChars={24} />
       </>
     );
   };
@@ -195,8 +208,7 @@ export const Menu: FC = () => {
           </MenubarTrigger>
           <MenubarContent align="center">
             <div className="w-60">
-              <h1 className="font-semibold py-2">Ethereum</h1>
-              <SelectedEthereumWallet className="text-sm" walletChars={24} />
+              <EthereumWallet />
               <MenubarSeparator></MenubarSeparator>
               <PolkadotWallet />
             </div>
@@ -229,10 +241,7 @@ export const Menu: FC = () => {
           </MenubarTrigger>
         </MenubarMenu>
       </Menubar>
-      <InstallMetamaskDialog
-        provider={ethereumProvider}
-        walletAuthorized={ethereumWalletAuthorized}
-      />
+      <InstallMetamaskDialog />
       <ErrorDialog
         open={!contextLoading && contextError !== null}
         title="Connection Error"

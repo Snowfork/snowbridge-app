@@ -6,17 +6,12 @@ import Link from "next/link";
 import { LucideBarChart, LucideLoaderCircle } from "lucide-react";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { useAtomValue } from "jotai";
-import {
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
 import { cn, formatTime } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
 
 const StatusCard = () => {
-  const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom);
-  const context = useAtomValue(snowbridgeContextAtom);
-  const { data: bridgeStatus } = useBridgeStatus(snowbridgeEnv, context);
+  const { data: bridgeStatus } = useBridgeStatus();
   const pathname = usePathname();
 
   if (bridgeStatus == null) return <Loading />;

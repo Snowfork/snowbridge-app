@@ -2,42 +2,42 @@ import {
   assetErc20MetaDataAtom,
   assetHubNativeTokenAtom,
   snowbridgeContextAtom,
-  snowbridgeContextEthChainIdAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import { Context, assets, contextFactory, environment } from "@snowbridge/api";
+import {
+  Context,
+  assets,
+  contextFactory,
+  destroyContext,
+  environment,
+} from "@snowbridge/api";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { AbstractProvider } from "ethers";
-import { ethersProviderAtom } from "@/store/ethereum";
+import { ethereumChainIdAtom, ethersProviderAtom } from "@/store/ethereum";
 
 const connectSnowbridgeContext = async (
   { config, locations }: environment.SnowbridgeEnvironment,
   ethereumProvider: AbstractProvider,
 ) => {
-  const context = await contextFactory(
-    {
-      ethereum: {
-        execution_url: "badurl",
-        beacon_url: config.BEACON_HTTP_API,
-      },
-      polkadot: {
-        url: {
-          bridgeHub: config.BRIDGE_HUB_WS_URL,
-          assetHub: config.ASSET_HUB_WS_URL,
-          relaychain: config.RELAY_CHAIN_WS_URL,
-          parachains: config.PARACHAINS,
-        },
-      },
-      appContracts: {
-        gateway: config.GATEWAY_CONTRACT,
-        beefy: config.BEEFY_CONTRACT,
+  const context = await contextFactory({
+    ethereum: {
+      execution_url: ethereumProvider,
+      beacon_url: config.BEACON_HTTP_API,
+    },
+    polkadot: {
+      url: {
+        bridgeHub: config.BRIDGE_HUB_WS_URL,
+        assetHub: config.ASSET_HUB_WS_URL,
+        relaychain: config.RELAY_CHAIN_WS_URL,
+        parachains: config.PARACHAINS,
       },
     },
-    {
-      ethereum: ethereumProvider,
+    appContracts: {
+      gateway: config.GATEWAY_CONTRACT,
+      beefy: config.BEEFY_CONTRACT,
     },
-  );
+  });
 
   const tokens = [
     ...new Set(
@@ -78,18 +78,23 @@ export const useSnowbridgeContext = (): [
   string | null,
 ] => {
   const [context, setContext] = useAtom(snowbridgeContextAtom);
-  const setChainId = useSetAtom(snowbridgeContextEthChainIdAtom);
   const setAssetHubNativeToken = useSetAtom(assetHubNativeTokenAtom);
   const setAssetErc20MetaData = useSetAtom(assetErc20MetaDataAtom);
 
   const ethereumProvider = useAtomValue(ethersProviderAtom);
+  const chainId = useAtomValue(ethereumChainIdAtom);
   const env = useAtomValue(snowbridgeEnvironmentAtom);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (env.ethChainId !== chainId) {
+      setContext(null);
+      return;
+    }
     if (ethereumProvider === null) {
+      setContext(null);
       return;
     }
     setLoading(true);
@@ -97,7 +102,6 @@ export const useSnowbridgeContext = (): [
       .then((result) => {
         setLoading(false);
         setContext(result.context);
-        setChainId(result.chainId);
         setAssetHubNativeToken(result.assetHubNativeToken);
         setAssetErc20MetaData(result.assetMetadata);
       })
@@ -109,9 +113,9 @@ export const useSnowbridgeContext = (): [
       });
   }, [
     env,
+    chainId,
     setAssetHubNativeToken,
     setAssetErc20MetaData,
-    setChainId,
     setContext,
     setError,
     setLoading,

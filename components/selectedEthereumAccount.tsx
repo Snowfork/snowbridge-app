@@ -1,11 +1,7 @@
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { cn, trimAccount } from "@/lib/utils";
-import { ethereumAccountAtom, ethereumChainIdAtom } from "@/store/ethereum";
-import {
-  snowbridgeContextEthChainIdAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { ethereumAccountAtom } from "@/store/ethereum";
 import { useAtomValue } from "jotai";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
@@ -24,12 +20,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const [connectToEthereumWallet, ethereumLoading, ethereumError] =
     useConnectEthereumWallet();
-  const ethereumChainId = useAtomValue(ethereumChainIdAtom);
-  const contextEthereumChainId = useAtomValue(snowbridgeContextEthChainIdAtom)!;
-  const snowbridgeEnv = useAtomValue(snowbridgeEnvironmentAtom);
-  const switchEthereumNetwork = useSwitchEthereumNetwork(
-    snowbridgeEnv.ethChainId,
-  );
+  const { shouldSwitchNetwork, switchNetwork } = useSwitchEthereumNetwork();
 
   if (!ethereumAccount) {
     return (
@@ -43,18 +34,14 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
       </Button>
     );
   }
-  if (
-    (contextEthereumChainId !== null &&
-      ethereumChainId !== contextEthereumChainId) ||
-    snowbridgeEnv.ethChainId !== ethereumChainId
-  ) {
+  if (shouldSwitchNetwork) {
     return (
       <>
         <Button
           className="w-full"
           type="button"
           variant="destructive"
-          onClick={switchEthereumNetwork}
+          onClick={switchNetwork}
         >
           Switch Network
         </Button>
