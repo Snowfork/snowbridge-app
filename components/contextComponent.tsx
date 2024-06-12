@@ -8,8 +8,7 @@ import { Button } from "./ui/button";
 import { windowEthereumAtom } from "@/store/ethereum";
 import { LucideLoaderCircle } from "lucide-react";
 
-export const ContextComponent: FC = ({ children }: PropsWithChildren) => {
-  const context = useAtomValue(snowbridgeContextAtom);
+export const ContextComponent: FC<PropsWithChildren> = ({ children }) => {
   const ethereum = useAtomValue(windowEthereumAtom);
   const { shouldSwitchNetwork, switchNetwork } = useSwitchEthereumNetwork();
 
