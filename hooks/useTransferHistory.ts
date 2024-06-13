@@ -8,6 +8,7 @@ import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
 export const REFRESH_INTERVAL: number = 15 * 60 * 1000; // 15 minutes
+export const ERROR_RETRY_INTERVAL: number = 1 * 60 * 1000; // 1 minutes
 export const SKIP_LIGHT_CLIENT_UPDATES: boolean = true;
 
 export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
@@ -111,5 +112,7 @@ export const useTransferHistory = () => {
     fallbackData: null,
     revalidateOnFocus: false,
     revalidateOnMount: false,
+    errorRetryInterval: ERROR_RETRY_INTERVAL,
+    errorRetryCount: 120, // Retry 120 times every minute (2 hours)
   });
 };

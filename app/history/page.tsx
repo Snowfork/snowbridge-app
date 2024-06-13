@@ -411,7 +411,12 @@ export default function History() {
 
   useEffect(() => {
     if (transfersError) {
-      setTransfersErrorMessage(transfersError.message ?? "Unknown Error");
+      console.error(transfersError);
+      setTransfersErrorMessage(
+        "The history service is under heavy load, so this may take a while...",
+      );
+    } else {
+      setTransfersErrorMessage(null);
     }
   }, [transfersError, setTransfersErrorMessage]);
 
@@ -503,7 +508,13 @@ export default function History() {
     return;
   }, [pages, setSelectedItem, setPage, hashItem]);
 
-  if (pages.length === 0 && isTransfersLoading) return <Loading />;
+  if (
+    pages.length === 0 &&
+    isTransfersLoading &&
+    transferHistoryCache.length === 0
+  ) {
+    return <Loading />;
+  }
 
   const start = Math.max(0, page - 2);
   const end = Math.min(pages.length - 1, page + 2);
