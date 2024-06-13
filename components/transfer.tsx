@@ -567,6 +567,7 @@ const onSubmit = (
           const signer = await ethereumProvider.getSigner();
           if (signer.address.toLowerCase() !== data.sourceAccount.toLowerCase())
             throw Error(`Source account mismatch.`);
+          console.log("pre validate");
           const plan = await toPolkadot.validateSend(
             context,
             signer,
@@ -577,6 +578,7 @@ const onSubmit = (
             destination.paraInfo.destinationFeeDOT,
             { maxConsumers: destination.paraInfo.maxConsumers },
           );
+          console.log("pre post validate");
           console.log(plan);
           if (plan.failure) {
             setBusyMessage("");
@@ -590,7 +592,9 @@ const onSubmit = (
           }
 
           setBusyMessage("Sending...");
+          console.log("pre send");
           const result = await toPolkadot.send(context, signer, plan);
+          console.log("post send");
           messageId = result.success?.messageId || "";
           transfer = {
             id: messageId,
@@ -1277,7 +1281,7 @@ export const TransferForm: FC = () => {
               </div>
               <br />
               <Button
-                disabled={context === null}
+                disabled={context === null || tokenMetadata === null}
                 className="w-full my-8"
                 type="submit"
               >
