@@ -325,12 +325,6 @@ const SendErrorDialog: FC<{
   };
   let errorList = <></>;
   if ((info?.errors.length || 0) > 0) {
-    const notEnoughToken =
-      info?.errors.find(
-        (error) =>
-          error.code === toPolkadot.SendValidationCode.InsufficientToken,
-      ) !== undefined && token === "WETH";
-
     errorList = (
       <ol className="list-inside list-disc">
         {info?.errors.map((e, i) => (
