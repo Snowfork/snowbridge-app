@@ -21,7 +21,6 @@ import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { formatBalance, formatTime, transformSs58Format } from "@/lib/utils";
 import { relayChainNativeAssetAtom } from "@/store/snowbridge";
-import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { useAtomValue } from "jotai";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { FC, Suspense, useEffect, useState } from "react";
@@ -103,6 +102,7 @@ const StatusCard = () => {
       : "text-red-700 font-semibold";
   if (status == null) return <Loading />;
 
+  console.log(status.relayers);
   return (
     <>
       <Card className="w-[360px] md:w-2/3">

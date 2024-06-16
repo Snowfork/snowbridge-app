@@ -110,7 +110,7 @@ const fetchStatus = async ([env, context, chainId]: [
         context.ethereum.api.getBalance(assetHubAgentAddress),
         context.ethereum.api.getBalance(bridgeHubAgentAddress),
         Promise.all(
-          config.RELAYERS.filter((r) => r.type == "ethereum").map(async (r) => {
+          config.RELAYERS.map(async (r) => {
             let balance = 0n;
             switch (r.type) {
               case "ethereum":
