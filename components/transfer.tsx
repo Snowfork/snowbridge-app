@@ -222,7 +222,7 @@ const doDepositAndApproveWeth = async (
   const response = await toPolkadot.depositWeth(context, signer, token, amount);
   console.log("deposit response", response);
   const receipt = await response.wait();
-  console.log("depoist receipt", receipt);
+  console.log("deposit receipt", receipt);
   if (receipt?.status === 0) {
     // check success
     throw Error("Token deposit failed.");
@@ -277,9 +277,8 @@ const SendErrorDialog: FC<{
   onDepositAndApproveWeth,
   onApproveSpend,
 }) => {
+  const token = getDestinationTokenIdByAddress(formData.token, destination);
   const fixAction = (error: ValidationError): JSX.Element => {
-    const token = getDestinationTokenIdByAddress(formData.token, destination);
-
     if (
       error.code === toPolkadot.SendValidationCode.InsufficientToken &&
       token === "WETH"
@@ -326,6 +325,12 @@ const SendErrorDialog: FC<{
   };
   let errorList = <></>;
   if ((info?.errors.length || 0) > 0) {
+    const notEnoughToken =
+      info?.errors.find(
+        (error) =>
+          error.code === toPolkadot.SendValidationCode.InsufficientToken,
+      ) !== undefined && token === "WETH";
+
     errorList = (
       <ol className="list-inside list-disc">
         {info?.errors.map((e, i) => (
@@ -444,6 +449,28 @@ const onSubmit = (
   addPendingTransaction: (_: PendingTransferAction) => void,
 ): ((data: FormData) => Promise<void>) => {
   return async (data) => {
+    if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
+
+    const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata);
+    if (amountInSmallestUnit === 0n) {
+      form.setError("amount", { message: "Amount must be greater than 0." });
+      return;
+    }
+    const minimumTransferAmount =
+      destination.erc20tokensReceivable.find(
+        (t) => t.address.toLowerCase() === data.token.toLowerCase(),
+      )?.minimumTransferAmount ?? 1n;
+    if (amountInSmallestUnit < minimumTransferAmount) {
+      form.setError(
+        "amount",
+        {
+          message: `Cannot send less than minimum value of ${formatBalance(minimumTransferAmount, Number(tokenMetadata.decimals.toString()))} ${tokenMetadata.symbol}.`,
+        },
+        { shouldFocus: true },
+      );
+      return;
+    }
+
     try {
       if (source.id !== data.source)
         throw Error(
@@ -454,13 +481,6 @@ const onSubmit = (
           `Invalid form state: source mismatch ${destination.id} and ${data.destination}.`,
         );
       if (context === null) throw Error(`Context not connected.`);
-      if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
-
-      const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata);
-      if (amountInSmallestUnit === 0n) {
-        form.setError("amount", { message: "Amount must be greater than 0." });
-        return;
-      }
 
       setBusyMessage("Validating...");
       let messageId: string;

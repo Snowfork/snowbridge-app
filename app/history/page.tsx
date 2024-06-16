@@ -392,7 +392,7 @@ const transferDetail = (
 
 export default function History() {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom) ?? {};
+  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const relaychainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -515,9 +515,10 @@ export default function History() {
   }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (
-    pages.length === 0 &&
-    isTransfersLoading &&
-    transferHistoryCache.length === 0
+    (pages.length === 0 &&
+      isTransfersLoading &&
+      transferHistoryCache.length === 0) ||
+    assetErc20MetaData === null
   ) {
     return <Loading />;
   }
