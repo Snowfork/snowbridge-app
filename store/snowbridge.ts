@@ -1,14 +1,8 @@
 import { getEnvironment, getEnvironmentName } from "@/lib/snowbridge";
-import { Context, environment, assets } from "@snowbridge/api";
+import { Context, assets } from "@snowbridge/api";
 import { atom } from "jotai";
 
-export interface NativeToken {
-  tokenSymbol: string;
-  tokenDecimal: number;
-  ss58Format: number | null;
-}
-
-export const assetHubNativeTokenAtom = atom<NativeToken | null>(null);
+export const relayChainNativeAssetAtom = atom<assets.NativeAsset | null>(null);
 export const assetErc20MetaDataAtom = atom<{
   [tokenAddress: string]: assets.ERC20Metadata;
 } | null>(null);

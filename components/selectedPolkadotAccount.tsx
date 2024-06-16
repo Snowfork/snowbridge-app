@@ -42,17 +42,19 @@ export const SelectedPolkadotAccount: FC = () => {
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          {polkadotAccounts?.map((acc) => (
-            <SelectItem key={acc.address} value={acc.address}>
-              <div>
-                {acc.name}{" "}
-                <pre className="inline md:hidden">
-                  ({trimAccount(acc.address)})
-                </pre>
-                <pre className="hidden md:inline">({acc.address})</pre>
-              </div>
-            </SelectItem>
-          ))}
+          {polkadotAccounts?.map((acc) => {
+            return (
+              <SelectItem key={acc.address} value={acc.address}>
+                <div>
+                  {acc.name}{" "}
+                  <pre className="inline md:hidden">
+                    ({trimAccount(acc.address)})
+                  </pre>
+                  <pre className="hidden md:inline">({acc.address})</pre>
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectGroup>
       </SelectContent>
     </Select>

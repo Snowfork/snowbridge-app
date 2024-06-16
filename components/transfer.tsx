@@ -11,7 +11,7 @@ import {
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
-  assetHubNativeTokenAtom,
+  relayChainNativeAssetAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
@@ -574,7 +574,11 @@ const onSubmit = (
             destination.paraInfo.paraId,
             amountInSmallestUnit,
             destination.paraInfo.destinationFeeDOT,
-            { maxConsumers: destination.paraInfo.maxConsumers },
+            {
+              maxConsumers: destination.paraInfo.maxConsumers,
+              ignoreExistentialDeposit:
+                destination.paraInfo.skipExistentialDepositCheck,
+            },
           );
           console.log(plan);
           if (plan.failure) {
@@ -684,7 +688,7 @@ export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const ethereumChainId = useAtomValue(ethereumChainIdAtom);
   const context = useAtomValue(snowbridgeContextAtom);
-  const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom);
+  const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const router = useRouter();

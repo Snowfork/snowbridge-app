@@ -1,6 +1,6 @@
 import {
   assetErc20MetaDataAtom,
-  assetHubNativeTokenAtom,
+  relayChainNativeAssetAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
@@ -40,18 +40,20 @@ const connectSnowbridgeContext = async (
         .map((l) => l.address.toLowerCase()),
     ),
   ];
-  const [network, assetHubNativeToken, assetMetadataList] = await Promise.all([
-    context.ethereum.api.getNetwork(),
-    assets.parachainNativeToken(context.polkadot.api.assetHub),
-    Promise.all(
-      tokens.map((t) =>
-        assets
-          .assetErc20Metadata(context, t)
-          .then((m) => ({ token: t, metadata: m }))
-          .catch((_) => null),
+  const [network, relayChainNativeToken, assetMetadataList] = await Promise.all(
+    [
+      context.ethereum.api.getNetwork(),
+      assets.parachainNativeAsset(context.polkadot.api.relaychain),
+      Promise.all(
+        tokens.map((t) =>
+          assets
+            .assetErc20Metadata(context, t)
+            .then((m) => ({ token: t, metadata: m }))
+            .catch((_) => null),
+        ),
       ),
-    ),
-  ]);
+    ],
+  );
 
   const assetMetadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
   assetMetadataList
@@ -61,7 +63,7 @@ const connectSnowbridgeContext = async (
   return {
     context,
     chainId: Number(network.chainId.toString()),
-    assetHubNativeToken,
+    relayChainNativeToken,
     assetMetadata,
   };
 };
@@ -72,7 +74,7 @@ export const useSnowbridgeContext = (): [
   string | null,
 ] => {
   const [context, setContext] = useAtom(snowbridgeContextAtom);
-  const setAssetHubNativeToken = useSetAtom(assetHubNativeTokenAtom);
+  const setRelayChainNativeAsset = useSetAtom(relayChainNativeAssetAtom);
   const setAssetErc20MetaData = useSetAtom(assetErc20MetaDataAtom);
 
   const ethereumProvider = useAtomValue(ethersProviderAtom);
@@ -96,7 +98,7 @@ export const useSnowbridgeContext = (): [
       .then((result) => {
         setLoading(false);
         setContext(result.context);
-        setAssetHubNativeToken(result.assetHubNativeToken);
+        setRelayChainNativeAsset(result.relayChainNativeToken);
         setAssetErc20MetaData(result.assetMetadata);
       })
       .catch((error) => {
@@ -108,7 +110,7 @@ export const useSnowbridgeContext = (): [
   }, [
     env,
     chainId,
-    setAssetHubNativeToken,
+    setRelayChainNativeAsset,
     setAssetErc20MetaData,
     setContext,
     setError,

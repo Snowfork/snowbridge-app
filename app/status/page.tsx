@@ -20,7 +20,8 @@ import {
 import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { formatBalance, formatTime } from "@/lib/utils";
-import { assetHubNativeTokenAtom } from "@/store/snowbridge";
+import { relayChainNativeAssetAtom } from "@/store/snowbridge";
+import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { useAtomValue } from "jotai";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { FC, Suspense, useEffect, useState } from "react";
@@ -28,25 +29,28 @@ import { FC, Suspense, useEffect, useState } from "react";
 const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   let amount = "0";
   let symbol = "ETH";
-  const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom);
+  let accountDisplay = account.account;
+  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   switch (account.type) {
     case "ethereum":
       symbol = "ETH";
       amount = formatBalance(account.balance, 18);
       break;
     case "substrate":
-      symbol = assetHubNativeToken?.tokenSymbol ?? "DOT";
+      symbol = relayChainNativeAsset?.tokenSymbol ?? "DOT";
       amount = formatBalance(
         account.balance,
-        assetHubNativeToken?.tokenDecimal ?? 10,
+        relayChainNativeAsset?.tokenDecimal ?? 10,
       );
+      const ss58format = relayChainNativeAsset?.ss58Format ?? 42;
+      accountDisplay = encodeAddress(decodeAddress(accountDisplay), ss58format);
       break;
   }
   return (
     <TableRow>
       <TableCell>
         {account.name}{" "}
-        <pre className="text-xs hidden md:block">{account.account}</pre>
+        <pre className="text-xs hidden md:block">{accountDisplay}</pre>
       </TableCell>
       <TableCell>
         <pre className="text-xs">

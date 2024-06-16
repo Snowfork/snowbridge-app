@@ -7,7 +7,7 @@ import {
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-const CACHE_REVALIDATE_IN_SECONDS = 30;
+const CACHE_REVALIDATE_IN_SECONDS = 5 * 60; // 5 minutes
 
 export const revalidate = CACHE_REVALIDATE_IN_SECONDS;
 export const fetchCache = "default-no-store";
