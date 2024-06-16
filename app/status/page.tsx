@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { useWindowHash } from "@/hooks/useWindowHash";
-import { formatBalance, formatTime } from "@/lib/utils";
+import { formatBalance, formatTime, transformSs58Format } from "@/lib/utils";
 import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { useAtomValue } from "jotai";
@@ -43,7 +43,7 @@ const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
         relayChainNativeAsset?.tokenDecimal ?? 10,
       );
       const ss58format = relayChainNativeAsset?.ss58Format ?? 42;
-      accountDisplay = encodeAddress(decodeAddress(accountDisplay), ss58format);
+      accountDisplay = transformSs58Format(accountDisplay, ss58format);
       break;
   }
   return (

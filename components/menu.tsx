@@ -46,6 +46,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { TermsOfUse } from "./termsOfUse";
+import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
@@ -114,8 +115,9 @@ const InstallMetamaskDialog: FC = () => {
 
 export const Menu: FC = () => {
   useEthereumProvider();
-  useConnectPolkadotWallet();
   const [_, contextLoading, contextError] = useSnowbridgeContext();
+  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
+  useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
