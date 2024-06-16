@@ -73,7 +73,10 @@ const StatusCard = () => {
 
   useEffect(() => {
     if (statusError) {
-      setStatusErrorMessage(statusError.message ?? "Unknown Error");
+      console.error(statusError);
+      setStatusErrorMessage("Bridge status unavaible. Please check back soon.");
+    } else {
+      setStatusErrorMessage(null);
     }
   }, [statusError, setStatusErrorMessage]);
 
@@ -190,7 +193,7 @@ const StatusCard = () => {
               </p>
               <p className="px-2">Latest Relaychain Block</p>
               <p className="px-2">
-                {status.statusInfo.toEthereum.latestPolkaotBlock}
+                {status.statusInfo.toEthereum.latestPolkadotBlock}
               </p>
               <p className="px-2">Relaychain Block in BEEFY client</p>
               <p className="px-2">

@@ -246,14 +246,13 @@ type FormData = {
   beneficiary: string;
 };
 
-const tokenName = (
-  erc20tokensReceivable: { [name: string]: string },
-  formData: FormData,
+const getDestinationTokenIdByAddress = (
+  tokenAddress: string,
+  destination?: environment.TransferLocation,
 ): string | undefined => {
-  const token = Object.entries(erc20tokensReceivable).find(
-    (kv) => kv[1] == formData.token,
-  );
-  return token !== undefined ? token[0] : undefined;
+  return (destination?.erc20tokensReceivable ?? []).find(
+    (token) => token.address === tokenAddress,
+  )?.id;
 };
 
 const parseAmount = (
@@ -279,7 +278,7 @@ const SendErrorDialog: FC<{
   onApproveSpend,
 }) => {
   const fixAction = (error: ValidationError): JSX.Element => {
-    const token = tokenName(destination.erc20tokensReceivable, formData);
+    const token = getDestinationTokenIdByAddress(formData.token, destination);
 
     if (
       error.code === toPolkadot.SendValidationCode.InsufficientToken &&
@@ -567,7 +566,6 @@ const onSubmit = (
           const signer = await ethereumProvider.getSigner();
           if (signer.address.toLowerCase() !== data.sourceAccount.toLowerCase())
             throw Error(`Source account mismatch.`);
-          console.log("pre validate");
           const plan = await toPolkadot.validateSend(
             context,
             signer,
@@ -578,7 +576,6 @@ const onSubmit = (
             destination.paraInfo.destinationFeeDOT,
             { maxConsumers: destination.paraInfo.maxConsumers },
           );
-          console.log("pre post validate");
           console.log(plan);
           if (plan.failure) {
             setBusyMessage("");
@@ -592,9 +589,8 @@ const onSubmit = (
           }
 
           setBusyMessage("Sending...");
-          console.log("pre send");
           const result = await toPolkadot.send(context, signer, plan);
-          console.log("post send");
+
           messageId = result.success?.messageId || "";
           transfer = {
             id: messageId,
@@ -712,9 +708,8 @@ export const TransferForm: FC = () => {
   );
   const [destination, setDestination] = useState(destinations[0]);
 
-  const tokens = Object.keys(destination.erc20tokensReceivable);
   const [token, setToken] = useState(
-    destination.erc20tokensReceivable[tokens[0]],
+    destination.erc20tokensReceivable[0].address,
   );
   const [tokenMetadata, setTokenMetadata] =
     useState<assets.ERC20Metadata | null>(null);
@@ -830,10 +825,13 @@ export const TransferForm: FC = () => {
     form.resetField("destination", { defaultValue: newDestination.id });
     form.resetField("beneficiary", { defaultValue: "" });
 
-    const newTokens = Object.values(newDestination.erc20tokensReceivable);
-    const newToken = newTokens.find((x) => x == watchToken) ?? newTokens[0];
-    setToken(newToken);
-    form.resetField("token", { defaultValue: newToken });
+    const newTokens = newDestination.erc20tokensReceivable;
+    const newToken =
+      newTokens.find(
+        (x) => x.address.toLowerCase() == watchToken.toLowerCase(),
+      ) ?? newTokens[0];
+    setToken(newToken.address);
+    form.resetField("token", { defaultValue: newToken.address });
   }, [
     form,
     source,
@@ -1259,11 +1257,9 @@ export const TransferForm: FC = () => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectGroup>
-                                {Object.entries(
-                                  destination.erc20tokensReceivable,
-                                ).map((tk) => (
-                                  <SelectItem key={tk[1]} value={tk[1]}>
-                                    {tk[0]}
+                                {destination.erc20tokensReceivable.map((t) => (
+                                  <SelectItem key={t.address} value={t.address}>
+                                    {t.id}
                                   </SelectItem>
                                 ))}
                               </SelectGroup>

@@ -4,13 +4,7 @@ import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import {
-  Context,
-  assets,
-  contextFactory,
-  destroyContext,
-  environment,
-} from "@snowbridge/api";
+import { Context, assets, contextFactory, environment } from "@snowbridge/api";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { AbstractProvider } from "ethers";
@@ -42,8 +36,8 @@ const connectSnowbridgeContext = async (
   const tokens = [
     ...new Set(
       locations
-        .flatMap((l) => Object.values(l.erc20tokensReceivable))
-        .map((l) => l.toLowerCase()),
+        .flatMap((l) => l.erc20tokensReceivable)
+        .map((l) => l.address.toLowerCase()),
     ),
   ];
   const [network, assetHubNativeToken, assetMetadataList] = await Promise.all([

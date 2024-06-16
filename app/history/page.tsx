@@ -29,7 +29,7 @@ import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn, formatBalance } from "@/lib/utils";
-import { ethereumAccountsAtom, ethereumChainIdAtom } from "@/store/ethereum";
+import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
@@ -110,13 +110,12 @@ const getEnvDetail = (
   return destination;
 };
 
-const getTokenName = (
-  transfer: Transfer,
+const getDestinationTokenByAddress = (
+  tokenAddress: string,
   destination?: environment.TransferLocation,
 ) => {
-  const tokens = destination?.erc20tokensReceivable ?? {};
-  return Object.keys(tokens).find(
-    (k) => tokens[k].toLowerCase() === transfer.info.tokenAddress.toLowerCase(),
+  return (destination?.erc20tokensReceivable ?? []).find(
+    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
   );
 };
 
@@ -251,7 +250,11 @@ const transferTitle = (
   const tokenAddress = transfer.info.tokenAddress.toLowerCase();
 
   let amount = transfer.info.amount;
-  let tokenName = getTokenName(transfer, destination);
+  let tokenConfig = getDestinationTokenByAddress(
+    transfer.info.tokenAddress,
+    destination,
+  );
+  let tokenName = tokenConfig?.id;
   const metaData =
     tokenAddress in assetErc20MetaData
       ? assetErc20MetaData[tokenAddress]
