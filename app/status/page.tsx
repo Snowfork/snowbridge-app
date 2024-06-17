@@ -102,7 +102,6 @@ const StatusCard = () => {
       : "text-red-700 font-semibold";
   if (status == null) return <Loading />;
 
-  console.log(status.relayers);
   return (
     <>
       <Card className="w-[360px] md:w-2/3">
@@ -175,13 +174,17 @@ const StatusCard = () => {
               <p className="px-2">
                 {status.statusInfo.toPolkadot.operatingMode.outbound}
               </p>
-              <p className="px-2">Latest Ethereum Block</p>
+              <p className="px-2">Latest Beacon Slot Attested</p>
               <p className="px-2">
-                {status.statusInfo.toPolkadot.latestEthereumBlock}
+                {status.statusInfo.toPolkadot.latestBeaconSlotAttested}
               </p>
-              <p className="px-2">Ethereum Block in Beacon client</p>
+              <p className="px-2">Latest Beacon Slot Finalized</p>
               <p className="px-2">
-                {status.statusInfo.toPolkadot.latestEthereumBlockOnPolkadot}
+                {status.statusInfo.toPolkadot.latestBeaconSlotFinalized}
+              </p>
+              <p className="px-2">Beacon Slot in Beacon client</p>
+              <p className="px-2">
+                {status.statusInfo.toPolkadot.latestBeaconSlotOnPolkadot}
               </p>
               <p className="px-2">Beacon client Latency (blocks)</p>
               <p className="px-2">

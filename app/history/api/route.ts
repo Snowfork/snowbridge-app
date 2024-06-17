@@ -1,3 +1,6 @@
+export const fetchCache = "default-no-store";
+export const dynamic = "force-dynamic";
+
 import {
   HISTORY_IN_SECONDS,
   SKIP_LIGHT_CLIENT_UPDATES,
@@ -10,7 +13,6 @@ import { unstable_cache } from "next/cache";
 const CACHE_REVALIDATE_IN_SECONDS = 5 * 60; // 5 minutes
 
 export const revalidate = CACHE_REVALIDATE_IN_SECONDS;
-export const fetchCache = "default-no-store";
 
 const getCachedTransferHistory = unstable_cache(
   () => {
