@@ -1,5 +1,7 @@
-export const fetchCache = "default-no-store";
-export const dynamic = "force-dynamic";
+// Next.js serverless options
+export const fetchCache = "default-no-store"; // Dont cache fetches unless asked.
+export const dynamic = "force-dynamic"; // Always run dynamically
+export const revalidate = 120; // Keep cache for 2 minutes
 
 import {
   HISTORY_IN_SECONDS,
@@ -10,18 +12,21 @@ import {
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-const CACHE_REVALIDATE_IN_SECONDS = 5 * 60; // 5 minutes
-
-export const revalidate = CACHE_REVALIDATE_IN_SECONDS;
+const CACHE_REVALIDATE_IN_SECONDS = 10; // 5 minutes
 
 const getCachedTransferHistory = unstable_cache(
   () => {
     const env = getEnvironment();
-    return getTransferHistory(
-      env,
-      SKIP_LIGHT_CLIENT_UPDATES,
-      HISTORY_IN_SECONDS,
-    );
+    try {
+      return getTransferHistory(
+        env,
+        SKIP_LIGHT_CLIENT_UPDATES,
+        HISTORY_IN_SECONDS,
+      );
+    } catch (err) {
+      reportError(err);
+      return Promise.resolve([]);
+    }
   },
   ["transfer-history"],
   {
