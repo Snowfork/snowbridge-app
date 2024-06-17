@@ -2,6 +2,7 @@
 export const fetchCache = "default-no-store"; // Dont cache fetches unless asked.
 export const dynamic = "force-dynamic"; // Always run dynamically
 export const revalidate = 120; // Keep cache for 2 minutes
+export const maxDuration = 90; // Timout after 90 seconds
 
 import {
   HISTORY_IN_SECONDS,
