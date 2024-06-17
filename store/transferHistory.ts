@@ -32,7 +32,7 @@ const transfersPendingReducer = (
 
 export const transferHistoryShowGlobal = atomWithStorage(
   "transfer_history_show_global",
-  false,
+  true,
 );
 
 export const transfersPendingLocalAtom = atom(

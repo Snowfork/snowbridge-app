@@ -13,6 +13,8 @@ import {
 import { ethereumChainIdAtom } from "@/store/ethereum";
 
 export const REFRESH_INTERVAL: number = 5 * 60 * 1000; // 5 minutes
+export const ERROR_RETRY_INTERVAL: number = 1 * 60 * 1000; // 1 minute
+
 const ACCEPTABLE_BRIDGE_LATENCY = 28800; // 8 hours
 
 export interface AccountInfo {
@@ -108,7 +110,7 @@ const fetchStatus = async ([env, context, chainId]: [
         context.ethereum.api.getBalance(assetHubAgentAddress),
         context.ethereum.api.getBalance(bridgeHubAgentAddress),
         Promise.all(
-          config.RELAYERS.filter((r) => r.type == "ethereum").map(async (r) => {
+          config.RELAYERS.map(async (r) => {
             let balance = 0n;
             switch (r.type) {
               case "ethereum":
@@ -216,5 +218,7 @@ export const useBridgeStatus = () => {
     revalidateOnMount: false,
     suspense: true,
     fallbackData: null,
+    errorRetryInterval: ERROR_RETRY_INTERVAL,
+    errorRetryCount: 120, // Retry 120 times every minute (2 hours)
   });
 };

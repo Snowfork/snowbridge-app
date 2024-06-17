@@ -15,10 +15,6 @@ import {
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { trimAccount } from "@/lib/utils";
 import {
-  ethereumWalletAuthorizedAtom,
-  ethersProviderAtom,
-} from "@/store/ethereum";
-import {
   polkadotAccountAtom,
   polkadotAccountsAtom,
   polkadotWalletModalOpenAtom,
@@ -36,7 +32,7 @@ import {
   LucideWallet,
 } from "lucide-react";
 import Link from "next/link";
-import { FC, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { ErrorDialog } from "./errorDialog";
 import { SelectedEthereumWallet } from "./selectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
@@ -50,7 +46,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { TermsOfUse } from "./termsOfUse";
-import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
@@ -119,8 +115,9 @@ const InstallMetamaskDialog: FC = () => {
 
 export const Menu: FC = () => {
   useEthereumProvider();
-  useConnectPolkadotWallet();
   const [_, contextLoading, contextError] = useSnowbridgeContext();
+  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
+  useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);

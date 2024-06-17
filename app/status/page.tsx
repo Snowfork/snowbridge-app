@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/table";
 import { AccountInfo, useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { useWindowHash } from "@/hooks/useWindowHash";
-import { formatBalance, formatTime } from "@/lib/utils";
-import { assetHubNativeTokenAtom } from "@/store/snowbridge";
+import { formatBalance, formatTime, transformSs58Format } from "@/lib/utils";
+import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { FC, Suspense, useEffect, useState } from "react";
@@ -28,25 +28,28 @@ import { FC, Suspense, useEffect, useState } from "react";
 const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   let amount = "0";
   let symbol = "ETH";
-  const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom);
+  let accountDisplay = account.account;
+  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   switch (account.type) {
     case "ethereum":
       symbol = "ETH";
       amount = formatBalance(account.balance, 18);
       break;
     case "substrate":
-      symbol = assetHubNativeToken?.tokenSymbol ?? "DOT";
+      symbol = relayChainNativeAsset?.tokenSymbol ?? "DOT";
       amount = formatBalance(
         account.balance,
-        assetHubNativeToken?.tokenDecimal ?? 10,
+        relayChainNativeAsset?.tokenDecimal ?? 10,
       );
+      const ss58format = relayChainNativeAsset?.ss58Format ?? 42;
+      accountDisplay = transformSs58Format(accountDisplay, ss58format);
       break;
   }
   return (
     <TableRow>
       <TableCell>
         {account.name}{" "}
-        <pre className="text-xs hidden md:block">{account.account}</pre>
+        <pre className="text-xs hidden md:block">{accountDisplay}</pre>
       </TableCell>
       <TableCell>
         <pre className="text-xs">
@@ -73,7 +76,10 @@ const StatusCard = () => {
 
   useEffect(() => {
     if (statusError) {
-      setStatusErrorMessage(statusError.message ?? "Unknown Error");
+      console.error(statusError);
+      setStatusErrorMessage("Bridge status unavaible. Please check back soon.");
+    } else {
+      setStatusErrorMessage(null);
     }
   }, [statusError, setStatusErrorMessage]);
 
@@ -168,13 +174,17 @@ const StatusCard = () => {
               <p className="px-2">
                 {status.statusInfo.toPolkadot.operatingMode.outbound}
               </p>
-              <p className="px-2">Latest Ethereum Block</p>
+              <p className="px-2">Latest Beacon Slot Attested</p>
               <p className="px-2">
-                {status.statusInfo.toPolkadot.latestEthereumBlock}
+                {status.statusInfo.toPolkadot.latestBeaconSlotAttested}
               </p>
-              <p className="px-2">Ethereum Block in Beacon client</p>
+              <p className="px-2">Latest Beacon Slot Finalized</p>
               <p className="px-2">
-                {status.statusInfo.toPolkadot.latestEthereumBlockOnPolkadot}
+                {status.statusInfo.toPolkadot.latestBeaconSlotFinalized}
+              </p>
+              <p className="px-2">Beacon Slot in Beacon client</p>
+              <p className="px-2">
+                {status.statusInfo.toPolkadot.latestBeaconSlotOnPolkadot}
               </p>
               <p className="px-2">Beacon client Latency (blocks)</p>
               <p className="px-2">
@@ -190,7 +200,7 @@ const StatusCard = () => {
               </p>
               <p className="px-2">Latest Relaychain Block</p>
               <p className="px-2">
-                {status.statusInfo.toEthereum.latestPolkaotBlock}
+                {status.statusInfo.toEthereum.latestPolkadotBlock}
               </p>
               <p className="px-2">Relaychain Block in BEEFY client</p>
               <p className="px-2">

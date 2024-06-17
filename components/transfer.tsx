@@ -11,7 +11,7 @@ import {
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
-  assetHubNativeTokenAtom,
+  relayChainNativeAssetAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
@@ -222,7 +222,7 @@ const doDepositAndApproveWeth = async (
   const response = await toPolkadot.depositWeth(context, signer, token, amount);
   console.log("deposit response", response);
   const receipt = await response.wait();
-  console.log("depoist receipt", receipt);
+  console.log("deposit receipt", receipt);
   if (receipt?.status === 0) {
     // check success
     throw Error("Token deposit failed.");
@@ -246,14 +246,13 @@ type FormData = {
   beneficiary: string;
 };
 
-const tokenName = (
-  erc20tokensReceivable: { [name: string]: string },
-  formData: FormData,
+const getDestinationTokenIdByAddress = (
+  tokenAddress: string,
+  destination?: environment.TransferLocation,
 ): string | undefined => {
-  const token = Object.entries(erc20tokensReceivable).find(
-    (kv) => kv[1] == formData.token,
-  );
-  return token !== undefined ? token[0] : undefined;
+  return (destination?.erc20tokensReceivable ?? []).find(
+    (token) => token.address === tokenAddress,
+  )?.id;
 };
 
 const parseAmount = (
@@ -278,9 +277,8 @@ const SendErrorDialog: FC<{
   onDepositAndApproveWeth,
   onApproveSpend,
 }) => {
+  const token = getDestinationTokenIdByAddress(formData.token, destination);
   const fixAction = (error: ValidationError): JSX.Element => {
-    const token = tokenName(destination.erc20tokensReceivable, formData);
-
     if (
       error.code === toPolkadot.SendValidationCode.InsufficientToken &&
       token === "WETH"
@@ -445,6 +443,28 @@ const onSubmit = (
   addPendingTransaction: (_: PendingTransferAction) => void,
 ): ((data: FormData) => Promise<void>) => {
   return async (data) => {
+    if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
+
+    const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata);
+    if (amountInSmallestUnit === 0n) {
+      form.setError("amount", { message: "Amount must be greater than 0." });
+      return;
+    }
+    const minimumTransferAmount =
+      destination.erc20tokensReceivable.find(
+        (t) => t.address.toLowerCase() === data.token.toLowerCase(),
+      )?.minimumTransferAmount ?? 1n;
+    if (amountInSmallestUnit < minimumTransferAmount) {
+      form.setError(
+        "amount",
+        {
+          message: `Cannot send less than minimum value of ${formatBalance(minimumTransferAmount, Number(tokenMetadata.decimals.toString()))} ${tokenMetadata.symbol}.`,
+        },
+        { shouldFocus: true },
+      );
+      return;
+    }
+
     try {
       if (source.id !== data.source)
         throw Error(
@@ -455,13 +475,6 @@ const onSubmit = (
           `Invalid form state: source mismatch ${destination.id} and ${data.destination}.`,
         );
       if (context === null) throw Error(`Context not connected.`);
-      if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
-
-      const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata);
-      if (amountInSmallestUnit === 0n) {
-        form.setError("amount", { message: "Amount must be greater than 0." });
-        return;
-      }
 
       setBusyMessage("Validating...");
       let messageId: string;
@@ -567,7 +580,6 @@ const onSubmit = (
           const signer = await ethereumProvider.getSigner();
           if (signer.address.toLowerCase() !== data.sourceAccount.toLowerCase())
             throw Error(`Source account mismatch.`);
-          console.log("pre validate");
           const plan = await toPolkadot.validateSend(
             context,
             signer,
@@ -576,9 +588,12 @@ const onSubmit = (
             destination.paraInfo.paraId,
             amountInSmallestUnit,
             destination.paraInfo.destinationFeeDOT,
-            { maxConsumers: destination.paraInfo.maxConsumers },
+            {
+              maxConsumers: destination.paraInfo.maxConsumers,
+              ignoreExistentialDeposit:
+                destination.paraInfo.skipExistentialDepositCheck,
+            },
           );
-          console.log("pre post validate");
           console.log(plan);
           if (plan.failure) {
             setBusyMessage("");
@@ -592,9 +607,8 @@ const onSubmit = (
           }
 
           setBusyMessage("Sending...");
-          console.log("pre send");
           const result = await toPolkadot.send(context, signer, plan);
-          console.log("post send");
+
           messageId = result.success?.messageId || "";
           transfer = {
             id: messageId,
@@ -688,7 +702,7 @@ export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const ethereumChainId = useAtomValue(ethereumChainIdAtom);
   const context = useAtomValue(snowbridgeContextAtom);
-  const assetHubNativeToken = useAtomValue(assetHubNativeTokenAtom);
+  const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const router = useRouter();
@@ -712,9 +726,8 @@ export const TransferForm: FC = () => {
   );
   const [destination, setDestination] = useState(destinations[0]);
 
-  const tokens = Object.keys(destination.erc20tokensReceivable);
   const [token, setToken] = useState(
-    destination.erc20tokensReceivable[tokens[0]],
+    destination.erc20tokensReceivable[0].address,
   );
   const [tokenMetadata, setTokenMetadata] =
     useState<assets.ERC20Metadata | null>(null);
@@ -830,10 +843,13 @@ export const TransferForm: FC = () => {
     form.resetField("destination", { defaultValue: newDestination.id });
     form.resetField("beneficiary", { defaultValue: "" });
 
-    const newTokens = Object.values(newDestination.erc20tokensReceivable);
-    const newToken = newTokens.find((x) => x == watchToken) ?? newTokens[0];
-    setToken(newToken);
-    form.resetField("token", { defaultValue: newToken });
+    const newTokens = newDestination.erc20tokensReceivable;
+    const newToken =
+      newTokens.find(
+        (x) => x.address.toLowerCase() == watchToken.toLowerCase(),
+      ) ?? newTokens[0];
+    setToken(newToken.address);
+    form.resetField("token", { defaultValue: newToken.address });
   }, [
     form,
     source,
@@ -1259,11 +1275,9 @@ export const TransferForm: FC = () => {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectGroup>
-                                {Object.entries(
-                                  destination.erc20tokensReceivable,
-                                ).map((tk) => (
-                                  <SelectItem key={tk[1]} value={tk[1]}>
-                                    {tk[0]}
+                                {destination.erc20tokensReceivable.map((t) => (
+                                  <SelectItem key={t.address} value={t.address}>
+                                    {t.id}
                                   </SelectItem>
                                 ))}
                               </SelectGroup>

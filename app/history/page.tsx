@@ -29,10 +29,11 @@ import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn, formatBalance } from "@/lib/utils";
-import { ethereumAccountsAtom, ethereumChainIdAtom } from "@/store/ethereum";
+import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
+  relayChainNativeAssetAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import {
@@ -110,13 +111,12 @@ const getEnvDetail = (
   return destination;
 };
 
-const getTokenName = (
-  transfer: Transfer,
+const getDestinationTokenByAddress = (
+  tokenAddress: string,
   destination?: environment.TransferLocation,
 ) => {
-  const tokens = destination?.erc20tokensReceivable ?? {};
-  return Object.keys(tokens).find(
-    (k) => tokens[k].toLowerCase() === transfer.info.tokenAddress.toLowerCase(),
+  return (destination?.erc20tokensReceivable ?? []).find(
+    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
   );
 };
 
@@ -251,7 +251,11 @@ const transferTitle = (
   const tokenAddress = transfer.info.tokenAddress.toLowerCase();
 
   let amount = transfer.info.amount;
-  let tokenName = getTokenName(transfer, destination);
+  let tokenConfig = getDestinationTokenByAddress(
+    transfer.info.tokenAddress,
+    destination,
+  );
+  let tokenName = tokenConfig?.id;
   const metaData =
     tokenAddress in assetErc20MetaData
       ? assetErc20MetaData[tokenAddress]
@@ -297,6 +301,7 @@ const transferTitle = (
 const transferDetail = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
+  ss58Format: number,
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const urls = EXPLORERS[env.name];
@@ -308,11 +313,11 @@ const transferDetail = (
 
   let source = transfer.info.sourceAddress;
   if (source.length === 66) {
-    source = encodeAddress(source, destination?.paraInfo?.ss58Format);
+    source = encodeAddress(source, ss58Format);
   }
   let beneficiary = transfer.info.beneficiaryAddress;
   if (beneficiary.length === 66) {
-    beneficiary = encodeAddress(beneficiary, destination?.paraInfo?.ss58Format);
+    beneficiary = encodeAddress(beneficiary, ss58Format);
   }
   const tokenUrl = `${urls["etherscan"]}token/${transfer.info.tokenAddress}`;
   let sourceAccountUrl;
@@ -387,7 +392,8 @@ const transferDetail = (
 
 export default function History() {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom) ?? {};
+  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
+  const relaychainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
@@ -509,9 +515,10 @@ export default function History() {
   }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (
-    pages.length === 0 &&
-    isTransfersLoading &&
-    transferHistoryCache.length === 0
+    (pages.length === 0 &&
+      isTransfersLoading &&
+      transferHistoryCache.length === 0) ||
+    assetErc20MetaData === null
   ) {
     return <Loading />;
   }
@@ -576,7 +583,13 @@ export default function History() {
                 <AccordionTrigger>
                   {transferTitle(v, env, assetErc20MetaData)}
                 </AccordionTrigger>
-                <AccordionContent>{transferDetail(v, env)}</AccordionContent>
+                <AccordionContent>
+                  {transferDetail(
+                    v,
+                    env,
+                    relaychainNativeAsset?.ss58Format ?? 42,
+                  )}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
