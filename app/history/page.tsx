@@ -122,7 +122,7 @@ const getDestinationTokenByAddress = (
 
 const etherscanEventLink = (baseUrl: string, txHash: string): string => {
   const slash = baseUrl.endsWith("/") ? "" : "/";
-  return `${baseUrl}${slash}tx/${txHash}#eventlog`;
+  return `${baseUrl}${slash}tx/${txHash}`;
 };
 
 const subscanEventLink = (baseUrl: string, eventIndex: string): string => {
