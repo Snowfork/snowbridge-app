@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { BusyDialog } from "./busyDialog";
 import { ErrorDialog } from "./errorDialog";
-import { FC } from "react";
+import { FC, useState } from "react";
 
 export type SelectedEthereumWalletProps = {
   className?: string;
@@ -21,6 +21,14 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const [connectToEthereumWallet, ethereumLoading, ethereumError] =
     useConnectEthereumWallet();
   const { shouldSwitchNetwork, switchNetwork } = useSwitchEthereumNetwork();
+  const [errorMessage, setErrorMessage] = useState(ethereumError);
+
+  if (errorMessage) {
+    console.error(errorMessage);
+    setErrorMessage(
+      "There was an error trying to access your wallet. Are you signed in?",
+    );
+  }
 
   if (!ethereumAccount) {
     return (
@@ -75,9 +83,9 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
         description="Waiting for Ethereum wallet..."
       />
       <ErrorDialog
-        open={!ethereumLoading && ethereumError !== null}
+        open={!ethereumLoading && errorMessage !== null}
         title="Ethereum Wallet Error"
-        description={ethereumError || "Unknown Error."}
+        description={errorMessage || "Unknown Error."}
       />
     </>
   );

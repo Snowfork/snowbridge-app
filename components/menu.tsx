@@ -117,7 +117,13 @@ export const Menu: FC = () => {
   useEthereumProvider();
   const [_, contextLoading, contextError] = useSnowbridgeContext();
   const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
+  const [errorMessage, setErrorMessage] = useState(contextError);
   useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
+
+  if (errorMessage) {
+    console.error(errorMessage);
+    setErrorMessage("There was an error connecting to Snowbridge.");
+  }
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
@@ -240,9 +246,9 @@ export const Menu: FC = () => {
       </Menubar>
       <InstallMetamaskDialog />
       <ErrorDialog
-        open={!contextLoading && contextError !== null}
+        open={!contextLoading && errorMessage !== null}
         title="Connection Error"
-        description={contextError || "Unknown Error."}
+        description={errorMessage || "Unknown Error."}
       />
       <PolkadotWalletDialog />
       <TermsOfUse />

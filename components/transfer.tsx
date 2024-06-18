@@ -179,7 +179,7 @@ const updateBalance = (
       setBalanceDisplay("unknown");
       setError({
         title: "Error",
-        description: `Could not fetch asset balance: ${err.message}`,
+        description: `Could not fetch asset balance.`,
         errors: [],
       });
     });
@@ -514,7 +514,9 @@ const onSubmit = (
             return;
           }
 
-          setBusyMessage("Sending...");
+          setBusyMessage(
+            "Waiting for transaction to be finalized. After finalization transfers can take up to 4 hours.",
+          );
           const result = await toEthereum.send(context, walletSigner, plan);
           messageId = result.success?.messageId || "";
           transfer = {
@@ -606,7 +608,9 @@ const onSubmit = (
             return;
           }
 
-          setBusyMessage("Sending...");
+          setBusyMessage(
+            "Waiting for transaction to be finalized. After finalization transfers can take up to 15-20 minutes.",
+          );
           const result = await toPolkadot.send(context, signer, plan);
 
           messageId = result.success?.messageId || "";
@@ -665,15 +669,10 @@ const onSubmit = (
       });
       setBusyMessage("");
     } catch (err: any) {
-      console.error(err);
-      let reason = "unknonwn";
-      if (err) {
-        reason = err.reason || err.message;
-      }
       setBusyMessage("");
       setError({
         title: "Send Error",
-        description: `Error occured while trying to send transaction. Reason: ${reason}`,
+        description: `Error occured while trying to send transaction.`,
         errors: [],
       });
     }
@@ -881,7 +880,7 @@ export const TransferForm: FC = () => {
         setTokenMetadata(null);
         setError({
           title: "Error",
-          description: `Could not fetch ERC20 token metadata: ${err.message}`,
+          description: `Token metadata unavailable.`,
           errors: [],
         });
       });
@@ -950,7 +949,7 @@ export const TransferForm: FC = () => {
         position: "bottom-center",
         closeButton: true,
         id: "deposit_approval_result",
-        description: "Token spend approval was succesful.",
+        description: "Token spend allowance approval was succesful.",
         important: true,
       });
       updateBalance(
@@ -965,7 +964,7 @@ export const TransferForm: FC = () => {
       );
     } catch (err: any) {
       console.error(err);
-      const errorMessage = `Action Failed: reason: ${err.reason || err.message}`;
+      const errorMessage = `Token spend allowance approval failed.`;
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
@@ -1014,7 +1013,7 @@ export const TransferForm: FC = () => {
         position: "bottom-center",
         closeButton: true,
         id: "approval_result",
-        description: "Token spend approval was succesful.",
+        description: "Token spend allowance approval was succesful.",
         important: true,
       });
       updateBalance(
@@ -1029,7 +1028,7 @@ export const TransferForm: FC = () => {
       );
     } catch (err: any) {
       console.error(err);
-      const errorMessage = `Action Failed: reason: ${err.reason || err.message}`;
+      const errorMessage = `Token spend allowance approval failed.`;
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
