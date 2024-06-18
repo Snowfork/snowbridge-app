@@ -45,38 +45,10 @@ function reportError(err: any) {
   return message;
 }
 
-let lastKnownHistory: any | null = null;
-let lastSetTime: number | null = null;
-
 export async function GET() {
   try {
-    const waitForTime = (CACHE_REVALIDATE_IN_SECONDS + 5) * 1000;
-    const now = new Date().getTime();
-    let promise = null;
-    if (
-      lastSetTime === null ||
-      lastKnownHistory === null ||
-      lastSetTime < now - waitForTime
-    ) {
-      console.log("Fetching");
-      promise = getCachedTransferHistory()
-        .then((history) => {
-          lastKnownHistory = history;
-          lastSetTime = now;
-          console.log("History set at ", lastSetTime);
-          return history;
-        })
-        .catch(reportError);
-    }
-    let returnValue;
-    if (lastKnownHistory == null && promise !== null) {
-      console.log("Waiting");
-      returnValue = await promise;
-    } else {
-      console.log("Return from local");
-      returnValue = lastKnownHistory;
-    }
-    return NextResponse.json(returnValue);
+    const history = await getCachedTransferHistory();
+    return NextResponse.json(history);
   } catch (err) {
     return NextResponse.json({ error: reportError(err) }, { status: 500 });
   }
