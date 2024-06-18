@@ -25,7 +25,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
-import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn, formatBalance } from "@/lib/utils";
@@ -44,6 +43,7 @@ import {
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assets, environment, history } from "@snowbridge/api";
+import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
@@ -241,15 +241,13 @@ const getExplorerLinks = (
   return links;
 };
 
-const transferTitle = (
+const formatTokenData = (
   transfer: Transfer,
-  env: environment.SnowbridgeEnvironment,
   assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
-): JSX.Element => {
-  const destination = getEnvDetail(transfer, env);
-  const when = new Date(transfer.info.when);
+  destination?: TransferLocation,
+  displayDecimals?: number,
+) => {
   const tokenAddress = transfer.info.tokenAddress.toLowerCase();
-
   let amount = transfer.info.amount;
   let tokenConfig = getDestinationTokenByAddress(
     transfer.info.tokenAddress,
@@ -264,15 +262,33 @@ const transferTitle = (
     amount = formatBalance(
       parseUnits(transfer.info.amount, 0),
       Number(metaData.decimals),
+      displayDecimals ?? Number(metaData.decimals),
     );
     tokenName = metaData.symbol;
   }
+  return { tokenName, amount };
+};
+
+const transferTitle = (
+  transfer: Transfer,
+  env: environment.SnowbridgeEnvironment,
+  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+): JSX.Element => {
+  const destination = getEnvDetail(transfer, env);
+  const when = new Date(transfer.info.when);
+
   const badgeStyle =
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
         ? ""
         : "bg-secondary";
+
+  const { tokenName, amount } = formatTokenData(
+    transfer,
+    assetErc20MetaData,
+    destination,
+  );
 
   return (
     <div className="grid grid-cols-8 justify-stretch w-full">
@@ -302,6 +318,7 @@ const transferDetail = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
   ss58Format: number,
+  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const urls = EXPLORERS[env.name];
@@ -329,10 +346,20 @@ const transferDetail = (
     sourceAccountUrl = `${urls["subscan_ah"]}/account/${transfer.info.sourceAddress}`;
     beneficiaryAccountUrl = `${urls["etherscan"]}address/${beneficiary}`;
   }
-
+  const { tokenName, amount } = formatTokenData(
+    transfer,
+    assetErc20MetaData,
+    destination,
+  );
   return (
     <div className="flex-col">
       <div className="p-2">
+        <p>
+          Value{" "}
+          <span className="inline whitespace-pre font-mono">
+            {amount} {tokenName}
+          </span>{" "}
+        </p>
         <p>
           Token Address{" "}
           <span className="inline whitespace-pre font-mono">
@@ -588,6 +615,7 @@ export default function History() {
                     v,
                     env,
                     relaychainNativeAsset?.ss58Format ?? 42,
+                    assetErc20MetaData,
                   )}
                 </AccordionContent>
               </AccordionItem>

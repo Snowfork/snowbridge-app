@@ -31,12 +31,13 @@ export const formatBalance = (
     return "0";
   };
 
-  const value = new Big(number.toString()).div(new Big(10).pow(decimals));
-
-  const zerosRemoved = replaceZeros(value.toFixed(displayDecimals, 0));
-  if (zerosRemoved !== "0") return zerosRemoved;
-
-  return replaceZeros(value.toFixed(decimals, 0));
+  let value = new Big(number.toString()).div(new Big(10).pow(decimals));
+  const [whole, decimal] = value.toFixed(displayDecimals, 0).split(".");
+  const d = replaceZeros(decimal);
+  if (d === "0") {
+    return whole;
+  }
+  return whole + "." + d;
 };
 
 export const formatTime = (time: number): string => {
