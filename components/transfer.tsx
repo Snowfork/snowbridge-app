@@ -515,7 +515,7 @@ const onSubmit = (
           }
 
           setBusyMessage(
-            "Waiting for transaction to be finalized. After finalization transfers can take up to 4 hours.",
+            "Waiting for transaction to be confirmed by wallet. After finalization transfers can take up to 4 hours.",
           );
           const result = await toEthereum.send(context, walletSigner, plan);
           messageId = result.success?.messageId || "";
@@ -609,7 +609,7 @@ const onSubmit = (
           }
 
           setBusyMessage(
-            "Waiting for transaction to be finalized. After finalization transfers can take up to 15-20 minutes.",
+            "Waiting for transaction to be confirmed by wallet. After finalization transfers can take up to 15-20 minutes.",
           );
           const result = await toPolkadot.send(context, signer, plan);
 

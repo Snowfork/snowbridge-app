@@ -8,6 +8,7 @@ import {
   HISTORY_IN_SECONDS,
   SKIP_LIGHT_CLIENT_UPDATES,
   getEnvironment,
+  getErrorMessage,
   getTransferHistory,
 } from "@/lib/snowbridge";
 import { NextResponse } from "next/server";
@@ -36,20 +37,11 @@ const getCachedTransferHistory = unstable_cache(
   },
 );
 
-function reportError(err: any) {
-  let message = "Unknown error";
-  if (err instanceof Error) {
-    message = err.message;
-  }
-  console.error(message, err);
-  return message;
-}
-
 export async function GET() {
   try {
-    const history = await getCachedTransferHistory();
-    return NextResponse.json(history);
+    //const history = await getCachedTransferHistory();
+    return NextResponse.json([]);
   } catch (err) {
-    return NextResponse.json({ error: reportError(err) }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
