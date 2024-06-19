@@ -3,7 +3,6 @@ import { ContextComponent } from "@/components/contextComponent";
 import { Footer } from "@/components/footer";
 import { Menu } from "@/components/menu";
 import { Toaster } from "@/components/ui/sonner";
-import { Marquee } from "@/components/marquee";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { Provider } from "jotai";
@@ -34,19 +33,12 @@ export default function RootLayout({
       <body className={cn(inter.className)}>
         <Provider>
           <main>
-            <div>
-              <Marquee pauseOnHover={true}>
-                <div>
-                  ⚠️ This is an early release of Snowbridge. We are testing
-                  heavily over the next 2 weeks and do not recommend sending
-                  large amounts just yet. ⚠️
-                </div>
-                <div>
-                  You may not see your bridged assets in your Wallet yet -
-                  support in SubWallet, Talisman and Nova is coming soon.
-                  Meanwhile, you can check your balance on this page.
-                </div>
-              </Marquee>
+            <div className="text-center bg-yellow-200">
+              ⚠️ This is an early release of Snowbridge. We are testing heavily
+              over the next 2 weeks and do not recommend sending large amounts
+              just yet. ⚠️ You may not see your bridged assets in your Wallet
+              yet - support in SubWallet, Talisman and Nova is coming soon.
+              Meanwhile, you can check your balance on this page.
             </div>
             <div className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
               <div className="w-full max-w-5xl md:gap-4 flex flex-col">
