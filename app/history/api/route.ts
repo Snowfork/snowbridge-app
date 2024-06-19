@@ -39,8 +39,8 @@ const getCachedTransferHistory = unstable_cache(
 
 export async function GET() {
   try {
-    //const history = await getCachedTransferHistory();
-    return NextResponse.json([]);
+    const history = await getCachedTransferHistory();
+    return NextResponse.json(history);
   } catch (err) {
     return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
