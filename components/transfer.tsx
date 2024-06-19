@@ -730,8 +730,8 @@ export const TransferForm: FC = () => {
   );
   const [tokenMetadata, setTokenMetadata] =
     useState<assets.ERC20Metadata | null>(null);
-  const [feeDisplay, setFeeDisplay] = useState<string>("unknown");
-  const [balanceDisplay, setBalanceDisplay] = useState<string>("unknown");
+  const [feeDisplay, setFeeDisplay] = useState<string>("Fetching...");
+  const [balanceDisplay, setBalanceDisplay] = useState<string>("Fetching...");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -1204,7 +1204,7 @@ export const TransferForm: FC = () => {
                         )}
                         <div
                           className={
-                            "text-xs text-right text-muted-foreground px-1 " +
+                            "text-sm text-right text-muted-foreground px-1 " +
                             ((source.type == "ethereum" &&
                               ethereumAccount !== null) ||
                             (source.type == "substrate" &&
@@ -1289,8 +1289,8 @@ export const TransferForm: FC = () => {
                   />
                 </div>
               </div>
-              <div className="text-xs text-right text-muted-foreground px-1">
-                Fee: {feeDisplay}
+              <div className="text-sm text-right text-muted-foreground px-1">
+                Transfer Fee: {feeDisplay}
               </div>
               <br />
               <Button

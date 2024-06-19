@@ -21,7 +21,8 @@ export const SelectedPolkadotAccount: FC = () => {
 
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  if (!polkadotAccount) {
+  console.log("abc", polkadotAccount, polkadotAccounts);
+  if (!polkadotAccounts || polkadotAccounts.length == 0) {
     return (
       <Button
         variant="link"
@@ -35,7 +36,7 @@ export const SelectedPolkadotAccount: FC = () => {
   return (
     <Select
       onValueChange={(v) => setPolkadotAccount(v)}
-      value={polkadotAccount.address}
+      value={(polkadotAccount ?? polkadotAccounts[0]).address}
     >
       <SelectTrigger>
         <SelectValue placeholder="Select an account" />

@@ -3,6 +3,7 @@ import { ContextComponent } from "@/components/contextComponent";
 import { Footer } from "@/components/footer";
 import { Menu } from "@/components/menu";
 import { Toaster } from "@/components/ui/sonner";
+import { WalletNotice } from "@/components/walletNotice";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { Provider } from "jotai";
@@ -49,8 +50,22 @@ export default function RootLayout({
                 </div>
                 <Menu />
               </div>
-              <div className="flex justify-center">
-                <BridgeStatus />
+              <div className="flex-col py-2 gap-2">
+                <div className="flex justify-center">
+                  <BridgeStatus />
+                </div>
+                <div
+                  className={cn(
+                    "flex justify-center",
+                    (
+                      process.env.NEXT_PUBLIC_SHOW_WALLET_NOTICE ?? "true"
+                    ).toLowerCase() === "true"
+                      ? "visible"
+                      : "invisible",
+                  )}
+                >
+                  <WalletNotice />
+                </div>
               </div>
             </div>
             <div className="w-full max-w-5xl flex place-content-center">
