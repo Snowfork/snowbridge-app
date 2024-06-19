@@ -9,33 +9,17 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { AbstractProvider } from "ethers";
 import { ethereumChainIdAtom, ethersProviderAtom } from "@/store/ethereum";
+import { createContext } from "@/lib/snowbridge";
 
 const connectSnowbridgeContext = async (
-  { config, locations }: environment.SnowbridgeEnvironment,
+  env: environment.SnowbridgeEnvironment,
   ethereumProvider: AbstractProvider,
 ) => {
-  const context = await contextFactory({
-    ethereum: {
-      execution_url: ethereumProvider,
-      beacon_url: config.BEACON_HTTP_API,
-    },
-    polkadot: {
-      url: {
-        bridgeHub: config.BRIDGE_HUB_WS_URL,
-        assetHub: config.ASSET_HUB_WS_URL,
-        relaychain: config.RELAY_CHAIN_WS_URL,
-        parachains: config.PARACHAINS,
-      },
-    },
-    appContracts: {
-      gateway: config.GATEWAY_CONTRACT,
-      beefy: config.BEEFY_CONTRACT,
-    },
-  });
+  const context = await createContext(ethereumProvider, env);
 
   const tokens = [
     ...new Set(
-      locations
+      env.locations
         .flatMap((l) => l.erc20tokensReceivable)
         .map((l) => l.address.toLowerCase()),
     ),
