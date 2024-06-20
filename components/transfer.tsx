@@ -399,7 +399,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     !allowManualInput &&
     accountFromWallet &&
     accounts.length == 0 &&
-    polkadotAccounts == null
+    (polkadotAccounts == null || polkadotAccounts.length == 0)
   ) {
     return (
       <Button

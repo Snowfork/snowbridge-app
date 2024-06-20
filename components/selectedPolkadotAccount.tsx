@@ -27,7 +27,10 @@ export const SelectedPolkadotAccount: FC = () => {
       <Button
         variant="link"
         className="w-full"
-        onClick={() => setPolkadotWalletModalOpen(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          setPolkadotWalletModalOpen(true);
+        }}
       >
         Connect Polkadot
       </Button>
