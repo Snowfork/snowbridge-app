@@ -21,21 +21,31 @@ export const SelectedPolkadotAccount: FC = () => {
 
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  console.log("abc", polkadotAccount, polkadotAccounts);
+
   if (!polkadotAccounts || polkadotAccounts.length == 0) {
     return (
       <Button
         variant="link"
         className="w-full"
-        onClick={() => setPolkadotWalletModalOpen(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          setPolkadotWalletModalOpen(true);
+        }}
       >
         Connect Polkadot
       </Button>
     );
+  } else {
+    if (!polkadotAccount) {
+      setPolkadotAccount(polkadotAccounts[0].address);
+    }
   }
   return (
     <Select
-      onValueChange={(v) => setPolkadotAccount(v)}
+      onValueChange={(v) => {
+        console.log(v);
+        setPolkadotAccount(v);
+      }}
       value={(polkadotAccount ?? polkadotAccounts[0]).address}
     >
       <SelectTrigger>

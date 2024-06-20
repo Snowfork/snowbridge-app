@@ -2,6 +2,7 @@ import { BridgeStatus } from "@/components/bridgeStatus";
 import { ContextComponent } from "@/components/contextComponent";
 import { Footer } from "@/components/footer";
 import { Menu } from "@/components/menu";
+import { TermsOfUse } from "@/components/termsOfUse";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
@@ -70,6 +71,7 @@ export default function RootLayout({
                 <Footer />
               </div>
               <Toaster />
+              <TermsOfUse />
             </div>
           </main>
         </Provider>

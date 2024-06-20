@@ -4,7 +4,6 @@ import {
   ethereumAccountAtom,
   ethereumAccountsAtom,
   ethereumChainIdAtom,
-  ethereumWalletAuthorizedAtom,
   ethersProviderAtom,
   windowEthereumAtom,
 } from "@/store/ethereum";
@@ -30,9 +29,6 @@ export const useEthereumProvider = () => {
   const setEthereumAccounts = useSetAtom(ethereumAccountsAtom);
   const setEthereumChainId = useSetAtom(ethereumChainIdAtom);
 
-  const [ethereumWalletAuthorized, setEthereumWalletAuthorized] = useAtom(
-    ethereumWalletAuthorizedAtom,
-  );
   useEffect(() => {
     if (ethereumProvider != null) return;
     const init = async (): Promise<void> => {
@@ -41,7 +37,6 @@ export const useEthereumProvider = () => {
       const updateAccounts = (accounts: string[]): void => {
         setEthereumAccount(accounts[0] ?? null);
         setEthereumAccounts(accounts);
-        setEthereumWalletAuthorized(accounts.length > 0);
       };
       const updateChainId = (chainId: unknown): void => {
         setEthereumChainId(Number.parseInt(chainId as string, 16));
@@ -52,29 +47,25 @@ export const useEthereumProvider = () => {
       provider.on("accountsChanged", updateAccounts);
       provider.on("chainChanged", updateChainId);
       void provider.request({ method: "eth_chainId" }).then(updateChainId);
-      if (ethereumWalletAuthorized) {
-        provider
-          .request({ method: "eth_requestAccounts" })
-          .then(updateAccounts)
-          .catch((error: any) => {
-            if (error.code === 4001) {
-              setEthereumWalletAuthorized(false);
-            } else {
-              throw error;
-            }
-          });
-      }
+      void provider
+        .request({ method: "eth_requestAccounts" })
+        .then(updateAccounts)
+        .catch((error: any) => {
+          if (error.code === 4001) {
+            console.log();
+          } else {
+            throw error;
+          }
+        });
     };
 
     void init();
   }, [
     ethereumProvider,
-    ethereumWalletAuthorized,
     setEthereumAccount,
     setEthereumAccounts,
     setEthereumChainId,
     setEthereumProvider,
-    setEthereumWalletAuthorized,
     setWindowEthereum,
   ]);
 };

@@ -49,7 +49,10 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
           className="w-full"
           type="button"
           variant="destructive"
-          onClick={switchNetwork}
+          onClick={(e) => {
+            e.preventDefault();
+            switchNetwork();
+          }}
         >
           Switch Network
         </Button>

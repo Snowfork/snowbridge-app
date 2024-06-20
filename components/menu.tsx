@@ -20,12 +20,14 @@ import {
   polkadotWalletModalOpenAtom,
   walletAtom,
 } from "@/store/polkadot";
+import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { WalletSelect } from "@talismn/connect-components";
 import { useAtom, useAtomValue } from "jotai";
 import {
   Github,
   LucideBarChart,
   LucideBookText,
+  LucideBug,
   LucideHistory,
   LucideMenu,
   LucideSend,
@@ -45,8 +47,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { TermsOfUse } from "./termsOfUse";
-import { relayChainNativeAssetAtom } from "@/store/snowbridge";
+import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
@@ -119,6 +120,7 @@ export const Menu: FC = () => {
   const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   const [errorMessage, setErrorMessage] = useState(contextError);
   useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
+  useConnectEthereumWallet();
 
   if (errorMessage) {
     console.error(errorMessage);
@@ -128,10 +130,11 @@ export const Menu: FC = () => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
 
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const PolkadotWallet = () => {
-    if (!polkadotAccount) {
+    if (!polkadotAccounts || polkadotAccounts.length == 0) {
       return (
         <Button
           className="w-full"
@@ -146,10 +149,10 @@ export const Menu: FC = () => {
       <>
         <h1 className="font-semibold py-2">Polkadot</h1>
         <div className="text-xs">
-          <p>Name: {polkadotAccount.name}</p>
+          <p>Name: {(polkadotAccount ?? polkadotAccounts[0]).name}</p>
           <p className="inline">Address: </p>
           <pre className="inline">
-            {trimAccount(polkadotAccount.address, 28)}
+            {trimAccount((polkadotAccount ?? polkadotAccounts[0]).address, 28)}
           </pre>
           <p>
             Wallet:{" "}
@@ -232,6 +235,18 @@ export const Menu: FC = () => {
             <Button
               className="flex items-center justify-start w-auto h-auto"
               variant="link"
+              onClick={() =>
+                window.open(
+                  "https://github.com/Snowfork/snowbridge-app/issues/new/choose",
+                )
+              }
+            >
+              <LucideBug className="w-[40px] h-[40px]" />
+              <p>Report an issue</p>
+            </Button>
+            <Button
+              className="flex items-center justify-start w-auto h-auto"
+              variant="link"
               onClick={() => window.open("https://docs.snowbridge.network/")}
             >
               <LucideBookText className="w-[40px] h-[40px]" />
@@ -251,7 +266,6 @@ export const Menu: FC = () => {
         description={errorMessage || "Unknown Error."}
       />
       <PolkadotWalletDialog />
-      <TermsOfUse />
     </div>
   );
 };

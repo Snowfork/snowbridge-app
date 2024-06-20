@@ -8,7 +8,11 @@ import {
   ethereumChainIdAtom,
   ethersProviderAtom,
 } from "@/store/ethereum";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
+import {
+  polkadotAccountAtom,
+  polkadotAccountsAtom,
+  polkadotWalletModalOpenAtom,
+} from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
   relayChainNativeAssetAtom,
@@ -32,7 +36,7 @@ import {
 } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { BrowserProvider, parseUnits } from "ethers";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useRouter } from "next/navigation";
 import {
   Dispatch,
@@ -80,8 +84,8 @@ import { LucideHardHat } from "lucide-react";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
-  | toPolkadot.SendValidationError
-  | toEthereum.SendValidationError;
+  | ({ kind: "toPolkadot" } & toPolkadot.SendValidationError)
+  | ({ kind: "toEthereum" } & toEthereum.SendValidationError);
 
 const formSchema = z.object({
   source: z.string().min(1, "Select source."),
@@ -97,14 +101,14 @@ const formSchema = z.object({
     .string()
     .min(1, "Select beneficiary.")
     .regex(
-      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/,
+      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
       "Invalid address format.",
     ),
   sourceAccount: z
     .string()
     .min(1, "Select source account.")
     .regex(
-      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/,
+      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
       "Invalid address format.",
     ),
 });
@@ -237,6 +241,30 @@ type ErrorInfo = {
   errors: ValidationError[];
 };
 
+const userFriendlyErrorMessage = (
+  error: ValidationError,
+  formData: FormData,
+) => {
+  if (error.kind === "toPolkadot") {
+    if (
+      error.code == toPolkadot.SendValidationCode.BeneficiaryAccountMissing &&
+      formData.destination === "assethub"
+    ) {
+      return "Beneficiary does not hold existential deposit on destination. Already have DOT on Polkadot? Teleport DOT to the beneficiary address on Asset Hub using your wallet.";
+    }
+    if (error.code == toPolkadot.SendValidationCode.InsufficientFee) {
+      return "Insufficient ETH balance to pay transfer fees.";
+    }
+    return error.message;
+  } else if (error.kind === "toEthereum") {
+    if (error.code == toEthereum.SendValidationCode.InsufficientFee) {
+      return "Insufficient DOT balance to pay transfer fees. Already have DOT on Polkadot? Teleport DOT to the source address on Asset Hub using your wallet.";
+    }
+    return error.message;
+  }
+  return (error as any).message;
+};
+
 type FormData = {
   source: string;
   sourceAccount: string;
@@ -278,29 +306,40 @@ const SendErrorDialog: FC<{
   onApproveSpend,
 }) => {
   const token = getDestinationTokenIdByAddress(formData.token, destination);
+  let errors = info?.errors ?? [];
+  const insufficentAsset = errors.find(
+    (error) =>
+      error.kind === "toPolkadot" &&
+      error.code === toPolkadot.SendValidationCode.InsufficientToken,
+  );
+  errors = errors.filter(
+    (error) =>
+      !(
+        error.kind === "toPolkadot" &&
+        error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved &&
+        insufficentAsset !== undefined
+      ),
+  );
+
   const fixAction = (error: ValidationError): JSX.Element => {
     if (
+      error.kind === "toPolkadot" &&
       error.code === toPolkadot.SendValidationCode.InsufficientToken &&
       token === "WETH"
     ) {
       return (
-        <Button
-          className="text-blue-600 py-0 h-auto"
-          variant="link"
-          onClick={onDepositAndApproveWeth}
-        >
-          Fix
+        <Button className="py-1" size="sm" onClick={onDepositAndApproveWeth}>
+          Deposit WETH and Approve Spend
         </Button>
       );
     }
-    if (error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved) {
+    if (
+      error.kind === "toPolkadot" &&
+      error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved
+    ) {
       return (
-        <Button
-          className="text-blue-600 py-0 h-auto"
-          variant="link"
-          onClick={onApproveSpend}
-        >
-          Fix
+        <Button className="py-1" size="sm" onClick={onApproveSpend}>
+          Approve WETH Spend
         </Button>
       );
     }
@@ -309,7 +348,7 @@ const SendErrorDialog: FC<{
     ) {
       return (
         <Button
-          className="text-blue-600 py-0 h-auto"
+          className="text-blue-600 py-1 h-auto"
           variant="link"
           onClick={() => {
             window.open(
@@ -324,12 +363,12 @@ const SendErrorDialog: FC<{
     return <></>;
   };
   let errorList = <></>;
-  if ((info?.errors.length || 0) > 0) {
+  if (errors.length > 0) {
     errorList = (
-      <ol className="list-inside list-disc">
-        {info?.errors.map((e, i) => (
-          <li key={i}>
-            {e.message}
+      <ol className="flex-col list-inside list-disc">
+        {errors.map((e, i) => (
+          <li key={i} className="p-1">
+            {userFriendlyErrorMessage(e, formData)}
             {fixAction(e)}
           </li>
         ))}
@@ -365,8 +404,29 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   accounts,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  if (
+    !allowManualInput &&
+    accountFromWallet &&
+    accounts.length == 0 &&
+    (polkadotAccounts == null || polkadotAccounts.length == 0)
+  ) {
+    return (
+      <Button
+        className="w-full"
+        variant="link"
+        onClick={(e) => {
+          e.preventDefault();
+          setPolkadotWalletModalOpen(true);
+        }}
+      >
+        Connect Polkadot
+      </Button>
+    );
+  }
   let input: JSX.Element;
-  if (!allowManualInput || (accountFromWallet && accounts.length > 0)) {
+  if (!allowManualInput && accountFromWallet && accounts.length > 0) {
     input = (
       <Select
         key="controlled"
@@ -487,7 +547,8 @@ const onSubmit = (
             throw Error(
               `Invalid form state: source does not have parachain info.`,
             );
-          if (polkadotAccount === null) throw Error(`Wallet not connected.`);
+          if (polkadotAccount === null)
+            throw Error(`Polkadot Wallet not connected.`);
           if (polkadotAccount.address !== data.sourceAccount)
             throw Error(`Source account mismatch.`);
           const walletSigner = {
@@ -509,7 +570,10 @@ const onSubmit = (
               title: "Send Plan Failed",
               description:
                 "Some preflight checks failed when planning the transfer.",
-              errors: plan.failure.errors,
+              errors: plan.failure.errors.map((e) => ({
+                kind: "toEthereum",
+                ...e,
+              })),
             });
             return;
           }
@@ -574,7 +638,8 @@ const onSubmit = (
             throw Error(
               `Invalid form state: destination does not have parachain id.`,
             );
-          if (ethereumProvider === null) throw Error(`Wallet not connected.`);
+          if (ethereumProvider === null)
+            throw Error(`Ethereum Wallet not connected.`);
           if (ethereumAccount === null)
             throw Error(`Wallet account not selected.`);
           if (ethereumAccount !== data.sourceAccount)
@@ -603,7 +668,10 @@ const onSubmit = (
               title: "Send Plan Failed",
               description:
                 "Some preflight checks failed when planning the transfer.",
-              errors: plan.failure.errors,
+              errors: plan.failure.errors.map((e) => ({
+                kind: "toPolkadot",
+                ...e,
+              })),
             });
             return;
           }
@@ -669,6 +737,7 @@ const onSubmit = (
       });
       setBusyMessage("");
     } catch (err: any) {
+      console.error(err);
       setBusyMessage("");
       setError({
         title: "Send Error",
