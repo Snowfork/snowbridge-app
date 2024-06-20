@@ -28,22 +28,6 @@ export const useSwitchEthereumNetwork = (): {
           params: [
             {
               chainId: chainIdHex,
-              // "chainName": "Gnosis",
-              // "rpcUrls": [
-              //   "https://rpc.gnosischain.com"
-              // ],
-              // "iconUrls": [
-              //   "https://xdaichain.com/fake/example/url/xdai.svg",
-              //   "https://xdaichain.com/fake/example/url/xdai.png"
-              // ],
-              // "nativeCurrency": {
-              //   "name": "XDAI",
-              //   "symbol": "XDAI",
-              //   "decimals": 18
-              // },
-              // "blockExplorerUrls": [
-              //   "https://blockscout.com/poa/xdai/"
-              // ]
             },
           ],
         });

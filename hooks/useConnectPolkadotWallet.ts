@@ -5,12 +5,12 @@ import {
   walletNameAtom,
 } from "@/store/polkadot";
 import { WalletAccount } from "@talismn/connect-wallets";
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { useEffect } from "react";
 
 export const useConnectPolkadotWallet = (ss58Format?: number): void => {
   const dappName = "Snowbridge";
-  const [, setAccounts] = useAtom(polkadotAccountsAtom);
+  const setAccounts = useSetAtom(polkadotAccountsAtom);
   const [wallet, setWallet] = useAtom(walletAtom);
   const [walletName] = useAtom(walletNameAtom);
 
@@ -27,6 +27,7 @@ export const useConnectPolkadotWallet = (ss58Format?: number): void => {
             setWallet(newWallet);
           }
         } catch (err) {
+          console.warn(err);
           // Ignore auto connect errors
         }
       }

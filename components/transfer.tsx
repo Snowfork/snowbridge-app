@@ -97,14 +97,14 @@ const formSchema = z.object({
     .string()
     .min(1, "Select beneficiary.")
     .regex(
-      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/,
+      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
       "Invalid address format.",
     ),
   sourceAccount: z
     .string()
     .min(1, "Select source account.")
     .regex(
-      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{48})$/,
+      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
       "Invalid address format.",
     ),
 });

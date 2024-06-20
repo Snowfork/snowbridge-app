@@ -21,7 +21,7 @@ export const SelectedPolkadotAccount: FC = () => {
 
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  console.log("abc", polkadotAccount, polkadotAccounts);
+
   if (!polkadotAccounts || polkadotAccounts.length == 0) {
     return (
       <Button
