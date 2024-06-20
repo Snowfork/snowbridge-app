@@ -80,8 +80,8 @@ import { LucideHardHat } from "lucide-react";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
-  | toPolkadot.SendValidationError
-  | toEthereum.SendValidationError;
+  | ({ kind: "toPolkadot" } & toPolkadot.SendValidationError)
+  | ({ kind: "toEthereum" } & toEthereum.SendValidationError);
 
 const formSchema = z.object({
   source: z.string().min(1, "Select source."),
@@ -237,6 +237,30 @@ type ErrorInfo = {
   errors: ValidationError[];
 };
 
+const userFriendlyErrorMessage = (
+  error: ValidationError,
+  formData: FormData,
+) => {
+  if (error.kind === "toPolkadot") {
+    if (
+      error.code == toPolkadot.SendValidationCode.BeneficiaryAccountMissing &&
+      formData.destination === "assethub"
+    ) {
+      return "Beneficiary does not hold existential deposit on destination. Already have DOT on Polkadot? Teleport DOT to Asset Hub using your wallet.";
+    }
+    if (error.code == toPolkadot.SendValidationCode.InsufficientFee) {
+      return "Insufficient ETH balance to pay transfer fees.";
+    }
+    return error.message;
+  } else if (error.kind === "toEthereum") {
+    if (error.code == toEthereum.SendValidationCode.InsufficientFee) {
+      return "Insufficient DOT balance to pay transfer fees. Already have DOT on Polkadot? Teleport DOT to Asset Hub using your wallet.";
+    }
+    return error.message;
+  }
+  return (error as any).message;
+};
+
 type FormData = {
   source: string;
   sourceAccount: string;
@@ -329,7 +353,7 @@ const SendErrorDialog: FC<{
       <ol className="list-inside list-disc">
         {info?.errors.map((e, i) => (
           <li key={i}>
-            {e.message}
+            {userFriendlyErrorMessage(e, formData)}
             {fixAction(e)}
           </li>
         ))}
@@ -509,7 +533,10 @@ const onSubmit = (
               title: "Send Plan Failed",
               description:
                 "Some preflight checks failed when planning the transfer.",
-              errors: plan.failure.errors,
+              errors: plan.failure.errors.map((e) => ({
+                kind: "toEthereum",
+                ...e,
+              })),
             });
             return;
           }
@@ -603,7 +630,10 @@ const onSubmit = (
               title: "Send Plan Failed",
               description:
                 "Some preflight checks failed when planning the transfer.",
-              errors: plan.failure.errors,
+              errors: plan.failure.errors.map((e) => ({
+                kind: "toPolkadot",
+                ...e,
+              })),
             });
             return;
           }
