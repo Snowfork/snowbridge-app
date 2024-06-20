@@ -8,7 +8,11 @@ import {
   ethereumChainIdAtom,
   ethersProviderAtom,
 } from "@/store/ethereum";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
+import {
+  polkadotAccountAtom,
+  polkadotAccountsAtom,
+  polkadotWalletModalOpenAtom,
+} from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
   relayChainNativeAssetAtom,
@@ -32,7 +36,7 @@ import {
 } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { BrowserProvider, parseUnits } from "ethers";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useRouter } from "next/navigation";
 import {
   Dispatch,
@@ -389,8 +393,29 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   accounts,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  if (
+    !allowManualInput &&
+    accountFromWallet &&
+    accounts.length == 0 &&
+    polkadotAccounts == null
+  ) {
+    return (
+      <Button
+        className="w-full"
+        variant="link"
+        onClick={(e) => {
+          e.preventDefault();
+          setPolkadotWalletModalOpen(true);
+        }}
+      >
+        Connect Polkadot
+      </Button>
+    );
+  }
   let input: JSX.Element;
-  if (!allowManualInput || (accountFromWallet && accounts.length > 0)) {
+  if (!allowManualInput && accountFromWallet && accounts.length > 0) {
     input = (
       <Select
         key="controlled"

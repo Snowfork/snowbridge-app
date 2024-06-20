@@ -130,10 +130,11 @@ export const Menu: FC = () => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
 
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const PolkadotWallet = () => {
-    if (!polkadotAccount) {
+    if (!polkadotAccounts || polkadotAccounts.length == 0) {
       return (
         <Button
           className="w-full"
@@ -148,10 +149,10 @@ export const Menu: FC = () => {
       <>
         <h1 className="font-semibold py-2">Polkadot</h1>
         <div className="text-xs">
-          <p>Name: {polkadotAccount.name}</p>
+          <p>Name: {(polkadotAccount ?? polkadotAccounts[0]).name}</p>
           <p className="inline">Address: </p>
           <pre className="inline">
-            {trimAccount(polkadotAccount.address, 28)}
+            {trimAccount((polkadotAccount ?? polkadotAccounts[0]).address, 28)}
           </pre>
           <p>
             Wallet:{" "}
