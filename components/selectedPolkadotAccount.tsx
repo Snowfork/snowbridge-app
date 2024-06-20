@@ -35,10 +35,17 @@ export const SelectedPolkadotAccount: FC = () => {
         Connect Polkadot
       </Button>
     );
+  } else {
+    if (!polkadotAccount) {
+      setPolkadotAccount(polkadotAccounts[0].address);
+    }
   }
   return (
     <Select
-      onValueChange={(v) => setPolkadotAccount(v)}
+      onValueChange={(v) => {
+        console.log(v);
+        setPolkadotAccount(v);
+      }}
       value={(polkadotAccount ?? polkadotAccounts[0]).address}
     >
       <SelectTrigger>

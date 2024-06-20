@@ -258,7 +258,7 @@ const userFriendlyErrorMessage = (
     return error.message;
   } else if (error.kind === "toEthereum") {
     if (error.code == toEthereum.SendValidationCode.InsufficientFee) {
-      return "Insufficient DOT balance to pay transfer fees. Already have DOT on Polkadot? Teleport DOT to source address on Asset Hub using your wallet.";
+      return "Insufficient DOT balance to pay transfer fees. Already have DOT on Polkadot? Teleport DOT to the source address on Asset Hub using your wallet.";
     }
     return error.message;
   }
@@ -306,29 +306,40 @@ const SendErrorDialog: FC<{
   onApproveSpend,
 }) => {
   const token = getDestinationTokenIdByAddress(formData.token, destination);
+  let errors = info?.errors ?? [];
+  const insufficentAsset = errors.find(
+    (error) =>
+      error.kind === "toPolkadot" &&
+      error.code === toPolkadot.SendValidationCode.InsufficientToken,
+  );
+  errors = errors.filter(
+    (error) =>
+      !(
+        error.kind === "toPolkadot" &&
+        error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved &&
+        insufficentAsset !== undefined
+      ),
+  );
+
   const fixAction = (error: ValidationError): JSX.Element => {
     if (
+      error.kind === "toPolkadot" &&
       error.code === toPolkadot.SendValidationCode.InsufficientToken &&
       token === "WETH"
     ) {
       return (
-        <Button
-          className="text-blue-600 py-0 h-auto"
-          variant="link"
-          onClick={onDepositAndApproveWeth}
-        >
-          Fix
+        <Button className="py-1" size="sm" onClick={onDepositAndApproveWeth}>
+          Deposit WETH and Approve Spend
         </Button>
       );
     }
-    if (error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved) {
+    if (
+      error.kind === "toPolkadot" &&
+      error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved
+    ) {
       return (
-        <Button
-          className="text-blue-600 py-0 h-auto"
-          variant="link"
-          onClick={onApproveSpend}
-        >
-          Fix
+        <Button className="py-1" size="sm" onClick={onApproveSpend}>
+          Approve WETH Spend
         </Button>
       );
     }
@@ -337,7 +348,7 @@ const SendErrorDialog: FC<{
     ) {
       return (
         <Button
-          className="text-blue-600 py-0 h-auto"
+          className="text-blue-600 py-1 h-auto"
           variant="link"
           onClick={() => {
             window.open(
@@ -352,11 +363,11 @@ const SendErrorDialog: FC<{
     return <></>;
   };
   let errorList = <></>;
-  if ((info?.errors.length || 0) > 0) {
+  if (errors.length > 0) {
     errorList = (
-      <ol className="list-inside list-disc">
-        {info?.errors.map((e, i) => (
-          <li key={i}>
+      <ol className="flex-col list-inside list-disc">
+        {errors.map((e, i) => (
+          <li key={i} className="p-1">
             {userFriendlyErrorMessage(e, formData)}
             {fixAction(e)}
           </li>
@@ -536,7 +547,8 @@ const onSubmit = (
             throw Error(
               `Invalid form state: source does not have parachain info.`,
             );
-          if (polkadotAccount === null) throw Error(`Wallet not connected.`);
+          if (polkadotAccount === null)
+            throw Error(`Polkadot Wallet not connected.`);
           if (polkadotAccount.address !== data.sourceAccount)
             throw Error(`Source account mismatch.`);
           const walletSigner = {
@@ -626,7 +638,8 @@ const onSubmit = (
             throw Error(
               `Invalid form state: destination does not have parachain id.`,
             );
-          if (ethereumProvider === null) throw Error(`Wallet not connected.`);
+          if (ethereumProvider === null)
+            throw Error(`Ethereum Wallet not connected.`);
           if (ethereumAccount === null)
             throw Error(`Wallet account not selected.`);
           if (ethereumAccount !== data.sourceAccount)
@@ -724,6 +737,7 @@ const onSubmit = (
       });
       setBusyMessage("");
     } catch (err: any) {
+      console.error(err);
       setBusyMessage("");
       setError({
         title: "Send Error",
