@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { BridgeStatus } from "@/components/bridgeStatus";
 import { ContextComponent } from "@/components/contextComponent";
 import { Footer } from "@/components/footer";
@@ -75,6 +76,7 @@ export default function RootLayout({
             </div>
           </main>
         </Provider>
+        <Analytics />
       </body>
     </html>
   );
