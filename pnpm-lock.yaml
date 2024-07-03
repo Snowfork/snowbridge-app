@@ -60,11 +60,11 @@ importers:
         specifier: ^1.0.3
         version: 1.0.3(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@snowbridge/api':
-        specifier: ^0.1.15
-        version: 0.1.15(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)
+        specifier: ^0.1.16
+        version: 0.1.16(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)
       '@snowbridge/contract-types':
-        specifier: ^0.1.15
-        version: 0.1.15
+        specifier: ^0.1.16
+        version: 0.1.16
       '@talismn/connect-components':
         specifier: ^1.1.8
         version: 1.1.8(@polkadot/api@11.2.1)(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1)(@polkadot/util@12.6.2))(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@2.79.1)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5))
@@ -1261,11 +1261,11 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@snowbridge/api@0.1.15':
-    resolution: {integrity: sha512-chY0uL0oQRhlJVaOAgFx5FfwRAwweDIdBVZPAlIq2DwPPWKoXfJeThQ3iurxo49C1UHSa/TvzmKO37UtD0HGMQ==}
+  '@snowbridge/api@0.1.16':
+    resolution: {integrity: sha512-Vf4ny9cevUfX+XnWSQ1xR+l/Oa1UkycJ1t4+5LNVTp0Qi8nTQu0aRIwyJgphMvrTMeDCk2XyT/uOMCcfmHLReA==}
 
-  '@snowbridge/contract-types@0.1.15':
-    resolution: {integrity: sha512-AdvzZEy0lbAK348VrW6GTLhblEr+wrYd/KBP4ZkJmR291bWSHcdNTiDSjK0U7oQFqAQHj4FMQsPKZq7M3UgwXw==}
+  '@snowbridge/contract-types@0.1.16':
+    resolution: {integrity: sha512-ShGJUCP3veebWjnOmlEaV5OxrVKAGXhQaRF0LCMNbeTQ+DOGQwNL9NoRIBYQ+e2AD5dz84/Sd9idToJ2mWMD8w==}
 
   '@substrate/connect-extension-protocol@2.0.0':
     resolution: {integrity: sha512-nKu8pDrE3LNCEgJjZe1iGXzaD6OSIDD4Xzz/yo4KO9mQ6LBvf49BVrt4qxBFGL6++NneLiWUZGoh+VSd4PyVIg==}
@@ -5887,14 +5887,14 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@snowbridge/api@0.1.15(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)':
+  '@snowbridge/api@0.1.16(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)':
     dependencies:
       '@polkadot/api': 11.2.1
       '@polkadot/keyring': 12.6.2(@polkadot/util-crypto@12.6.2(@polkadot/util@12.6.2))(@polkadot/util@12.6.2)
       '@polkadot/types': 11.2.1
       '@polkadot/util': 12.6.2
       '@polkadot/util-crypto': 12.6.2(@polkadot/util@12.6.2)
-      '@snowbridge/contract-types': 0.1.15
+      '@snowbridge/contract-types': 0.1.16
       '@typechain/ethers-v6': 0.5.1(ethers@6.12.1)(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)
       ethers: 6.12.1
       rxjs: 7.8.1
@@ -5905,7 +5905,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@snowbridge/contract-types@0.1.15':
+  '@snowbridge/contract-types@0.1.16':
     dependencies:
       ethers: 6.12.1
     transitivePeerDependencies:
