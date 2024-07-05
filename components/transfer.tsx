@@ -487,6 +487,41 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   );
 };
 
+const validateOFAC = async (
+  data: FormData,
+  form: UseFormReturn<FormData>,
+): Promise<boolean> => {
+  const response = await fetch("/blocked/api", {
+    method: "POST",
+    body: JSON.stringify({
+      sourceAddress: data.sourceAccount,
+      beneficiaryAddress: data.beneficiary,
+    }),
+  });
+  if (!response.ok) {
+    throw Error(
+      `Error verifying ofac status: ${response.status} - ${response.statusText}`,
+    );
+  }
+  const result = await response.json();
+  console.log(response, result);
+  if (result.beneficiaryBanned) {
+    form.setError(
+      "beneficiary",
+      { message: "Beneficiary banned." },
+      { shouldFocus: true },
+    );
+  }
+  if (result.sourceBanned) {
+    form.setError(
+      "sourceAccount",
+      { message: "Source Account banned." },
+      { shouldFocus: true },
+    );
+  }
+  return result.beneficiaryBanned === false && result.sourceBanned === false;
+};
+
 const onSubmit = (
   context: Context | null,
   source: environment.TransferLocation,
@@ -498,7 +533,7 @@ const onSubmit = (
   ethereumProvider: BrowserProvider | null,
   tokenMetadata: assets.ERC20Metadata | null,
   appRouter: AppRouter,
-  form: UseFormReturn<any>,
+  form: UseFormReturn<FormData>,
   refreshHistory: () => void,
   addPendingTransaction: (_: PendingTransferAction) => void,
 ): ((data: FormData) => Promise<void>) => {
@@ -526,6 +561,10 @@ const onSubmit = (
     }
 
     try {
+      if (!(await validateOFAC(data, form))) {
+        return;
+      }
+
       if (source.id !== data.source)
         throw Error(
           `Invalid form state: source mismatch ${source.id} and ${data.source}.`,
@@ -537,6 +576,7 @@ const onSubmit = (
       if (context === null) throw Error(`Context not connected.`);
 
       setBusyMessage("Validating...");
+
       let messageId: string;
       let transfer: Transfer;
       switch (source.type) {
@@ -737,6 +777,7 @@ const onSubmit = (
       });
       setBusyMessage("");
     } catch (err: any) {
+      console.log("here");
       console.error(err);
       setBusyMessage("");
       setError({
