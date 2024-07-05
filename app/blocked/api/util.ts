@@ -12,7 +12,7 @@ export const checkOFAC = async (address: string): Promise<boolean> => {
     }
   );
   if (result.data?.identifications?.length) {
-    return false;
+    return true;
   }
-  return true;
+  return false;
 };
