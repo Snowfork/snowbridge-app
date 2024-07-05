@@ -81,7 +81,6 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { LucideHardHat } from "lucide-react";
-import axios from "axios";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -488,6 +487,43 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   );
 };
 
+const validateOFAC = async (
+  data: FormData,
+  form: UseFormReturn<FormData>,
+): Promise<boolean> => {
+  const response = await fetch("/blocked/api", {
+    method: "POST",
+    body: JSON.stringify({
+      sourceAddress: data.sourceAccount,
+      beneficiaryAddress: data.beneficiary,
+    }),
+  });
+  if (!response.ok) {
+    throw Error(
+      `Error verifying ofac status: ${response.status} - ${response.statusText}`,
+    );
+  }
+  const result = await response.json();
+  if (result?.data?.beneficiaryBanned) {
+    form.setError(
+      "beneficiary",
+      { message: "Banned OFAC address." },
+      { shouldFocus: true },
+    );
+  }
+  if (result?.data?.sourceBanned) {
+    form.setError(
+      "sourceAccount",
+      { message: "Banned OFAC address." },
+      { shouldFocus: true },
+    );
+  }
+  return (
+    result?.data?.beneficiaryBanned === false &&
+    result?.data?.sourceBanned === false
+  );
+};
+
 const onSubmit = (
   context: Context | null,
   source: environment.TransferLocation,
@@ -499,7 +535,7 @@ const onSubmit = (
   ethereumProvider: BrowserProvider | null,
   tokenMetadata: assets.ERC20Metadata | null,
   appRouter: AppRouter,
-  form: UseFormReturn<any>,
+  form: UseFormReturn<FormData>,
   refreshHistory: () => void,
   addPendingTransaction: (_: PendingTransferAction) => void,
 ): ((data: FormData) => Promise<void>) => {
@@ -527,6 +563,10 @@ const onSubmit = (
     }
 
     try {
+      if (!validateOFAC(data, form)) {
+        return;
+      }
+
       if (source.id !== data.source)
         throw Error(
           `Invalid form state: source mismatch ${source.id} and ${data.source}.`,
@@ -539,20 +579,6 @@ const onSubmit = (
 
       setBusyMessage("Validating...");
 
-      let result: any = await axios.post("/blocked/api", {
-        sourceAddress: data.sourceAccount,
-        beneficiaryAddress: data.beneficiary,
-      });
-      if (result?.data?.sourceBanned || result?.data?.beneficiaryBanned) {
-        setBusyMessage("");
-        setError({
-          title: "OFAC compliance check failed",
-          description: "Illegal address banned",
-          errors: [],
-        });
-        return;
-      }
-      
       let messageId: string;
       let transfer: Transfer;
       switch (source.type) {
