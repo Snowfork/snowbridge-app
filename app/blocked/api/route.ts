@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkOFAC } from "./util";
+import { checkOFAC } from "../../../lib/ofac";
 
 export const dynamic = "force-dynamic"; // Always run dynamically
 
