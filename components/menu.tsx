@@ -52,6 +52,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { track } from "@vercel/analytics/react";
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
@@ -88,6 +89,9 @@ const InstallMetamaskDialog: FC = () => {
   useEffect(() => {
     getEthereumProvider().then((p) => setShow(p === null));
   });
+  if (show) {
+    track("Install MetaMask");
+  }
   return (
     <Dialog open={show}>
       <DialogContent>

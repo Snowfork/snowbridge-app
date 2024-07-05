@@ -52,6 +52,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
           onClick={(e) => {
             e.preventDefault();
             switchNetwork();
+            track("Switch Network");
           }}
         >
           Switch Network
