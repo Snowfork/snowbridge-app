@@ -9,8 +9,8 @@ export const config = {
 };
 
 export function middleware(req: NextRequest) {
-  const geo = req.geo ?? geolocation(req);
-  const ip = req.ip ?? ipAddress(req);
+  const geo = geolocation(req);
+  const ip = ipAddress(req) || req.ip;
   // If country is unknown we default to US.
 
   const country = geo.country ?? "US";
