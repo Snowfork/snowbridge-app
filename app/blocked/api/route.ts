@@ -14,8 +14,11 @@ export async function POST(request: NextRequest) {
       { status: 500, statusText: "No CHAINALYSIS_KEY configured." },
     );
   }
-  const sourceBanned = await checkOFAC(sourceAddress, apiKey);
-  const beneficiaryBanned = await checkOFAC(beneficiaryAddress, apiKey);
+  const [sourceBanned, beneficiaryBanned] = await Promise.all([
+    checkOFAC(sourceAddress, apiKey),
+    checkOFAC(beneficiaryAddress, apiKey),
+  ]);
+
   if (sourceBanned) {
     console.log("banned source address", sourceAddress);
   }
