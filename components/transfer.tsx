@@ -81,6 +81,7 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { LucideHardHat } from "lucide-react";
+import axios from "axios";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -537,6 +538,21 @@ const onSubmit = (
       if (context === null) throw Error(`Context not connected.`);
 
       setBusyMessage("Validating...");
+
+      let result: any = await axios.post("/blocked/api", {
+        sourceAddress: data.sourceAccount,
+        beneficiaryAddress: data.beneficiary,
+      });
+      if (result?.data?.sourceBanned || result?.data?.beneficiaryBanned) {
+        setBusyMessage("");
+        setError({
+          title: "OFAC compliance check failed",
+          description: "Illegal address banned",
+          errors: [],
+        });
+        return;
+      }
+      
       let messageId: string;
       let transfer: Transfer;
       switch (source.type) {
