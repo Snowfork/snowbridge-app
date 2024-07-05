@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { checkOFAC } from "../app/blocked/api/util";
 import { expect, test } from "@jest/globals";
 
-describe("dd", () => {
+describe("Address blocks are in place", () => {
   test("Address valid.", async () => {
     let result = await checkOFAC("0x90A987B944Cb1dCcE5564e5FDeCD7a54D3de27Fe");
     expect(result).toBe(false);
