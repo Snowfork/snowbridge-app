@@ -8,12 +8,14 @@ const BLOCKED_COUNTRIES = [
   "KP", // North Korea
   "SY", // Syria
   "RU", // Russia
+  "unknown", // Block if we cannot identify country
 ];
 
 const BLOCKED_REGIONS = [
   { country: "UA", region: "14" }, // Ukraine Donetsk
   { country: "UA", region: "43" }, // Ukraine Crimea
   { country: "UA", region: "09" }, // Ukraine Luhansk
+  { country: "UA", region: "unknown" }, // Ukraine if we cannot identify region
 ];
 
 export const config = {
