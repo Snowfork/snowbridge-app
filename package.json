@@ -49,7 +49,8 @@
     "swr": "^2.2.5",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.7"
+    "zod": "^3.23.7",
+    "axios": "^1.7.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.6",
@@ -67,6 +68,7 @@
     "ts-jest": "^29.1.5",
     "ts-mockito": "^2.6.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "@jest/globals": "^29.7.0"
   }
 }

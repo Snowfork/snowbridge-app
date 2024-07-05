@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkOFAC } from "./util";
 
 export const dynamic = "force-dynamic"; // Always run dynamically
 
 export async function POST(request: NextRequest) {
-  // Input data
-  /*
-    {
-      "sourceAddress": "0x00000000...."
-      "beneficiary": "0x00000000...."
-    }
-
-  */
   const { sourceAddress, beneficiaryAddress } = await request.json();
-  // TODO: Lookup address
+  const sourceBanned = await checkOFAC(sourceAddress);
+  const beneficiaryBanned = await checkOFAC(beneficiaryAddress);
   return NextResponse.json({
-    sourceBanned: true,
-    beneficiaryBanned: true,
+    sourceBanned: sourceBanned,
+    beneficiaryBanned: beneficiaryBanned,
   });
 }
