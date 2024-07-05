@@ -9,7 +9,10 @@ export async function POST(request: NextRequest) {
   if (apiKey === undefined || apiKey.trim() === "") {
     const message = "No chainalysis key configured.";
     console.error(message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: message },
+      { status: 500, statusText: "No CHAINALYSIS_KEY configured." },
+    );
   }
   const sourceBanned = await checkOFAC(sourceAddress, apiKey);
   const beneficiaryBanned = await checkOFAC(beneficiaryAddress, apiKey);

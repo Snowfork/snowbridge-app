@@ -504,24 +504,22 @@ const validateOFAC = async (
     );
   }
   const result = await response.json();
-  if (result?.data?.beneficiaryBanned) {
+  console.log(response, result);
+  if (result.beneficiaryBanned) {
     form.setError(
       "beneficiary",
-      { message: "Banned OFAC address." },
+      { message: "Beneficiary banned." },
       { shouldFocus: true },
     );
   }
-  if (result?.data?.sourceBanned) {
+  if (result.sourceBanned) {
     form.setError(
       "sourceAccount",
-      { message: "Banned OFAC address." },
+      { message: "Source Account banned." },
       { shouldFocus: true },
     );
   }
-  return (
-    result?.data?.beneficiaryBanned === false &&
-    result?.data?.sourceBanned === false
-  );
+  return result.beneficiaryBanned === false && result.sourceBanned === false;
 };
 
 const onSubmit = (
@@ -563,7 +561,7 @@ const onSubmit = (
     }
 
     try {
-      if (!validateOFAC(data, form)) {
+      if (!(await validateOFAC(data, form))) {
         return;
       }
 
@@ -779,6 +777,7 @@ const onSubmit = (
       });
       setBusyMessage("");
     } catch (err: any) {
+      console.log("here");
       console.error(err);
       setBusyMessage("");
       setError({
