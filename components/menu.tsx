@@ -7,20 +7,24 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar";
+import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import {
   getEthereumProvider,
   useEthereumProvider,
 } from "@/hooks/useEthereumProvider";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
-import { trimAccount } from "@/lib/utils";
+import { cn, trimAccount } from "@/lib/utils";
 import {
   polkadotAccountAtom,
   polkadotAccountsAtom,
   polkadotWalletModalOpenAtom,
   walletAtom,
 } from "@/store/polkadot";
-import { relayChainNativeAssetAtom } from "@/store/snowbridge";
+import {
+  relayChainNativeAssetAtom,
+  snowbridgeEnvNameAtom,
+} from "@/store/snowbridge";
 import { WalletSelect } from "@talismn/connect-components";
 import { useAtom, useAtomValue } from "jotai";
 import {
@@ -33,6 +37,7 @@ import {
   LucideSend,
   LucideWallet,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { FC, useEffect, useState } from "react";
 import { ErrorDialog } from "./errorDialog";
@@ -47,7 +52,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
+import { track } from "@vercel/analytics/react";
 
 const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
@@ -84,6 +89,9 @@ const InstallMetamaskDialog: FC = () => {
   useEffect(() => {
     getEthereumProvider().then((p) => setShow(p === null));
   });
+  if (show) {
+    track("Install MetaMask");
+  }
   return (
     <Dialog open={show}>
       <DialogContent>
@@ -117,6 +125,7 @@ const InstallMetamaskDialog: FC = () => {
 export const Menu: FC = () => {
   useEthereumProvider();
   const [_, contextLoading, contextError] = useSnowbridgeContext();
+  const envName = useAtomValue(snowbridgeEnvNameAtom);
   const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   const [errorMessage, setErrorMessage] = useState(contextError);
   useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
@@ -223,7 +232,7 @@ export const Menu: FC = () => {
         <MenubarMenu>
           <MenubarContent align="center">
             <Button
-              className="flex items-center justify-start w-auto h-auto"
+              className="flex items-center justify-start w-auto h-auto gap-2"
               variant="link"
               onClick={() =>
                 window.open("https://github.com/Snowfork/snowbridge")
@@ -233,7 +242,7 @@ export const Menu: FC = () => {
               <p>GitHub</p>
             </Button>
             <Button
-              className="flex items-center justify-start w-auto h-auto"
+              className="flex items-center justify-start w-auto h-auto gap-2"
               variant="link"
               onClick={() =>
                 window.open(
@@ -245,12 +254,30 @@ export const Menu: FC = () => {
               <p>Report an issue</p>
             </Button>
             <Button
-              className="flex items-center justify-start w-auto h-auto"
+              className="flex items-center justify-start w-auto h-auto gap-2"
               variant="link"
               onClick={() => window.open("https://docs.snowbridge.network/")}
             >
               <LucideBookText className="w-[40px] h-[40px]" />
               <p>Docs</p>
+            </Button>
+            <Button
+              className={cn(
+                "flex items-center justify-start w-auto h-auto gap-2",
+                envName === "polkadot_mainnet" ? "" : "hidden",
+              )}
+              variant="link"
+              onClick={() =>
+                window.open("https://dune.com/substrate/snowbridge")
+              }
+            >
+              <Image
+                src="https://dune.com/assets/DuneLogoCircle.svg"
+                width={40}
+                height={40}
+                alt="Dune Logo"
+              />
+              <p>Snowbridge Dune Dashboard</p>
             </Button>
           </MenubarContent>
           <MenubarTrigger>

@@ -81,6 +81,7 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { LucideHardHat } from "lucide-react";
+import { track } from "@vercel/analytics";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -537,30 +538,38 @@ const onSubmit = (
   addPendingTransaction: (_: PendingTransferAction) => void,
 ): ((data: FormData) => Promise<void>) => {
   return async (data) => {
-    if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
-
-    const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata);
-    if (amountInSmallestUnit === 0n) {
-      form.setError("amount", { message: "Amount must be greater than 0." });
-      return;
-    }
-    const minimumTransferAmount =
-      destination.erc20tokensReceivable.find(
-        (t) => t.address.toLowerCase() === data.token.toLowerCase(),
-      )?.minimumTransferAmount ?? 1n;
-    if (amountInSmallestUnit < minimumTransferAmount) {
-      form.setError(
-        "amount",
-        {
-          message: `Cannot send less than minimum value of ${formatBalance(minimumTransferAmount, Number(tokenMetadata.decimals.toString()))} ${tokenMetadata.symbol}.`,
-        },
-        { shouldFocus: true },
-      );
-      return;
-    }
+    track("Validate Send", data);
 
     try {
+      if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
+
+      const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata);
+      if (amountInSmallestUnit === 0n) {
+        const errorMessage = "Amount must be greater than 0.";
+        form.setError("amount", { message: errorMessage });
+        track("Validate Failed", { ...data, errorMessage });
+        return;
+      }
+
+      const minimumTransferAmount =
+        destination.erc20tokensReceivable.find(
+          (t) => t.address.toLowerCase() === data.token.toLowerCase(),
+        )?.minimumTransferAmount ?? 1n;
+      if (amountInSmallestUnit < minimumTransferAmount) {
+        const errorMessage = `Cannot send less than minimum value of ${formatBalance(minimumTransferAmount, Number(tokenMetadata.decimals.toString()))} ${tokenMetadata.symbol}.`;
+        form.setError(
+          "amount",
+          {
+            message: errorMessage,
+          },
+          { shouldFocus: true },
+        );
+        track("Validate Failed", { ...data, errorMessage });
+        return;
+      }
+
       if (!(await validateOFAC(data, form))) {
+        track("OFAC Validation.", data);
         return;
       }
 
@@ -604,6 +613,10 @@ const onSubmit = (
           );
           console.log(plan);
           if (plan.failure) {
+            track("Plan Failed", {
+              ...data,
+              errors: JSON.stringify(plan.failure.errors),
+            });
             setBusyMessage("");
             setError({
               title: "Send Plan Failed",
@@ -702,6 +715,10 @@ const onSubmit = (
           );
           console.log(plan);
           if (plan.failure) {
+            track("Plan Failed", {
+              ...data,
+              errors: JSON.stringify(plan.failure.errors),
+            });
             setBusyMessage("");
             setError({
               title: "Send Plan Failed",
@@ -751,6 +768,10 @@ const onSubmit = (
         default:
           throw Error(`Invalid form state: cannot infer source type.`);
       }
+      track("Send Success", {
+        ...data,
+        messageId,
+      });
       form.reset();
       const transferUrl = `/history#${messageId}`;
       appRouter.prefetch(transferUrl);
@@ -776,8 +797,11 @@ const onSubmit = (
       });
       setBusyMessage("");
     } catch (err: any) {
-      console.log("here");
       console.error(err);
+      track("Send Failed", {
+        ...data,
+        error: JSON.stringify(err),
+      });
       setBusyMessage("");
       setError({
         title: "Send Error",
@@ -1042,12 +1066,14 @@ export const TransferForm: FC = () => {
       context == null ||
       ethereumChainId == null ||
       sourceAccount == undefined
-    )
+    ) {
       return;
+    }
     const toastTitle = "Deposit and Approve Token Spend";
     setBusyMessage("Depositing and approving spend...");
     try {
       const formData = form.getValues();
+      track("Deposit And Approve", formData);
       await doDepositAndApproveWeth(
         context,
         ethereumProvider,
@@ -1071,9 +1097,15 @@ export const TransferForm: FC = () => {
         setBalanceDisplay,
         setError,
       );
+      track("Deposit And Approve Success", formData);
     } catch (err: any) {
       console.error(err);
+      const formData = form.getValues();
       const errorMessage = `Token spend allowance approval failed.`;
+      track("Deposit And Approve Failed", {
+        ...formData,
+        error: JSON.stringify(err),
+      });
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
@@ -1112,6 +1144,7 @@ export const TransferForm: FC = () => {
     setBusyMessage("Approving spend...");
     try {
       const formData = form.getValues();
+      track("Approve Spend", formData);
       await doApproveSpend(
         context,
         ethereumProvider,
@@ -1135,9 +1168,15 @@ export const TransferForm: FC = () => {
         setBalanceDisplay,
         setError,
       );
+      track("Approve Spend Success", formData);
     } catch (err: any) {
       console.error(err);
+      const formData = form.getValues();
       const errorMessage = `Token spend allowance approval failed.`;
+      track("Approve Spend Success", {
+        ...formData,
+        errror: JSON.stringify(err),
+      });
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
