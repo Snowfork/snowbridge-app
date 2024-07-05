@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { BusyDialog } from "./busyDialog";
 import { ErrorDialog } from "./errorDialog";
 import { FC, useState } from "react";
+import { track } from "@vercel/analytics/react";
 
 export type SelectedEthereumWalletProps = {
   className?: string;
