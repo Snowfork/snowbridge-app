@@ -504,7 +504,6 @@ const validateOFAC = async (
     );
   }
   const result = await response.json();
-  console.log(response, result);
   if (result.beneficiaryBanned) {
     form.setError(
       "beneficiary",
