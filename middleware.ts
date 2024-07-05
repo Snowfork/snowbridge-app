@@ -24,19 +24,14 @@ export const config = {
 
 export function middleware(req: NextRequest) {
   const geo = geolocation(req);
-  const ip = ipAddress(req) || req.ip;
-  // If country is unknown we default to US.
 
   const country = geo.country ?? "unknown";
   const region = geo.countryRegion ?? "unknown";
-
-  console.log("!!!!!!!!!!!!!!!!!!!!!!! remove this log", geo);
 
   let blocked = false;
 
   // Block countries
   if (BLOCKED_COUNTRIES.includes(country)) {
-    console.log("Country blocked", geo);
     blocked = true;
   }
 
@@ -46,11 +41,19 @@ export function middleware(req: NextRequest) {
       (x) => x.country === country && x.region === region,
     ) !== undefined
   ) {
-    console.log("Region blocked", geo);
     blocked = true;
   }
 
+  if (
+    blocked &&
+    geo.region === "dev1" &&
+    req.nextUrl.host === "localhost:3000"
+  ) {
+    blocked = false;
+  }
+
   if (blocked) {
+    console.log("Country/Region blocked", country, region);
     req.nextUrl.pathname = "/blocked";
     return NextResponse.rewrite(req.nextUrl, { status: 451 });
   }
