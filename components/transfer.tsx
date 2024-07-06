@@ -153,6 +153,13 @@ const getTokenBalance = async (
   }
 };
 
+const errorMessage = (err: any) => {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}`;
+  }
+  return "Unknown error";
+};
+
 const updateBalance = (
   context: Context,
   ethereumChainId: number,
@@ -800,7 +807,7 @@ const onSubmit = (
       console.error(err);
       track("Send Failed", {
         ...data,
-        error: JSON.stringify(err),
+        message: errorMessage(err),
       });
       setBusyMessage("");
       setError({
@@ -1101,17 +1108,17 @@ export const TransferForm: FC = () => {
     } catch (err: any) {
       console.error(err);
       const formData = form.getValues();
-      const errorMessage = `Token spend allowance approval failed.`;
+      const message = `Token spend allowance approval failed.`;
       track("Deposit And Approve Failed", {
         ...formData,
-        error: JSON.stringify(err),
+        message: errorMessage(err),
       });
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
         duration: 20000,
         id: "deposit_approval_result",
-        description: errorMessage,
+        description: message,
         important: true,
       });
     } finally {
@@ -1172,17 +1179,17 @@ export const TransferForm: FC = () => {
     } catch (err: any) {
       console.error(err);
       const formData = form.getValues();
-      const errorMessage = `Token spend allowance approval failed.`;
+      const message = `Token spend allowance approval failed.`;
       track("Approve Spend Success", {
         ...formData,
-        errror: JSON.stringify(err),
+        message: errorMessage(err),
       });
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
         duration: 20000,
         id: "approval_result",
-        description: errorMessage,
+        description: message,
         important: true,
       });
     } finally {
