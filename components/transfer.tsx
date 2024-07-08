@@ -554,7 +554,6 @@ const onSubmit = (
       if (amountInSmallestUnit === 0n) {
         const errorMessage = "Amount must be greater than 0.";
         form.setError("amount", { message: errorMessage });
-        track("Validate Failed", { ...data, errorMessage });
         return;
       }
 
