@@ -1231,6 +1231,17 @@ export const TransferForm: FC = () => {
         return { key: x, name: x, type: "ethereum" as environment.SourceType };
       })
       .forEach((x) => beneficiaries.push(x));
+
+    polkadotAccounts
+      ?.filter((x: any) => x.type === "ethereum")
+      .map((x) => {
+        return {
+          key: x.address,
+          name: `${x.name} (${x.source})` || "",
+          type: destination.type,
+        };
+      })
+      .forEach((x) => beneficiaries.push(x));
   }
 
   return (
