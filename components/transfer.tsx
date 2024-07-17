@@ -1209,27 +1209,12 @@ export const TransferForm: FC = () => {
     tokenMetadata,
   ]);
 
-  const sources: AccountInfo[] = [];
-  if (source.type === "substrate") {
-    polkadotAccounts
-      ?.map((x) => {
-        return { key: x.address, name: x.name || "", type: source.type };
-      })
-      .forEach((x) => sources.push(x));
-  }
-  if (
-    source.type === "ethereum" ||
-    source.paraInfo?.has20ByteAccounts === true
-  ) {
-    ethereumAccounts
-      ?.map((x) => {
-        return { key: x, name: x, type: "ethereum" as environment.SourceType };
-      })
-      .forEach((x) => sources.push(x));
-  }
-
   const beneficiaries: AccountInfo[] = [];
-  if (destination.type === "substrate") {
+  if (
+    destination.type === "substrate" &&
+    (destination.paraInfo?.addressType === "32byte" ||
+      destination.paraInfo?.addressType === "both")
+  ) {
     polkadotAccounts
       ?.map((x) => {
         return { key: x.address, name: x.name || "", type: destination.type };
@@ -1238,7 +1223,8 @@ export const TransferForm: FC = () => {
   }
   if (
     destination.type === "ethereum" ||
-    destination.paraInfo?.has20ByteAccounts === true
+    destination.paraInfo?.addressType === "20byte" ||
+    destination.paraInfo?.addressType === "both"
   ) {
     ethereumAccounts
       ?.map((x) => {
