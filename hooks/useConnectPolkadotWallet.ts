@@ -59,7 +59,7 @@ export const useConnectPolkadotWallet = (ss58Format?: number): void => {
     const updateAccounts = async (): Promise<void> => {
       if (wallet != null) {
         // Some wallets don't implement subscribeAccounts correctly, so call getAccounts anyway
-        const walletAccounts = await wallet.getAccounts();
+        const walletAccounts = await wallet.getAccounts(true);
         const accounts = walletAccounts.filter((account) =>
           validateAddress(account.address),
         );

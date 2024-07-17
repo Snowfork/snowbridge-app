@@ -153,6 +153,13 @@ const getTokenBalance = async (
   }
 };
 
+const errorMessage = (err: any) => {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}`;
+  }
+  return "Unknown error";
+};
+
 const updateBalance = (
   context: Context,
   ethereumChainId: number,
@@ -547,7 +554,6 @@ const onSubmit = (
       if (amountInSmallestUnit === 0n) {
         const errorMessage = "Amount must be greater than 0.";
         form.setError("amount", { message: errorMessage });
-        track("Validate Failed", { ...data, errorMessage });
         return;
       }
 
@@ -800,7 +806,7 @@ const onSubmit = (
       console.error(err);
       track("Send Failed", {
         ...data,
-        error: JSON.stringify(err),
+        message: errorMessage(err),
       });
       setBusyMessage("");
       setError({
@@ -1101,17 +1107,17 @@ export const TransferForm: FC = () => {
     } catch (err: any) {
       console.error(err);
       const formData = form.getValues();
-      const errorMessage = `Token spend allowance approval failed.`;
+      const message = `Token spend allowance approval failed.`;
       track("Deposit And Approve Failed", {
         ...formData,
-        error: JSON.stringify(err),
+        message: errorMessage(err),
       });
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
         duration: 20000,
         id: "deposit_approval_result",
-        description: errorMessage,
+        description: message,
         important: true,
       });
     } finally {
@@ -1172,17 +1178,17 @@ export const TransferForm: FC = () => {
     } catch (err: any) {
       console.error(err);
       const formData = form.getValues();
-      const errorMessage = `Token spend allowance approval failed.`;
+      const message = `Token spend allowance approval failed.`;
       track("Approve Spend Success", {
         ...formData,
-        errror: JSON.stringify(err),
+        message: errorMessage(err),
       });
       toast.error(toastTitle, {
         position: "bottom-center",
         closeButton: true,
         duration: 20000,
         id: "approval_result",
-        description: errorMessage,
+        description: message,
         important: true,
       });
     } finally {
@@ -1203,27 +1209,12 @@ export const TransferForm: FC = () => {
     tokenMetadata,
   ]);
 
-  const sources: AccountInfo[] = [];
-  if (source.type === "substrate") {
-    polkadotAccounts
-      ?.map((x) => {
-        return { key: x.address, name: x.name || "", type: source.type };
-      })
-      .forEach((x) => sources.push(x));
-  }
-  if (
-    source.type === "ethereum" ||
-    source.paraInfo?.has20ByteAccounts === true
-  ) {
-    ethereumAccounts
-      ?.map((x) => {
-        return { key: x, name: x, type: "ethereum" as environment.SourceType };
-      })
-      .forEach((x) => sources.push(x));
-  }
-
   const beneficiaries: AccountInfo[] = [];
-  if (destination.type === "substrate") {
+  if (
+    destination.type === "substrate" &&
+    (destination.paraInfo?.addressType === "32byte" ||
+      destination.paraInfo?.addressType === "both")
+  ) {
     polkadotAccounts
       ?.map((x) => {
         return { key: x.address, name: x.name || "", type: destination.type };
@@ -1232,11 +1223,23 @@ export const TransferForm: FC = () => {
   }
   if (
     destination.type === "ethereum" ||
-    destination.paraInfo?.has20ByteAccounts === true
+    destination.paraInfo?.addressType === "20byte" ||
+    destination.paraInfo?.addressType === "both"
   ) {
     ethereumAccounts
       ?.map((x) => {
         return { key: x, name: x, type: "ethereum" as environment.SourceType };
+      })
+      .forEach((x) => beneficiaries.push(x));
+
+    polkadotAccounts
+      ?.filter((x: any) => x.type === "ethereum")
+      .map((x) => {
+        return {
+          key: x.address,
+          name: `${x.name} (${x.source})` || "",
+          type: destination.type,
+        };
       })
       .forEach((x) => beneficiaries.push(x));
   }
