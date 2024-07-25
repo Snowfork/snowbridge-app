@@ -96,21 +96,21 @@ const formSchema = z.object({
     .string()
     .regex(
       /^([1-9][0-9]{0,37})|([0-9]{0,37}\.+[0-9]{0,18})$/,
-      "Invalid amount",
+      "Invalid amount"
     ),
   beneficiary: z
     .string()
     .min(1, "Select beneficiary.")
     .regex(
       /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
-      "Invalid address format.",
+      "Invalid address format."
     ),
   sourceAccount: z
     .string()
     .min(1, "Select source account.")
     .regex(
       /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
-      "Invalid address format.",
+      "Invalid address format."
     ),
 });
 
@@ -119,7 +119,7 @@ const getTokenBalance = async (
   token: string,
   ethereumChainId: bigint,
   source: environment.TransferLocation,
-  sourceAccount: string,
+  sourceAccount: string
 ): Promise<{
   balance: bigint;
   gatewayAllowance?: bigint;
@@ -135,13 +135,13 @@ const getTokenBalance = async (
       const location = assets.erc20TokenToAssetLocation(
         parachain.registry,
         ethereumChainId,
-        token,
+        token
       );
       const balance = await assets.palletAssetsBalance(
         parachain,
         location,
         sourceAccount,
-        "foreignAssets",
+        "foreignAssets"
       );
       return { balance: balance ?? 0n, gatewayAllowance: undefined };
     }
@@ -168,22 +168,27 @@ const updateBalance = (
   token: string,
   tokenMetadata: assets.ERC20Metadata,
   setBalanceDisplay: (_: string) => void,
-  setError: (_: ErrorInfo | null) => void,
+  setError: (_: ErrorInfo | null) => void
 ) => {
   getTokenBalance(
     context,
     token,
     BigInt(ethereumChainId),
     source,
-    sourceAccount,
+    sourceAccount
   )
     .then((result) => {
       let allowance = "";
       if (result.gatewayAllowance !== undefined) {
-        allowance = ` (Allowance: ${formatBalance(result.gatewayAllowance ?? 0n, Number(tokenMetadata.decimals))} ${tokenMetadata.symbol})`;
+        allowance = ` (Allowance: ${formatBalance(
+          result.gatewayAllowance ?? 0n,
+          Number(tokenMetadata.decimals)
+        )} ${tokenMetadata.symbol})`;
       }
       setBalanceDisplay(
-        `${formatBalance(result.balance, Number(tokenMetadata.decimals))} ${tokenMetadata.symbol} ${allowance}`,
+        `${formatBalance(result.balance, Number(tokenMetadata.decimals))} ${
+          tokenMetadata.symbol
+        } ${allowance}`
       );
     })
     .catch((err) => {
@@ -201,7 +206,7 @@ const doApproveSpend = async (
   context: Context | null,
   ethereumProvider: BrowserProvider | null,
   token: string,
-  amount: bigint,
+  amount: bigint
 ): Promise<void> => {
   if (context == null || ethereumProvider == null) return;
 
@@ -210,7 +215,7 @@ const doApproveSpend = async (
     context,
     signer,
     token,
-    amount,
+    amount
   );
 
   console.log("approval response", response);
@@ -226,7 +231,7 @@ const doDepositAndApproveWeth = async (
   context: Context | null,
   ethereumProvider: BrowserProvider | null,
   token: string,
-  amount: bigint,
+  amount: bigint
 ): Promise<void> => {
   if (context == null || ethereumProvider == null) return;
 
@@ -251,7 +256,7 @@ type ErrorInfo = {
 
 const userFriendlyErrorMessage = (
   error: ValidationError,
-  formData: FormData,
+  formData: FormData
 ) => {
   if (error.kind === "toPolkadot") {
     if (
@@ -284,16 +289,16 @@ type FormData = {
 
 const getDestinationTokenIdByAddress = (
   tokenAddress: string,
-  destination?: environment.TransferLocation,
+  destination?: environment.TransferLocation
 ): string | undefined => {
   return (destination?.erc20tokensReceivable ?? []).find(
-    (token) => token.address === tokenAddress,
+    (token) => token.address === tokenAddress
   )?.id;
 };
 
 const parseAmount = (
   decimals: string,
-  metadata: assets.ERC20Metadata,
+  metadata: assets.ERC20Metadata
 ): bigint => {
   return parseUnits(decimals, metadata.decimals);
 };
@@ -318,7 +323,7 @@ const SendErrorDialog: FC<{
   const insufficentAsset = errors.find(
     (error) =>
       error.kind === "toPolkadot" &&
-      error.code === toPolkadot.SendValidationCode.InsufficientToken,
+      error.code === toPolkadot.SendValidationCode.InsufficientToken
   );
   errors = errors.filter(
     (error) =>
@@ -326,7 +331,7 @@ const SendErrorDialog: FC<{
         error.kind === "toPolkadot" &&
         error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved &&
         insufficentAsset !== undefined
-      ),
+      )
   );
 
   const fixAction = (error: ValidationError): JSX.Element => {
@@ -360,7 +365,7 @@ const SendErrorDialog: FC<{
           variant="link"
           onClick={() => {
             window.open(
-              "https://support.polkadot.network/support/solutions/articles/65000181800-what-is-statemint-and-statemine-and-how-do-i-use-them-#Sufficient-and-non-sufficient-assets",
+              "https://support.polkadot.network/support/solutions/articles/65000181800-what-is-statemint-and-statemine-and-how-do-i-use-them-#Sufficient-and-non-sufficient-assets"
             );
           }}
         >
@@ -462,7 +467,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
                   </pre>
                   <pre className="hidden md:inline">{acc.name}</pre>
                 </SelectItem>
-              ),
+              )
             )}
           </SelectGroup>
         </SelectContent>
@@ -497,7 +502,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
 
 const validateOFAC = async (
   data: FormData,
-  form: UseFormReturn<FormData>,
+  form: UseFormReturn<FormData>
 ): Promise<boolean> => {
   const response = await fetch("/blocked/api", {
     method: "POST",
@@ -508,7 +513,7 @@ const validateOFAC = async (
   });
   if (!response.ok) {
     throw Error(
-      `Error verifying ofac status: ${response.status} - ${response.statusText}`,
+      `Error verifying ofac status: ${response.status} - ${response.statusText}`
     );
   }
   const result = await response.json();
@@ -516,14 +521,14 @@ const validateOFAC = async (
     form.setError(
       "beneficiary",
       { message: "Beneficiary banned." },
-      { shouldFocus: true },
+      { shouldFocus: true }
     );
   }
   if (result.sourceBanned) {
     form.setError(
       "sourceAccount",
       { message: "Source Account banned." },
-      { shouldFocus: true },
+      { shouldFocus: true }
     );
   }
   return result.beneficiaryBanned === false && result.sourceBanned === false;
@@ -542,7 +547,7 @@ const onSubmit = (
   appRouter: AppRouter,
   form: UseFormReturn<FormData>,
   refreshHistory: () => void,
-  addPendingTransaction: (_: PendingTransferAction) => void,
+  addPendingTransaction: (_: PendingTransferAction) => void
 ): ((data: FormData) => Promise<void>) => {
   return async (data) => {
     track("Validate Send", data);
@@ -559,16 +564,19 @@ const onSubmit = (
 
       const minimumTransferAmount =
         destination.erc20tokensReceivable.find(
-          (t) => t.address.toLowerCase() === data.token.toLowerCase(),
+          (t) => t.address.toLowerCase() === data.token.toLowerCase()
         )?.minimumTransferAmount ?? 1n;
       if (amountInSmallestUnit < minimumTransferAmount) {
-        const errorMessage = `Cannot send less than minimum value of ${formatBalance(minimumTransferAmount, Number(tokenMetadata.decimals.toString()))} ${tokenMetadata.symbol}.`;
+        const errorMessage = `Cannot send less than minimum value of ${formatBalance(
+          minimumTransferAmount,
+          Number(tokenMetadata.decimals.toString())
+        )} ${tokenMetadata.symbol}.`;
         form.setError(
           "amount",
           {
             message: errorMessage,
           },
-          { shouldFocus: true },
+          { shouldFocus: true }
         );
         track("Validate Failed", { ...data, errorMessage });
         return;
@@ -581,11 +589,11 @@ const onSubmit = (
 
       if (source.id !== data.source)
         throw Error(
-          `Invalid form state: source mismatch ${source.id} and ${data.source}.`,
+          `Invalid form state: source mismatch ${source.id} and ${data.source}.`
         );
       if (destination.id !== data.destination)
         throw Error(
-          `Invalid form state: source mismatch ${destination.id} and ${data.destination}.`,
+          `Invalid form state: source mismatch ${destination.id} and ${data.destination}.`
         );
       if (context === null) throw Error(`Context not connected.`);
 
@@ -599,7 +607,7 @@ const onSubmit = (
             throw Error(`Invalid form state: destination type mismatch.`);
           if (source.paraInfo === undefined)
             throw Error(
-              `Invalid form state: source does not have parachain info.`,
+              `Invalid form state: source does not have parachain info.`
             );
           if (polkadotAccount === null)
             throw Error(`Polkadot Wallet not connected.`);
@@ -615,7 +623,7 @@ const onSubmit = (
             source.paraInfo.paraId,
             data.beneficiary,
             data.token,
-            amountInSmallestUnit,
+            amountInSmallestUnit
           );
           console.log(plan);
           if (plan.failure) {
@@ -637,7 +645,7 @@ const onSubmit = (
           }
 
           setBusyMessage(
-            "Waiting for transaction to be confirmed by wallet. After finalization transfers can take up to 4 hours.",
+            "Waiting for transaction to be confirmed by wallet. After finalization transfers can take up to 4 hours."
           );
           const result = await toEthereum.send(context, walletSigner, plan);
           messageId = result.success?.messageId || "";
@@ -674,10 +682,10 @@ const onSubmit = (
                     "-" +
                     result.success.sourceParachain.txIndex.toString()
                   : result.success?.assetHub !== undefined
-                    ? result.success?.assetHub?.blockNumber.toString() +
-                      "-" +
-                      result.success?.assetHub.txIndex.toString()
-                    : "unknown",
+                  ? result.success?.assetHub?.blockNumber.toString() +
+                    "-" +
+                    result.success?.assetHub.txIndex.toString()
+                  : "unknown",
 
               relayChain: {
                 block_hash: result.success?.relayChain.submittedAtHash ?? "",
@@ -694,7 +702,7 @@ const onSubmit = (
             throw Error(`Invalid form state: destination type mismatch.`);
           if (destination.paraInfo === undefined)
             throw Error(
-              `Invalid form state: destination does not have parachain id.`,
+              `Invalid form state: destination does not have parachain id.`
             );
           if (ethereumProvider === null)
             throw Error(`Ethereum Wallet not connected.`);
@@ -717,7 +725,7 @@ const onSubmit = (
               maxConsumers: destination.paraInfo.maxConsumers,
               ignoreExistentialDeposit:
                 destination.paraInfo.skipExistentialDepositCheck,
-            },
+            }
           );
           console.log(plan);
           if (plan.failure) {
@@ -739,7 +747,7 @@ const onSubmit = (
           }
 
           setBusyMessage(
-            "Waiting for transaction to be confirmed by wallet. After finalization transfers can take up to 15-20 minutes.",
+            "Waiting for transaction to be confirmed by wallet. After finalization transfers can take up to 15-20 minutes."
           );
           const result = await toPolkadot.send(context, signer, plan);
 
@@ -859,13 +867,13 @@ export const TransferForm: FC = () => {
   const [sourceAccount, setSourceAccount] = useState<string>();
   const [destinations, setDestinations] = useState(
     source.destinationIds.map(
-      (d) => snowbridgeEnvironment.locations.find((s) => d === s.id)!,
-    ),
+      (d) => snowbridgeEnvironment.locations.find((s) => d === s.id)!
+    )
   );
   const [destination, setDestination] = useState(destinations[0]);
 
   const [token, setToken] = useState(
-    destination.erc20tokensReceivable[0].address,
+    destination.erc20tokensReceivable[0].address
   );
   const [tokenMetadata, setTokenMetadata] =
     useState<assets.ERC20Metadata | null>(null);
@@ -894,7 +902,7 @@ export const TransferForm: FC = () => {
             setFeeDisplay(
               formatBalance(fee, assetHubNativeToken?.tokenDecimal ?? 0) +
                 " " +
-                assetHubNativeToken?.tokenSymbol,
+                assetHubNativeToken?.tokenSymbol
             );
           })
           .catch((err) => {
@@ -924,7 +932,7 @@ export const TransferForm: FC = () => {
             context,
             token,
             destination.paraInfo.paraId,
-            destination.paraInfo.destinationFeeDOT,
+            destination.paraInfo.destinationFeeDOT
           )
           .then((fee) => {
             setFeeDisplay(formatBalance(fee, 18) + " ETH");
@@ -965,7 +973,7 @@ export const TransferForm: FC = () => {
     let newDestinations = destinations;
     if (source.id !== watchSource) {
       const newSource = snowbridgeEnvironment.locations.find(
-        (s) => s.id == watchSource,
+        (s) => s.id == watchSource
       )!;
       setSource(newSource);
       newDestinations = newSource.destinationIds
@@ -984,7 +992,7 @@ export const TransferForm: FC = () => {
     const newTokens = newDestination.erc20tokensReceivable;
     const newToken =
       newTokens.find(
-        (x) => x.address.toLowerCase() == watchToken.toLowerCase(),
+        (x) => x.address.toLowerCase() == watchToken.toLowerCase()
       ) ?? newTokens[0];
     setToken(newToken.address);
     form.resetField("token", { defaultValue: newToken.address });
@@ -1051,7 +1059,7 @@ export const TransferForm: FC = () => {
       token,
       tokenMetadata,
       setBalanceDisplay,
-      setError,
+      setError
     );
   }, [
     form,
@@ -1084,7 +1092,7 @@ export const TransferForm: FC = () => {
         context,
         ethereumProvider,
         formData.token,
-        parseAmount(formData.amount, tokenMetadata),
+        parseAmount(formData.amount, tokenMetadata)
       );
       toast.info(toastTitle, {
         position: "bottom-center",
@@ -1101,7 +1109,7 @@ export const TransferForm: FC = () => {
         token,
         tokenMetadata,
         setBalanceDisplay,
-        setError,
+        setError
       );
       track("Deposit And Approve Success", formData);
     } catch (err: any) {
@@ -1155,7 +1163,7 @@ export const TransferForm: FC = () => {
         context,
         ethereumProvider,
         formData.token,
-        parseAmount(formData.amount, tokenMetadata),
+        parseAmount(formData.amount, tokenMetadata)
       );
       toast.info(toastTitle, {
         position: "bottom-center",
@@ -1172,7 +1180,7 @@ export const TransferForm: FC = () => {
         token,
         tokenMetadata,
         setBalanceDisplay,
-        setError,
+        setError
       );
       track("Approve Spend Success", formData);
     } catch (err: any) {
@@ -1270,8 +1278,8 @@ export const TransferForm: FC = () => {
                   router,
                   form,
                   refreshHistory,
-                  transfersPendingLocal,
-                ),
+                  transfersPendingLocal
+                )
               )}
               className="space-y-2"
             >

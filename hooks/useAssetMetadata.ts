@@ -1,31 +1,26 @@
-import {
-  HISTORY_IN_SECONDS,
-  SKIP_LIGHT_CLIENT_UPDATES,
-  getTransferHistory,
-} from "@/lib/snowbridge";
+import { BridgedAssetsMetadata } from "@/lib/snowbridge";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { Transfer } from "@/store/transferHistory";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
-export const REFRESH_INTERVAL: number = 15 * 60 * 1000; // 15 minutes
+export const REFRESH_INTERVAL: number = 60 * 60 * 1000; // 1 hour
 export const ERROR_RETRY_INTERVAL: number = 1 * 60 * 1000; // 1 minute
 
-const fetchTranferHistory = async (): Promise<Transfer[] | null> => {
+const fetchAssetMetaData = async (): Promise<BridgedAssetsMetadata | null> => {
   console.log("Fetching history server side");
-  const result = await fetch("/history/api");
+  const result = await fetch("/assets/api");
   if (result.status == 200) {
     return await result.json();
   } else {
     throw Error(
-      `Could not fetch history. ${result.status} ${result.statusText} ${result.body}`
+      `Could not asset metadata. ${result.status} ${result.statusText} ${result.body}`
     );
   }
 };
 
-export const useTransferHistory = () => {
+export const useAssetMetaData = () => {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  return useSWR([env, "history"], fetchTranferHistory, {
+  return useSWR([env, "assetMetaData"], fetchAssetMetaData, {
     refreshInterval: REFRESH_INTERVAL,
     suspense: true,
     fallbackData: null,
