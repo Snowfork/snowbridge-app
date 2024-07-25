@@ -197,9 +197,16 @@ export type BridgedAssetsMetadata = {
   };
 };
 
+export type ContextOverrides = {
+  bridgeHub?: string;
+  assetHub?: string;
+  relaychain?: string;
+};
+
 export async function createContext(
   ethereumProvider: AbstractProvider,
   { config }: SnowbridgeEnvironment,
+  overrides?: ContextOverrides,
 ) {
   return await contextFactory({
     ethereum: {
@@ -208,11 +215,9 @@ export async function createContext(
     },
     polkadot: {
       url: {
-        bridgeHub:
-          process.env.NEXT_PUBLIC_BRIDGE_HUB_URL ?? config.BRIDGE_HUB_URL,
-        assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL ?? config.ASSET_HUB_URL,
-        relaychain:
-          process.env.NEXT_PUBLIC_RELAY_CHAIN_URL ?? config.RELAY_CHAIN_URL,
+        bridgeHub: overrides?.bridgeHub ?? config.BRIDGE_HUB_URL,
+        assetHub: overrides?.assetHub ?? config.ASSET_HUB_URL,
+        relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
         parachains: config.PARACHAINS,
       },
     },

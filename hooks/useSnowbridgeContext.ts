@@ -13,15 +13,19 @@ import { createContext } from "@/lib/snowbridge";
 
 const connectSnowbridgeContext = async (
   env: environment.SnowbridgeEnvironment,
-  ethereumProvider: AbstractProvider,
+  ethereumProvider: AbstractProvider
 ) => {
-  const context = await createContext(ethereumProvider, env);
+  const context = await createContext(ethereumProvider, env, {
+    bridgeHub: process.env.NEXT_PUBLIC_BRIDGE_HUB_URL,
+    assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL,
+    relaychain: process.env.NEXT_PUBLIC_RELAY_CHAIN_URL,
+  });
 
   const tokens = [
     ...new Set(
       env.locations
         .flatMap((l) => l.erc20tokensReceivable)
-        .map((l) => l.address.toLowerCase()),
+        .map((l) => l.address.toLowerCase())
     ),
   ];
   const [network, relayChainNativeToken, assetMetadataList] = await Promise.all(
@@ -33,10 +37,10 @@ const connectSnowbridgeContext = async (
           assets
             .assetErc20Metadata(context, t)
             .then((m) => ({ token: t, metadata: m }))
-            .catch((_) => null),
-        ),
+            .catch((_) => null)
+        )
       ),
-    ],
+    ]
   );
 
   const assetMetadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
@@ -55,7 +59,7 @@ const connectSnowbridgeContext = async (
 export const useSnowbridgeContext = (): [
   Context | null,
   boolean,
-  string | null,
+  string | null
 ] => {
   const [context, setContext] = useAtom(snowbridgeContextAtom);
   const setRelayChainNativeAsset = useSetAtom(relayChainNativeAssetAtom);
