@@ -558,10 +558,9 @@ export default function History() {
   }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (
-    (pages.length === 0 &&
-      isTransfersLoading &&
-      transferHistoryCache.length === 0) ||
-    assetErc20MetaData === null
+    pages.length === 0 &&
+    isTransfersLoading &&
+    transferHistoryCache.length === 0
   ) {
     return <Loading />;
   }

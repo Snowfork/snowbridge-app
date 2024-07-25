@@ -1,6 +1,5 @@
 import { Analytics } from "@vercel/analytics/react";
 import { BridgeStatus } from "@/components/BridgeStatus";
-import { ContextComponent } from "@/components/Context";
 import { Footer } from "@/components/Footer";
 import { Menu } from "@/components/Menu";
 import { TermsOfUse } from "@/components/TermsOfUse";
@@ -64,7 +63,7 @@ export default function RootLayout({
                 </div>
               </div>
               <div className="w-full max-w-5xl flex place-content-center">
-                <ContextComponent>{children}</ContextComponent>
+                {children}
               </div>
               <div className="w-full max-w-5xl flex flex-col place-items-center text-sm">
                 <Footer />

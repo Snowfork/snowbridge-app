@@ -8,6 +8,7 @@ import {
   contextFactory,
   Context,
   utils,
+  assets,
 } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import {
@@ -325,8 +326,8 @@ export async function getBridgeStatus(
     !toPolkadot.bridgeOperational || !toPolkadot.channelOperational
       ? "Halted"
       : !toPolkadot.lightClientLatencyIsAcceptable
-      ? "Delayed"
-      : "Normal";
+        ? "Delayed"
+        : "Normal";
 
   const toEthereum = {
     bridgeOperational:
@@ -337,8 +338,8 @@ export async function getBridgeStatus(
   const toEthereumOperatingMode = !toEthereum.bridgeOperational
     ? "Halted"
     : !toEthereum.lightClientLatencyIsAcceptable
-    ? "Delayed"
-    : "Normal";
+      ? "Delayed"
+      : "Normal";
 
   let overallStatus: StatusValue = toEthereumOperatingMode;
   if (toEthereumOperatingMode === "Normal") {
@@ -372,4 +373,38 @@ export function getErrorMessage(err: any) {
   }
   console.error(message, err);
   return message;
+}
+
+export async function assetMetadata(
+  context: Context,
+  env: SnowbridgeEnvironment,
+) {
+  const tokens = [
+    ...new Set(
+      env.locations
+        .flatMap((l) => l.erc20tokensReceivable)
+        .map((l) => l.address.toLowerCase()),
+    ),
+  ];
+  const [relayChainNativeToken, assetMetadataList] = await Promise.all([
+    assets.parachainNativeAsset(context.polkadot.api.relaychain),
+    Promise.all(
+      tokens.map((t) =>
+        assets
+          .assetErc20Metadata(context, t)
+          .then((m) => ({ token: t, metadata: m }))
+          .catch((_) => null),
+      ),
+    ),
+  ]);
+
+  const erc20Metadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
+  assetMetadataList
+    .filter((am) => am !== null)
+    .forEach((am) => (erc20Metadata[am!.token] = am!.metadata));
+
+  return {
+    relayChainNativeToken,
+    erc20Metadata,
+  };
 }
