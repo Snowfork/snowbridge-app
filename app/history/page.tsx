@@ -25,6 +25,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
+import { useAssetMetaData } from "@/hooks/useAssetMetadata";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn } from "@/lib/utils";
@@ -288,7 +289,7 @@ const formatTokenData = (
 const transferTitle = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+  assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const when = new Date(transfer.info.when);
@@ -302,7 +303,7 @@ const transferTitle = (
 
   const { tokenName, amount } = formatTokenData(
     transfer,
-    assetErc20MetaData,
+    assetErc20Metadata,
     destination,
   );
 
@@ -334,7 +335,7 @@ const transferDetail = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
   ss58Format: number,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+  assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const urls = EXPLORERS[env.name];
@@ -364,7 +365,7 @@ const transferDetail = (
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
-    assetErc20MetaData,
+    assetErc20Metadata,
     destination,
   );
   return (
@@ -435,8 +436,6 @@ const transferDetail = (
 
 export default function History() {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
-  const relaychainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
@@ -446,6 +445,14 @@ export default function History() {
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
   );
+
+  const {
+    data: assetMetadata,
+    isLoading: isMetadataLoading,
+    isValidating: isMetadataValidating,
+    error: metadataError,
+  } = useAssetMetaData();
+
   const {
     data: transfers,
     mutate,
@@ -453,7 +460,13 @@ export default function History() {
     isValidating: isTransfersValidating,
     error: transfersError,
   } = useTransferHistory();
-  const isRefreshing = isTransfersLoading || isTransfersValidating;
+
+  const isRefreshing =
+    isTransfersLoading ||
+    isTransfersValidating ||
+    isMetadataLoading ||
+    isMetadataValidating;
+
   const [transfersErrorMessage, setTransfersErrorMessage] = useState<
     string | null
   >(null);
@@ -467,7 +480,15 @@ export default function History() {
     } else {
       setTransfersErrorMessage(null);
     }
-  }, [transfersError, setTransfersErrorMessage]);
+    if (metadataError) {
+      console.error(metadataError);
+      setTransfersErrorMessage(
+        "The history service is under heavy load, so this may take a while...",
+      );
+    } else {
+      setTransfersErrorMessage(null);
+    }
+  }, [metadataError, transfersError, setTransfersErrorMessage]);
 
   const [showGlobal, setShowGlobal] = useAtom(transferHistoryShowGlobal);
 
@@ -558,13 +579,15 @@ export default function History() {
   }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (
-    pages.length === 0 &&
-    isTransfersLoading &&
-    transferHistoryCache.length === 0
+    (pages.length === 0 &&
+      isTransfersLoading &&
+      transferHistoryCache.length === 0) ||
+    assetMetadata === null
   ) {
     return <Loading />;
   }
 
+  console.log(assetMetadata);
   const start = Math.max(0, page - 2);
   const end = Math.min(pages.length - 1, page + 2);
   const renderPages = pages
@@ -626,14 +649,14 @@ export default function History() {
                 value={v.id?.toString() ?? i.toString()}
               >
                 <AccordionTrigger>
-                  {transferTitle(v, env, assetErc20MetaData)}
+                  {transferTitle(v, env, assetMetadata.erc20Metadata)}
                 </AccordionTrigger>
                 <AccordionContent>
                   {transferDetail(
                     v,
                     env,
-                    relaychainNativeAsset?.ss58Format ?? 42,
-                    assetErc20MetaData,
+                    assetMetadata.relaychainNativeAsset?.ss58Format ?? 42,
+                    assetMetadata.erc20Metadata,
                   )}
                 </AccordionContent>
               </AccordionItem>

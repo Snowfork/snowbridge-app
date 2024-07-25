@@ -190,6 +190,13 @@ export type BridgeStatus = {
   };
 };
 
+export type BridgedAssetsMetadata = {
+  relaychainNativeAsset: assets.NativeAsset;
+  erc20Metadata: {
+    [tokenAddress: string]: assets.ERC20Metadata;
+  };
+};
+
 export async function createContext(
   ethereumProvider: AbstractProvider,
   { config }: SnowbridgeEnvironment,
@@ -378,7 +385,7 @@ export function getErrorMessage(err: any) {
 export async function assetMetadata(
   context: Context,
   env: SnowbridgeEnvironment,
-) {
+): Promise<BridgedAssetsMetadata> {
   const tokens = [
     ...new Set(
       env.locations
@@ -386,7 +393,7 @@ export async function assetMetadata(
         .map((l) => l.address.toLowerCase()),
     ),
   ];
-  const [relayChainNativeToken, assetMetadataList] = await Promise.all([
+  const [relaychainNativeAsset, assetMetadataList] = await Promise.all([
     assets.parachainNativeAsset(context.polkadot.api.relaychain),
     Promise.all(
       tokens.map((t) =>
@@ -404,7 +411,7 @@ export async function assetMetadata(
     .forEach((am) => (erc20Metadata[am!.token] = am!.metadata));
 
   return {
-    relayChainNativeToken,
+    relaychainNativeAsset,
     erc20Metadata,
   };
 }

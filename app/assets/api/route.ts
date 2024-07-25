@@ -7,7 +7,7 @@ import {
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
-const CACHE_REVALIDATE_IN_SECONDS = 1; // 1 hour
+const CACHE_REVALIDATE_IN_SECONDS = 60 * 60; // 1 hour
 
 const getCachedAssetMetadata = unstable_cache(
   async () => {
