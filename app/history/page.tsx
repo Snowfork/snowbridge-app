@@ -587,7 +587,6 @@ export default function History() {
     return <Loading />;
   }
 
-  console.log(assetMetadata);
   const start = Math.max(0, page - 2);
   const end = Math.min(pages.length - 1, page + 2);
   const renderPages = pages

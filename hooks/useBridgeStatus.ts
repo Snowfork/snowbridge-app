@@ -24,7 +24,7 @@ export const useBridgeStatus = () => {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
   return useSWR([env, "bridgeStatus"], fetchStatus, {
     refreshInterval: REFRESH_INTERVAL,
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnMount: true,
     suspense: true,
     fallbackData: null,

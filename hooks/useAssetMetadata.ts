@@ -24,7 +24,7 @@ export const useAssetMetaData = () => {
     refreshInterval: REFRESH_INTERVAL,
     suspense: true,
     fallbackData: null,
-    revalidateOnFocus: true,
+    revalidateOnFocus: false,
     revalidateOnMount: true,
     errorRetryInterval: ERROR_RETRY_INTERVAL,
     errorRetryCount: 120, // Retry 120 times every minute (2 hours)
