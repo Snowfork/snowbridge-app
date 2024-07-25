@@ -74,32 +74,32 @@ const isWalletTransaction = (
   polkadotAccounts: WalletAccount[] | null,
   ethereumAccounts: string[] | null,
   sourceAddress: string,
-  beneficiaryAddress: string,
+  beneficiaryAddress: string
 ): boolean => {
   const polkadotAccount = (polkadotAccounts ?? []).find(
     (acc) =>
       beneficiaryAddress.trim().toLowerCase() ===
         acc.address.trim().toLowerCase() ||
-      sourceAddress.trim().toLowerCase() == acc.address.trim().toLowerCase(),
+      sourceAddress.trim().toLowerCase() == acc.address.trim().toLowerCase()
   );
   const ethereumAccount = (ethereumAccounts ?? []).find(
     (acc) =>
       beneficiaryAddress.trim().toLowerCase() === acc.trim().toLowerCase() ||
-      sourceAddress.trim().toLowerCase() == acc.trim().toLowerCase(),
+      sourceAddress.trim().toLowerCase() == acc.trim().toLowerCase()
   );
   return polkadotAccount !== undefined || ethereumAccount !== undefined;
 };
 
 const getEnvDetail = (
   transfer: Transfer,
-  env: environment.SnowbridgeEnvironment,
+  env: environment.SnowbridgeEnvironment
 ) => {
   if (transfer.info.destinationParachain === undefined) {
     return env.locations.find((loc) => loc.id === "ethereum");
   }
 
   let destination = env.locations.find(
-    (loc) => loc.paraInfo?.paraId === transfer.info.destinationParachain,
+    (loc) => loc.paraInfo?.paraId === transfer.info.destinationParachain
   );
 
   if (
@@ -113,10 +113,10 @@ const getEnvDetail = (
 
 const getDestinationTokenByAddress = (
   tokenAddress: string,
-  destination?: environment.TransferLocation,
+  destination?: environment.TransferLocation
 ) => {
   return (destination?.erc20tokensReceivable ?? []).find(
-    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
+    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase()
   );
 };
 
@@ -134,7 +134,7 @@ const subscanEventLink = (baseUrl: string, eventIndex: string): string => {
 const getExplorerLinks = (
   env: environment.SnowbridgeEnvironment,
   transfer: Transfer,
-  destination?: environment.TransferLocation,
+  destination?: environment.TransferLocation
 ) => {
   const urls = EXPLORERS[env.name];
   const links: { text: string; url: string }[] = [];
@@ -150,7 +150,7 @@ const getExplorerLinks = (
         text: "Bridge Hub received XCM from Asset Hub",
         url: subscanEventLink(
           urls["subscan_bh"],
-          ethTransfer.bridgeHubXcmDelivered.event_index,
+          ethTransfer.bridgeHubXcmDelivered.event_index
         ),
       });
     }
@@ -159,7 +159,7 @@ const getExplorerLinks = (
         text: "Message delivered to Snowbridge Message Queue",
         url: subscanEventLink(
           urls["subscan_bh"],
-          ethTransfer.bridgeHubChannelDelivered.event_index,
+          ethTransfer.bridgeHubChannelDelivered.event_index
         ),
       });
     }
@@ -168,7 +168,7 @@ const getExplorerLinks = (
         text: "Message queued on Asset Hub Channel",
         url: subscanEventLink(
           urls["subscan_bh"],
-          ethTransfer.bridgeHubMessageQueued.event_index,
+          ethTransfer.bridgeHubMessageQueued.event_index
         ),
       });
     }
@@ -177,7 +177,7 @@ const getExplorerLinks = (
         text: "Message accepted by Asset Hub Channel",
         url: subscanEventLink(
           urls["subscan_bh"],
-          ethTransfer.bridgeHubMessageAccepted.event_index,
+          ethTransfer.bridgeHubMessageAccepted.event_index
         ),
       });
     }
@@ -186,7 +186,7 @@ const getExplorerLinks = (
         text: "Message included by beefy client",
         url: etherscanEventLink(
           urls["etherscan"],
-          ethTransfer.ethereumBeefyIncluded.transactionHash,
+          ethTransfer.ethereumBeefyIncluded.transactionHash
         ),
       });
     }
@@ -195,7 +195,7 @@ const getExplorerLinks = (
         text: "Message dispatched on Ethereum",
         url: etherscanEventLink(
           urls["etherscan"],
-          ethTransfer.ethereumMessageDispatched.transactionHash,
+          ethTransfer.ethereumMessageDispatched.transactionHash
         ),
       });
     }
@@ -206,7 +206,7 @@ const getExplorerLinks = (
       text: "Submitted to Snowbridge Gateway",
       url: etherscanEventLink(
         urls["etherscan"],
-        dotTransfer.submitted.transactionHash,
+        dotTransfer.submitted.transactionHash
       ),
     });
 
@@ -215,7 +215,7 @@ const getExplorerLinks = (
         text: "Included by light client on Bridge Hub",
         url: subscanEventLink(
           urls["subscan_bh"],
-          dotTransfer.beaconClientIncluded.event_index,
+          dotTransfer.beaconClientIncluded.event_index
         ),
       });
     }
@@ -224,7 +224,7 @@ const getExplorerLinks = (
         text: "Inbound message received on Asset Hub channel",
         url: subscanEventLink(
           urls["subscan_bh"],
-          dotTransfer.inboundMessageReceived.event_index,
+          dotTransfer.inboundMessageReceived.event_index
         ),
       });
     }
@@ -233,7 +233,7 @@ const getExplorerLinks = (
         text: "Message dispatched on Asset Hub",
         url: subscanEventLink(
           urls["subscan_ah"],
-          dotTransfer.assetHubMessageProcessed.event_index,
+          dotTransfer.assetHubMessageProcessed.event_index
         ),
       });
     }
@@ -245,13 +245,13 @@ const formatTokenData = (
   transfer: Transfer,
   assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
   destination?: TransferLocation,
-  displayDecimals?: number,
+  displayDecimals?: number
 ) => {
   const tokenAddress = transfer.info.tokenAddress.toLowerCase();
   let amount = transfer.info.amount;
   let tokenConfig = getDestinationTokenByAddress(
     transfer.info.tokenAddress,
-    destination,
+    destination
   );
   let tokenName = tokenConfig?.id;
   const metaData =
@@ -262,7 +262,7 @@ const formatTokenData = (
     amount = formatBalance(
       parseUnits(transfer.info.amount, 0),
       Number(metaData.decimals),
-      displayDecimals ?? Number(metaData.decimals),
+      displayDecimals ?? Number(metaData.decimals)
     );
     tokenName = metaData.symbol;
   }
@@ -272,7 +272,7 @@ const formatTokenData = (
 const transferTitle = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+  assetErc20MetaData: { [token: string]: assets.ERC20Metadata }
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const when = new Date(transfer.info.when);
@@ -281,13 +281,13 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-        ? ""
-        : "bg-secondary";
+      ? ""
+      : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,
     assetErc20MetaData,
-    destination,
+    destination
   );
 
   return (
@@ -318,14 +318,14 @@ const transferDetail = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
   ss58Format: number,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+  assetErc20MetaData: { [token: string]: assets.ERC20Metadata }
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const urls = EXPLORERS[env.name];
   const links: { text: string; url: string }[] = getExplorerLinks(
     env,
     transfer,
-    destination,
+    destination
   );
 
   let source = transfer.info.sourceAddress;
@@ -349,7 +349,7 @@ const transferDetail = (
   const { tokenName, amount } = formatTokenData(
     transfer,
     assetErc20MetaData,
-    destination,
+    destination
   );
   return (
     <div className="flex-col">
@@ -425,10 +425,10 @@ export default function History() {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
   const [transferHistoryCache, setTransferHistoryCache] = useAtom(
-    transferHistoryCacheAtom,
+    transferHistoryCacheAtom
   );
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
-    transfersPendingLocalAtom,
+    transfersPendingLocalAtom
   );
   const {
     data: transfers,
@@ -446,7 +446,7 @@ export default function History() {
     if (transfersError) {
       console.error(transfersError);
       setTransfersErrorMessage(
-        "The history service is under heavy load, so this may take a while...",
+        "The history service is under heavy load, so this may take a while..."
       );
     } else {
       setTransfersErrorMessage(null);
@@ -467,7 +467,7 @@ export default function History() {
       if (
         transferHistoryCache.find(
           (h) =>
-            h.id.toLowerCase() === transfersPendingLocal[i].id.toLowerCase(),
+            h.id.toLowerCase() === transfersPendingLocal[i].id.toLowerCase()
         )
       ) {
         setTransfersPendingLocal({
@@ -497,7 +497,7 @@ export default function History() {
         polkadotAccounts,
         ethereumAccounts,
         transfer.info.sourceAddress,
-        transfer.info.beneficiaryAddress,
+        transfer.info.beneficiaryAddress
       );
       if (!showGlobal && !transfer.isWalletTransaction) continue;
 
@@ -542,10 +542,9 @@ export default function History() {
   }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (
-    (pages.length === 0 &&
-      isTransfersLoading &&
-      transferHistoryCache.length === 0) ||
-    assetErc20MetaData === null
+    pages.length === 0 &&
+    isTransfersLoading &&
+    transferHistoryCache.length === 0
   ) {
     return <Loading />;
   }
@@ -615,7 +614,7 @@ export default function History() {
                     v,
                     env,
                     relaychainNativeAsset?.ss58Format ?? 42,
-                    assetErc20MetaData,
+                    assetErc20MetaData
                   )}
                 </AccordionContent>
               </AccordionItem>

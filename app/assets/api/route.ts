@@ -1,27 +1,21 @@
-// Next.js serverless options
-export const fetchCache = "default-no-store"; // Dont cache fetches unless asked.
-export const dynamic = "force-dynamic"; // Always run dynamically
-export const revalidate = 120; // Keep cache for 2 minutes
-export const maxDuration = 90; // Timout adter
-
 import { getServerContext } from "@/lib/server/context";
 import {
-  getBridgeStatus,
+  assetMetadata,
   getEnvironment,
   getErrorMessage,
 } from "@/lib/snowbridge";
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
-const CACHE_REVALIDATE_IN_SECONDS = 60; // 1 minutes
+const CACHE_REVALIDATE_IN_SECONDS = 1; // 1 hour
 
-const getCachedBridgeStatus = unstable_cache(
+const getCachedAssetMetadata = unstable_cache(
   async () => {
     const env = getEnvironment();
     try {
       const context = await getServerContext();
-      const status = await getBridgeStatus(context, env);
-      return status;
+      const metadata = await assetMetadata(context, env);
+      return metadata;
     } catch (err) {
       reportError(err);
       return Promise.resolve(null);
@@ -36,8 +30,8 @@ const getCachedBridgeStatus = unstable_cache(
 
 export async function GET() {
   try {
-    const status = await getCachedBridgeStatus();
-    return NextResponse.json(status);
+    const assets = await getCachedAssetMetadata();
+    return NextResponse.json(assets);
   } catch (err) {
     return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }

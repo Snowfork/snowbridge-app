@@ -1,7 +1,6 @@
 "use client";
 
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
-import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import { FC, PropsWithChildren } from "react";
 import { Button } from "./ui/button";

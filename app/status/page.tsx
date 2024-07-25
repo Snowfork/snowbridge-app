@@ -40,7 +40,7 @@ const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
       symbol = relayChainNativeAsset?.tokenSymbol ?? "DOT";
       amount = formatBalance(
         BigInt(account.balance),
-        relayChainNativeAsset?.tokenDecimal ?? 10,
+        relayChainNativeAsset?.tokenDecimal ?? 10
       );
       const ss58format = relayChainNativeAsset?.ss58Format ?? 42;
       accountDisplay = transformSs58Format(accountDisplay, ss58format);
@@ -72,7 +72,7 @@ const StatusCard = () => {
 
   const isRefreshing = isStatusLoading || isStatusValidating;
   const [statusErrorMessage, setStatusErrorMessage] = useState<string | null>(
-    null,
+    null
   );
 
   useEffect(() => {
@@ -101,7 +101,6 @@ const StatusCard = () => {
     status.summary.overallStatus === "Normal"
       ? "text-green-700 font-semibold"
       : "text-red-700 font-semibold";
-  if (status == null) return <Loading />;
 
   return (
     <>
