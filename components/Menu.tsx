@@ -4,30 +4,11 @@ import {
   Menubar,
   MenubarContent,
   MenubarMenu,
-  MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar";
-import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
-import {
-  getEthereumProvider,
-  useEthereumProvider,
-} from "@/hooks/useEthereumProvider";
-import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { cn } from "@/lib/utils";
-import { trimAccount } from "@/utils/formatting";
-import {
-  polkadotAccountAtom,
-  polkadotAccountsAtom,
-  polkadotWalletModalOpenAtom,
-  walletAtom,
-} from "@/store/polkadot";
-import {
-  relayChainNativeAssetAtom,
-  snowbridgeEnvNameAtom,
-} from "@/store/snowbridge";
-import { WalletSelect } from "@talismn/connect-components";
-import { useAtom, useAtomValue } from "jotai";
+import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
+import { useAtomValue } from "jotai";
 import {
   Github,
   LucideBarChart,
@@ -36,129 +17,14 @@ import {
   LucideHistory,
   LucideMenu,
   LucideSend,
-  LucideWallet,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { FC, useEffect, useState } from "react";
-import { ErrorDialog } from "./ErrorDialog";
-import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
-import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
+import { FC } from "react";
 import { Button } from "./ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import { track } from "@vercel/analytics/react";
-import { PolkadotWalletDialog } from "./polkadotWalletDialog";
-
-// const InstallMetamaskDialog: FC = () => {
-//   let [show, setShow] = useState(false);
-//   useEffect(() => {
-//     getEthereumProvider().then((p) => setShow(p === null));
-//   });
-//   if (show) {
-//     track("Install MetaMask");
-//   }
-//   return (
-//     <Dialog open={show}>
-//       <DialogContent>
-//         <DialogHeader>
-//           <DialogTitle>Metamask Is Not Installed</DialogTitle>
-//           <DialogDescription>
-//             Please install the Metamask extension and refresh the page.
-//           </DialogDescription>
-//         </DialogHeader>
-//         <DialogFooter>
-//           <Button
-//             variant="link"
-//             onClick={() => window.open("https://metamask.io/")}
-//           >
-//             Install Metamask
-//           </Button>
-//           <Button
-//             variant="link"
-//             onClick={() => {
-//               window.location.reload();
-//             }}
-//           >
-//             Refresh
-//           </Button>
-//         </DialogFooter>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// };
 
 export const Menu: FC = () => {
-  // useEthereumProvider();
   const envName = useAtomValue(snowbridgeEnvNameAtom);
-  // const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
-  // const [errorMessage, setErrorMessage] = useState(contextError);
-  // useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
-  // useConnectEthereumWallet();
-
-  // if (errorMessage) {
-  //   console.error(errorMessage);
-  //   setErrorMessage("There was an error connecting to Snowbridge.");
-  // }
-
-  // const polkadotAccount = useAtomValue(polkadotAccountAtom);
-  // const wallet = useAtomValue(walletAtom);
-
-  // const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  // const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
-
-  // const PolkadotWallet = () => {
-  //   if (!polkadotAccounts || polkadotAccounts.length == 0) {
-  //     return (
-  //       <Button
-  //         className="w-full"
-  //         variant="link"
-  //         onClick={() => setPolkadotWalletModalOpen(true)}
-  //       >
-  //         Connect Polkadot
-  //       </Button>
-  //     );
-  //   }
-  //   return (
-  //     <>
-  //       <h1 className="font-semibold py-2">Polkadot</h1>
-  //       <div className="text-xs">
-  //         <p>Name: {(polkadotAccount ?? polkadotAccounts[0]).name}</p>
-  //         <p className="inline">Address: </p>
-  //         <pre className="inline">
-  //           {trimAccount((polkadotAccount ?? polkadotAccounts[0]).address, 28)}
-  //         </pre>
-  //         <p>
-  //           Wallet:{" "}
-  //           <Button
-  //             className="w-full"
-  //             variant="outline"
-  //             onClick={() => setPolkadotWalletModalOpen(true)}
-  //           >
-  //             {wallet?.title}
-  //           </Button>{" "}
-  //         </p>
-  //         <p>Account:</p>
-  //       </div>
-  //       <SelectedPolkadotAccount />
-  //     </>
-  //   );
-  // };
-
-  // const EthereumWallet = () => {
-  //   return (
-  //     <>
-  //       <h1 className="font-semibold py-2">Ethereum</h1>
-  //       <SelectedEthereumWallet className="text-sm" walletChars={24} />
-  //     </>
-  //   );
-  // };
 
   return (
     <div className="flex items-center">
@@ -217,7 +83,7 @@ export const Menu: FC = () => {
               variant="link"
               onClick={() =>
                 window.open(
-                  "https://github.com/Snowfork/snowbridge-app/issues/new/choose"
+                  "https://github.com/Snowfork/snowbridge-app/issues/new/choose",
                 )
               }
             >
@@ -235,7 +101,7 @@ export const Menu: FC = () => {
             <Button
               className={cn(
                 "flex items-center justify-start w-auto h-auto gap-2",
-                envName === "polkadot_mainnet" ? "" : "hidden"
+                envName === "polkadot_mainnet" ? "" : "hidden",
               )}
               variant="link"
               onClick={() =>
@@ -257,13 +123,6 @@ export const Menu: FC = () => {
           </MenubarTrigger>
         </MenubarMenu>
       </Menubar>
-      {/* <InstallMetamaskDialog /> */}
-      {/* <ErrorDialog
-        open={!contextLoading && errorMessage !== null}
-        title="Connection Error"
-        description={errorMessage || "Unknown Error."}
-      /> */}
-      {/* <PolkadotWalletDialog /> */}
     </div>
   );
 };
