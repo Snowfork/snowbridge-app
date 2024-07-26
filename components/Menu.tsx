@@ -96,7 +96,6 @@ import { PolkadotWalletDialog } from "./polkadotWalletDialog";
 
 export const Menu: FC = () => {
   // useEthereumProvider();
-  // const [_, contextLoading, contextError] = useSnowbridgeContext();
   const envName = useAtomValue(snowbridgeEnvNameAtom);
   // const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   // const [errorMessage, setErrorMessage] = useState(contextError);

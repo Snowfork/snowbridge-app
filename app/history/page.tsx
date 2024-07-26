@@ -25,18 +25,14 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
-import { useAssetMetaData } from "@/hooks/useAssetMetadata";
+import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn } from "@/lib/utils";
 import { formatBalance } from "@/utils/formatting";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
-import {
-  assetErc20MetaDataAtom,
-  relayChainNativeAssetAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import {
   Transfer,
   transferHistoryCacheAtom,
@@ -47,6 +43,7 @@ import { encodeAddress } from "@polkadot/util-crypto";
 import { assets, environment, history } from "@snowbridge/api";
 import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { WalletAccount } from "@talismn/connect-wallets";
+import { track } from "@vercel/analytics";
 import { parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
 import {
@@ -446,12 +443,7 @@ export default function History() {
     transfersPendingLocalAtom,
   );
 
-  const {
-    data: assetMetadata,
-    isLoading: isMetadataLoading,
-    isValidating: isMetadataValidating,
-    error: metadataError,
-  } = useAssetMetaData();
+  const { relaychainNativeAsset, erc20Metadata } = useAssetMetadata();
 
   const {
     data: transfers,
@@ -461,12 +453,7 @@ export default function History() {
     error: transfersError,
   } = useTransferHistory();
 
-  const isRefreshing =
-    isTransfersLoading ||
-    isTransfersValidating ||
-    isMetadataLoading ||
-    isMetadataValidating;
-
+  const isRefreshing = isTransfersLoading || isTransfersValidating;
   const [transfersErrorMessage, setTransfersErrorMessage] = useState<
     string | null
   >(null);
@@ -474,21 +461,14 @@ export default function History() {
   useEffect(() => {
     if (transfersError) {
       console.error(transfersError);
+      track("History Page Failed", transfersError);
       setTransfersErrorMessage(
         "The history service is under heavy load, so this may take a while...",
       );
     } else {
       setTransfersErrorMessage(null);
     }
-    if (metadataError) {
-      console.error(metadataError);
-      setTransfersErrorMessage(
-        "The history service is under heavy load, so this may take a while...",
-      );
-    } else {
-      setTransfersErrorMessage(null);
-    }
-  }, [metadataError, transfersError, setTransfersErrorMessage]);
+  }, [transfersError, setTransfersErrorMessage]);
 
   const [showGlobal, setShowGlobal] = useAtom(transferHistoryShowGlobal);
 
@@ -582,7 +562,7 @@ export default function History() {
     (pages.length === 0 &&
       isTransfersLoading &&
       transferHistoryCache.length === 0) ||
-    assetMetadata === null
+    erc20Metadata === null
   ) {
     return <Loading />;
   }
@@ -648,14 +628,14 @@ export default function History() {
                 value={v.id?.toString() ?? i.toString()}
               >
                 <AccordionTrigger>
-                  {transferTitle(v, env, assetMetadata.erc20Metadata)}
+                  {transferTitle(v, env, erc20Metadata)}
                 </AccordionTrigger>
                 <AccordionContent>
                   {transferDetail(
                     v,
                     env,
-                    assetMetadata.relaychainNativeAsset?.ss58Format ?? 42,
-                    assetMetadata.erc20Metadata,
+                    relaychainNativeAsset?.ss58Format ?? 42,
+                    erc20Metadata,
                   )}
                 </AccordionContent>
               </AccordionItem>
