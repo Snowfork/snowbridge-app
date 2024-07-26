@@ -5,7 +5,6 @@ import { formatBalance, trimAccount } from "@/lib/utils";
 import {
   ethereumAccountAtom,
   ethereumAccountsAtom,
-  ethereumChainIdAtom,
   ethersProviderAtom,
 } from "@/store/ethereum";
 import {
