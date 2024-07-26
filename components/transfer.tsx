@@ -82,6 +82,7 @@ import {
 import { Toggle } from "./ui/toggle";
 import { LucideHardHat } from "lucide-react";
 import { track } from "@vercel/analytics";
+import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -162,7 +163,7 @@ const errorMessage = (err: any) => {
 
 const updateBalance = (
   context: Context,
-  ethereumChainId: number,
+  env: SnowbridgeEnvironment,
   source: environment.TransferLocation,
   sourceAccount: string,
   token: string,
@@ -170,13 +171,7 @@ const updateBalance = (
   setBalanceDisplay: (_: string) => void,
   setError: (_: ErrorInfo | null) => void
 ) => {
-  getTokenBalance(
-    context,
-    token,
-    BigInt(ethereumChainId),
-    source,
-    sourceAccount
-  )
+  getTokenBalance(context, token, BigInt(env.ethChainId), source, sourceAccount)
     .then((result) => {
       let allowance = "";
       if (result.gatewayAllowance !== undefined) {
@@ -846,7 +841,6 @@ export const TransferComponent: FC = () => {
 
 export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
-  const ethereumChainId = useAtomValue(ethereumChainIdAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
@@ -1046,14 +1040,13 @@ export const TransferForm: FC = () => {
     if (
       context == null ||
       newSourceAccount === undefined ||
-      ethereumChainId == null ||
       token === "" ||
       tokenMetadata == null
     )
       return;
     updateBalance(
       context,
-      ethereumChainId,
+      snowbridgeEnvironment,
       source,
       newSourceAccount,
       token,
@@ -1070,7 +1063,7 @@ export const TransferForm: FC = () => {
     setSourceAccount,
     token,
     context,
-    ethereumChainId,
+    snowbridgeEnvironment,
     tokenMetadata,
   ]);
 
@@ -1078,7 +1071,6 @@ export const TransferForm: FC = () => {
     if (
       tokenMetadata == null ||
       context == null ||
-      ethereumChainId == null ||
       sourceAccount == undefined
     ) {
       return;
@@ -1103,7 +1095,7 @@ export const TransferForm: FC = () => {
       });
       updateBalance(
         context,
-        ethereumChainId,
+        snowbridgeEnvironment,
         source,
         sourceAccount,
         token,
@@ -1134,6 +1126,7 @@ export const TransferForm: FC = () => {
     }
   }, [
     context,
+    snowbridgeEnvironment,
     ethereumProvider,
     form,
     setBusyMessage,
@@ -1142,17 +1135,11 @@ export const TransferForm: FC = () => {
     sourceAccount,
     setBalanceDisplay,
     token,
-    ethereumChainId,
     source,
   ]);
 
   const approveSpend = useCallback(async () => {
-    if (
-      tokenMetadata == null ||
-      context == null ||
-      ethereumChainId == null ||
-      sourceAccount == undefined
-    )
+    if (tokenMetadata == null || context == null || sourceAccount == undefined)
       return;
     const toastTitle = "Approve Token Spend";
     setBusyMessage("Approving spend...");
@@ -1174,7 +1161,7 @@ export const TransferForm: FC = () => {
       });
       updateBalance(
         context,
-        ethereumChainId,
+        snowbridgeEnvironment,
         source,
         sourceAccount,
         token,
@@ -1205,6 +1192,7 @@ export const TransferForm: FC = () => {
     }
   }, [
     context,
+    snowbridgeEnvironment,
     ethereumProvider,
     form,
     setBusyMessage,
@@ -1212,7 +1200,6 @@ export const TransferForm: FC = () => {
     sourceAccount,
     setBalanceDisplay,
     token,
-    ethereumChainId,
     source,
     tokenMetadata,
   ]);

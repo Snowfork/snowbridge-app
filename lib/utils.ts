@@ -23,7 +23,7 @@ export const trimAccount = (account: string, chars: number = 12): string => {
 export const formatBalance = (
   number: bigint,
   decimals: number,
-  displayDecimals: number = 6,
+  displayDecimals: number = 9
 ): string => {
   const replaceZeros = (str: string): string => {
     const newStr = str.replace(/(\.0+)$/, "").replace(/(0+)$/, "");
@@ -62,7 +62,7 @@ export const validateAddress = (address: string): boolean => {
 
 export const transformSs58Format = (
   address: string,
-  ss58Format: number,
+  ss58Format: number
 ): string => {
   try {
     return encodeAddress(decodeAddress(address), ss58Format);

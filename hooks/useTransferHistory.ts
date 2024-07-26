@@ -1,8 +1,3 @@
-import {
-  HISTORY_IN_SECONDS,
-  SKIP_LIGHT_CLIENT_UPDATES,
-  getTransferHistory,
-} from "@/lib/snowbridge";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { Transfer } from "@/store/transferHistory";
 import { useAtomValue } from "jotai";
