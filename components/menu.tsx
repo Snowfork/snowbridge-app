@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/menubar";
 import { cn, trimAccount } from "@/lib/utils";
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   Github,
   LucideBarChart,
@@ -24,9 +24,70 @@ import Image from "next/image";
 import Link from "next/link";
 import { FC } from "react";
 import { Button } from "./ui/button";
+import {
+  polkadotAccountAtom,
+  polkadotAccountsAtom,
+  polkadotWalletModalOpenAtom,
+  walletAtom,
+} from "@/store/polkadot";
+import { SelectedEthereumWallet } from "./selectedEthereumAccount";
+import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
+
+  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const wallet = useAtomValue(walletAtom);
+
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+
+  const PolkadotWallet = () => {
+    if (!polkadotAccounts || polkadotAccounts.length == 0) {
+      return (
+        <Button
+          className="w-full"
+          variant="link"
+          onClick={() => setPolkadotWalletModalOpen(true)}
+        >
+          Connect Polkadot
+        </Button>
+      );
+    }
+    return (
+      <>
+        <h1 className="font-semibold py-2">Polkadot</h1>
+        <div className="text-xs">
+          <p>Name: {(polkadotAccount ?? polkadotAccounts[0]).name}</p>
+          <p className="inline">Address: </p>
+          <pre className="inline">
+            {trimAccount((polkadotAccount ?? polkadotAccounts[0]).address, 28)}
+          </pre>
+          <p>
+            Wallet:{" "}
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => setPolkadotWalletModalOpen(true)}
+            >
+              {wallet?.title}
+            </Button>{" "}
+          </p>
+          <p>Account:</p>
+        </div>
+        <SelectedPolkadotAccount />
+      </>
+    );
+  };
+
+  const EthereumWallet = () => {
+    return (
+      <>
+        <h1 className="font-semibold py-2">Ethereum</h1>
+        <SelectedEthereumWallet className="text-sm" walletChars={24} />
+      </>
+    );
+  };
 
   return (
     <div className="flex items-center">
@@ -55,7 +116,7 @@ export const Menu: FC = () => {
             </Link>
           </MenubarTrigger>
         </MenubarMenu>
-        {/* <MenubarMenu>
+        <MenubarMenu>
           <MenubarTrigger>
             <LucideWallet />
             <p className="pl-2 hidden md:flex">Wallets</p>
@@ -67,7 +128,7 @@ export const Menu: FC = () => {
               <PolkadotWallet />
             </div>
           </MenubarContent>
-        </MenubarMenu> */}
+        </MenubarMenu>
         <MenubarMenu>
           <MenubarContent align="center">
             <Button

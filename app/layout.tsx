@@ -7,15 +7,16 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { Provider } from "jotai";
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Image from "next/image";
+import { Metadata } from "next";
 
 const inter = Inter({ subsets: ["latin"] });
 
+import { metadata as meta } from "@/lib/metadata";
+
 export const metadata: Metadata = {
-  title: "Snowbridge",
-  description: "The Ethereum Polkadot bridge.",
+  ...meta,
   icons: [
     {
       rel: "icon",
