@@ -1013,8 +1013,11 @@ export const TransferForm: FC = () => {
 
   useEffect(() => {
     if (context == null) return;
-    if (assetErc20MetaData !== null && assetErc20MetaData[token]) {
-      setTokenMetadata(assetErc20MetaData[token]);
+    if (
+      assetErc20MetaData !== null &&
+      assetErc20MetaData[token.toLowerCase()]
+    ) {
+      setTokenMetadata(assetErc20MetaData[token.toLowerCase()]);
       return;
     }
 
@@ -1051,6 +1054,7 @@ export const TransferForm: FC = () => {
       tokenMetadata == null
     )
       return;
+    console.log("BBBBB");
     updateBalance(
       context,
       snowbridgeEnvironment,

@@ -24,7 +24,7 @@ const getCachedAssetMetadata = unstable_cache(
   ["bridge-status"],
   {
     tags: ["status"],
-    revalidate: CACHE_REVALIDATE_IN_SECONDS,
+    revalidate: 1,
   }
 );
 

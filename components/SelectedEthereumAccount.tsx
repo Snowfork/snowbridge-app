@@ -44,7 +44,6 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
     setThemeMode("light");
   }
 
-  console.log("here", address, chainId, isConnected, status, walletInfo);
   if (error) {
     console.error(error);
     setErrorMessage(

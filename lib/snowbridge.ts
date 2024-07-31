@@ -413,7 +413,7 @@ export async function assetMetadata(
   const erc20Metadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
   assetMetadataList
     .filter((am) => am !== null)
-    .forEach((am) => (erc20Metadata[am!.token] = am!.metadata));
+    .forEach((am) => (erc20Metadata[am!.token.toLowerCase()] = am!.metadata));
 
   return {
     relaychainNativeAsset,

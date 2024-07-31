@@ -16,6 +16,7 @@ import { metadata } from "../metadata";
   }
 
   const env = getEnvironment();
+  // TODO: Move to env.
   const mainnet = {
     chainId: env.ethChainId,
     name: "Sepolia",
