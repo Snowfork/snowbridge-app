@@ -2,7 +2,6 @@
 
 import { cn, trimAccount } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { toast } from "sonner";
 import { BusyDialog } from "./busyDialog";
 import { ErrorDialog } from "./errorDialog";
 import { FC, useState } from "react";
@@ -44,7 +43,6 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
     setThemeMode("light");
   }
 
-  console.log("here", address, chainId, isConnected, status, walletInfo);
   if (error) {
     console.error(error);
     setErrorMessage(
