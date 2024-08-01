@@ -1,6 +1,6 @@
 "use client";
 
-import { ErrorDialog } from "@/components/errorDialog";
+import { ErrorDialog } from "@/components/ErrorDialog";
 import {
   Accordion,
   AccordionContent,
