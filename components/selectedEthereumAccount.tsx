@@ -5,12 +5,12 @@ import { ethereumAccountAtom } from "@/store/ethereum";
 import { useAtomValue } from "jotai";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
-import { BusyDialog } from "./busyDialog";
-import { ErrorDialog } from "./errorDialog";
+import { BusyDialog } from "./BusyDialog";
+import { ErrorDialog } from "./ErrorDialog";
 import { FC, useState } from "react";
 import { track } from "@vercel/analytics/react";
 
-export type SelectedEthereumWalletProps = {
+type SelectedEthereumWalletProps = {
   className?: string;
   walletChars?: number;
 };

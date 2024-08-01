@@ -40,9 +40,9 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { FC, useEffect, useState } from "react";
-import { ErrorDialog } from "./errorDialog";
-import { SelectedEthereumWallet } from "./selectedEthereumAccount";
-import { SelectedPolkadotAccount } from "./selectedPolkadotAccount";
+import { ErrorDialog } from "./ErrorDialog";
+import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
+import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { Button } from "./ui/button";
 import {
   Dialog,

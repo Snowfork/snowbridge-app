@@ -2,7 +2,7 @@ import { FC, ReactNode } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog"
 import { LucideAlertCircle } from "lucide-react"
 
-export type ErrorProps = {
+type ErrorProps = {
     title?: string,
     description: string,
     open: boolean,
