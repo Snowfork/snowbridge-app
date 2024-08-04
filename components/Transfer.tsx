@@ -82,6 +82,8 @@ import { LucideHardHat } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import { formatBalance, trimAccount } from "@/utils/formatting";
+import { PolkadotWalletsContextProvider } from "@polkadot-onboard/react";
+import { polkadotWalletAggregator } from "@/lib/client/polkadot-onboard";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -838,7 +840,11 @@ export const TransferComponent: FC = () => {
         <p>Under Maintenance: Check back soon!</p>
       </div>
     );
-  return <TransferForm />;
+  return (
+    <PolkadotWalletsContextProvider walletAggregator={polkadotWalletAggregator}>
+      <TransferForm />
+    </PolkadotWalletsContextProvider>
+  );
 };
 
 export const TransferForm: FC = () => {

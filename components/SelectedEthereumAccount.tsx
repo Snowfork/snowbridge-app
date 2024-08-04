@@ -34,7 +34,6 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const { switchNetwork } = useSwitchNetwork();
   const { address, chainId, isConnected, status } = useWeb3ModalAccount();
   const { disconnect } = useDisconnect();
-  const { walletInfo } = useWalletInfo();
   const { open, close } = useWeb3Modal();
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
