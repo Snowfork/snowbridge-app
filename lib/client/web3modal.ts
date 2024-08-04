@@ -28,8 +28,8 @@ import { metadata } from "../metadata";
   const web3meta = {
     name: metadata.title,
     description: metadata.description,
-    url: "/", // origin must match your domain & subdomain
-    icons: ["/icon.svg"],
+    url: metadata.url, // origin must match your domain & subdomain
+    icons: [metadata.icon],
   };
 
   const ethersConfig = defaultConfig({
