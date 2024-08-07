@@ -1,11 +1,13 @@
-'use client'
-import { Context, toPolkadot } from '@snowbridge/api'
-import { BrowserProvider } from 'ethers'
+"use client";
+import { Context, toPolkadot } from "@snowbridge/api";
+import { BrowserProvider } from "ethers";
 
-export async function doApproveSpend(context: Context | null,
+export async function doApproveSpend(
+  context: Context | null,
   ethereumProvider: BrowserProvider | null,
   token: string,
-  amount: bigint): Promise<void> {
+  amount: bigint,
+): Promise<void> {
   if (context == null || ethereumProvider == null) return;
 
   const signer = await ethereumProvider.getSigner();
@@ -13,14 +15,14 @@ export async function doApproveSpend(context: Context | null,
     context,
     signer,
     token,
-    amount
+    amount,
   );
 
-  console.log('approval response', response);
+  console.log("approval response", response);
   const receipt = await response.wait();
-  console.log('approval receipt', receipt);
+  console.log("approval receipt", receipt);
   if (receipt?.status === 0) {
     // check success
-    throw Error('Token spend approval failed.');
+    throw Error("Token spend approval failed.");
   }
 }
