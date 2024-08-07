@@ -1,3 +1,24 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": ["next/core-web-vitals", "prettier"],
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": [
+      "error",
+      {
+        "singleQuote": false,
+        "trailingComma": "all",
+        "semi": true
+      }
+    ],
+    "quotes": [
+      "error",
+      "single",
+      {
+        "allowTemplateLiterals": true,
+        "avoidEscape": true
+      }
+    ],
+    "semi": ["error", "always"],
+    "comma-dangle": ["error", "always-multiline"]
+  }
 }
