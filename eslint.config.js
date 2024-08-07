@@ -1,4 +1,3 @@
-/* eslint-disable import/no-anonymous-default-export */
 import prettier from "eslint-plugin-prettier";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
