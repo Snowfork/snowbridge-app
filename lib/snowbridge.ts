@@ -32,7 +32,7 @@ export function getEnvironment() {
   const env = environment.SNOWBRIDGE_ENV[envName];
   if (env === undefined)
     throw new Error(
-      `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${envName}'`
+      `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${envName}'`,
     );
   return env;
 }
@@ -40,7 +40,7 @@ export function getEnvironment() {
 export async function getTransferHistory(
   env: environment.SnowbridgeEnvironment,
   skipLightClientUpdates: boolean,
-  historyInSeconds: number
+  historyInSeconds: number,
 ) {
   console.log("Fetching transfer history.");
   if (!env.config.SUBSCAN_API) {
@@ -61,15 +61,15 @@ export async function getTransferHistory(
 
   const assetHubScan = subscan.createApi(
     env.config.SUBSCAN_API.ASSET_HUB_URL,
-    subscanKey
+    subscanKey,
   );
   const bridgeHubScan = subscan.createApi(
     env.config.SUBSCAN_API.BRIDGE_HUB_URL,
-    subscanKey
+    subscanKey,
   );
   const relaychainScan = subscan.createApi(
     env.config.SUBSCAN_API.RELAY_CHAIN_URL,
-    subscanKey
+    subscanKey,
   );
 
   const bridgeHubParaId = env.config.BRIDGE_HUB_PARAID;
@@ -78,11 +78,11 @@ export async function getTransferHistory(
 
   const beefyClient = BeefyClient__factory.connect(
     env.config.BEEFY_CONTRACT,
-    ethereumProvider
+    ethereumProvider,
   );
   const gateway = IGateway__factory.connect(
     env.config.GATEWAY_CONTRACT,
-    ethereumProvider
+    ethereumProvider,
   );
   const ethereumSearchPeriodBlocks =
     historyInSeconds / ETHEREUM_BLOCK_TIME_SECONDS;
@@ -93,20 +93,20 @@ export async function getTransferHistory(
 
   const toAssetHubBlock = await subscan.fetchBlockNearTimestamp(
     assetHubScan,
-    utcNowTimestamp
+    utcNowTimestamp,
   );
   const fromAssetHubBlock = await subscan.fetchBlockNearTimestamp(
     assetHubScan,
-    utcNowTimestamp - historyInSeconds
+    utcNowTimestamp - historyInSeconds,
   );
 
   const toBridgeHubBlock = await subscan.fetchBlockNearTimestamp(
     bridgeHubScan,
-    utcNowTimestamp
+    utcNowTimestamp,
   );
   const fromBridgeHubBlock = await subscan.fetchBlockNearTimestamp(
     bridgeHubScan,
-    utcNowTimestamp - historyInSeconds
+    utcNowTimestamp - historyInSeconds,
   );
 
   if (ethNowBlock === null) {
@@ -138,7 +138,7 @@ export async function getTransferHistory(
     env.ethChainId,
     assetHubParaId,
     beefyClient,
-    gateway
+    gateway,
   );
   console.log("To Ethereum transfers:", toEthereum.length);
 
@@ -150,7 +150,7 @@ export async function getTransferHistory(
     bridgeHubParaId,
     gateway,
     ethereumProvider,
-    beacon_url
+    beacon_url,
   );
   console.log("To Polkadot transfers:", toPolkadot.length);
 
@@ -191,7 +191,7 @@ export type BridgeStatus = {
 
 export async function createContext(
   ethereumProvider: AbstractProvider,
-  { config }: SnowbridgeEnvironment
+  { config }: SnowbridgeEnvironment,
 ) {
   return await contextFactory({
     ethereum: {
@@ -217,12 +217,12 @@ export async function createContext(
 
 export async function getBridgeStatus(
   context: Context,
-  { config }: SnowbridgeEnvironment
+  { config }: SnowbridgeEnvironment,
 ): Promise<BridgeStatus> {
   console.log("Refreshing bridge status.");
   const assetHubSovereignAddress = utils.paraIdToSovereignAccount(
     "sibl",
-    config.ASSET_HUB_PARAID
+    config.ASSET_HUB_PARAID,
   );
   const bridgeHubAgentId = u8aToHex(blake2AsU8a("0x00", 256));
 
@@ -238,25 +238,25 @@ export async function getBridgeStatus(
     status.bridgeStatusInfo(context),
     status.channelStatusInfo(
       context,
-      utils.paraIdToChannelId(config.ASSET_HUB_PARAID)
+      utils.paraIdToChannelId(config.ASSET_HUB_PARAID),
     ),
     status.channelStatusInfo(context, config.PRIMARY_GOVERNANCE_CHANNEL_ID),
     status.channelStatusInfo(context, config.SECONDARY_GOVERNANCE_CHANNEL_ID),
     context.polkadot.api.bridgeHub.query.system.account(
-      assetHubSovereignAddress
+      assetHubSovereignAddress,
     ),
     context.ethereum.contracts.gateway.agentOf(
       utils.paraIdToAgentId(
         context.polkadot.api.bridgeHub.registry,
-        config.ASSET_HUB_PARAID
-      )
+        config.ASSET_HUB_PARAID,
+      ),
     ),
     context.ethereum.contracts.gateway.agentOf(bridgeHubAgentId),
   ]);
 
   const accounts: AccountInfo[] = [];
   const assetHubSovereignBalance = BigInt(
-    (assetHubSovereignAccountCodec.toPrimitive() as any).data.free
+    (assetHubSovereignAccountCodec.toPrimitive() as any).data.free,
   );
   accounts.push({
     name: "Asset Hub Sovereign",
@@ -283,10 +283,10 @@ export async function getBridgeStatus(
                 (
                   (
                     await context.polkadot.api.bridgeHub.query.system.account(
-                      r.account
+                      r.account,
                     )
                   ).toPrimitive() as any
-                ).data.free
+                ).data.free,
               ).toString();
               break;
           }
@@ -296,7 +296,7 @@ export async function getBridgeStatus(
             balance: balance,
             type: r.type,
           };
-        })
+        }),
       ),
     ]);
 
@@ -325,8 +325,8 @@ export async function getBridgeStatus(
     !toPolkadot.bridgeOperational || !toPolkadot.channelOperational
       ? "Halted"
       : !toPolkadot.lightClientLatencyIsAcceptable
-      ? "Delayed"
-      : "Normal";
+        ? "Delayed"
+        : "Normal";
 
   const toEthereum = {
     bridgeOperational:
@@ -337,8 +337,8 @@ export async function getBridgeStatus(
   const toEthereumOperatingMode = !toEthereum.bridgeOperational
     ? "Halted"
     : !toEthereum.lightClientLatencyIsAcceptable
-    ? "Delayed"
-    : "Normal";
+      ? "Delayed"
+      : "Normal";
 
   let overallStatus: StatusValue = toEthereumOperatingMode;
   if (toEthereumOperatingMode === "Normal") {
