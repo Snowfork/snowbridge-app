@@ -14,7 +14,8 @@ import {
   useEthereumProvider,
 } from "@/hooks/useEthereumProvider";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
-import { cn, trimAccount } from "@/lib/utils";
+import { cn } from "@/utils/cn";
+import { trimAccount } from "@/utils/formatting";
 import {
   polkadotAccountAtom,
   polkadotAccountsAtom,
