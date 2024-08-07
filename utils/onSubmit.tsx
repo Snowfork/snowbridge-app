@@ -17,7 +17,7 @@ import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { track } from "@vercel/analytics";
 import { errorMessage } from "./errorMessage";
-import { parseAmount } from "@/utils/balances/parseAmount";
+import { parseAmount } from "@/utils/balances";
 import { AppRouter, FormData, ErrorInfo } from "@/utils/types";
 import { validateOFAC } from "@/components/Transfer";
 

@@ -59,8 +59,8 @@ import { formSchema } from "@/utils/formSchema";
 import { SelectAccount } from "./SelectAccount";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { errorMessage } from "@/utils/errorMessage";
-import { updateBalance } from "@/utils/balances/updateBalance";
-import { parseAmount } from "@/utils/balances/parseAmount";
+import { updateBalance, parseAmount } from "@/utils/balances";
+
 import { doApproveSpend } from "@/utils/doApproveSpend";
 import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
 import { FormData, ErrorInfo, AccountInfo, AppRouter } from "@/utils/types";
