@@ -13,7 +13,7 @@ import {
   polkadotAccountsAtom,
   polkadotWalletModalOpenAtom,
 } from "@/store/polkadot";
-import { trimAccount } from "@/lib/utils";
+import { trimAccount } from "@/utils/formatting";
 import { FC } from "react";
 
 export const SelectedPolkadotAccount: FC = () => {

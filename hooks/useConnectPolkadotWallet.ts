@@ -1,4 +1,5 @@
-import { transformSs58Format, validateAddress } from "@/lib/utils";
+import { validateAddress } from "@/utils/validateAddress";
+import { transformSs58Format } from "@/utils/formatting";
 import {
   polkadotAccountsAtom,
   walletAtom,
