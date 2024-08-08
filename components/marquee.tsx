@@ -1,7 +1,7 @@
 import { HTMLAttributes, ReactNode } from "react";
 import "@/styles/globals.css";
 import "@/styles/marquee.css";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 type MarqueeProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;

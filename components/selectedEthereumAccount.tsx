@@ -1,6 +1,6 @@
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 import { trimAccount } from "@/utils/formatting";
 import { ethereumAccountAtom } from "@/store/ethereum";
 import { useAtomValue } from "jotai";
