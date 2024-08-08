@@ -1,3 +1,4 @@
+/* eslint-disable import/no-anonymous-default-export */
 import prettier from "eslint-plugin-prettier";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +16,7 @@ const compat = new FlatCompat({
 export default [
   ...compat.extends("next/core-web-vitals", "prettier"),
   {
-    ignores: [".next/**/*"],
+    ignores: [".next/**/*", "components/ui/**/*"],
     plugins: {
       prettier,
     },

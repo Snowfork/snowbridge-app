@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LucideBarChart, LucideLoaderCircle } from "lucide-react";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { useAtomValue } from "jotai";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/cn";
 import { formatTime } from "@/utils/formatting";
 import { usePathname } from "next/navigation";
 import { snowbridgeContextAtom } from "@/store/snowbridge";

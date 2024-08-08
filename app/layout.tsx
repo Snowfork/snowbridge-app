@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Menu } from "@/components/Menu";
 import { TermsOfUse } from "@/components/TermsOfUse";
 import { Toaster } from "@/components/ui/sonner";
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/cn";
 import "@/styles/globals.css";
 import { Provider } from "jotai";
 import type { Metadata } from "next";
