@@ -14,9 +14,9 @@ const compat = new FlatCompat({
 });
 
 export default [
+  { ignores: [".next/", "components/ui/**/*"] },
   ...compat.extends("next/core-web-vitals", "prettier"),
   {
-    ignores: [".next/**/*", "components/ui/**/*"],
     plugins: {
       prettier,
     },
