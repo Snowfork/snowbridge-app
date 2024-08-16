@@ -106,7 +106,7 @@ export const TransferComponent: FC = () => {
       .toLowerCase()
       .trim() === "true";
 
-  if (maintenance)
+  if (maintenance) {
     return (
       <div className="flex-col gap-2">
         <div className="flex justify-center">
@@ -115,6 +115,7 @@ export const TransferComponent: FC = () => {
         <p>Under Maintenance: Check back soon!</p>
       </div>
     );
+  }
   return <TransferForm />;
 };
 
@@ -167,7 +168,9 @@ export const TransferForm: FC = () => {
   });
 
   useEffect(() => {
-    if (context == null) return;
+    if (context == null) {
+      return;
+    }
     switch (source.type) {
       case "substrate": {
         toEthereum
@@ -290,7 +293,9 @@ export const TransferForm: FC = () => {
   ]);
 
   useEffect(() => {
-    if (context == null) return;
+    if (context == null) {
+      return;
+    }
     if (assetErc20MetaData !== null && assetErc20MetaData[token]) {
       setTokenMetadata(assetErc20MetaData[token]);
       return;
@@ -328,8 +333,9 @@ export const TransferForm: FC = () => {
       ethereumChainId == null ||
       token === "" ||
       tokenMetadata == null
-    )
+    ) {
       return;
+    }
     updateBalance(
       context,
       ethereumChainId,
@@ -431,8 +437,9 @@ export const TransferForm: FC = () => {
       context == null ||
       ethereumChainId == null ||
       sourceAccount == undefined
-    )
+    ) {
       return;
+    }
     const toastTitle = "Approve Token Spend";
     setBusyMessage("Approving spend...");
     try {

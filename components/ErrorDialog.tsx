@@ -27,7 +27,9 @@ export const ErrorDialog: FC<ErrorProps> = ({
     <Dialog
       open={open}
       onOpenChange={(a) => {
-        if (!a && dismiss) dismiss();
+        if (!a && dismiss) {
+          dismiss();
+        }
       }}
     >
       <DialogContent>

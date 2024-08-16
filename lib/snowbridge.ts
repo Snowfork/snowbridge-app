@@ -23,17 +23,20 @@ export const ACCEPTABLE_BRIDGE_LATENCY = 28800; // 8 hours
 
 export function getEnvironmentName() {
   const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
-  if (!name) throw new Error("NEXT_PUBLIC_SNOWBRIDGE_ENV var not configured.");
+  if (!name) {
+    throw new Error("NEXT_PUBLIC_SNOWBRIDGE_ENV var not configured.");
+  }
   return name;
 }
 
 export function getEnvironment() {
   const envName = getEnvironmentName();
   const env = environment.SNOWBRIDGE_ENV[envName];
-  if (env === undefined)
+  if (env === undefined) {
     throw new Error(
       `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${envName}'`,
     );
+  }
   return env;
 }
 
@@ -325,8 +328,8 @@ export async function getBridgeStatus(
     !toPolkadot.bridgeOperational || !toPolkadot.channelOperational
       ? "Halted"
       : !toPolkadot.lightClientLatencyIsAcceptable
-      ? "Delayed"
-      : "Normal";
+        ? "Delayed"
+        : "Normal";
 
   const toEthereum = {
     bridgeOperational:
@@ -337,8 +340,8 @@ export async function getBridgeStatus(
   const toEthereumOperatingMode = !toEthereum.bridgeOperational
     ? "Halted"
     : !toEthereum.lightClientLatencyIsAcceptable
-    ? "Delayed"
-    : "Normal";
+      ? "Delayed"
+      : "Normal";
 
   let overallStatus: StatusValue = toEthereumOperatingMode;
   if (toEthereumOperatingMode === "Normal") {

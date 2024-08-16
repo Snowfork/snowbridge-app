@@ -91,7 +91,9 @@ const StatusCard = () => {
   const hash = useWindowHash();
   const diagnostic = hash === "diagnostic";
 
-  if (status == null) return <Loading />;
+  if (status == null) {
+    return <Loading />;
+  }
 
   const toPolkadotStyle =
     status.summary.toPolkadotOperatingMode === "Normal"
@@ -105,7 +107,9 @@ const StatusCard = () => {
     status.summary.overallStatus === "Normal"
       ? "text-green-700 font-semibold"
       : "text-red-700 font-semibold";
-  if (status == null) return <Loading />;
+  if (status == null) {
+    return <Loading />;
+  }
 
   return (
     <>

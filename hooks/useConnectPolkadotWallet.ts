@@ -16,7 +16,9 @@ export const useConnectPolkadotWallet = (ss58Format?: number): void => {
   const [walletName] = useAtom(walletNameAtom);
 
   useEffect(() => {
-    if (wallet != null || walletName == null) return;
+    if (wallet != null || walletName == null) {
+      return;
+    }
     let unmounted = false;
     const connect = async (): Promise<void> => {
       const { getWalletBySource } = await import("@talismn/connect-wallets");
@@ -43,7 +45,9 @@ export const useConnectPolkadotWallet = (ss58Format?: number): void => {
     let unsub: () => void;
     let unmounted = false;
     const saveAccounts = (accounts?: WalletAccount[]): void => {
-      if (accounts == null || unmounted) return;
+      if (accounts == null || unmounted) {
+        return;
+      }
       if (ss58Format === undefined) {
         setAccounts(accounts);
       } else {

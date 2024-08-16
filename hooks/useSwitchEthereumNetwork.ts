@@ -14,7 +14,9 @@ export const useSwitchEthereumNetwork = (): {
   const shouldSwitchNetwork = providerChainID !== envChainId;
 
   const switchNetwork = useCallback(async () => {
-    if (!shouldSwitchNetwork || ethereum === null) return;
+    if (!shouldSwitchNetwork || ethereum === null) {
+      return;
+    }
     const chainIdHex = `0x${envChainId.toString(16)}`;
     try {
       await ethereum.request({

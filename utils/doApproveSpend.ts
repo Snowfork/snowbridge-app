@@ -8,7 +8,9 @@ export async function doApproveSpend(
   token: string,
   amount: bigint,
 ): Promise<void> {
-  if (context == null || ethereumProvider == null) return;
+  if (context == null || ethereumProvider == null) {
+    return;
+  }
 
   const signer = await ethereumProvider.getSigner();
   const response = await toPolkadot.approveTokenSpend(

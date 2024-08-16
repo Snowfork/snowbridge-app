@@ -27,8 +27,12 @@ function countryBlockCase(
 
     when(mockedRequest.nextUrl).thenReturn(nextUrl);
     const headers = new Headers();
-    if (country) headers.set(COUNTRY_HEADER_NAME, country);
-    if (region) headers.set(REGION_HEADER_NAME, region);
+    if (country) {
+      headers.set(COUNTRY_HEADER_NAME, country);
+    }
+    if (region) {
+      headers.set(REGION_HEADER_NAME, region);
+    }
     when(mockedRequest.headers).thenReturn(headers);
 
     const result = middleware(instance(mockedRequest));

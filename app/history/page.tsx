@@ -287,8 +287,8 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-      ? ""
-      : "bg-secondary";
+        ? ""
+        : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,
@@ -464,7 +464,9 @@ export default function History() {
   const hashItem = useWindowHash();
 
   useEffect(() => {
-    if (transfers === null) return;
+    if (transfers === null) {
+      return;
+    }
     setTransferHistoryCache(transfers);
   }, [transfers, setTransferHistoryCache]);
 
@@ -505,7 +507,9 @@ export default function History() {
         transfer.info.sourceAddress,
         transfer.info.beneficiaryAddress,
       );
-      if (!showGlobal && !transfer.isWalletTransaction) continue;
+      if (!showGlobal && !transfer.isWalletTransaction) {
+        continue;
+      }
 
       allTransfers.push(transfer);
     }

@@ -87,7 +87,9 @@ export const useSnowbridgeContext = (): [
       })
       .catch((error) => {
         let message = "Unknown Error";
-        if (error instanceof Error) message = error.message;
+        if (error instanceof Error) {
+          message = error.message;
+        }
         setLoading(false);
         setError(message);
       });
