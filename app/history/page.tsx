@@ -467,7 +467,7 @@ export default function History() {
       if (
         transferHistoryCache.find(
           (h) =>
-            h.id.toLowerCase() === transfersPendingLocal[i].id.toLowerCase(),
+            h.id?.toLowerCase() === transfersPendingLocal[i].id.toLowerCase(),
         )
       ) {
         setTransfersPendingLocal({
