@@ -20,7 +20,7 @@ Then, on the `.env`-file, configure of your project by assigning the values that
 NEXT_PUBLIC_SNOWBRIDGE_ENV=rococo_sepolia
 ```
 
-If you are not using local chains, create an `.env.local` to set the required A.P.I. keys.
+If you are not using local chains, set the required A.P.I. keys.
 
 ```env
 NEXT_PUBLIC_ALCHEMY_KEY=...
