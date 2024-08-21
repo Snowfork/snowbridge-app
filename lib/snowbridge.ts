@@ -1,3 +1,4 @@
+import { parachainConfigs } from "@/utils/parachainConfigs";
 import { u8aToHex } from "@polkadot/util";
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
 import {
@@ -21,6 +22,52 @@ export const HISTORY_IN_SECONDS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
 export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
 export const ACCEPTABLE_BRIDGE_LATENCY = 28800; // 8 hours
 
+async function addParachains(env: environment.SnowbridgeEnvironment) {
+  const assetHubLocation = env.locations.find(({ id }) => id === "assethub");
+  if (!assetHubLocation) {
+    throw new Error(
+      `Could not find the asset hub configuration object inside of the chosen environment "${env.name}."`,
+    );
+  }
+  const pertinentParaConfigs = Object.values(parachainConfigs).filter(
+    ({ snowEnv, location }) =>
+      snowEnv === env.name &&
+      !assetHubLocation.destinationIds.includes(location.id),
+  );
+
+  if (pertinentParaConfigs.length == 0) {
+    console.log(
+      `No suitable parachains to add to the given snowbridge environment "${env.name}".`,
+    );
+    return;
+  }
+
+  // add the parachains as destinations on the assetHub location
+  // and the corresponding tokens as receivable
+
+  pertinentParaConfigs.forEach((paraConfig) => {
+    assetHubLocation.destinationIds.push(paraConfig.location.id);
+    assetHubLocation.erc20tokensReceivable.push(
+      ...paraConfig.location.erc20tokensReceivable,
+    );
+  });
+  env.locations.push(...pertinentParaConfigs.map((para) => para.location));
+  env.config.PARACHAINS.push(
+    ...pertinentParaConfigs.map((para) => para.endpoint),
+  );
+
+  // TODO: delete this log later
+  // during developing only:
+  console.log(
+    "SnowbridgeEnvironment after adding parachains: ",
+    JSON.stringify(
+      env,
+      (_, v) => (typeof v === "bigint" ? v.toString() : v), // replacer of bigInts
+      2,
+    ),
+  );
+}
+
 export function getEnvironmentName() {
   const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
   if (!name) throw new Error("NEXT_PUBLIC_SNOWBRIDGE_ENV var not configured.");
@@ -34,6 +81,7 @@ export function getEnvironment() {
     throw new Error(
       `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${envName}'`,
     );
+  addParachains(env);
   return env;
 }
 
