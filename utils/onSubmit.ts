@@ -1,7 +1,7 @@
 "use client";
 import { formatBalance } from "@/utils/formatting";
 import { PendingTransferAction, Transfer } from "@/store/transferHistory";
-import { Signer } from "@polkadot/api/types";
+import { Signer, SubmittableExtrinsic } from "@polkadot/api/types";
 import {
   Context,
   assets,
@@ -20,6 +20,8 @@ import { errorMessage } from "./errorMessage";
 import { parseAmount } from "@/utils/balances";
 import { AppRouter, FormData, ErrorInfo } from "@/utils/types";
 import { validateOFAC } from "@/components/Transfer";
+import { ISubmittableResult } from "@polkadot/types/types";
+import { decodeAddress } from "@polkadot/util-crypto";
 
 export function onSubmit({
   context,
@@ -327,4 +329,156 @@ export function onSubmit({
       });
     }
   };
+}
+
+export function submitParachainToAssetHubTransfer({
+  context,
+  polkadotAccount,
+  source,
+  destination,
+
+  amountInSmallestUnit,
+  setError,
+  setBusyMessage,
+}: {
+  context: Context | null;
+  polkadotAccount: WalletAccount | null;
+  source: environment.TransferLocation;
+  destination: environment.TransferLocation;
+  // data: FormData;
+  amountInSmallestUnit: bigint;
+  setError: Dispatch<SetStateAction<ErrorInfo | null>>;
+  setBusyMessage: Dispatch<SetStateAction<string>>;
+}): SubmittableExtrinsic<"promise", ISubmittableResult> {
+  const { pallet } = parachainConfigs[source.id];
+  if (!context) {
+    throw Error("this is shit");
+  }
+  if (source.type !== "substrate") {
+    throw Error(`Invalid form state: source type mismatch.`);
+  }
+  if (!source.paraInfo) {
+    throw Error(`Invalid form state: source does not have parachain id.`);
+  }
+  if (destination.type !== "substrate") {
+    throw Error(`Invalid form state: destination type mismatch.`);
+  }
+  if (destination.paraInfo === undefined) {
+    throw Error(`Invalid form state: destination does not have parachain id.`);
+  }
+
+  const parachainApi = context.polkadot.api.parachains[source.paraInfo?.paraId];
+
+  const pathToBeneficiary = {
+    V3: {
+      parents: 0,
+      interior: {
+        X1: {
+          AccountId32: {
+            id: decodeAddress(
+              "5Dc5nu57ww3nnxToV2XimMYUZcYgEDhBC8cygDNpQYe45gdU",
+            ),
+          },
+        },
+      },
+    },
+  };
+
+  return parachainApi.tx[pallet].switch(
+    amountInSmallestUnit,
+    pathToBeneficiary,
+  );
+}
+
+export async function submitAssetHubToParachainTransfer({
+  context,
+  polkadotAccount,
+  source,
+  destination,
+
+  amountInSmallestUnit,
+  setError,
+  setBusyMessage,
+}: {
+  context: Context | null;
+  polkadotAccount: WalletAccount | null;
+  source: environment.TransferLocation;
+  destination: environment.TransferLocation;
+
+  amountInSmallestUnit: bigint;
+  setError: Dispatch<SetStateAction<ErrorInfo | null>>;
+  setBusyMessage: Dispatch<SetStateAction<string>>;
+}): Promise<SubmittableExtrinsic<"promise", ISubmittableResult>> {
+  const { pallet, parachainId } = parachainConfigs[destination.id];
+  console.log(parachainId);
+  if (!context) {
+    throw Error("shit");
+  }
+  if (source.type !== "substrate") {
+    throw Error(`Invalid form state: source type mismatch.`);
+  }
+  if (!source.paraInfo) {
+    throw Error(`Invalid form state: source does not have parachain id.`);
+  }
+  if (destination.type !== "substrate") {
+    throw Error(`Invalid form state: destination type mismatch.`);
+  }
+  if (destination.paraInfo === undefined) {
+    throw Error(`Invalid form state: destination does not have parachain id.`);
+  }
+
+  const assetHubApi = context.polkadot.api.assetHub;
+  const parachainApi =
+    context.polkadot.api.parachains[destination.paraInfo?.paraId];
+
+  const switchPair = await parachainApi.query[pallet].switchPair();
+  const remoteAssetId = (switchPair as any).unwrap().remoteAssetId.toJSON().v4;
+
+  const pathToBeneficiary = {
+    parents: 0,
+    interior: {
+      X1: [
+        {
+          AccountId32: {
+            id: decodeAddress(
+              "5Dc5nu57ww3nnxToV2XimMYUZcYgEDhBC8cygDNpQYe45gdU",
+            ),
+          },
+        },
+      ],
+    },
+  };
+  const pathToParachain = {
+    parents: 1,
+    interior: {
+      X1: [
+        {
+          Parachain: parachainId,
+        },
+      ],
+    },
+  };
+
+  return assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
+    {
+      V4: pathToParachain,
+    },
+    {
+      V4: [{ id: remoteAssetId, fun: { Fungible: amountInSmallestUnit } }],
+    },
+    "LocalReserve",
+    { V4: remoteAssetId },
+    "LocalReserve",
+    {
+      V4: [
+        {
+          DepositAsset: {
+            assets: { Wild: "All" },
+            beneficiary: pathToBeneficiary,
+          },
+        },
+      ],
+    },
+    "Unlimited",
+  );
 }
