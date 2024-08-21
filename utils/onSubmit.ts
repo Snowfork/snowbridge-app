@@ -22,6 +22,7 @@ import { AppRouter, FormData, ErrorInfo } from "@/utils/types";
 import { validateOFAC } from "@/components/Transfer";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { decodeAddress } from "@polkadot/util-crypto";
+import { parachainConfigs } from "./parachainConfigs";
 
 export function onSubmit({
   context,
