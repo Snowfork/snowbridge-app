@@ -334,38 +334,31 @@ export function onSubmit({
 
 export function submitParachainToAssetHubTransfer({
   context,
-  polkadotAccount,
+  beneficiary,
   source,
-  destination,
-
-  amountInSmallestUnit,
+  amount,
+  tokenMetadata,
   setError,
   setBusyMessage,
 }: {
   context: Context | null;
-  polkadotAccount: WalletAccount | null;
+  beneficiary: string;
   source: environment.TransferLocation;
-  destination: environment.TransferLocation;
-  // data: FormData;
-  amountInSmallestUnit: bigint;
+  amount: string;
+  tokenMetadata: assets.ERC20Metadata;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
 }): SubmittableExtrinsic<"promise", ISubmittableResult> {
-  const { pallet } = parachainConfigs[source.id];
+  const { pallet } = parachainConfigs[source.name];
+
   if (!context) {
-    throw Error("this is shit");
+    throw Error("Invalid context: please update context");
   }
   if (source.type !== "substrate") {
     throw Error(`Invalid form state: source type mismatch.`);
   }
   if (!source.paraInfo) {
     throw Error(`Invalid form state: source does not have parachain id.`);
-  }
-  if (destination.type !== "substrate") {
-    throw Error(`Invalid form state: destination type mismatch.`);
-  }
-  if (destination.paraInfo === undefined) {
-    throw Error(`Invalid form state: destination does not have parachain id.`);
   }
 
   const parachainApi = context.polkadot.api.parachains[source.paraInfo?.paraId];
@@ -376,14 +369,13 @@ export function submitParachainToAssetHubTransfer({
       interior: {
         X1: {
           AccountId32: {
-            id: decodeAddress(
-              "5Dc5nu57ww3nnxToV2XimMYUZcYgEDhBC8cygDNpQYe45gdU",
-            ),
+            id: decodeAddress(beneficiary),
           },
         },
       },
     },
   };
+  const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
 
   return parachainApi.tx[pallet].switch(
     amountInSmallestUnit,
@@ -393,27 +385,26 @@ export function submitParachainToAssetHubTransfer({
 
 export async function submitAssetHubToParachainTransfer({
   context,
-  polkadotAccount,
+  beneficiary,
   source,
   destination,
-
-  amountInSmallestUnit,
+  amount,
+  tokenMetadata,
   setError,
   setBusyMessage,
 }: {
   context: Context | null;
-  polkadotAccount: WalletAccount | null;
+  beneficiary: string;
   source: environment.TransferLocation;
   destination: environment.TransferLocation;
-
-  amountInSmallestUnit: bigint;
+  amount: string;
+  tokenMetadata: assets.ERC20Metadata;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
 }): Promise<SubmittableExtrinsic<"promise", ISubmittableResult>> {
-  const { pallet, parachainId } = parachainConfigs[destination.id];
-  console.log(parachainId);
+  const { pallet, parachainId } = parachainConfigs[destination.name];
   if (!context) {
-    throw Error("shit");
+    throw Error("Invalid context: please update context");
   }
   if (source.type !== "substrate") {
     throw Error(`Invalid form state: source type mismatch.`);
@@ -441,9 +432,7 @@ export async function submitAssetHubToParachainTransfer({
       X1: [
         {
           AccountId32: {
-            id: decodeAddress(
-              "5Dc5nu57ww3nnxToV2XimMYUZcYgEDhBC8cygDNpQYe45gdU",
-            ),
+            id: decodeAddress(beneficiary),
           },
         },
       ],
@@ -459,6 +448,7 @@ export async function submitAssetHubToParachainTransfer({
       ],
     },
   };
+  const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
 
   return assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
     {
