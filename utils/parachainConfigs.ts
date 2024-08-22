@@ -28,7 +28,7 @@ export const parachainConfigs: RegisterOfParaConfigs = {
     parachainId: 2086,
     location: {
       id: "kilt",
-      name: "KILT",
+      name: "Kilt",
       type: "substrate",
       destinationIds: ["assethub"],
       paraInfo: {
@@ -57,7 +57,7 @@ export const parachainConfigs: RegisterOfParaConfigs = {
     parachainId: 4504,
     location: {
       id: "rilt",
-      name: "RILT",
+      name: "Rilt",
       type: "substrate",
       destinationIds: ["assethub"],
       paraInfo: {
