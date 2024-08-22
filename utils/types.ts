@@ -1,5 +1,5 @@
 import { type useRouter } from "next/navigation";
-import { toPolkadot, toEthereum } from "@snowbridge/api";
+import { toPolkadot, toEthereum, environment } from "@snowbridge/api";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
@@ -10,6 +10,15 @@ export type ErrorInfo = {
   title: string;
   description: string;
   errors: ValidationError[];
+};
+
+export type FormDataSwitch = {
+  source: environment.TransferLocation;
+  sourceAccount: string;
+  destination: environment.TransferLocation;
+  token: string;
+  amount: string;
+  beneficiary: string;
 };
 
 export type FormData = {
