@@ -49,6 +49,10 @@ import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { SelectAccount } from "./SelectAccount";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
+import { parseAmount } from "@/utils/balances";
+import { formatBalance } from "@/utils/formatting";
+import { parseUnits } from "ethers/utils";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -56,10 +60,10 @@ export const SwitchComponent: FC = () => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
-
-  const filteredLocations = snowbridgeEnvironment.locations.filter(
-    (x) => x.type !== "ethereum",
-  );
+  const [balanceDisplay, setBalanceDisplay] = useState("0.0");
+  const filteredLocations = snowbridgeEnvironment.locations
+    .filter((x) => x.type !== "ethereum")
+    .filter((x) => x.name !== "Muse");
   const initialSource = filteredLocations.find((v) => v.id === "assethub");
   const initialDestination = filteredLocations.find((v) => v.id === "rilt");
   const form: UseFormReturn<FormDataSwitch> = useForm<
@@ -80,7 +84,34 @@ export const SwitchComponent: FC = () => {
   const destination = form.watch("destination");
   const account = form.watch("sourceAccount");
   const amount = form.watch("amount");
-  const balanceDisplay = "KILT";
+
+  useEffect(() => {
+    const handle = async () => {
+      let balance: string;
+
+      if (source.name === "assethub") {
+        const { data } =
+          await context?.polkadot.api.assetHub.query.system.account(account);
+        balance = data.toHuman().free;
+      } else if (source.name !== "assethub") {
+        const { data } =
+          await context?.polkadot.api.parachains[
+            source.paraInfo?.paraId
+          ].query.system.account(account);
+
+        balance = data.toHuman().free;
+        console.log(data.toHuman().free);
+      }
+      console.log(balance);
+      const formattedBalance = formatBalance({
+        number: balance,
+        decimals: source.paraInfo!.decimals,
+      });
+      console.log("nope", formattedBalance);
+      setBalanceDisplay(formattedBalance);
+    };
+    handle();
+  }, [account, context, polkadotAccounts, source]);
 
   useEffect(() => {
     if (source && source.destinationIds.length > 0) {
@@ -339,27 +370,13 @@ export const SwitchComponent: FC = () => {
                     name="token"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="invisible">Token</FormLabel>
+                        <FormLabel>Token</FormLabel>
                         <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a token" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                {source.erc20tokensReceivable.map((t) => (
-                                  <SelectItem key={t.address} value={t.address}>
-                                    {t.id}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                            <FormMessage />
-                          </Select>
+                          <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                            {source.name}
+                          </div>
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
