@@ -203,6 +203,14 @@ export const Menu: FC = () => {
         </MenubarMenu>
         <MenubarMenu>
           <MenubarTrigger>
+            <Link href="/switch" className="flex items-center">
+              <LucideSend />
+              <p className="pl-2 hidden md:flex">Switch</p>
+            </Link>
+          </MenubarTrigger>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger>
             <Link href="/status" className="flex items-center">
               <LucideBarChart />
               <p className="pl-2 hidden md:flex">Status</p>
