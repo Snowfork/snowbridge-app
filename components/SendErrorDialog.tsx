@@ -5,14 +5,19 @@ import { ErrorDialog } from "./ErrorDialog";
 import { Button } from "./ui/button";
 import { getDestinationTokenIdByAddress } from "../utils/getDestinationTokenIdByAddress";
 import { userFriendlyErrorMessage } from "../utils/userFriendlyErrorMessage";
-import { ErrorInfo, FormData, ValidationError } from "@/utils/types";
+import {
+  ErrorInfo,
+  FormData,
+  FormDataSwitch,
+  ValidationError,
+} from "@/utils/types";
 
 export const SendErrorDialog: FC<{
   info: ErrorInfo | null;
-  formData: FormData;
+  formData: FormData | FormDataSwitch;
   destination: environment.TransferLocation;
-  onDepositAndApproveWeth: () => Promise<void>;
-  onApproveSpend: () => Promise<void>;
+  onDepositAndApproveWeth?: () => Promise<void>;
+  onApproveSpend?: () => Promise<void>;
   dismiss: () => void;
 }> = ({
   info,
