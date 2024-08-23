@@ -1,7 +1,7 @@
 "use client";
 
 import { FC, useEffect, useState } from "react";
-import { Context, assets } from "@snowbridge/api";
+import { assets } from "@snowbridge/api";
 import {
   Card,
   CardContent,
@@ -18,25 +18,21 @@ import {
   FormLabel,
   FormMessage,
 } from "./ui/form";
-
 import {
   submitAssetHubToParachainTransfer,
   submitParachainToAssetHubTransfer,
 } from "@/utils/onSubmit";
-
-import { polkadotAccountsAtom } from "@/store/polkadot";
+import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   snowbridgeEnvironmentAtom,
   snowbridgeContextAtom,
 } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
-
 import { formSchemaSwitch } from "@/utils/formSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { AccountInfo, ErrorInfo, FormDataSwitch } from "@/utils/types";
-
 import {
   Select,
   SelectContent,
@@ -49,33 +45,37 @@ import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { SelectAccount } from "./SelectAccount";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
-import { parseAmount } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
-import { parseUnits } from "ethers/utils";
+import { BusyDialog } from "./BusyDialog";
+import { SendErrorDialog } from "./SendErrorDialog";
+import { SubmittableExtrinsic } from "@polkadot/api/types";
+import { ISubmittableResult } from "@polkadot/types/types";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
-  const [balanceDisplay, setBalanceDisplay] = useState("0.0");
+  const [balanceDisplay, setBalanceDisplay] = useState("Fetching...");
+
   const filteredLocations = snowbridgeEnvironment.locations
     .filter((x) => x.type !== "ethereum")
     .filter((x) => x.name !== "Muse");
-  const initialSource = filteredLocations.find((v) => v.id === "assethub");
+
   const initialDestination = filteredLocations.find((v) => v.id === "rilt");
   const form: UseFormReturn<FormDataSwitch> = useForm<
     z.infer<typeof formSchemaSwitch>
   >({
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
-      source: initialSource,
+      source: filteredLocations.find((v) => v.id === "assethub"),
       destination: initialDestination,
-      token: "",
-      beneficiary: "",
-      sourceAccount: "",
+      token: initialDestination?.erc20tokensReceivable[0].id,
+      beneficiary: polkadotAccount?.address ?? "",
+      sourceAccount: polkadotAccount?.address ?? "",
       amount: "0.0",
     },
   });
@@ -83,44 +83,63 @@ export const SwitchComponent: FC = () => {
   const source = form.watch("source");
   const destination = form.watch("destination");
   const account = form.watch("sourceAccount");
-  const amount = form.watch("amount");
+  const beneficiaries: AccountInfo[] = [];
+  polkadotAccounts
+    ?.map((x) => {
+      return { key: x.address, name: x.name || "", type: destination.type };
+    })
+    .forEach((x) => beneficiaries.push(x));
 
   useEffect(() => {
-    const handle = async () => {
-      let balance: string;
+    if (!context || !account || !source) return;
 
-      if (source.name === "assethub") {
-        const { data } =
-          await context?.polkadot.api.assetHub.query.system.account(account);
-        balance = data.toHuman().free;
-      } else if (source.name !== "assethub") {
-        const { data } =
-          await context?.polkadot.api.parachains[
-            source.paraInfo?.paraId
-          ].query.system.account(account);
+    // To do: Fix balance querying.
+    // const fetchBalance = async () => {
+    //   try {
+    //     let balance = "Fetching...";
 
-        balance = data.toHuman().free;
-        console.log(data.toHuman().free);
-      }
-      console.log(balance);
-      const formattedBalance = formatBalance({
-        number: balance,
-        decimals: source.paraInfo!.decimals,
-      });
-      console.log("nope", formattedBalance);
-      setBalanceDisplay(formattedBalance);
-    };
-    handle();
-  }, [account, context, polkadotAccounts, source]);
+    //     if (source.name === "assethub") {
+    //       const { data } =
+    //         await context.polkadot.api.assetHub.query.system.account(account);
+    //       balance = data.toHuman().free;
+    //     } else if (source.paraInfo) {
+    //       const { data } =
+    //         await context.polkadot.api.parachains[
+    //           source.paraInfo.paraId!
+    //         ].query.system.account(account);
+    //       balance = data.toHuman().free;
+    //     }
+    //     balance = "12,1230123,10123";
+    //     const formattedBalance = formatBalance({
+    //       number: BigInt(balance.replace(/,/g, "")),
+    //       decimals: source.paraInfo?.decimals || 12,
+    //     });
+    //     setBalanceDisplay(formattedBalance);
+    //   } catch (err) {
+    //     setBalanceDisplay("unknown");
+    //     setError({
+    //       title: "Error",
+    //       description: `Could not fetch asset balance.`,
+    //       errors: [],
+    //     });
+    //   }
+    // };
+
+    // fetchBalance();
+    setBalanceDisplay("1");
+  }, [account, context, source]);
 
   useEffect(() => {
     if (source && source.destinationIds.length > 0) {
-      const newDestinationId = source.destinationIds[0];
+      const newDestinationId = source.destinationIds.filter(
+        (x) => x !== "ethereum",
+      )[0];
+      const selectedDestination = filteredLocations.find(
+        (v) => v.id === newDestinationId,
+      );
       const currentDestination = form.getValues("destination");
-      if (currentDestination?.id !== newDestinationId) {
-        const selectedDestination = filteredLocations.find(
-          (v) => v.id === newDestinationId,
-        );
+
+      if (currentDestination?.id !== newDestinationId && selectedDestination) {
         if (selectedDestination) {
           form.setValue("destination", selectedDestination);
           const newToken =
@@ -133,69 +152,61 @@ export const SwitchComponent: FC = () => {
     }
   }, [source, filteredLocations, form]);
 
-  const onSubmit = async (data: FormDataSwitch, context: Context) => {
-    const { sourceAccount, source, destination, token, beneficiary } = data;
-    if (!account) {
-      console.log("no account");
-      return;
-    }
-    if (!destination) {
-      console.log("no account");
-      return;
-    }
-    if (!source) {
-      console.log("no account");
-      return;
-    }
-    if (!context) {
-      return;
-    }
-    if (!token) {
-      return;
-    }
-    const tokenMetadata = await assets
-      .assetErc20Metadata(context, token)
-      .then((val) => val);
-    let transaction;
-    console.log(source.id);
-    if (source.id === "assethub") {
-      transaction = await submitAssetHubToParachainTransfer({
-        context,
-        beneficiary,
-        source,
-        destination,
-        amount,
-        tokenMetadata,
-        setError,
-        setBusyMessage,
-      });
-    } else {
-      transaction = submitParachainToAssetHubTransfer({
-        context,
-        beneficiary,
-        source,
-        amount,
-        tokenMetadata,
-        setError,
-        setBusyMessage,
-      });
-    }
+  const onSubmit = async (data: FormDataSwitch) => {
+    try {
+      const { sourceAccount, source, destination, token, beneficiary, amount } =
+        data;
 
-    const { signer, address } = polkadotAccounts?.find(
-      (val) => val.address === sourceAccount,
-    )!;
-    if (!signer) {
-      return;
+      if (!context) {
+        throw new Error("Context is not available");
+      }
+      const tokenMetadata = await assets.assetErc20Metadata(context, token);
+
+      const sendTransfer = async (
+        transfer: SubmittableExtrinsic<"promise", ISubmittableResult>,
+      ) => {
+        const { signer, address } = polkadotAccounts?.find(
+          (val) => val.address === sourceAccount,
+        )!;
+        if (!signer) {
+          throw new Error("Signer is not available");
+        }
+
+        await transfer.signAndSend(address, { signer });
+      };
+
+      if (source.id === "assethub") {
+        await submitAssetHubToParachainTransfer({
+          context,
+          beneficiary,
+          source,
+          destination,
+          amount,
+          tokenMetadata,
+          setError,
+          setBusyMessage,
+          sendTransfer,
+        });
+      } else {
+        await submitParachainToAssetHubTransfer({
+          context,
+          beneficiary,
+          source,
+          amount,
+          tokenMetadata,
+          setError,
+          setBusyMessage,
+          sendTransfer,
+        });
+      }
+    } catch (err) {
+      setError({
+        title: "Transaction Failed",
+        description: `Error occured while trying to send transaction.`,
+        errors: [],
+      });
     }
-    transaction.signAndSend(address, { signer });
   };
-
-  const beneficiaries: AccountInfo[] = [];
-  polkadotAccounts
-    ?.map((x) => {
-      return { key: x.address, name: x.name || "", type: destination.type };
-    })
-    .forEach((x) => beneficiaries.push(x));
 
   return (
     <>
@@ -209,7 +220,7 @@ export const SwitchComponent: FC = () => {
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((data) => onSubmit(data, context!))}
+              onSubmit={form.handleSubmit((data) => onSubmit(data))}
               className="space-y-2"
             >
               <div className="grid grid-cols-2 space-x-2">
@@ -365,21 +376,12 @@ export const SwitchComponent: FC = () => {
                   />
                 </div>
                 <div className="w-1/3">
-                  <FormField
-                    control={form.control}
-                    name="token"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Token</FormLabel>
-                        <FormControl>
-                          <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                            {source.name}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                      {source.name}
+                    </div>
+                  </FormItem>
                 </div>
               </div>
               <div className="text-sm text-right text-muted-foreground px-1">
@@ -387,7 +389,7 @@ export const SwitchComponent: FC = () => {
               </div>
               <br />
               <Button
-                disabled={context === null}
+                // disabled={context === null || token === null}
                 className="w-full my-8"
                 type="submit"
               >
@@ -397,6 +399,13 @@ export const SwitchComponent: FC = () => {
           </Form>
         </CardContent>
       </Card>
+      <BusyDialog open={busyMessage !== ""} description={busyMessage} />
+      <SendErrorDialog
+        info={error}
+        formData={form.getValues()}
+        destination={destination}
+        dismiss={() => setError(null)}
+      />
     </>
   );
 };

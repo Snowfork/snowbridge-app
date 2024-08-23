@@ -332,7 +332,7 @@ export function onSubmit({
   };
 }
 
-export function submitParachainToAssetHubTransfer({
+export async function submitParachainToAssetHubTransfer({
   context,
   beneficiary,
   source,
@@ -340,6 +340,7 @@ export function submitParachainToAssetHubTransfer({
   tokenMetadata,
   setError,
   setBusyMessage,
+  sendTransfer,
 }: {
   context: Context | null;
   beneficiary: string;
@@ -348,39 +349,54 @@ export function submitParachainToAssetHubTransfer({
   tokenMetadata: assets.ERC20Metadata;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
-}): SubmittableExtrinsic<"promise", ISubmittableResult> {
-  const { pallet } = parachainConfigs[source.name];
+  sendTransfer: (
+    transfer: SubmittableExtrinsic<"promise", ISubmittableResult>,
+  ) => void;
+}): Promise<void> {
+  try {
+    const { pallet } = parachainConfigs[source.name];
 
-  if (!context) {
-    throw Error("Invalid context: please update context");
-  }
-  if (source.type !== "substrate") {
-    throw Error(`Invalid form state: source type mismatch.`);
-  }
-  if (!source.paraInfo) {
-    throw Error(`Invalid form state: source does not have parachain id.`);
-  }
+    if (!context) {
+      throw Error("Invalid context: please update context");
+    }
+    if (source.type !== "substrate") {
+      throw Error(`Invalid form state: source type mismatch.`);
+    }
+    if (!source.paraInfo) {
+      throw Error(`Invalid form state: source does not have parachain id.`);
+    }
 
-  const parachainApi = context.polkadot.api.parachains[source.paraInfo?.paraId];
+    const parachainApi =
+      context.polkadot.api.parachains[source.paraInfo?.paraId];
 
-  const pathToBeneficiary = {
-    V3: {
-      parents: 0,
-      interior: {
-        X1: {
-          AccountId32: {
-            id: decodeAddress(beneficiary),
+    const pathToBeneficiary = {
+      V3: {
+        parents: 0,
+        interior: {
+          X1: {
+            AccountId32: {
+              id: decodeAddress(beneficiary),
+            },
           },
         },
       },
-    },
-  };
-  const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
-
-  return parachainApi.tx[pallet].switch(
-    amountInSmallestUnit,
-    pathToBeneficiary,
-  );
+    };
+    const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
+    setBusyMessage("Waiting for transaction to be confirmed by wallet.");
+    const transfer = await parachainApi.tx[pallet].switch(
+      amountInSmallestUnit,
+      pathToBeneficiary,
+    );
+    sendTransfer(transfer);
+  } catch (err) {
+    console.error(err);
+    setBusyMessage("");
+    setError({
+      title: "Send Error",
+      description: `Error occured while trying to send transaction.`,
+      errors: [],
+    });
+  }
 }
 
 export async function submitAssetHubToParachainTransfer({
@@ -392,6 +408,7 @@ export async function submitAssetHubToParachainTransfer({
   tokenMetadata,
   setError,
   setBusyMessage,
+  sendTransfer,
 }: {
   context: Context | null;
   beneficiary: string;
@@ -401,75 +418,93 @@ export async function submitAssetHubToParachainTransfer({
   tokenMetadata: assets.ERC20Metadata;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
-}): Promise<SubmittableExtrinsic<"promise", ISubmittableResult>> {
-  const { pallet, parachainId } = parachainConfigs[destination.name];
-  if (!context) {
-    throw Error("Invalid context: please update context");
-  }
-  if (source.type !== "substrate") {
-    throw Error(`Invalid form state: source type mismatch.`);
-  }
-  if (!source.paraInfo) {
-    throw Error(`Invalid form state: source does not have parachain id.`);
-  }
-  if (destination.type !== "substrate") {
-    throw Error(`Invalid form state: destination type mismatch.`);
-  }
-  if (destination.paraInfo === undefined) {
-    throw Error(`Invalid form state: destination does not have parachain id.`);
-  }
+  sendTransfer: (
+    transfer: SubmittableExtrinsic<"promise", ISubmittableResult>,
+  ) => void;
+}): Promise<void> {
+  try {
+    const { pallet, parachainId } = parachainConfigs[destination.name];
+    if (!context) {
+      throw Error("Invalid context: please update context");
+    }
+    if (source.type !== "substrate") {
+      throw Error(`Invalid form state: source type mismatch.`);
+    }
+    if (!source.paraInfo) {
+      throw Error(`Invalid form state: source does not have parachain id.`);
+    }
+    if (destination.type !== "substrate") {
+      throw Error(`Invalid form state: destination type mismatch.`);
+    }
+    if (destination.paraInfo === undefined) {
+      throw Error(
+        `Invalid form state: destination does not have parachain id.`,
+      );
+    }
 
-  const assetHubApi = context.polkadot.api.assetHub;
-  const parachainApi =
-    context.polkadot.api.parachains[destination.paraInfo?.paraId];
+    const assetHubApi = context.polkadot.api.assetHub;
+    const parachainApi =
+      context.polkadot.api.parachains[destination.paraInfo?.paraId];
 
-  const switchPair = await parachainApi.query[pallet].switchPair();
-  const remoteAssetId = (switchPair as any).unwrap().remoteAssetId.toJSON().v4;
+    const switchPair = await parachainApi.query[pallet].switchPair();
+    const remoteAssetId = (switchPair as any)
+      .unwrap()
+      .remoteAssetId.toJSON().v4;
 
-  const pathToBeneficiary = {
-    parents: 0,
-    interior: {
-      X1: [
-        {
-          AccountId32: {
-            id: decodeAddress(beneficiary),
+    const pathToBeneficiary = {
+      parents: 0,
+      interior: {
+        X1: [
+          {
+            AccountId32: {
+              id: decodeAddress(beneficiary),
+            },
           },
-        },
-      ],
-    },
-  };
-  const pathToParachain = {
-    parents: 1,
-    interior: {
-      X1: [
-        {
-          Parachain: parachainId,
-        },
-      ],
-    },
-  };
-  const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
-
-  return assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
-    {
-      V4: pathToParachain,
-    },
-    {
-      V4: [{ id: remoteAssetId, fun: { Fungible: amountInSmallestUnit } }],
-    },
-    "LocalReserve",
-    { V4: remoteAssetId },
-    "LocalReserve",
-    {
-      V4: [
-        {
-          DepositAsset: {
-            assets: { Wild: "All" },
-            beneficiary: pathToBeneficiary,
+        ],
+      },
+    };
+    const pathToParachain = {
+      parents: 1,
+      interior: {
+        X1: [
+          {
+            Parachain: parachainId,
           },
-        },
-      ],
-    },
-    "Unlimited",
-  );
+        ],
+      },
+    };
+    const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
+    setBusyMessage("Waiting for transaction to be confirmed by wallet.");
+    const transfer = assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
+      {
+        V4: pathToParachain,
+      },
+      {
+        V4: [{ id: remoteAssetId, fun: { Fungible: amountInSmallestUnit } }],
+      },
+      "LocalReserve",
+      { V4: remoteAssetId },
+      "LocalReserve",
+      {
+        V4: [
+          {
+            DepositAsset: {
+              assets: { Wild: "All" },
+              beneficiary: pathToBeneficiary,
+            },
+          },
+        ],
+      },
+      "Unlimited",
+    );
+    sendTransfer(transfer);
+  } catch (err) {
+    console.error(err);
+    setBusyMessage("");
+    setError({
+      title: "Send Error",
+      description: `Error occured while trying to send transaction.`,
+      errors: [],
+    });
+  }
 }
