@@ -51,15 +51,20 @@ import { SendErrorDialog } from "./SendErrorDialog";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { ISubmittableResult } from "@polkadot/types/types";
 
+import PolkadotBalance from "./Balances";
+
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
-
+  const [tokenMetadata, setTokenMetadata] = useState<assets.NativeAsset>({
+    tokenSymbol: "",
+    tokenDecimal: 0,
+    ss58Format: 42,
+  });
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
-  const [balanceDisplay, setBalanceDisplay] = useState("Fetching...");
 
   const filteredLocations = snowbridgeEnvironment.locations
     .filter((x) => x.type !== "ethereum")
@@ -82,7 +87,7 @@ export const SwitchComponent: FC = () => {
 
   const source = form.watch("source");
   const destination = form.watch("destination");
-  const account = form.watch("sourceAccount");
+  const sourceAccount = form.watch("sourceAccount");
   const beneficiaries: AccountInfo[] = [];
   polkadotAccounts
     ?.map((x) => {
@@ -91,43 +96,20 @@ export const SwitchComponent: FC = () => {
     .forEach((x) => beneficiaries.push(x));
 
   useEffect(() => {
-    if (!context || !account || !source) return;
+    const fetchTokenMetadata = async () => {
+      let api;
+      if (source.id === "assethub") {
+        api = context?.polkadot.api.assetHub;
+      } else {
+        api = context?.polkadot.api.parachains[source.paraInfo?.paraId];
+      }
 
-    // To do: Fix balance querying.
-    // const fetchBalance = async () => {
-    //   try {
-    //     let balance = "Fetching...";
+      const tokenAsset = await assets.parachainNativeAsset(api);
 
-    //     if (source.name === "assethub") {
-    //       const { data } =
-    //         await context.polkadot.api.assetHub.query.system.account(account);
-    //       balance = data.toHuman().free;
-    //     } else if (source.paraInfo) {
-    //       const { data } =
-    //         await context.polkadot.api.parachains[
-    //           source.paraInfo.paraId!
-    //         ].query.system.account(account);
-    //       balance = data.toHuman().free;
-    //     }
-    //     balance = "12,1230123,10123";
-    //     const formattedBalance = formatBalance({
-    //       number: BigInt(balance.replace(/,/g, "")),
-    //       decimals: source.paraInfo?.decimals || 12,
-    //     });
-    //     setBalanceDisplay(formattedBalance);
-    //   } catch (err) {
-    //     setBalanceDisplay("unknown");
-    //     setError({
-    //       title: "Error",
-    //       description: `Could not fetch asset balance.`,
-    //       errors: [],
-    //     });
-    //   }
-    // };
-
-    // fetchBalance();
-    setBalanceDisplay("1");
-  }, [account, context, source]);
+      setTokenMetadata(tokenAsset);
+    };
+    fetchTokenMetadata();
+  }, [context, source]);
 
   useEffect(() => {
     if (source && source.destinationIds.length > 0) {
@@ -173,6 +155,7 @@ export const SwitchComponent: FC = () => {
         }
 
         await transfer.signAndSend(address, { signer });
+        setBusyMessage("");
       };
 
       if (source.id === "assethub") {
@@ -325,14 +308,11 @@ export const SwitchComponent: FC = () => {
                     <FormControl>
                       <>
                         <SelectedPolkadotAccount />
-
-                        <div
-                          className={
-                            "text-sm text-right text-muted-foreground px-1 "
-                          }
-                        >
-                          Balance: {balanceDisplay}
-                        </div>
+                        <PolkadotBalance
+                          sourceAccount={sourceAccount}
+                          source={source}
+                          tokenMetadata={tokenMetadata}
+                        />
                       </>
                     </FormControl>
                     <FormMessage />
@@ -379,7 +359,7 @@ export const SwitchComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Amount</FormLabel>
                     <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                      {source.name}
+                      {tokenMetadata.tokenSymbol}
                     </div>
                   </FormItem>
                 </div>
