@@ -1,6 +1,7 @@
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
+
 import { assets, environment } from "@snowbridge/api";
 import React, { useState, useEffect } from "react";
 
@@ -11,7 +12,7 @@ const PolkadotBalance = ({
 }: {
   sourceAccount: string;
   source: environment.TransferLocation;
-  tokenMetadata: assets.NativeAsset;
+  tokenMetadata: assets.NativeAsset | assets.ERC20Metadata;
 }) => {
   const [context] = useSnowbridgeContext();
   const [balance, setBalance] = useState("Fetching...");
@@ -23,17 +24,19 @@ const PolkadotBalance = ({
     const fetchBalance = async () => {
       try {
         let api: ApiPromise;
-        let formattedDot;
+        let formattedDot = null;
+
         if (source.id === "assethub") {
           api = context?.polkadot.api.assetHub;
-          setDotBalance(null);
         } else {
           api =
             context?.polkadot.api.parachains[source.paraInfo?.paraId ?? 1000];
         }
+
         const {
           data: { free: accountBalance },
         } = await api.query.system.account(sourceAccount);
+
         if (source.paraInfo?.paraId !== 1000) {
           const checkFun = await api.query.fungibles.account(
             {
@@ -42,22 +45,20 @@ const PolkadotBalance = ({
             },
             sourceAccount,
           );
+          const rawDotBalance = (
+            checkFun.toHuman()?.balance.toString() as string
+          ).replaceAll(",", "");
           formattedDot = formatBalance({
-            number: BigInt(
-              (checkFun.toHuman()?.balance.toString() as string).replaceAll(
-                ",",
-                "",
-              ),
-            ),
+            number: BigInt(rawDotBalance),
             decimals: 12,
-            displayDecimals: 3,
           }).toString();
         }
+
         const formattedBalance = formatBalance({
           number: accountBalance,
           decimals: tokenMetadata.tokenDecimal,
-          displayDecimals: 3,
         }).toString();
+
         setBalance(formattedBalance);
         setDotBalance(formattedDot);
         setLoading(false);
