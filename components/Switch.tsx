@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { assets } from "@snowbridge/api";
 import {
   Card,
@@ -45,7 +45,6 @@ import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { SelectAccount } from "./SelectAccount";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { formatBalance } from "@/utils/formatting";
 import { BusyDialog } from "./BusyDialog";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
@@ -63,14 +62,26 @@ export const SwitchComponent: FC = () => {
     tokenDecimal: 0,
     ss58Format: 42,
   });
+  const [feeDisplay, setFeeDisplay] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
+  const [transaction, setTransaction] = useState<SubmittableExtrinsic<
+    "promise",
+    ISubmittableResult
+  > | null>(null);
+  const filteredLocations = useMemo(
+    () =>
+      snowbridgeEnvironment.locations
+        .filter((x) => x.type !== "ethereum")
+        .filter((x) => x.name !== "Muse"),
+    [snowbridgeEnvironment],
+  );
 
-  const filteredLocations = snowbridgeEnvironment.locations
-    .filter((x) => x.type !== "ethereum")
-    .filter((x) => x.name !== "Muse");
+  const initialDestination = useMemo(
+    () => filteredLocations.find((v) => v.id === "rilt"),
+    [filteredLocations],
+  );
 
-  const initialDestination = filteredLocations.find((v) => v.id === "rilt");
   const form: UseFormReturn<FormDataSwitch> = useForm<
     z.infer<typeof formSchemaSwitch>
   >({
@@ -88,108 +99,129 @@ export const SwitchComponent: FC = () => {
   const source = form.watch("source");
   const destination = form.watch("destination");
   const sourceAccount = form.watch("sourceAccount");
-  const beneficiaries: AccountInfo[] = [];
-  polkadotAccounts
-    ?.map((x) => {
-      return { key: x.address, name: x.name || "", type: destination.type };
-    })
-    .forEach((x) => beneficiaries.push(x));
+  const beneficiary = form.watch("beneficiary");
+  const amount = form.watch("amount");
+
+  const beneficiaries: AccountInfo[] = useMemo(
+    () =>
+      polkadotAccounts?.map((x) => ({
+        key: x.address,
+        name: x.name || "",
+        type: destination.type,
+      })) || [],
+    [polkadotAccounts, destination.type],
+  );
 
   useEffect(() => {
     const fetchTokenMetadata = async () => {
-      let api;
-      if (source.id === "assethub") {
-        api = context?.polkadot.api.assetHub;
-      } else {
-        api = context?.polkadot.api.parachains[source.paraInfo?.paraId];
+      if (!context || !source) return;
+
+      let api =
+        source.id === "assethub"
+          ? context.polkadot.api.assetHub
+          : context.polkadot.api.parachains[source.paraInfo?.paraId];
+
+      if (source.id !== "assethub") {
+        const tokenAsset = await assets.parachainNativeAsset(api);
+        setTokenMetadata(tokenAsset);
       }
-
-      const tokenAsset = await assets.parachainNativeAsset(api);
-
-      setTokenMetadata(tokenAsset);
     };
+
     fetchTokenMetadata();
   }, [context, source]);
 
   useEffect(() => {
-    if (source && source.destinationIds.length > 0) {
-      const newDestinationId = source.destinationIds.filter(
-        (x) => x !== "ethereum",
-      )[0];
-      const selectedDestination = filteredLocations.find(
-        (v) => v.id === newDestinationId,
-      );
-      const currentDestination = form.getValues("destination");
+    if (!source || source.destinationIds.length === 0) return;
 
-      if (currentDestination?.id !== newDestinationId && selectedDestination) {
-        if (selectedDestination) {
-          form.setValue("destination", selectedDestination);
-          const newToken =
-            selectedDestination.erc20tokensReceivable[0]?.address || "";
-          if (form.getValues("token") !== newToken) {
-            form.setValue("token", newToken);
-          }
-        }
+    const newDestinationId = source.destinationIds.filter(
+      (x) => x !== "ethereum",
+    )[0];
+    const selectedDestination = filteredLocations.find(
+      (v) => v.id === newDestinationId,
+    );
+    const currentDestination = form.getValues("destination");
+
+    if (currentDestination?.id !== newDestinationId && selectedDestination) {
+      form.setValue("destination", selectedDestination);
+      const newToken =
+        selectedDestination.erc20tokensReceivable[0]?.address || "";
+      if (form.getValues("token") !== newToken) {
+        form.setValue("token", newToken);
       }
     }
   }, [source, filteredLocations, form]);
 
-  const onSubmit = async (data: FormDataSwitch) => {
+  const handleTransaction = useCallback(async () => {
+    if (!context || !sourceAccount) {
+      throw new Error("No context");
+      return;
+    }
+
+    const { token } = form.getValues();
+    const tokenMetadata = await assets.assetErc20Metadata(context, token);
+
+    const sendTransaction = async (
+      transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
+    ) => {
+      const fee = await transaction.paymentInfo(sourceAccount);
+      setTransaction(transaction);
+      setFeeDisplay(fee.partialFee.toHuman());
+    };
+
+    if (source.id === "assethub") {
+      await submitAssetHubToParachainTransfer({
+        context,
+        beneficiary,
+        source,
+        destination,
+        amount,
+        tokenMetadata,
+        setError,
+        setBusyMessage,
+        sendTransaction,
+      });
+    } else {
+      submitParachainToAssetHubTransfer({
+        context,
+        beneficiary,
+        source,
+        amount,
+        tokenMetadata,
+        setError,
+        setBusyMessage,
+        sendTransaction,
+      });
+    }
+  }, [context, sourceAccount, form, source, beneficiary, destination, amount]);
+
+  useEffect(() => {
+    handleTransaction();
+  }, [handleTransaction]);
+
+  const onSubmit = useCallback(async () => {
+    if (!transaction) {
+      return;
+    }
     try {
-      const { sourceAccount, source, destination, token, beneficiary, amount } =
-        data;
-
-      if (!context) {
-        throw new Error("Context is not available");
+      const { signer, address } = polkadotAccounts?.find(
+        (val) => val.address === sourceAccount,
+      )!;
+      if (!signer) {
+        throw new Error("Signer is not available");
       }
-      const tokenMetadata = await assets.assetErc20Metadata(context, token);
-
-      const sendTransfer = async (
-        transfer: SubmittableExtrinsic<"promise", ISubmittableResult>,
-      ) => {
-        const { signer, address } = polkadotAccounts?.find(
-          (val) => val.address === sourceAccount,
-        )!;
-        if (!signer) {
-          throw new Error("Signer is not available");
-        }
-
-        await transfer.signAndSend(address, { signer });
-        setBusyMessage("");
-      };
-
-      if (source.id === "assethub") {
-        await submitAssetHubToParachainTransfer({
-          context,
-          beneficiary,
-          source,
-          destination,
-          amount,
-          tokenMetadata,
-          setError,
-          setBusyMessage,
-          sendTransfer,
-        });
-      } else {
-        await submitParachainToAssetHubTransfer({
-          context,
-          beneficiary,
-          source,
-          amount,
-          tokenMetadata,
-          setError,
-          setBusyMessage,
-          sendTransfer,
-        });
-      }
+      setBusyMessage("Waiting for transaction to be confirmed by wallet.");
+      await transaction.signAndSend(address, { signer });
+      setBusyMessage("");
+      form.reset();
     } catch (err) {
+      setBusyMessage("");
       setError({
         title: "Transaction Failed",
         description: `Error occured while trying to send transaction.`,
         errors: [],
       });
     }
-  };
+  }, [polkadotAccounts, sourceAccount, transaction, form]);
 
   return (
     <>
@@ -203,7 +235,7 @@ export const SwitchComponent: FC = () => {
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((data) => onSubmit(data))}
+              onSubmit={form.handleSubmit((data) => onSubmit())}
               className="space-y-2"
             >
               <div className="grid grid-cols-2 space-x-2">
@@ -365,7 +397,7 @@ export const SwitchComponent: FC = () => {
                 </div>
               </div>
               <div className="text-sm text-right text-muted-foreground px-1">
-                Transfer Fee: {""}
+                Transfer Fee: {feeDisplay}
               </div>
               <br />
               <Button
