@@ -332,7 +332,7 @@ export function onSubmit({
   };
 }
 
-export async function submitParachainToAssetHubTransfer({
+export function submitParachainToAssetHubTransfer({
   context,
   beneficiary,
   source,
@@ -340,7 +340,7 @@ export async function submitParachainToAssetHubTransfer({
   tokenMetadata,
   setError,
   setBusyMessage,
-  sendTransfer,
+  sendTransaction,
 }: {
   context: Context | null;
   beneficiary: string;
@@ -349,10 +349,10 @@ export async function submitParachainToAssetHubTransfer({
   tokenMetadata: assets.ERC20Metadata;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
-  sendTransfer: (
-    transfer: SubmittableExtrinsic<"promise", ISubmittableResult>,
+  sendTransaction: (
+    transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
   ) => void;
-}): Promise<void> {
+}): void {
   try {
     const { pallet } = parachainConfigs[source.name];
 
@@ -382,12 +382,11 @@ export async function submitParachainToAssetHubTransfer({
       },
     };
     const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
-    setBusyMessage("Waiting for transaction to be confirmed by wallet.");
-    const transfer = await parachainApi.tx[pallet].switch(
+    const transfer = parachainApi.tx[pallet].switch(
       amountInSmallestUnit,
       pathToBeneficiary,
     );
-    sendTransfer(transfer);
+    sendTransaction(transfer);
   } catch (err) {
     console.error(err);
     setBusyMessage("");
@@ -408,7 +407,7 @@ export async function submitAssetHubToParachainTransfer({
   tokenMetadata,
   setError,
   setBusyMessage,
-  sendTransfer,
+  sendTransaction,
 }: {
   context: Context | null;
   beneficiary: string;
@@ -418,8 +417,8 @@ export async function submitAssetHubToParachainTransfer({
   tokenMetadata: assets.ERC20Metadata;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
-  sendTransfer: (
-    transfer: SubmittableExtrinsic<"promise", ISubmittableResult>,
+  sendTransaction: (
+    transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
   ) => void;
 }): Promise<void> {
   try {
@@ -474,7 +473,6 @@ export async function submitAssetHubToParachainTransfer({
       },
     };
     const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
-    setBusyMessage("Waiting for transaction to be confirmed by wallet.");
     const transfer = assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
       {
         V4: pathToParachain,
@@ -497,7 +495,7 @@ export async function submitAssetHubToParachainTransfer({
       },
       "Unlimited",
     );
-    sendTransfer(transfer);
+    sendTransaction(transfer);
   } catch (err) {
     console.error(err);
     setBusyMessage("");
