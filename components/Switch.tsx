@@ -21,7 +21,7 @@ import {
 import {
   submitAssetHubToParachainTransfer,
   submitParachainToAssetHubTransfer,
-} from "@/utils/onSubmit";
+} from "@/utils/onSwitch";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   snowbridgeEnvironmentAtom,
