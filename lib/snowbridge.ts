@@ -1,3 +1,7 @@
+import {
+  buildParachainConfig,
+  RegisterOfParaConfigs,
+} from "@/utils/parachainConfigs/buildParachainConfig";
 import { u8aToHex } from "@polkadot/util";
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
 import {
@@ -20,6 +24,40 @@ export const SKIP_LIGHT_CLIENT_UPDATES = true;
 export const HISTORY_IN_SECONDS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
 export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
 export const ACCEPTABLE_BRIDGE_LATENCY = 28800; // 8 hours
+
+export const parachainConfigs: RegisterOfParaConfigs = {};
+
+export async function populateParachainConfigs() {
+  const paraNodes = process.env.PARACHAIN_ENDPOINTS?.split(";");
+  const etherApiKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
+
+  if (!paraNodes || !etherApiKey) {
+    return;
+  }
+
+  for await (const endpoint of paraNodes) {
+    const newConfig = await buildParachainConfig(endpoint, etherApiKey);
+
+    // debugger:
+    console.log(
+      "newConfig: ",
+      JSON.stringify(
+        newConfig,
+        (_, v) => (typeof v === "bigint" ? v.toString() : v), // replacer of bigInts
+        2,
+      ),
+    );
+
+    if (!newConfig) {
+      return;
+    }
+    if (newConfig.name in parachainConfigs) {
+      // don't overwrite
+    } else {
+      parachainConfigs[newConfig.name] = newConfig;
+    }
+  }
+}
 
 export function getEnvironmentName() {
   const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
