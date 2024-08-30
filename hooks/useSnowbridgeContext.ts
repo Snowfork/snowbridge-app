@@ -4,7 +4,7 @@ import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import { Context, assets, contextFactory, environment } from "@snowbridge/api";
+import { Context, assets, environment } from "@snowbridge/api";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { AbstractProvider } from "ethers";

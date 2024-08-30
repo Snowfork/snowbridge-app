@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 import "@/styles/marquee.css";
 import { cn } from "@/lib/utils";
 
-export type MarqueeProps = HTMLAttributes<HTMLDivElement> & {
+type MarqueeProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
   direction?: "left" | "up";
   pauseOnHover?: boolean;

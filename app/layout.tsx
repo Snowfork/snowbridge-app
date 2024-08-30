@@ -1,9 +1,9 @@
 import { Analytics } from "@vercel/analytics/react";
-import { BridgeStatus } from "@/components/bridgeStatus";
-import { ContextComponent } from "@/components/contextComponent";
-import { Footer } from "@/components/footer";
-import { Menu } from "@/components/menu";
-import { TermsOfUse } from "@/components/termsOfUse";
+import { BridgeStatus } from "@/components/BridgeStatus";
+import { ContextComponent } from "@/components/Context";
+import { Footer } from "@/components/Footer";
+import { Menu } from "@/components/Menu";
+import { TermsOfUse } from "@/components/TermsOfUse";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";

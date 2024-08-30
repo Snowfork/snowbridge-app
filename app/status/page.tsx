@@ -1,6 +1,6 @@
 "use client";
 
-import { ErrorDialog } from "@/components/errorDialog";
+import { ErrorDialog } from "@/components/ErrorDialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +20,11 @@ import {
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { AccountInfo } from "@/lib/snowbridge";
-import { formatBalance, formatTime, transformSs58Format } from "@/lib/utils";
+import {
+  formatTime,
+  transformSs58Format,
+  formatBalance,
+} from "@/utils/formatting";
 import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
@@ -34,14 +38,14 @@ const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   switch (account.type) {
     case "ethereum":
       symbol = "ETH";
-      amount = formatBalance(BigInt(account.balance), 18);
+      amount = formatBalance({ number: BigInt(account.balance), decimals: 18 });
       break;
     case "substrate":
       symbol = relayChainNativeAsset?.tokenSymbol ?? "DOT";
-      amount = formatBalance(
-        BigInt(account.balance),
-        relayChainNativeAsset?.tokenDecimal ?? 10,
-      );
+      amount = formatBalance({
+        number: BigInt(account.balance),
+        decimals: relayChainNativeAsset?.tokenDecimal ?? 10,
+      });
       const ss58format = relayChainNativeAsset?.ss58Format ?? 42;
       accountDisplay = transformSs58Format(accountDisplay, ss58format);
       break;

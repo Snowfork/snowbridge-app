@@ -28,10 +28,11 @@ export function getEnvironmentName() {
 }
 
 export function getEnvironment() {
-  const env = environment.SNOWBRIDGE_ENV[getEnvironmentName()];
+  const envName = getEnvironmentName();
+  const env = environment.SNOWBRIDGE_ENV[envName];
   if (env === undefined)
     throw new Error(
-      `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${env}'`,
+      `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${envName}'`,
     );
   return env;
 }

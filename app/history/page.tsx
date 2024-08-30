@@ -1,6 +1,6 @@
 "use client";
 
-import { ErrorDialog } from "@/components/errorDialog";
+import { ErrorDialog } from "@/components/ErrorDialog";
 import {
   Accordion,
   AccordionContent,
@@ -27,7 +27,8 @@ import {
 import { Toggle } from "@/components/ui/toggle";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
-import { cn, formatBalance } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatBalance } from "@/utils/formatting";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
@@ -259,11 +260,11 @@ const formatTokenData = (
       ? assetErc20MetaData[tokenAddress]
       : null;
   if (metaData !== null) {
-    amount = formatBalance(
-      parseUnits(transfer.info.amount, 0),
-      Number(metaData.decimals),
-      displayDecimals ?? Number(metaData.decimals),
-    );
+    amount = formatBalance({
+      number: parseUnits(transfer.info.amount, 0),
+      decimals: Number(metaData.decimals),
+      displayDecimals: displayDecimals ?? Number(metaData.decimals),
+    });
     tokenName = metaData.symbol;
   }
   return { tokenName, amount };
