@@ -59,6 +59,11 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 
 const ITEMS_PER_PAGE = 5;
 const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
+  local_e2e: {
+    etherscan: "https://no-expolorers-for-local-e2e/",
+    subscan_ah: "https://no-expolorers-for-local-e2e/",
+    subscan_bh: "https://no-expolorers-for-local-e2e/",
+  },
   rococo_sepolia: {
     etherscan: "https://sepolia.etherscan.io/",
     subscan_ah: "https://assethub-rococo.subscan.io/",
@@ -282,8 +287,8 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-        ? ""
-        : "bg-secondary";
+      ? ""
+      : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,
