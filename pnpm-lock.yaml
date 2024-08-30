@@ -19,7 +19,7 @@ importers:
         version: 16.1.0
       '@polkadot/api':
         specifier: ^11.2.1
-        version: 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+        version: 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring':
         specifier: ^12.6.2
         version: 12.6.2(@polkadot/util-crypto@12.6.2(@polkadot/util@12.6.2))(@polkadot/util@12.6.2)
@@ -60,17 +60,17 @@ importers:
         specifier: ^1.0.3
         version: 1.0.3(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@snowbridge/api':
-        specifier: ^0.1.17
-        version: 0.1.19(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)(utf-8-validate@6.0.4)
+        specifier: ^0.1.19
+        version: 0.1.19(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)(utf-8-validate@5.0.10)
       '@snowbridge/contract-types':
-        specifier: ^0.1.17
-        version: 0.1.17(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+        specifier: ^0.1.19
+        version: 0.1.19(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@talismn/connect-components':
         specifier: ^1.1.8
-        version: 1.1.8(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@2.79.1)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5))
+        version: 1.1.8(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@2.79.1)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5))
       '@talismn/connect-wallets':
         specifier: ^1.2.5
-        version: 1.2.5(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@6.0.4))
+        version: 1.2.5(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@5.0.10))
       '@types/big.js':
         specifier: ^6.2.2
         version: 6.2.2
@@ -93,8 +93,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       ethers:
-        specifier: ^6.12.1
-        version: 6.12.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+        specifier: ^6.13.2
+        version: 6.13.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       jotai:
         specifier: ^2.8.0
         version: 2.8.0(@types/react@18.3.1)(react@18.3.1)
@@ -129,8 +129,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.3(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5)))
       utf-8-validate:
-        specifier: ^6.0.4
-        version: 6.0.4
+        specifier: ^5.0.2
+        version: 5.0.10
       zod:
         specifier: ^3.23.7
         version: 3.23.7
@@ -138,12 +138,15 @@ importers:
       '@jest/globals':
         specifier: ^29.7.0
         version: 29.7.0
+      '@testing-library/dom':
+        specifier: ^10.0.0
+        version: 10.4.0
       '@testing-library/jest-dom':
         specifier: ^6.4.6
         version: 6.4.6(@jest/globals@29.7.0)(@types/jest@29.5.12)(jest@29.7.0(@types/node@20.12.10)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5)))
       '@testing-library/react':
         specifier: ^16.0.0
-        version: 16.0.0(@testing-library/dom@8.20.1)(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 16.0.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.12
@@ -173,7 +176,7 @@ importers:
         version: 29.7.0(@types/node@20.12.10)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5))
       jest-environment-jsdom:
         specifier: ^29.7.0
-        version: 29.7.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+        version: 29.7.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       postcss:
         specifier: ^8.4.38
         version: 8.4.38
@@ -1283,9 +1286,6 @@ packages:
   '@snowbridge/api@0.1.19':
     resolution: {integrity: sha512-bLvYJdgxl3cNMvyBM73M6CE0Quzjg9mgt2zEaW3iftft0RrV2jl/Urwfa9S+kPQjHLW/Jc/YVoLY89sPg2RaFg==}
 
-  '@snowbridge/contract-types@0.1.17':
-    resolution: {integrity: sha512-obMU6z4RfJSh3fmXbmmHhlLl7J55K6ItzJYkE92aQcVG7LE3f+4DyEiWBwkkp2Ijb2+AJLCByld582XfFmnTVA==}
-
   '@snowbridge/contract-types@0.1.19':
     resolution: {integrity: sha512-eXLRkqD/6Ehicmkmnz76A5GQa34Kfdn2k9hjH2y64Q0A7y42uVFN7ACKOTYUhMXBbf9J9CI0sh2MFNpX1q/C7w==}
 
@@ -1334,6 +1334,10 @@ packages:
     peerDependencies:
       '@polkadot/api': '>=9.3.3'
       '@polkadot/extension-inject': '>=0.44.6'
+
+  '@testing-library/dom@10.4.0':
+    resolution: {integrity: sha512-pemlzrSESWbdAloYml3bAJMEfNh1Z7EduzqPKprCH5S341frlpYnUEW0H72dLxa6IsYr+mPno20GiSm+h9dEdQ==}
+    engines: {node: '>=18'}
 
   '@testing-library/dom@8.20.1':
     resolution: {integrity: sha512-/DiOQ5xBxgdYRC8LNk7U+RWat0S3qRLeIw3ZIkMQ9kkVlRmwD/Eg8k8CqIpD6GW7u20JIUOfMKbxtiLutpjQ4g==}
@@ -2340,10 +2344,6 @@ packages:
 
   ethereum-cryptography@2.1.3:
     resolution: {integrity: sha512-BlwbIL7/P45W8FGW2r7LGuvoEZ+7PWsniMvQ4p5s2xCyw9tmaDlpfsN9HjAucbF+t/qpVHwZUisgfK24TCW8aA==}
-
-  ethers@6.12.1:
-    resolution: {integrity: sha512-j6wcVoZf06nqEcBbDWkKg8Fp895SS96dSnTCjiXT+8vt2o02raTn4Lo9ERUuIVU5bAjoPYeA+7ytQFexFmLuVw==}
-    engines: {node: '>=14.0.0'}
 
   ethers@6.13.2:
     resolution: {integrity: sha512-9VkriTTed+/27BGuY1s0hf441kqwHJ1wtN2edksEtiRvXx+soxRX3iSXTfFqq2+YwrOqbDoTHjIhQnjJRlzKmg==}
@@ -4375,8 +4375,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
-  utf-8-validate@6.0.4:
-    resolution: {integrity: sha512-xu9GQDeFp+eZ6LnCywXN/zBancWvOpUMzgjLPSjy4BRHSmTelvn2E0DG0o1sTiw5hkCKBHo8rwSKncfRfv2EEQ==}
+  utf-8-validate@5.0.10:
+    resolution: {integrity: sha512-Z6czzLq4u8fPOyx7TU6X3dvUZVvoJmxSQ+IcrlmagKhilxlhZgxPK6C5Jqbkw1IDUmFTM+cz9QDnnLTwDz/2gQ==}
     engines: {node: '>=6.14.2'}
 
   util-deprecate@1.0.2:
@@ -4466,36 +4466,12 @@ packages:
     resolution: {integrity: sha512-7KxauUdBmSdWnmpaGFg+ppNjKF8uNLry8LyzjauQDOVONfFLNKrKvQOxZ/VuTIcS/gge/YNahf5RIIQWTSarlg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
 
-  ws@8.17.0:
-    resolution: {integrity: sha512-uJq6108EgZMAl20KagGkzCKfMEjxmKvZHG7Tlq0Z6nOky7YF7aq4mOx6xK8TJ/i1LeK4Qus7INktacctDgY8Ow==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   ws@8.17.1:
     resolution: {integrity: sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
       utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
-  ws@8.5.0:
-    resolution: {integrity: sha512-BWX0SWVgLPzYwF8lTzEy1egjhS4S4OEAHfsO8o65WOVsrnSRGaSiUaa9e0ggGlkMTtBlmOpEXiie9RUcBO86qg==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: ^5.0.2
     peerDependenciesMeta:
       bufferutil:
         optional: true
@@ -5232,10 +5208,10 @@ snapshots:
   '@polkadot-api/utils@0.0.1':
     optional: true
 
-  '@polkadot/api-augment@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/api-augment@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/api-base': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/rpc-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/api-base': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/rpc-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/types': 11.2.1
       '@polkadot/types-augment': 11.2.1
       '@polkadot/types-codec': 11.2.1
@@ -5246,9 +5222,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@polkadot/api-base@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/api-base@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/types': 11.2.1
       '@polkadot/util': 12.6.2
       rxjs: 7.8.1
@@ -5258,12 +5234,12 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@polkadot/api-derive@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/api-derive@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/api-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/api-base': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/api-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/api-base': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/types': 11.2.1
       '@polkadot/types-codec': 11.2.1
       '@polkadot/util': 12.6.2
@@ -5275,15 +5251,15 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/api-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/api-base': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/api-derive': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/api-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/api-base': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/api-derive': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring': 12.6.2(@polkadot/util-crypto@12.6.2(@polkadot/util@12.6.2))(@polkadot/util@12.6.2)
-      '@polkadot/rpc-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/rpc-provider': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/rpc-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/rpc-provider': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/types': 11.2.1
       '@polkadot/types-augment': 11.2.1
       '@polkadot/types-codec': 11.2.1
@@ -5299,10 +5275,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/rpc-provider': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/rpc-provider': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/types': 11.2.1
       '@polkadot/util': 12.6.2
       '@polkadot/util-crypto': 12.6.2(@polkadot/util@12.6.2)
@@ -5325,9 +5301,9 @@ snapshots:
       '@substrate/ss58-registry': 1.47.0
       tslib: 2.6.2
 
-  '@polkadot/rpc-augment@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/rpc-augment@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/rpc-core': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/types': 11.2.1
       '@polkadot/types-codec': 11.2.1
       '@polkadot/util': 12.6.2
@@ -5337,10 +5313,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@polkadot/rpc-core@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/rpc-core@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/rpc-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/rpc-provider': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/rpc-augment': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/rpc-provider': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/types': 11.2.1
       '@polkadot/util': 12.6.2
       rxjs: 7.8.1
@@ -5350,7 +5326,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@polkadot/rpc-provider@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/rpc-provider@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@polkadot/keyring': 12.6.2(@polkadot/util-crypto@12.6.2(@polkadot/util@12.6.2))(@polkadot/util@12.6.2)
       '@polkadot/types': 11.2.1
@@ -5359,13 +5335,13 @@ snapshots:
       '@polkadot/util-crypto': 12.6.2(@polkadot/util@12.6.2)
       '@polkadot/x-fetch': 12.6.2
       '@polkadot/x-global': 12.6.2
-      '@polkadot/x-ws': 12.6.2(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/x-ws': 12.6.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       eventemitter3: 5.0.1
       mock-socket: 9.3.1
       nock: 13.5.4
       tslib: 2.6.2
     optionalDependencies:
-      '@substrate/connect': 0.8.10(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@substrate/connect': 0.8.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -5514,11 +5490,11 @@ snapshots:
       '@polkadot/x-global': 12.6.2
       tslib: 2.6.2
 
-  '@polkadot/x-ws@12.6.2(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@polkadot/x-ws@12.6.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@polkadot/x-global': 12.6.2
       tslib: 2.6.2
-      ws: 8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      ws: 8.17.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -5976,16 +5952,16 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@snowbridge/api@0.1.19(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)(utf-8-validate@6.0.4)':
+  '@snowbridge/api@0.1.19(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring': 12.6.2(@polkadot/util-crypto@12.6.2(@polkadot/util@12.6.2))(@polkadot/util@12.6.2)
       '@polkadot/types': 11.2.1
       '@polkadot/util': 12.6.2
       '@polkadot/util-crypto': 12.6.2(@polkadot/util@12.6.2)
-      '@snowbridge/contract-types': 0.1.19(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@typechain/ethers-v6': 0.5.1(ethers@6.13.2(bufferutil@4.0.8)(utf-8-validate@6.0.4))(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)
-      ethers: 6.13.2(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@snowbridge/contract-types': 0.1.19(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@typechain/ethers-v6': 0.5.1(ethers@6.13.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)
+      ethers: 6.13.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       rxjs: 7.8.1
     transitivePeerDependencies:
       - bufferutil
@@ -5994,16 +5970,9 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@snowbridge/contract-types@0.1.17(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@snowbridge/contract-types@0.1.19(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      ethers: 6.12.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@snowbridge/contract-types@0.1.19(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
-    dependencies:
-      ethers: 6.13.2(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      ethers: 6.13.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -6014,18 +5983,18 @@ snapshots:
   '@substrate/connect-known-chains@1.1.4':
     optional: true
 
-  '@substrate/connect@0.8.10(bufferutil@4.0.8)(utf-8-validate@6.0.4)':
+  '@substrate/connect@0.8.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@substrate/connect-extension-protocol': 2.0.0
       '@substrate/connect-known-chains': 1.1.4
-      '@substrate/light-client-extension-helpers': 0.0.6(smoldot@2.0.22(bufferutil@4.0.8)(utf-8-validate@6.0.4))
-      smoldot: 2.0.22(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@substrate/light-client-extension-helpers': 0.0.6(smoldot@2.0.22(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+      smoldot: 2.0.22(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
     optional: true
 
-  '@substrate/light-client-extension-helpers@0.0.6(smoldot@2.0.22(bufferutil@4.0.8)(utf-8-validate@6.0.4))':
+  '@substrate/light-client-extension-helpers@0.0.6(smoldot@2.0.22(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
     dependencies:
       '@polkadot-api/json-rpc-provider': 0.0.1
       '@polkadot-api/json-rpc-provider-proxy': 0.0.1
@@ -6034,7 +6003,7 @@ snapshots:
       '@substrate/connect-extension-protocol': 2.0.0
       '@substrate/connect-known-chains': 1.1.4
       rxjs: 7.8.1
-      smoldot: 2.0.22(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      smoldot: 2.0.22(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     optional: true
 
   '@substrate/ss58-registry@1.47.0': {}
@@ -6046,10 +6015,10 @@ snapshots:
       '@swc/counter': 0.1.3
       tslib: 2.6.2
 
-  '@talismn/connect-components@1.1.8(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@2.79.1)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5))':
+  '@talismn/connect-components@1.1.8(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@2.79.1)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5))':
     dependencies:
       '@talismn/connect-ui': 1.1.3(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@2.79.1)(ts-node@10.9.2(@types/node@20.12.10)(typescript@5.4.5))
-      '@talismn/connect-wallets': 1.2.5(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@6.0.4))
+      '@talismn/connect-wallets': 1.2.5(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@5.0.10))
       '@testing-library/react': 13.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react': 18.3.1
       '@types/react-dom': 18.3.0
@@ -6077,10 +6046,21 @@ snapshots:
       - rollup
       - ts-node
 
-  '@talismn/connect-wallets@1.2.5(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@6.0.4))':
+  '@talismn/connect-wallets@1.2.5(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
     dependencies:
-      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-      '@polkadot/extension-inject': 0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      '@polkadot/api': 11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@polkadot/extension-inject': 0.47.3(@polkadot/api@11.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@12.6.2)(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+
+  '@testing-library/dom@10.4.0':
+    dependencies:
+      '@babel/code-frame': 7.24.7
+      '@babel/runtime': 7.24.5
+      '@types/aria-query': 5.0.4
+      aria-query: 5.3.0
+      chalk: 4.1.2
+      dom-accessibility-api: 0.5.16
+      lz-string: 1.5.0
+      pretty-format: 27.5.1
 
   '@testing-library/dom@8.20.1':
     dependencies:
@@ -6116,10 +6096,10 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@testing-library/react@16.0.0(@testing-library/dom@8.20.1)(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@testing-library/react@16.0.0(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.24.5
-      '@testing-library/dom': 8.20.1
+      '@testing-library/dom': 10.4.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     optionalDependencies:
@@ -6138,9 +6118,9 @@ snapshots:
 
   '@tsconfig/node16@1.0.4': {}
 
-  '@typechain/ethers-v6@0.5.1(ethers@6.13.2(bufferutil@4.0.8)(utf-8-validate@6.0.4))(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)':
+  '@typechain/ethers-v6@0.5.1(ethers@6.13.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.4.5))(typescript@5.4.5)':
     dependencies:
-      ethers: 6.13.2(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      ethers: 6.13.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       lodash: 4.17.21
       ts-essentials: 7.0.3(typescript@5.4.5)
       typechain: 8.3.2(typescript@5.4.5)
@@ -7309,7 +7289,7 @@ snapshots:
       '@scure/bip32': 1.3.3
       '@scure/bip39': 1.2.2
 
-  ethers@6.12.1(bufferutil@4.0.8)(utf-8-validate@6.0.4):
+  ethers@6.13.2(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
       '@adraffy/ens-normalize': 1.10.1
       '@noble/curves': 1.2.0
@@ -7317,20 +7297,7 @@ snapshots:
       '@types/node': 18.15.13
       aes-js: 4.0.0-beta.5
       tslib: 2.4.0
-      ws: 8.5.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  ethers@6.13.2(bufferutil@4.0.8)(utf-8-validate@6.0.4):
-    dependencies:
-      '@adraffy/ens-normalize': 1.10.1
-      '@noble/curves': 1.2.0
-      '@noble/hashes': 1.3.2
-      '@types/node': 18.15.13
-      aes-js: 4.0.0-beta.5
-      tslib: 2.4.0
-      ws: 8.17.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      ws: 8.17.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -7945,7 +7912,7 @@ snapshots:
       jest-util: 29.7.0
       pretty-format: 29.7.0
 
-  jest-environment-jsdom@29.7.0(bufferutil@4.0.8)(utf-8-validate@6.0.4):
+  jest-environment-jsdom@29.7.0(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
@@ -7954,7 +7921,7 @@ snapshots:
       '@types/node': 20.12.10
       jest-mock: 29.7.0
       jest-util: 29.7.0
-      jsdom: 20.0.3(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      jsdom: 20.0.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -8188,7 +8155,7 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@20.0.3(bufferutil@4.0.8)(utf-8-validate@6.0.4):
+  jsdom@20.0.3(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
       abab: 2.0.6
       acorn: 8.11.3
@@ -8214,7 +8181,7 @@ snapshots:
       whatwg-encoding: 2.0.0
       whatwg-mimetype: 3.0.0
       whatwg-url: 11.0.0
-      ws: 8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      ws: 8.17.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       xml-name-validator: 4.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -9158,9 +9125,9 @@ snapshots:
 
   slash@3.0.0: {}
 
-  smoldot@2.0.22(bufferutil@4.0.8)(utf-8-validate@6.0.4):
+  smoldot@2.0.22(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
-      ws: 8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.4)
+      ws: 8.17.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -9603,7 +9570,7 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  utf-8-validate@6.0.4:
+  utf-8-validate@5.0.10:
     dependencies:
       node-gyp-build: 4.8.1
 
@@ -9712,20 +9679,10 @@ snapshots:
       imurmurhash: 0.1.4
       signal-exit: 3.0.7
 
-  ws@8.17.0(bufferutil@4.0.8)(utf-8-validate@6.0.4):
+  ws@8.17.1(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     optionalDependencies:
       bufferutil: 4.0.8
-      utf-8-validate: 6.0.4
-
-  ws@8.17.1(bufferutil@4.0.8)(utf-8-validate@6.0.4):
-    optionalDependencies:
-      bufferutil: 4.0.8
-      utf-8-validate: 6.0.4
-
-  ws@8.5.0(bufferutil@4.0.8)(utf-8-validate@6.0.4):
-    optionalDependencies:
-      bufferutil: 4.0.8
-      utf-8-validate: 6.0.4
+      utf-8-validate: 5.0.10
 
   xml-name-validator@4.0.0: {}
 
