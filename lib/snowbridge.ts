@@ -325,8 +325,8 @@ export async function getBridgeStatus(
     !toPolkadot.bridgeOperational || !toPolkadot.channelOperational
       ? "Halted"
       : !toPolkadot.lightClientLatencyIsAcceptable
-        ? "Delayed"
-        : "Normal";
+      ? "Delayed"
+      : "Normal";
 
   const toEthereum = {
     bridgeOperational:
@@ -337,8 +337,8 @@ export async function getBridgeStatus(
   const toEthereumOperatingMode = !toEthereum.bridgeOperational
     ? "Halted"
     : !toEthereum.lightClientLatencyIsAcceptable
-      ? "Delayed"
-      : "Normal";
+    ? "Delayed"
+    : "Normal";
 
   let overallStatus: StatusValue = toEthereumOperatingMode;
   if (toEthereumOperatingMode === "Normal") {

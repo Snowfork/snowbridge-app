@@ -11,7 +11,7 @@ import {
   getErrorMessage,
 } from "@/lib/snowbridge";
 import { Context } from "@snowbridge/api";
-import { AlchemyProvider } from "ethers";
+import { AbstractProvider, AlchemyProvider, WebSocketProvider } from "ethers";
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 
@@ -27,7 +27,16 @@ async function getContext() {
     throw Error("Missing Alchemy Key");
   }
 
-  const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
+  let ethereumProvider: AbstractProvider;
+  if (env.name === "local_e2e") {
+    ethereumProvider = new WebSocketProvider(
+      env.config.ETHEREUM_API(alchemyKey),
+      env.ethChainId,
+    );
+  } else {
+    ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
+  }
+
   context = await createContext(ethereumProvider, env);
   return context;
 }
@@ -40,7 +49,7 @@ const getCachedBridgeStatus = unstable_cache(
       const status = await getBridgeStatus(context, env);
       return status;
     } catch (err) {
-      reportError(err);
+      getErrorMessage(err);
       return Promise.resolve(null);
     }
   },
