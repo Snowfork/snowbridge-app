@@ -97,6 +97,9 @@ function addParachains(
       2,
     ),
   );
+  console.log(
+    `Added this parachains to the "${env.name}" snowbridge environment: ${pertinentParaConfigs.map(({ name }) => name).join(";")}.`,
+  );
 }
 
 export function getEnvironmentName() {
