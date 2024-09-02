@@ -2,6 +2,7 @@ import {
   buildParachainConfig,
   RegisterOfParaConfigs,
 } from "@/utils/parachainConfigs/buildParachainConfig";
+import { printify } from "@/utils/printify";
 import { u8aToHex } from "@polkadot/util";
 import { blake2AsU8a, encodeAddress } from "@polkadot/util-crypto";
 import {
@@ -89,14 +90,7 @@ function addParachains(
 
   // TODO: delete this log later
   // during developing only:
-  console.log(
-    "SnowbridgeEnvironment after adding parachains: ",
-    JSON.stringify(
-      env,
-      (_, v) => (typeof v === "bigint" ? v.toString() : v), // replacer of bigInts
-      2,
-    ),
-  );
+  console.log("SnowbridgeEnvironment after adding parachains: ", printify(env));
   console.log(
     `Added this parachains to the "${env.name}" snowbridge environment: ${pertinentParaConfigs.map(({ name }) => name).join(";")}.`,
   );
