@@ -24,15 +24,19 @@ export const ACCEPTABLE_BRIDGE_LATENCY = 28800; // 8 hours
 
 async function addParachains(env: environment.SnowbridgeEnvironment) {
   const assetHubLocation = env.locations.find(({ id }) => id === "assethub");
-  if (!assetHubLocation) {
+  const ethereumLocation = env.locations.find(({ id }) => id === "ethereum");
+
+  if (!assetHubLocation || !ethereumLocation) {
     throw new Error(
       `Could not find the asset hub configuration object inside of the chosen environment "${env.name}."`,
     );
   }
+
   const pertinentParaConfigs = Object.values(parachainConfigs).filter(
     ({ snowEnv, location }) =>
       snowEnv === env.name &&
-      !assetHubLocation.destinationIds.includes(location.id),
+      !assetHubLocation.destinationIds.includes(location.id) &&
+      !ethereumLocation.destinationIds.includes(location.id),
   );
 
   if (pertinentParaConfigs.length == 0) {
@@ -50,21 +54,14 @@ async function addParachains(env: environment.SnowbridgeEnvironment) {
     assetHubLocation.erc20tokensReceivable.push(
       ...paraConfig.location.erc20tokensReceivable,
     );
+    ethereumLocation.destinationIds.push(paraConfig.location.id);
+    ethereumLocation.erc20tokensReceivable.push(
+      ...paraConfig.location.erc20tokensReceivable,
+    );
   });
   env.locations.push(...pertinentParaConfigs.map((para) => para.location));
   env.config.PARACHAINS.push(
     ...pertinentParaConfigs.map((para) => para.endpoint),
-  );
-
-  // TODO: delete this log later
-  // during developing only:
-  console.log(
-    "SnowbridgeEnvironment after adding parachains: ",
-    JSON.stringify(
-      env,
-      (_, v) => (typeof v === "bigint" ? v.toString() : v), // replacer of bigInts
-      2,
-    ),
   );
 }
 
