@@ -133,7 +133,9 @@ export const TransferForm: FC = () => {
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
 
   const { mutate: refreshHistory } = useTransferHistory();
-
+  const filteredLocations = snowbridgeEnvironment.locations.filter(
+    (val) => val.id !== "rilt",
+  );
   const transfersPendingLocal = useSetAtom(transfersPendingLocalAtom);
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
@@ -579,7 +581,7 @@ export const TransferForm: FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {snowbridgeEnvironment.locations
+                              {filteredLocations
                                 .filter((s) => s.destinationIds.length > 0)
                                 .map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
@@ -610,11 +612,13 @@ export const TransferForm: FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {destinations.map((s) => (
-                                <SelectItem key={s.id} value={s.id}>
-                                  {s.name}
-                                </SelectItem>
-                              ))}
+                              {destinations
+                                .filter((val) => val.id !== "rilt")
+                                .map((s) => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    {s.name}
+                                  </SelectItem>
+                                ))}
                             </SelectGroup>
                           </SelectContent>
                         </Select>
