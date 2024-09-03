@@ -287,8 +287,8 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-      ? ""
-      : "bg-secondary";
+        ? ""
+        : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,
@@ -473,7 +473,7 @@ export default function History() {
       if (
         transferHistoryCache.find(
           (h) =>
-            h.id.toLowerCase() === transfersPendingLocal[i].id.toLowerCase(),
+            h.id?.toLowerCase() === transfersPendingLocal[i].id?.toLowerCase(),
         )
       ) {
         setTransfersPendingLocal({
@@ -611,8 +611,11 @@ export default function History() {
               router.push("#" + v);
             }}
           >
-            {pages[page]?.map((v) => (
-              <AccordionItem key={v.id} value={v.id.toString()}>
+            {pages[page]?.map((v, i) => (
+              <AccordionItem
+                key={v.id}
+                value={v.id?.toString() ?? i.toString()}
+              >
                 <AccordionTrigger>
                   {transferTitle(v, env, assetErc20MetaData)}
                 </AccordionTrigger>
