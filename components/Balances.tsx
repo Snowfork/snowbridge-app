@@ -1,8 +1,7 @@
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { formatBalance } from "@/utils/formatting";
-import { ApiPromise } from "@polkadot/api";
 
-import { assets, environment } from "@snowbridge/api";
+import { environment } from "@snowbridge/api";
 import React, { useState, useEffect } from "react";
 
 const PolkadotBalance = ({
@@ -12,26 +11,29 @@ const PolkadotBalance = ({
 }: {
   sourceAccount: string;
   source: environment.TransferLocation;
-  tokenMetadata: assets.NativeAsset | assets.ERC20Metadata;
+  tokenMetadata: {
+    symbol: string;
+    decimal: number;
+    ss58Format: number;
+  };
 }) => {
   const [context] = useSnowbridgeContext();
   const [balance, setBalance] = useState("Fetching...");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [dotBalance, setDotBalance] = useState("");
 
   useEffect(() => {
     const fetchBalance = async () => {
+      if (!context) return;
+
       try {
-        let api: ApiPromise;
         let formattedDot = null;
 
-        if (source.id === "assethub") {
-          api = context?.polkadot.api.assetHub;
-        } else {
-          api =
-            context?.polkadot.api.parachains[source.paraInfo?.paraId ?? 1000];
-        }
+        let api =
+          source.id === "assethub"
+            ? context.polkadot.api.assetHub
+            : context.polkadot.api.parachains[source.paraInfo?.paraId!];
 
         const {
           data: { free: accountBalance },
@@ -56,11 +58,11 @@ const PolkadotBalance = ({
 
         const formattedBalance = formatBalance({
           number: accountBalance,
-          decimals: tokenMetadata.tokenDecimal,
+          decimals: tokenMetadata.decimal,
         }).toString();
 
         setBalance(formattedBalance);
-        setDotBalance(formattedDot);
+        setDotBalance(formattedDot!);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -96,7 +98,7 @@ const PolkadotBalance = ({
 
   return (
     <div className="text-sm text-right text-muted-foreground px-1">
-      Balance: {tokenMetadata.tokenSymbol}{" "}
+      Balance: {tokenMetadata.symbol}
       {dotBalance ? (
         <>
           {" "}

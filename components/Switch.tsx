@@ -57,9 +57,9 @@ export const SwitchComponent: FC = () => {
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
-  const [tokenMetadata, setTokenMetadata] = useState<assets.NativeAsset>({
-    tokenSymbol: "",
-    tokenDecimal: 0,
+  const [tokenMetadata, setTokenMetadata] = useState({
+    symbol: "",
+    decimal: 0,
     ss58Format: 42,
   });
   const [feeDisplay, setFeeDisplay] = useState("");
@@ -69,6 +69,7 @@ export const SwitchComponent: FC = () => {
     "promise",
     ISubmittableResult
   > | null>(null);
+
   const filteredLocations = useMemo(
     () =>
       snowbridgeEnvironment.locations
@@ -101,6 +102,7 @@ export const SwitchComponent: FC = () => {
   const sourceAccount = form.watch("sourceAccount");
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
+  const token = form.watch("token");
 
   const beneficiaries: AccountInfo[] = useMemo(
     () =>
@@ -119,16 +121,27 @@ export const SwitchComponent: FC = () => {
       let api =
         source.id === "assethub"
           ? context.polkadot.api.assetHub
-          : context.polkadot.api.parachains[source.paraInfo?.paraId];
+          : context.polkadot.api.parachains[source.paraInfo?.paraId!];
 
       if (source.id !== "assethub") {
         const tokenAsset = await assets.parachainNativeAsset(api);
-        setTokenMetadata(tokenAsset);
+        setTokenMetadata({
+          symbol: tokenAsset.tokenSymbol,
+          decimal: tokenAsset.tokenDecimal,
+          ss58Format: tokenAsset.ss58Format,
+        });
+      } else {
+        const tokenAsset = await assets.assetErc20Metadata(context, token);
+        setTokenMetadata({
+          symbol: tokenAsset.symbol,
+          decimal: 0,
+          ss58Format: 42,
+        });
       }
     };
 
     fetchTokenMetadata();
-  }, [context, source]);
+  }, [context, source, token]);
 
   useEffect(() => {
     if (!source || source.destinationIds.length === 0) return;
@@ -152,9 +165,8 @@ export const SwitchComponent: FC = () => {
   }, [source, filteredLocations, form]);
 
   const handleTransaction = useCallback(async () => {
-    if (!context || !sourceAccount) {
+    if (!context) {
       throw new Error("No context");
-      return;
     }
 
     const { token } = form.getValues();
@@ -235,7 +247,7 @@ export const SwitchComponent: FC = () => {
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((data) => onSubmit())}
+              onSubmit={form.handleSubmit(() => onSubmit())}
               className="space-y-2"
             >
               <div className="grid grid-cols-2 space-x-2">
@@ -391,7 +403,7 @@ export const SwitchComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Amount</FormLabel>
                     <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                      {tokenMetadata.tokenSymbol}
+                      {tokenMetadata.symbol}
                     </div>
                   </FormItem>
                 </div>
@@ -401,7 +413,7 @@ export const SwitchComponent: FC = () => {
               </div>
               <br />
               <Button
-                // disabled={context === null || token === null}
+                disabled={context === null || token === null}
                 className="w-full my-8"
                 type="submit"
               >
