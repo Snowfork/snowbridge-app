@@ -41,7 +41,7 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       },
       erc20tokensReceivable: [
         {
-          id: "KILT",
+          id: "wKILT",
           address: "", // not existent yet
           minimumTransferAmount: 1n,
         },
@@ -70,7 +70,7 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       },
       erc20tokensReceivable: [
         {
-          id: "RILT",
+          id: "wRILT",
           address: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
           minimumTransferAmount: 1n,
         },
@@ -78,3 +78,13 @@ export const parachainConfigs: RegisterOfParaConfigs = {
     },
   },
 };
+
+export function filterParachainLocations(locations: TransferLocation[]) {
+  const parachainLocationIds = Object.values(parachainConfigs).map(
+    ({ location }) => location.id,
+  );
+  const filteredLocations = locations.filter(
+    ({ id }) => !parachainLocationIds.includes(id),
+  );
+  return filteredLocations;
+}

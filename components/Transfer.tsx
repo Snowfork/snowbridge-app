@@ -63,8 +63,9 @@ import { updateBalance, parseAmount } from "@/utils/balances";
 
 import { doApproveSpend } from "@/utils/doApproveSpend";
 import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
-import { FormData, ErrorInfo, AccountInfo, AppRouter } from "@/utils/types";
+import { FormData, ErrorInfo, AccountInfo } from "@/utils/types";
 import { onSubmit } from "@/utils/onSubmit";
+import { filterParachainLocations } from "@/utils/parachainConfigs";
 
 export const validateOFAC = async (
   data: FormData,
@@ -126,20 +127,20 @@ export const TransferForm: FC = () => {
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const appRouter = useRouter();
-
+  const filteredLocations = filterParachainLocations(
+    snowbridgeEnvironment.locations,
+  );
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
 
   const { mutate: refreshHistory } = useTransferHistory();
-  const filteredLocations = snowbridgeEnvironment.locations.filter(
-    (val) => val.id !== "rilt",
-  );
+
   const transfersPendingLocal = useSetAtom(transfersPendingLocalAtom);
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
-  const [source, setSource] = useState(snowbridgeEnvironment.locations[0]);
+  const [source, setSource] = useState(filteredLocations[0]);
   const [sourceAccount, setSourceAccount] = useState<string>();
   const [destinations, setDestinations] = useState(
     source.destinationIds.map(
