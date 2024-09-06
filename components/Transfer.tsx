@@ -59,8 +59,8 @@ import { formSchema } from "@/utils/formSchema";
 import { SelectAccount } from "./SelectAccount";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { errorMessage } from "@/utils/errorMessage";
-import { updateBalance, parseAmount } from "@/utils/balances";
-
+import { updateBalance } from "@/utils/balances";
+import { parseUnits } from "ethers";
 import { doApproveSpend } from "@/utils/doApproveSpend";
 import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
 import { FormData, ErrorInfo, AccountInfo } from "@/utils/types";
@@ -374,7 +374,7 @@ export const TransferForm: FC = () => {
         context,
         ethereumProvider,
         formData.token,
-        parseAmount(formData.amount, tokenMetadata),
+        parseUnits(formData.amount, tokenMetadata.decimals),
       );
       toast.info(toastTitle, {
         position: "bottom-center",
@@ -445,7 +445,7 @@ export const TransferForm: FC = () => {
         context,
         ethereumProvider,
         formData.token,
-        parseAmount(formData.amount, tokenMetadata),
+        parseUnits(formData.amount, tokenMetadata.decimals),
       );
       toast.info(toastTitle, {
         position: "bottom-center",

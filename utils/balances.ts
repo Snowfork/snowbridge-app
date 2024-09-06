@@ -2,14 +2,6 @@
 import { Context, assets, environment } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ErrorInfo } from "./types";
-import { parseUnits } from "ethers";
-
-export function parseAmount(
-  decimals: string,
-  metadata: assets.ERC20Metadata,
-): bigint {
-  return parseUnits(decimals, metadata.decimals);
-}
 
 async function getTokenBalance({
   context,
