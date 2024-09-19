@@ -5,6 +5,7 @@ import { Dispatch, SetStateAction } from "react";
 import { ErrorInfo } from "@/utils/types";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { decodeAddress } from "@polkadot/util-crypto";
+import { parachainConfigs } from "./parachainConfigs";
 
 export async function submitParachainToAssetHubTransfer({
   context,
@@ -79,7 +80,6 @@ export async function submitAssetHubToParachainTransfer({
   destination,
   amount,
   sourceAccount,
-  remoteAssetId,
   setError,
   setBusyMessage,
   sendTransaction,
@@ -89,9 +89,7 @@ export async function submitAssetHubToParachainTransfer({
   source: environment.TransferLocation;
   destination: environment.TransferLocation;
   amount: bigint;
-  decimal: number;
   sourceAccount: string;
-  remoteAssetId: {};
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
   sendTransaction: (
@@ -117,8 +115,12 @@ export async function submitAssetHubToParachainTransfer({
         `Invalid form state: destination does not have parachain id.`,
       );
     }
-
+    const { pallet } = parachainConfigs[destination.name];
     const assetHubApi = context.polkadot.api.assetHub;
+    const parachainApi =
+      context.polkadot.api.parachains[destination.paraInfo?.paraId];
+
+    const switchPair = await parachainApi.query[pallet].switchPair();
 
     const pathToBeneficiary = {
       parents: 0,
@@ -143,12 +145,19 @@ export async function submitAssetHubToParachainTransfer({
       },
     };
 
+    const remoteAssetId = switchPair.unwrap().remoteAssetId.toJSON().v4;
+
     const transfer = assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
       {
         V4: pathToParachain,
       },
       {
-        V4: [{ id: remoteAssetId, fun: { Fungible: amount } }],
+        V4: [
+          {
+            id: remoteAssetId,
+            fun: { Fungible: amount },
+          },
+        ],
       },
       "LocalReserve",
       { V4: remoteAssetId },

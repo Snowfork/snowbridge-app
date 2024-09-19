@@ -53,20 +53,7 @@ import { parseUnits } from "ethers";
 import { toast } from "sonner";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 
-import { ApiPromise } from "@polkadot/api";
 import { useRouter } from "next/navigation";
-
-const fetchSwitchTokenData = async (api: ApiPromise, pallet: string) => {
-  const switchPair = await api.query[pallet].switchPair();
-
-  const remoteAssetId = switchPair.unwrap().remoteAssetId.toJSON().v4;
-  const remoteXcmFee = switchPair.unwrap().remoteXcmFee.toJSON().v4;
-  const remoteReserveLocation = switchPair
-    .unwrap()
-    .remoteReserveLocation.toJSON().v4;
-
-  return { remoteAssetId, remoteXcmFee, remoteReserveLocation };
-};
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -75,15 +62,6 @@ export const SwitchComponent: FC = () => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const router = useRouter();
 
-  const [tokenMetadata, setTokenMetadata] = useState<{
-    symbol: string;
-    decimal: number;
-    ss58Format: number;
-  }>({
-    symbol: "",
-    decimal: 0,
-    ss58Format: 42,
-  });
   const [feeDisplay, setFeeDisplay] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
@@ -92,7 +70,7 @@ export const SwitchComponent: FC = () => {
     ISubmittableResult
   > | null>(null);
   const [xcmFee, setXcmFee] = useState<string | null>(null);
-  const [switchAssetDetails, setSwitchAssetDetails] = useState<{} | null>(null);
+
   const filteredLocations = useMemo(
     () =>
       snowbridgeEnvironment.locations
@@ -138,60 +116,6 @@ export const SwitchComponent: FC = () => {
   );
 
   useEffect(() => {
-    const fetchSwitchDetails = async () => {
-      if (!context) return;
-      if (source.id === "assethub") {
-        setSwitchAssetDetails(null);
-        return;
-      }
-
-      const { pallet } = parachainConfigs[source.name];
-
-      const { remoteAssetId, remoteXcmFee, remoteReserveLocation } =
-        await fetchSwitchTokenData(
-          context.polkadot.api.parachains[source.paraInfo?.paraId!],
-          pallet,
-        );
-
-      setSwitchAssetDetails({
-        remoteAssetId,
-        remoteXcmFee,
-        remoteReserveLocation,
-      });
-    };
-    fetchSwitchDetails();
-  }, [context, source]);
-
-  useEffect(() => {
-    const fetchTokenMetadata = async () => {
-      if (!context) return;
-      if (!source) return;
-
-      const tokenAsset = {
-        tokenSymbol: "wRILT",
-        tokenDecimal: 15,
-        ss58Format: 38,
-      };
-
-      if (source.id !== "assethub") {
-        setTokenMetadata({
-          symbol: tokenAsset.tokenSymbol,
-          decimal: tokenAsset.tokenDecimal,
-          ss58Format: tokenAsset.ss58Format,
-        });
-      } else {
-        setTokenMetadata({
-          symbol: tokenAsset.tokenSymbol ?? "not found",
-          decimal: Number(tokenAsset.tokenDecimal),
-          ss58Format: tokenAsset.ss58Format,
-        });
-      }
-    };
-
-    fetchTokenMetadata();
-  }, [context, destination.name, source, token]);
-
-  useEffect(() => {
     if (context == null) return;
     if (!source || source.destinationIds.length === 0) return;
 
@@ -217,18 +141,11 @@ export const SwitchComponent: FC = () => {
   }, [source, filteredLocations, form, context]);
 
   const handleTransaction = useCallback(async () => {
-    if (
-      !context ||
-      !beneficiary ||
-      !source ||
-      !destination ||
-      !tokenMetadata ||
-      !sourceAccount ||
-      !switchAssetDetails
-    ) {
+    if (!context || !beneficiary || !source || !destination || !sourceAccount) {
       return;
     }
-    const amountInSmallestUnit = parseUnits(amount, tokenMetadata.decimal);
+
+    const amountInSmallestUnit = parseUnits(amount, 12);
     if (!amountInSmallestUnit) {
       return;
     }
@@ -251,8 +168,6 @@ export const SwitchComponent: FC = () => {
         destination,
         amount: amountInSmallestUnit,
         sourceAccount,
-        decimal: tokenMetadata.decimal,
-        remoteAssetId: switchAssetDetails,
         setError,
         setBusyMessage,
         sendTransaction,
@@ -272,16 +187,7 @@ export const SwitchComponent: FC = () => {
         sendTransaction,
       });
     }
-  }, [
-    context,
-    beneficiary,
-    source,
-    destination,
-    tokenMetadata,
-    sourceAccount,
-    amount,
-    switchAssetDetails,
-  ]);
+  }, [context, beneficiary, source, destination, sourceAccount, amount]);
 
   useEffect(() => {
     handleTransaction();
@@ -454,8 +360,6 @@ export const SwitchComponent: FC = () => {
                         <PolkadotBalance
                           sourceAccount={sourceAccount}
                           source={source}
-                          tokenMetadata={tokenMetadata}
-                          destination={destination}
                         />
                       </>
                     </FormControl>
@@ -503,7 +407,7 @@ export const SwitchComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                      {tokenMetadata.symbol}
+                      {"tokenMetadata.symbol"}
                     </div>
                   </FormItem>
                 </div>
