@@ -1,40 +1,36 @@
 "use client";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
-import { Context, assets, environment } from "@snowbridge/api";
-
+import { Context, environment } from "@snowbridge/api";
 import { Dispatch, SetStateAction } from "react";
-
-import { parseAmount } from "@/utils/balances";
 import { ErrorInfo } from "@/utils/types";
-
 import { ISubmittableResult } from "@polkadot/types/types";
 import { decodeAddress } from "@polkadot/util-crypto";
-import { parachainConfigs } from "./parachainConfigs";
 
-export function submitParachainToAssetHubTransfer({
+export async function submitParachainToAssetHubTransfer({
   context,
   beneficiary,
+  sourceAccount,
   source,
   amount,
-  tokenMetadata,
+  pallet,
   setError,
   setBusyMessage,
   sendTransaction,
 }: {
   context: Context | null;
   beneficiary: string;
+  sourceAccount: string;
   source: environment.TransferLocation;
-  amount: string;
-  tokenMetadata: assets.ERC20Metadata;
+  amount: bigint;
+  pallet: string;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
   sendTransaction: (
     transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
+    remoteXcmFee?: any,
   ) => void;
-}): void {
+}): Promise<void> {
   try {
-    const { pallet } = parachainConfigs[source.name];
-
     if (!context) {
       throw Error("Invalid context: please update context");
     }
@@ -60,12 +56,11 @@ export function submitParachainToAssetHubTransfer({
         },
       },
     };
-    const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
-    const transfer = parachainApi.tx[pallet].switch(
-      amountInSmallestUnit,
-      pathToBeneficiary,
-    );
-    sendTransaction(transfer);
+
+    const transfer = parachainApi.tx[pallet].switch(amount, pathToBeneficiary);
+    const transactionFee = await transfer.paymentInfo(sourceAccount);
+
+    sendTransaction(transfer, transactionFee.partialFee.toHuman());
   } catch (err) {
     console.error(err);
     setBusyMessage("");
@@ -83,7 +78,8 @@ export async function submitAssetHubToParachainTransfer({
   source,
   destination,
   amount,
-  tokenMetadata,
+  sourceAccount,
+  remoteAssetId,
   setError,
   setBusyMessage,
   sendTransaction,
@@ -92,16 +88,18 @@ export async function submitAssetHubToParachainTransfer({
   beneficiary: string;
   source: environment.TransferLocation;
   destination: environment.TransferLocation;
-  amount: string;
-  tokenMetadata: assets.ERC20Metadata;
+  amount: bigint;
+  decimal: number;
+  sourceAccount: string;
+  remoteAssetId: {};
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
   sendTransaction: (
     transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
+    remoteXcmFee?: any,
   ) => void;
 }): Promise<void> {
   try {
-    const { pallet, parachainId } = parachainConfigs[destination.name];
     if (!context) {
       throw Error("Invalid context: please update context");
     }
@@ -121,13 +119,6 @@ export async function submitAssetHubToParachainTransfer({
     }
 
     const assetHubApi = context.polkadot.api.assetHub;
-    const parachainApi =
-      context.polkadot.api.parachains[destination.paraInfo?.paraId];
-
-    const switchPair = await parachainApi.query[pallet].switchPair();
-    const remoteAssetId = (switchPair as any)
-      .unwrap()
-      .remoteAssetId.toJSON().v4;
 
     const pathToBeneficiary = {
       parents: 0,
@@ -146,18 +137,18 @@ export async function submitAssetHubToParachainTransfer({
       interior: {
         X1: [
           {
-            Parachain: parachainId,
+            Parachain: destination.paraInfo?.paraId,
           },
         ],
       },
     };
-    const amountInSmallestUnit = parseAmount(amount, tokenMetadata);
+
     const transfer = assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
       {
         V4: pathToParachain,
       },
       {
-        V4: [{ id: remoteAssetId, fun: { Fungible: amountInSmallestUnit } }],
+        V4: [{ id: remoteAssetId, fun: { Fungible: amount } }],
       },
       "LocalReserve",
       { V4: remoteAssetId },
@@ -174,13 +165,16 @@ export async function submitAssetHubToParachainTransfer({
       },
       "Unlimited",
     );
-    sendTransaction(transfer);
+
+    const transactionFee = await transfer.paymentInfo(sourceAccount);
+
+    sendTransaction(transfer, transactionFee.partialFee.toHuman());
   } catch (err) {
     console.error(err);
     setBusyMessage("");
     setError({
       title: "Send Error",
-      description: `Error occured while trying to send transaction.`,
+      description: `Error occured while trying to send transaction ${err}`,
       errors: [],
     });
   }
