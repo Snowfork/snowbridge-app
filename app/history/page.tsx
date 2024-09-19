@@ -59,6 +59,11 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 
 const ITEMS_PER_PAGE = 5;
 const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
+  local_e2e: {
+    etherscan: "https://no-expolorers-for-local-e2e/",
+    subscan_ah: "https://no-expolorers-for-local-e2e/",
+    subscan_bh: "https://no-expolorers-for-local-e2e/",
+  },
   rococo_sepolia: {
     etherscan: "https://sepolia.etherscan.io/",
     subscan_ah: "https://assethub-rococo.subscan.io/",
@@ -470,7 +475,7 @@ export default function History() {
       if (
         transferHistoryCache.find(
           (h) =>
-            h.id.toLowerCase() === transfersPendingLocal[i].id.toLowerCase(),
+            h.id?.toLowerCase() === transfersPendingLocal[i].id?.toLowerCase(),
         )
       ) {
         setTransfersPendingLocal({
@@ -608,8 +613,11 @@ export default function History() {
               router.push("#" + v);
             }}
           >
-            {pages[page]?.map((v) => (
-              <AccordionItem key={v.id} value={v.id.toString()}>
+            {pages[page]?.map((v, i) => (
+              <AccordionItem
+                key={v.id}
+                value={v.id?.toString() ?? i.toString()}
+              >
                 <AccordionTrigger>
                   {transferTitle(v, env, assetErc20MetaData)}
                 </AccordionTrigger>

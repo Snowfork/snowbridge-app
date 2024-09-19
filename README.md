@@ -6,8 +6,7 @@ Perform token transfers using Snowbridge.
 
 ### Configure
 
-Copy the `.env.example`-file into an `.env`-file on the same scope.
-Then, on the `.env`-file, configure of your project by assigning the values that fit your needs.
+On the `.env`-file, configure of your project by assigning the values that fit your needs.
 
 **NEXT_PUBLIC_SNOWBRIDGE_ENV** accepts:
 
