@@ -1,7 +1,6 @@
 "use client";
 
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
-import { assets } from "@snowbridge/api";
 import {
   Card,
   CardContent,
@@ -49,15 +48,38 @@ import { BusyDialog } from "./BusyDialog";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { ISubmittableResult } from "@polkadot/types/types";
-
 import PolkadotBalance from "./Balances";
+import { parseUnits } from "ethers";
+import { toast } from "sonner";
+import { parachainConfigs } from "@/utils/parachainConfigs";
+
+import { ApiPromise } from "@polkadot/api";
+import { useRouter } from "next/navigation";
+
+const fetchSwitchTokenData = async (api: ApiPromise, pallet: string) => {
+  const switchPair = await api.query[pallet].switchPair();
+
+  const remoteAssetId = switchPair.unwrap().remoteAssetId.toJSON().v4;
+  const remoteXcmFee = switchPair.unwrap().remoteXcmFee.toJSON().v4;
+  const remoteReserveLocation = switchPair
+    .unwrap()
+    .remoteReserveLocation.toJSON().v4;
+
+  return { remoteAssetId, remoteXcmFee, remoteReserveLocation };
+};
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
-  const [tokenMetadata, setTokenMetadata] = useState({
+  const router = useRouter();
+
+  const [tokenMetadata, setTokenMetadata] = useState<{
+    symbol: string;
+    decimal: number;
+    ss58Format: number;
+  }>({
     symbol: "",
     decimal: 0,
     ss58Format: 42,
@@ -69,7 +91,8 @@ export const SwitchComponent: FC = () => {
     "promise",
     ISubmittableResult
   > | null>(null);
-
+  const [xcmFee, setXcmFee] = useState<string | null>(null);
+  const [switchAssetDetails, setSwitchAssetDetails] = useState<{} | null>(null);
   const filteredLocations = useMemo(
     () =>
       snowbridgeEnvironment.locations
@@ -115,35 +138,61 @@ export const SwitchComponent: FC = () => {
   );
 
   useEffect(() => {
-    const fetchTokenMetadata = async () => {
-      if (!context || !source) return;
+    const fetchSwitchDetails = async () => {
+      if (!context) return;
+      if (source.id === "assethub") {
+        setSwitchAssetDetails(null);
+        return;
+      }
 
-      let api =
-        source.id === "assethub"
-          ? context.polkadot.api.assetHub
-          : context.polkadot.api.parachains[source.paraInfo?.paraId!];
+      const { pallet } = parachainConfigs[source.name];
+
+      const { remoteAssetId, remoteXcmFee, remoteReserveLocation } =
+        await fetchSwitchTokenData(
+          context.polkadot.api.parachains[source.paraInfo?.paraId!],
+          pallet,
+        );
+
+      setSwitchAssetDetails({
+        remoteAssetId,
+        remoteXcmFee,
+        remoteReserveLocation,
+      });
+    };
+    fetchSwitchDetails();
+  }, [context, source]);
+
+  useEffect(() => {
+    const fetchTokenMetadata = async () => {
+      if (!context) return;
+      if (!source) return;
+
+      const tokenAsset = {
+        tokenSymbol: "wRILT",
+        tokenDecimal: 15,
+        ss58Format: 38,
+      };
 
       if (source.id !== "assethub") {
-        const tokenAsset = await assets.parachainNativeAsset(api);
         setTokenMetadata({
           symbol: tokenAsset.tokenSymbol,
           decimal: tokenAsset.tokenDecimal,
           ss58Format: tokenAsset.ss58Format,
         });
       } else {
-        const tokenAsset = await assets.assetErc20Metadata(context, token);
         setTokenMetadata({
-          symbol: tokenAsset.symbol,
-          decimal: 0,
-          ss58Format: 42,
+          symbol: tokenAsset.tokenSymbol ?? "not found",
+          decimal: Number(tokenAsset.tokenDecimal),
+          ss58Format: tokenAsset.ss58Format,
         });
       }
     };
 
     fetchTokenMetadata();
-  }, [context, source, token]);
+  }, [context, destination.name, source, token]);
 
   useEffect(() => {
+    if (context == null) return;
     if (!source || source.destinationIds.length === 0) return;
 
     const newDestinationId = source.destinationIds.filter(
@@ -160,51 +209,79 @@ export const SwitchComponent: FC = () => {
         selectedDestination.erc20tokensReceivable[0]?.address || "";
       if (form.getValues("token") !== newToken) {
         form.setValue("token", newToken);
+        // form.resetField("amount");
+        setXcmFee("");
+        setFeeDisplay("");
       }
     }
-  }, [source, filteredLocations, form]);
+  }, [source, filteredLocations, form, context]);
 
   const handleTransaction = useCallback(async () => {
-    if (!context) {
-      throw new Error("No context");
+    if (
+      !context ||
+      !beneficiary ||
+      !source ||
+      !destination ||
+      !tokenMetadata ||
+      !sourceAccount ||
+      !switchAssetDetails
+    ) {
+      return;
     }
-
-    const { token } = form.getValues();
-    const tokenMetadata = await assets.assetErc20Metadata(context, token);
-
+    const amountInSmallestUnit = parseUnits(amount, tokenMetadata.decimal);
+    if (!amountInSmallestUnit) {
+      return;
+    }
     const sendTransaction = async (
       transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
+      transactionFee: string,
     ) => {
-      const fee = await transaction.paymentInfo(sourceAccount);
       setTransaction(transaction);
-      setFeeDisplay(fee.partialFee.toHuman());
+      setFeeDisplay(transactionFee);
     };
 
     if (source.id === "assethub") {
+      if (destination.id === "assethub") {
+        return;
+      }
       await submitAssetHubToParachainTransfer({
         context,
         beneficiary,
         source,
         destination,
-        amount,
-        tokenMetadata,
+        amount: amountInSmallestUnit,
+        sourceAccount,
+        decimal: tokenMetadata.decimal,
+        remoteAssetId: switchAssetDetails,
         setError,
         setBusyMessage,
         sendTransaction,
       });
     } else {
+      const { pallet } = parachainConfigs[source.name];
+
       submitParachainToAssetHubTransfer({
         context,
         beneficiary,
         source,
-        amount,
-        tokenMetadata,
+        amount: amountInSmallestUnit,
+        pallet,
+        sourceAccount,
         setError,
         setBusyMessage,
         sendTransaction,
       });
     }
-  }, [context, sourceAccount, form, source, beneficiary, destination, amount]);
+  }, [
+    context,
+    beneficiary,
+    source,
+    destination,
+    tokenMetadata,
+    sourceAccount,
+    amount,
+    switchAssetDetails,
+  ]);
 
   useEffect(() => {
     handleTransaction();
@@ -222,7 +299,28 @@ export const SwitchComponent: FC = () => {
         throw new Error("Signer is not available");
       }
       setBusyMessage("Waiting for transaction to be confirmed by wallet.");
-      await transaction.signAndSend(address, { signer });
+      await transaction.signAndSend(address, { signer }, (result) => {
+        setBusyMessage("Currently in flight");
+
+        if (result.isFinalized) {
+          toast.info("Transfer Successful", {
+            position: "bottom-center",
+            closeButton: true,
+            duration: 60000,
+            id: "transfer_success",
+            description: "Token transfer was succesfully initiated.",
+            important: true,
+            action: {
+              label: "View",
+              onClick: () =>
+                router.push(
+                  `https://spiritnet.subscan.io/extrinsic/${result.txHash}`,
+                ),
+            },
+          });
+        }
+      });
+
       setBusyMessage("");
       form.reset();
     } catch (err) {
@@ -232,8 +330,9 @@ export const SwitchComponent: FC = () => {
         description: `Error occured while trying to send transaction.`,
         errors: [],
       });
+      form.reset();
     }
-  }, [polkadotAccounts, sourceAccount, transaction, form]);
+  }, [transaction, polkadotAccounts, form, sourceAccount, router]);
 
   return (
     <>
@@ -356,6 +455,7 @@ export const SwitchComponent: FC = () => {
                           sourceAccount={sourceAccount}
                           source={source}
                           tokenMetadata={tokenMetadata}
+                          destination={destination}
                         />
                       </>
                     </FormControl>
@@ -401,7 +501,7 @@ export const SwitchComponent: FC = () => {
                 </div>
                 <div className="w-1/3">
                   <FormItem>
-                    <FormLabel>Amount</FormLabel>
+                    <FormLabel>Unit</FormLabel>
                     <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
                       {tokenMetadata.symbol}
                     </div>
@@ -409,11 +509,11 @@ export const SwitchComponent: FC = () => {
                 </div>
               </div>
               <div className="text-sm text-right text-muted-foreground px-1">
-                Transfer Fee: {feeDisplay}
+                Transfer Fee: {feeDisplay} {xcmFee ? <>{xcmFee}</> : null}
               </div>
               <br />
               <Button
-                disabled={context === null || token === null}
+                disabled={!context || !token}
                 className="w-full my-8"
                 type="submit"
               >
