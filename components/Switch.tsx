@@ -54,6 +54,7 @@ import { toast } from "sonner";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 
 import { useRouter } from "next/navigation";
+import { formatBalance } from "@/utils/formatting";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -69,6 +70,8 @@ export const SwitchComponent: FC = () => {
     "promise",
     ISubmittableResult
   > | null>(null);
+  const [xcmFeeSymbol, setXcmFeeSymbol] = useState<string | null>(null);
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
   const [xcmFee, setXcmFee] = useState<string | null>(null);
 
   const filteredLocations = useMemo(
@@ -133,7 +136,7 @@ export const SwitchComponent: FC = () => {
         selectedDestination.erc20tokensReceivable[0]?.address || "";
       if (form.getValues("token") !== newToken) {
         form.setValue("token", newToken);
-        // form.resetField("amount");
+        form.resetField("amount");
         setXcmFee("");
         setFeeDisplay("");
       }
@@ -209,6 +212,7 @@ export const SwitchComponent: FC = () => {
         setBusyMessage("Currently in flight");
 
         if (result.isFinalized) {
+          setBusyMessage("");
           toast.info("Transfer Successful", {
             position: "bottom-center",
             closeButton: true,
@@ -239,6 +243,28 @@ export const SwitchComponent: FC = () => {
       form.reset();
     }
   }, [transaction, polkadotAccounts, form, sourceAccount, router]);
+
+  useEffect(() => {
+    if (!source || !destination) return;
+    if (source.id === "assethub") {
+      const { nativeTokenMetadata } = parachainConfigs[destination.name];
+      setTokenSymbol(nativeTokenMetadata.symbol);
+      setXcmFee(null);
+      setXcmFeeSymbol(null);
+      return;
+    }
+    const { switchPair } = parachainConfigs[source.name];
+    const { xcmFee } = switchPair[0];
+    const formattedFee = formatBalance({
+      number: BigInt(xcmFee.amount),
+      decimals: xcmFee.decimals,
+      displayDecimals: 3,
+    });
+    setTokenSymbol(switchPair[0].tokenMetadata.symbol);
+
+    setXcmFee(formattedFee);
+    setXcmFeeSymbol(xcmFee.symbol);
+  }, [source, destination]);
 
   return (
     <>
@@ -408,13 +434,20 @@ export const SwitchComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                      {"tokenMetadata.symbol"}
+                      {tokenSymbol}
                     </div>
                   </FormItem>
                 </div>
               </div>
               <div className="text-sm text-right text-muted-foreground px-1">
-                Transfer Fee: {feeDisplay} {xcmFee ? <>{xcmFee}</> : null}
+                Transfer Fee: {feeDisplay}
+              </div>
+              <div className="text-sm text-right text-muted-foreground px-1">
+                {xcmFee ? (
+                  <>
+                    XCM Fee: {xcmFee} {xcmFeeSymbol}
+                  </>
+                ) : null}
               </div>
               <br />
               <Button
