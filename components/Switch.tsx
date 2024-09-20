@@ -360,6 +360,7 @@ export const SwitchComponent: FC = () => {
                         <PolkadotBalance
                           sourceAccount={sourceAccount}
                           source={source}
+                          destination={destination}
                         />
                       </>
                     </FormControl>
