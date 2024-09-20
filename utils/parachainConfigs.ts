@@ -4,7 +4,8 @@ import { bigint } from "zod";
 type SnowbridgeEnvironmentNames =
   | "local_e2e"
   | "rococo_sepolia"
-  | "polkadot_mainnet";
+  | "polkadot_mainnet"
+  | "paseo_sepolia";
 type SwitchPair = Array<{
   id: string;
   tokenMetadata: {
@@ -18,6 +19,34 @@ type SwitchPair = Array<{
     decimals: number;
     locationId: string;
     amount: bigint;
+  };
+  remoteAssetId: {
+    parents: number;
+    interior: {
+      X2: (
+        | {
+            GlobalConsensus: {
+              Ethereum: {
+                chainId: string;
+              };
+            };
+          }
+        | {
+            AccountKey20: {
+              network: null;
+              key: string;
+            };
+          }
+      )[];
+    };
+  };
+  remoteReserveLocation: {
+    parents: number;
+    interior: {
+      X1: {
+        Parachain: number;
+      }[];
+    };
   };
 }>;
 
@@ -53,13 +82,43 @@ export const parachainConfigs: RegisterOfParaConfigs = {
           symbol: "wKILT",
           decimals: 15,
           address: "",
-          minimumTransferAmount: BigInt(10000000000000),
+          minimumTransferAmount: BigInt(33333333),
         },
         xcmFee: {
           symbol: "DOT",
           decimals: 10,
           locationId: "assethub",
           amount: BigInt(10000000000),
+        },
+        remoteAssetId: {
+          parents: 2,
+          interior: {
+            X2: [
+              {
+                GlobalConsensus: {
+                  Ethereum: {
+                    chainId: "11155111",
+                  },
+                },
+              },
+              {
+                AccountKey20: {
+                  network: null,
+                  key: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+                },
+              },
+            ],
+          },
+        },
+        remoteReserveLocation: {
+          parents: 1,
+          interior: {
+            X1: [
+              {
+                Parachain: 1000,
+              },
+            ],
+          },
         },
       },
     ],
@@ -111,6 +170,36 @@ export const parachainConfigs: RegisterOfParaConfigs = {
           locationId: "assethub",
           amount: BigInt(10000000000),
         },
+        remoteAssetId: {
+          parents: 2,
+          interior: {
+            X2: [
+              {
+                GlobalConsensus: {
+                  Ethereum: {
+                    chainId: "11155111",
+                  },
+                },
+              },
+              {
+                AccountKey20: {
+                  network: null,
+                  key: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+                },
+              },
+            ],
+          },
+        },
+        remoteReserveLocation: {
+          parents: 1,
+          interior: {
+            X1: [
+              {
+                Parachain: 1000,
+              },
+            ],
+          },
+        },
       },
     ],
     parachainId: 4504,
@@ -160,6 +249,37 @@ export const parachainConfigs: RegisterOfParaConfigs = {
           decimals: 10,
           locationId: "assethub",
           amount: BigInt(10000000000),
+        },
+        remoteAssetId: {
+          parents: 2,
+          interior: {
+            X2: [
+              {
+                GlobalConsensus: {
+                  Ethereum: {
+                    chainId: "11155111",
+                  },
+                },
+              },
+              {
+                AccountKey20: {
+                  network: null,
+                  key: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+                },
+              },
+            ],
+          },
+        },
+
+        remoteReserveLocation: {
+          parents: 1,
+          interior: {
+            X1: [
+              {
+                Parachain: 1000,
+              },
+            ],
+          },
         },
       },
     ],
