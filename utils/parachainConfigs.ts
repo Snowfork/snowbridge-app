@@ -1,5 +1,4 @@
 import { TransferLocation } from "@snowbridge/api/dist/environment";
-import { bigint } from "zod";
 
 type SnowbridgeEnvironmentNames =
   | "local_e2e"
@@ -12,13 +11,13 @@ type SwitchPair = Array<{
     symbol: string;
     decimals: number;
     address: string;
-    minimumTransferAmount: BigInt;
+    minimumTransferAmount: string;
   };
   xcmFee: {
     symbol: string;
     decimals: number;
     locationId: string;
-    amount: bigint;
+    amount: string;
   };
   remoteAssetId: {
     parents: number;
@@ -162,13 +161,13 @@ export const parachainConfigs: RegisterOfParaConfigs = {
           symbol: "wRILT",
           decimals: 15,
           address: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
-          minimumTransferAmount: BigInt(10000000000000),
+          minimumTransferAmount: "10000000000000",
         },
         xcmFee: {
           symbol: "ROC",
           decimals: 10,
           locationId: "assethub",
-          amount: BigInt(10000000000),
+          amount: "10000000000",
         },
         remoteAssetId: {
           parents: 2,
