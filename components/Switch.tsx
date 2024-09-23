@@ -119,8 +119,7 @@ export const SwitchComponent: FC = () => {
   );
 
   useEffect(() => {
-    if (context == null) return;
-    if (!source || source.destinationIds.length === 0) return;
+    if (!context || !source || source.destinationIds.length === 0) return;
 
     const newDestinationId = source.destinationIds.filter(
       (x) => x !== "ethereum",
@@ -132,6 +131,7 @@ export const SwitchComponent: FC = () => {
 
     if (currentDestination?.id !== newDestinationId && selectedDestination) {
       form.setValue("destination", selectedDestination);
+
       const newToken =
         selectedDestination.erc20tokensReceivable[0]?.address || "";
       if (form.getValues("token") !== newToken) {
@@ -140,6 +140,34 @@ export const SwitchComponent: FC = () => {
         setXcmFee("");
         setFeeDisplay("");
       }
+    }
+
+    if (source.id === "assethub" && selectedDestination?.id === "assethub") {
+      const nonAssetHubDestination = filteredLocations.find(
+        (v) => v.id !== "assethub",
+      );
+      if (nonAssetHubDestination) {
+        form.setValue("destination", nonAssetHubDestination);
+      }
+    }
+
+    if (source.id === "assethub") {
+      const { nativeTokenMetadata } =
+        parachainConfigs[selectedDestination?.name || ""];
+      setTokenSymbol(nativeTokenMetadata.symbol);
+      setXcmFee(null);
+      setXcmFeeSymbol(null);
+    } else {
+      const { switchPair } = parachainConfigs[source.name];
+      const { xcmFee } = switchPair[0];
+      const formattedFee = formatBalance({
+        number: BigInt(xcmFee.amount),
+        decimals: xcmFee.decimals,
+        displayDecimals: 3,
+      });
+      setTokenSymbol(switchPair[0].tokenMetadata.symbol);
+      setXcmFee(formattedFee);
+      setXcmFeeSymbol(xcmFee.symbol);
     }
   }, [source, filteredLocations, form, context]);
 
@@ -243,28 +271,6 @@ export const SwitchComponent: FC = () => {
       form.reset();
     }
   }, [transaction, polkadotAccounts, form, sourceAccount, router]);
-
-  useEffect(() => {
-    if (!source || !destination) return;
-    if (source.id === "assethub") {
-      const { nativeTokenMetadata } = parachainConfigs[destination.name];
-      setTokenSymbol(nativeTokenMetadata.symbol);
-      setXcmFee(null);
-      setXcmFeeSymbol(null);
-      return;
-    }
-    const { switchPair } = parachainConfigs[source.name];
-    const { xcmFee } = switchPair[0];
-    const formattedFee = formatBalance({
-      number: BigInt(xcmFee.amount),
-      decimals: xcmFee.decimals,
-      displayDecimals: 3,
-    });
-    setTokenSymbol(switchPair[0].tokenMetadata.symbol);
-
-    setXcmFee(formattedFee);
-    setXcmFeeSymbol(xcmFee.symbol);
-  }, [source, destination]);
 
   return (
     <>
