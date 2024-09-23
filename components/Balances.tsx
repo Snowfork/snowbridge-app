@@ -132,6 +132,7 @@ const PolkadotBalance = ({
   }, [sourceAccount, context, source, destination]);
 
   useEffect(() => {
+    if (source.name === destination.name) return;
     fetchBalanceData();
 
     return () => {
