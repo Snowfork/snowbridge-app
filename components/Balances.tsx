@@ -1,34 +1,11 @@
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
-import { formatBalance } from "@/utils/formatting";
+import { fetchBalances, getFormattedBalance } from "@/utils/balances";
+
 import { parachainConfigs } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
-import { ApiPromise } from "@polkadot/api";
+
 import { assets, environment } from "@snowbridge/api";
 import React, { useState, useEffect, useCallback } from "react";
-
-const getFormattedBalance = (balance: any, decimals: number) => {
-  return formatBalance({
-    number: BigInt(balance.toString().replaceAll(",", "")),
-    decimals,
-    displayDecimals: 3,
-  });
-};
-const fetchBalances = async (
-  api: ApiPromise,
-  remoteAssetId: any,
-  sourceAccount: string,
-  decimals: number,
-) => {
-  const fungibleBalance = await api.query.foreignAssets.account(
-    remoteAssetId,
-    sourceAccount,
-  );
-
-  return getFormattedBalance(
-    fungibleBalance.isEmpty ? 0 : fungibleBalance?.toHuman()?.balance,
-    decimals,
-  );
-};
 
 const PolkadotBalance = ({
   sourceAccount,
@@ -52,6 +29,7 @@ const PolkadotBalance = ({
 
   const fetchBalanceData = useCallback(async () => {
     if (!context || !source || !sourceAccount || !destination) return;
+    if (source.name === destination.name) return;
 
     try {
       const assetHubApi = context.polkadot.api.assetHub;
@@ -132,7 +110,6 @@ const PolkadotBalance = ({
   }, [sourceAccount, context, source, destination]);
 
   useEffect(() => {
-    if (source.name === destination.name) return;
     fetchBalanceData();
 
     return () => {

@@ -2,6 +2,7 @@
 import { Context, assets, environment } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ErrorInfo } from "./types";
+import { ApiPromise } from "@polkadot/api";
 
 async function getTokenBalance({
   context,
@@ -89,4 +90,28 @@ export function updateBalance(
         errors: [],
       });
     });
+}
+
+export function getFormattedBalance(balance: any, decimals: number) {
+  return formatBalance({
+    number: BigInt(balance.toString().replaceAll(",", "")),
+    decimals,
+    displayDecimals: 3,
+  });
+}
+export async function fetchBalances(
+  api: ApiPromise,
+  remoteAssetId: any,
+  sourceAccount: string,
+  decimals: number,
+) {
+  const fungibleBalance = await api.query.foreignAssets.account(
+    remoteAssetId,
+    sourceAccount,
+  );
+
+  return getFormattedBalance(
+    fungibleBalance.isEmpty ? 0 : fungibleBalance?.toHuman()?.balance,
+    decimals,
+  );
 }
