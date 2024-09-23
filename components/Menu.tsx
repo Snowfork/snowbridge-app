@@ -30,6 +30,7 @@ import { WalletSelect } from "@talismn/connect-components";
 import { useAtom, useAtomValue } from "jotai";
 import {
   Github,
+  LucideArrowRightLeft,
   LucideBarChart,
   LucideBookText,
   LucideBug,
@@ -204,7 +205,7 @@ export const Menu: FC = () => {
         <MenubarMenu>
           <MenubarTrigger>
             <Link href="/switch" className="flex items-center">
-              <LucideSend />
+              <LucideArrowRightLeft />
               <p className="pl-2 hidden md:flex">Switch</p>
             </Link>
           </MenubarTrigger>
