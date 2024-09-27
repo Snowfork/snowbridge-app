@@ -69,6 +69,11 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     subscan_ah: "https://assethub-rococo.subscan.io/",
     subscan_bh: "https://bridgehub-rococo.subscan.io/",
   },
+  paseo_sepolia: {
+    etherscan: "https://sepolia.etherscan.io/",
+    subscan_ah: "https://assethub-paseo.subscan.io/",
+    subscan_bh: "https://bridgehub-paseo.subscan.io/",
+  },
   polkadot_mainnet: {
     etherscan: "https://etherscan.io/",
     subscan_ah: "https://assethub-polkadot.subscan.io/",
