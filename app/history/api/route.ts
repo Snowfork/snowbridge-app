@@ -23,7 +23,7 @@ const getCachedTransferHistory = unstable_cache(
       return getTransferHistory(
         env,
         SKIP_LIGHT_CLIENT_UPDATES,
-        HISTORY_IN_SECONDS
+        HISTORY_IN_SECONDS,
       );
     } catch (err) {
       getErrorMessage(err);
@@ -34,7 +34,7 @@ const getCachedTransferHistory = unstable_cache(
   {
     tags: ["history"],
     revalidate: CACHE_REVALIDATE_IN_SECONDS,
-  }
+  },
 );
 
 export async function GET() {
