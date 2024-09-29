@@ -25,7 +25,7 @@ const getCachedAssetMetadata = unstable_cache(
   {
     tags: ["status"],
     revalidate: 1,
-  }
+  },
 );
 
 export async function GET() {

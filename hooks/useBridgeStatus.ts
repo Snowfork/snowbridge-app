@@ -15,7 +15,7 @@ const fetchStatus = async (): Promise<BridgeStatus | null> => {
     return await result.json();
   } else {
     throw Error(
-      `Could not status history. ${result.status} ${result.statusText} ${result.body}`
+      `Could not status history. ${result.status} ${result.statusText} ${result.body}`,
     );
   }
 };

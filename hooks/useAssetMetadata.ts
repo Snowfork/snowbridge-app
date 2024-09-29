@@ -17,7 +17,7 @@ const fetchAssetMetadata = async (): Promise<BridgedAssetsMetadata | null> => {
     return await result.json();
   } else {
     throw Error(
-      `Could not asset metadata. ${result.status} ${result.statusText} ${result.body}`
+      `Could not asset metadata. ${result.status} ${result.statusText} ${result.body}`,
     );
   }
 };
@@ -25,7 +25,7 @@ const fetchAssetMetadata = async (): Promise<BridgedAssetsMetadata | null> => {
 export const useAssetMetadata = () => {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
   const [relaychainNativeAsset, setRelayChainNativeAsset] = useAtom(
-    relayChainNativeAssetAtom
+    relayChainNativeAssetAtom,
   );
   const [erc20Metadata, setErc20Metadata] = useAtom(assetErc20MetadataAtom);
   const swr = useSWR([env, "assetMetaData"], fetchAssetMetadata, {

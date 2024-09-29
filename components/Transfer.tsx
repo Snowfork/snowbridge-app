@@ -1,56 +1,49 @@
 "use client";
 
 import { useTransferHistory } from "@/hooks/useTransferHistory";
+import { polkadotWalletAggregator } from "@/lib/client/polkadot-onboard";
 import {
   ethereumAccountAtom,
   ethereumAccountsAtom,
   ethersProviderAtom,
 } from "@/store/ethereum";
-import {
-  polkadotAccountAtom,
-  polkadotAccountsAtom,
-  polkadotWalletModalOpenAtom,
-} from "@/store/polkadot";
+import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
   relayChainNativeAssetAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import {
-  PendingTransferAction,
-  Transfer,
-  transfersPendingLocalAtom,
-} from "@/store/transferHistory";
+import { transfersPendingLocalAtom } from "@/store/transferHistory";
+import { parseAmount, updateBalance } from "@/utils/balances";
+import { errorMessage } from "@/utils/errorMessage";
+import { formatBalance } from "@/utils/formatting";
+import { formSchema } from "@/utils/formSchema";
+import { onSubmit } from "@/utils/onSubmit";
+import { AccountInfo, ErrorInfo, FormData } from "@/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Signer } from "@polkadot/api/types";
+import { PolkadotWalletsContextProvider } from "@polkadot-onboard/react";
 import {
   Context,
   assets,
   environment,
-  history,
   toEthereum,
   toPolkadot,
 } from "@snowbridge/api";
-import { WalletAccount } from "@talismn/connect-wallets";
-import { BrowserProvider, parseUnits } from "ethers";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { track } from "@vercel/analytics";
+import { BrowserProvider } from "ethers";
+import { useAtomValue, useSetAtom } from "jotai";
+import { LucideHardHat } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Dispatch,
-  FC,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { UseFormReturn, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { BusyDialog } from "./BusyDialog";
-import { ErrorDialog } from "./ErrorDialog";
+import { SelectAccount } from "./SelectAccount";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
+import { SendErrorDialog } from "./SendErrorDialog";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -77,130 +70,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Toggle } from "./ui/toggle";
-import { LucideHardHat } from "lucide-react";
-import { track } from "@vercel/analytics";
-import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
-import { formatBalance, trimAccount } from "@/utils/formatting";
-import { PolkadotWalletsContextProvider } from "@polkadot-onboard/react";
-import { polkadotWalletAggregator } from "@/lib/client/polkadot-onboard";
-import { onSubmit } from "@/utils/onSubmit";
-import { SelectAccount } from "./SelectAccount";
-import { AccountInfo } from "@/utils/types";
-
-type AppRouter = ReturnType<typeof useRouter>;
-type ValidationError =
-  | ({ kind: "toPolkadot" } & toPolkadot.SendValidationError)
-  | ({ kind: "toEthereum" } & toEthereum.SendValidationError);
-
-const formSchema = z.object({
-  source: z.string().min(1, "Select source."),
-  destination: z.string().min(1, "Select destination."),
-  token: z.string().min(1, "Select token."),
-  amount: z
-    .string()
-    .regex(
-      /^([1-9][0-9]{0,37})|([0-9]{0,37}\.+[0-9]{0,18})$/,
-      "Invalid amount",
-    ),
-  beneficiary: z
-    .string()
-    .min(1, "Select beneficiary.")
-    .regex(
-      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
-      "Invalid address format.",
-    ),
-  sourceAccount: z
-    .string()
-    .min(1, "Select source account.")
-    .regex(
-      /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
-      "Invalid address format.",
-    ),
-});
-
-const getTokenBalance = async (
-  context: Context,
-  token: string,
-  ethereumChainId: bigint,
-  source: environment.TransferLocation,
-  sourceAccount: string,
-): Promise<{
-  balance: bigint;
-  gatewayAllowance?: bigint;
-}> => {
-  switch (source.type) {
-    case "substrate": {
-      if (source.paraInfo?.paraId === undefined) {
-        throw Error(`ParaId not configured for source ${source.name}.`);
-      }
-      const parachain =
-        context.polkadot.api.parachains[source.paraInfo?.paraId] ??
-        context.polkadot.api.assetHub;
-      const location = assets.erc20TokenToAssetLocation(
-        parachain.registry,
-        ethereumChainId,
-        token,
-      );
-      const balance = await assets.palletAssetsBalance(
-        parachain,
-        location,
-        sourceAccount,
-        "foreignAssets",
-      );
-      return { balance: balance ?? 0n, gatewayAllowance: undefined };
-    }
-    case "ethereum": {
-      return await assets.assetErc20Balance(context, token, sourceAccount);
-    }
-    default:
-      throw Error(`Unknown source type ${source.type}.`);
-  }
-};
-
-const errorMessage = (err: any) => {
-  if (err instanceof Error) {
-    return `${err.name}: ${err.message}`;
-  }
-  return "Unknown error";
-};
-
-const updateBalance = (
-  context: Context,
-  env: SnowbridgeEnvironment,
-  source: environment.TransferLocation,
-  sourceAccount: string,
-  token: string,
-  tokenMetadata: assets.ERC20Metadata,
-  setBalanceDisplay: (_: string) => void,
-  setError: (_: ErrorInfo | null) => void,
-) => {
-  getTokenBalance(context, token, BigInt(env.ethChainId), source, sourceAccount)
-    .then((result) => {
-      let allowance = "";
-      if (result.gatewayAllowance !== undefined) {
-        allowance = ` (Allowance: ${formatBalance({
-          number: result.gatewayAllowance ?? 0n,
-          decimals: Number(tokenMetadata.decimals),
-        })} ${tokenMetadata.symbol})`;
-      }
-      setBalanceDisplay(
-        `${formatBalance({
-          number: result.balance,
-          decimals: Number(tokenMetadata.decimals),
-        })} ${tokenMetadata.symbol} ${allowance}`,
-      );
-    })
-    .catch((err) => {
-      console.error(err);
-      setBalanceDisplay("unknown");
-      setError({
-        title: "Error",
-        description: `Could not fetch asset balance.`,
-        errors: [],
-      });
-    });
-};
+import SnowbridgeEnvironment = environment.SnowbridgeEnvironment;
 
 const doApproveSpend = async (
   context: Context | null,
@@ -246,159 +116,6 @@ const doDepositAndApproveWeth = async (
   }
 
   return await doApproveSpend(context, ethereumProvider, token, amount);
-};
-
-type ErrorInfo = {
-  title: string;
-  description: string;
-  errors: ValidationError[];
-};
-
-const userFriendlyErrorMessage = (
-  error: ValidationError,
-  formData: FormData,
-) => {
-  if (error.kind === "toPolkadot") {
-    if (
-      error.code == toPolkadot.SendValidationCode.BeneficiaryAccountMissing &&
-      formData.destination === "assethub"
-    ) {
-      return "Beneficiary does not hold existential deposit on destination. Already have DOT on Polkadot? Teleport DOT to the beneficiary address on Asset Hub using your wallet.";
-    }
-    if (error.code == toPolkadot.SendValidationCode.InsufficientFee) {
-      return "Insufficient ETH balance to pay transfer fees.";
-    }
-    return error.message;
-  } else if (error.kind === "toEthereum") {
-    if (error.code == toEthereum.SendValidationCode.InsufficientFee) {
-      return "Insufficient DOT balance to pay transfer fees. Already have DOT on Polkadot? Teleport DOT to the source address on Asset Hub using your wallet.";
-    }
-    return error.message;
-  }
-  return (error as any).message;
-};
-
-type FormData = {
-  source: string;
-  sourceAccount: string;
-  destination: string;
-  token: string;
-  amount: string;
-  beneficiary: string;
-};
-
-const getDestinationTokenIdByAddress = (
-  tokenAddress: string,
-  destination?: environment.TransferLocation,
-): string | undefined => {
-  return (destination?.erc20tokensReceivable ?? []).find(
-    (token) => token.address === tokenAddress,
-  )?.id;
-};
-
-const parseAmount = (
-  decimals: string,
-  metadata: assets.ERC20Metadata,
-): bigint => {
-  return parseUnits(decimals, metadata.decimals);
-};
-
-const SendErrorDialog: FC<{
-  info: ErrorInfo | null;
-  formData: FormData;
-  destination: environment.TransferLocation;
-  onDepositAndApproveWeth: () => Promise<void>;
-  onApproveSpend: () => Promise<void>;
-  dismiss: () => void;
-}> = ({
-  info,
-  formData,
-  destination,
-  dismiss,
-  onDepositAndApproveWeth,
-  onApproveSpend,
-}) => {
-  const token = getDestinationTokenIdByAddress(formData.token, destination);
-  let errors = info?.errors ?? [];
-  const insufficentAsset = errors.find(
-    (error) =>
-      error.kind === "toPolkadot" &&
-      error.code === toPolkadot.SendValidationCode.InsufficientToken,
-  );
-  errors = errors.filter(
-    (error) =>
-      !(
-        error.kind === "toPolkadot" &&
-        error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved &&
-        insufficentAsset !== undefined
-      ),
-  );
-
-  const fixAction = (error: ValidationError): JSX.Element => {
-    if (
-      error.kind === "toPolkadot" &&
-      error.code === toPolkadot.SendValidationCode.InsufficientToken &&
-      token === "WETH"
-    ) {
-      return (
-        <Button className="py-1" size="sm" onClick={onDepositAndApproveWeth}>
-          Deposit WETH and Approve Spend
-        </Button>
-      );
-    }
-    if (
-      error.kind === "toPolkadot" &&
-      error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved
-    ) {
-      return (
-        <Button className="py-1" size="sm" onClick={onApproveSpend}>
-          Approve WETH Spend
-        </Button>
-      );
-    }
-    if (
-      error.code === toPolkadot.SendValidationCode.BeneficiaryAccountMissing
-    ) {
-      return (
-        <Button
-          className="text-blue-600 py-1 h-auto"
-          variant="link"
-          onClick={() => {
-            window.open(
-              "https://support.polkadot.network/support/solutions/articles/65000181800-what-is-statemint-and-statemine-and-how-do-i-use-them-#Sufficient-and-non-sufficient-assets",
-            );
-          }}
-        >
-          Help
-        </Button>
-      );
-    }
-    return <></>;
-  };
-  let errorList = <></>;
-  if (errors.length > 0) {
-    errorList = (
-      <ol className="flex-col list-inside list-disc">
-        {errors.map((e, i) => (
-          <li key={i} className="p-1">
-            {userFriendlyErrorMessage(e, formData)}
-            {fixAction(e)}
-          </li>
-        ))}
-      </ol>
-    );
-  }
-
-  return (
-    <ErrorDialog
-      open={info !== null}
-      dismiss={dismiss}
-      title={info?.title ?? "Error"}
-      description={info?.description ?? "Unknown Error"}
-    >
-      {errorList}
-    </ErrorDialog>
-  );
 };
 
 export const validateOFAC = async (
