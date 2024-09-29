@@ -70,53 +70,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import SnowbridgeEnvironment = environment.SnowbridgeEnvironment;
-
-const doApproveSpend = async (
-  context: Context | null,
-  ethereumProvider: BrowserProvider | null,
-  token: string,
-  amount: bigint,
-): Promise<void> => {
-  if (context == null || ethereumProvider == null) return;
-
-  const signer = await ethereumProvider.getSigner();
-  const response = await toPolkadot.approveTokenSpend(
-    context,
-    signer,
-    token,
-    amount,
-  );
-
-  console.log("approval response", response);
-  const receipt = await response.wait();
-  console.log("approval receipt", receipt);
-  if (receipt?.status === 0) {
-    // check success
-    throw Error("Token spend approval failed.");
-  }
-};
-
-const doDepositAndApproveWeth = async (
-  context: Context | null,
-  ethereumProvider: BrowserProvider | null,
-  token: string,
-  amount: bigint,
-): Promise<void> => {
-  if (context == null || ethereumProvider == null) return;
-
-  const signer = await ethereumProvider.getSigner();
-  const response = await toPolkadot.depositWeth(context, signer, token, amount);
-  console.log("deposit response", response);
-  const receipt = await response.wait();
-  console.log("deposit receipt", receipt);
-  if (receipt?.status === 0) {
-    // check success
-    throw Error("Token deposit failed.");
-  }
-
-  return await doApproveSpend(context, ethereumProvider, token, amount);
-};
+import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
+import { doApproveSpend } from "@/utils/doApproveSpend";
 
 export const validateOFAC = async (
   data: FormData,
