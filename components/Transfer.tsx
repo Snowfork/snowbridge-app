@@ -85,6 +85,8 @@ import { formatBalance, trimAccount } from "@/utils/formatting";
 import { PolkadotWalletsContextProvider } from "@polkadot-onboard/react";
 import { polkadotWalletAggregator } from "@/lib/client/polkadot-onboard";
 import { onSubmit } from "@/utils/onSubmit";
+import { SelectAccount } from "./SelectAccount";
+import { AccountInfo } from "@/utils/types";
 
 type AppRouter = ReturnType<typeof useRouter>;
 type ValidationError =
@@ -461,7 +463,7 @@ export const TransferForm: FC = () => {
   const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
-  const router = useRouter();
+  const appRouter = useRouter();
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -886,10 +888,10 @@ export const TransferForm: FC = () => {
                   ethereumAccount,
                   ethereumProvider,
                   tokenMetadata,
-                  router,
+                  appRouter,
                   form,
                   refreshHistory,
-                  transfersPendingLocal,
+                  addPendingTransaction: transfersPendingLocal,
                 }),
               )}
               className="space-y-2"
