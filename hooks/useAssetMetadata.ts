@@ -5,6 +5,7 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
+import { useEffect } from "react";
 import useSWR from "swr";
 
 export const REFRESH_INTERVAL: number = 60 * 60 * 1000; // 1 hour
@@ -37,9 +38,11 @@ export const useAssetMetadata = () => {
     errorRetryInterval: ERROR_RETRY_INTERVAL,
     errorRetryCount: 120, // Retry 120 times every minute (2 hours)
   });
-  if (swr.data !== null) {
-    setErc20Metadata(swr.data.erc20Metadata);
-    setRelayChainNativeAsset(swr.data.relaychainNativeAsset);
-  }
+  useEffect(() => {
+    if (swr.data !== null) {
+      setErc20Metadata(swr.data.erc20Metadata);
+      setRelayChainNativeAsset(swr.data.relaychainNativeAsset);
+    }
+  }, [setErc20Metadata, setRelayChainNativeAsset, swr]);
   return { relaychainNativeAsset, erc20Metadata, swr };
 };
