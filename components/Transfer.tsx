@@ -181,6 +181,7 @@ export const TransferForm: FC = () => {
               formatBalance({
                 number: fee,
                 decimals: assetHubNativeToken?.tokenDecimal ?? 0,
+                displayDecimals: 8,
               }) +
                 " " +
                 assetHubNativeToken?.tokenSymbol,
@@ -217,7 +218,8 @@ export const TransferForm: FC = () => {
           )
           .then((fee) => {
             setFeeDisplay(
-              formatBalance({ number: fee, decimals: 18 }) + " ETH",
+              formatBalance({ number: fee, decimals: 18, displayDecimals: 8 }) +
+                " ETH",
             );
           })
           .catch((err) => {
