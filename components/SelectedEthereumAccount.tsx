@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { BusyDialog } from "./BusyDialog";
 import { ErrorDialog } from "./ErrorDialog";
 import { FC, useState } from "react";
 import { track } from "@vercel/analytics/react";
@@ -33,9 +32,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const { error } = useWeb3ModalError();
   const { switchNetwork } = useSwitchNetwork();
   const { address, chainId, isConnected, status } = useWeb3ModalAccount();
-  const { disconnect } = useDisconnect();
-  const { walletInfo } = useWalletInfo();
-  const { open, close } = useWeb3Modal();
+  const { open } = useWeb3Modal();
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const env = useAtomValue(snowbridgeEnvironmentAtom);
@@ -52,8 +49,6 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   }
 
   if (!isConnected || address === undefined || status === "disconnected") {
-    disconnect();
-    close();
     return (
       <Button
         className="w-full"
@@ -98,11 +93,6 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
         </pre>
         <pre className="w-auto hidden md:inline">{address}</pre>
       </div>
-      <BusyDialog
-        open={false}
-        title="Ethereum Wallet"
-        description="Waiting for Ethereum wallet..."
-      />
       <ErrorDialog
         open={errorMessage !== null}
         title="Ethereum Wallet Error"
