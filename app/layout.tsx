@@ -35,11 +35,6 @@ export default function RootLayout({
       <body className={cn(inter.className)}>
         <Provider>
           <main>
-            <div className="text-center bg-yellow-200">
-              You may not see your bridged assets in your Wallet yet - support
-              in SubWallet, Talisman and Nova is coming soon. Meanwhile, you can
-              check your balance on this page.
-            </div>
             <div className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
               <div className="w-full max-w-5xl md:gap-4 flex flex-col">
                 <div className="w-full place-items-center justify-between flex flex-col md:flex-row">
