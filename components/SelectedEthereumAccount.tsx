@@ -34,6 +34,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const { switchNetwork } = useSwitchNetwork();
   const { address, chainId, isConnected, status } = useWeb3ModalAccount();
   const { disconnect } = useDisconnect();
+  const { walletInfo } = useWalletInfo();
   const { open, close } = useWeb3Modal();
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -59,7 +60,6 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
         type="button"
         variant="link"
         onClick={async (e) => {
-          e.preventDefault();
           await open();
         }}
       >
@@ -74,9 +74,8 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
           className="w-full"
           type="button"
           variant="destructive"
-          onClick={(e) => {
-            e.preventDefault();
-            switchNetwork(env.ethChainId);
+          onClick={async (e) => {
+            await switchNetwork(env.ethChainId);
             track("Switch Network");
           }}
         >

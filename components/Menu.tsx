@@ -33,6 +33,7 @@ import {
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { trimAccount } from "@/utils/formatting";
+import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
@@ -187,6 +188,7 @@ export const Menu: FC = () => {
           </MenubarTrigger>
         </MenubarMenu>
       </Menubar>
+      <PolkadotWalletDialog />
     </div>
   );
 };

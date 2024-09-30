@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransferHistory } from "@/hooks/useTransferHistory";
-import { polkadotWalletAggregator } from "@/lib/client/polkadot-onboard";
 import {
   ethereumAccountAtom,
   ethereumAccountsAtom,
@@ -22,7 +21,6 @@ import { formSchema } from "@/utils/formSchema";
 import { onSubmit } from "@/utils/onSubmit";
 import { AccountInfo, ErrorInfo, FormData } from "@/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PolkadotWalletsContextProvider } from "@polkadot-onboard/react";
 import {
   Context,
   assets,
@@ -122,11 +120,7 @@ export const TransferComponent: FC = () => {
         <p>Under Maintenance: Check back soon!</p>
       </div>
     );
-  return (
-    <PolkadotWalletsContextProvider walletAggregator={polkadotWalletAggregator}>
-      <TransferForm />
-    </PolkadotWalletsContextProvider>
-  );
+  return <TransferForm />;
 };
 
 export const TransferForm: FC = () => {

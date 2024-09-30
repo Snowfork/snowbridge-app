@@ -15,21 +15,9 @@ import {
 } from "@/store/polkadot";
 import { trimAccount } from "@/utils/formatting";
 import { FC } from "react";
-import { useWallets } from "@polkadot-onboard/react";
 
 export const SelectedPolkadotAccount: FC = () => {
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
-
-  const { wallets } = useWallets();
-  for (const w of wallets ?? []) {
-    //w.connect();
-    if (w.type === "WALLET_CONNECT") {
-      console.log("AAAA", w, w.isConnected());
-      //if (w.isConnected()) w.disconnect();
-      if (!w.isConnected()) w.connect().then(() => console.log("connected"));
-      //w.subscribeAccounts().then((x) => console.log("B", x));
-    }
-  }
 
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -40,6 +28,7 @@ export const SelectedPolkadotAccount: FC = () => {
         variant="link"
         className="w-full"
         onClick={(e) => {
+          console.log("abc");
           e.preventDefault();
           setPolkadotWalletModalOpen(true);
         }}
