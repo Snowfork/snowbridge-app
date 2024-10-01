@@ -217,6 +217,7 @@ export const TransferForm: FC = () => {
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
 
+  // to do: introduce the location component into transfer to reduce code to make it easier to read
   useEffect(() => {
     let newDestinations = destinations;
     if (source.id !== watchSource) {

@@ -1,5 +1,4 @@
 "use client";
-
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Card,
@@ -32,14 +31,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { AccountInfo, ErrorInfo, FormDataSwitch } from "@/utils/types";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { SelectAccount } from "./SelectAccount";
 import { Input } from "./ui/input";
@@ -56,6 +47,7 @@ import { parachainConfigs } from "@/utils/parachainConfigs";
 import { useRouter } from "next/navigation";
 import XcmBalance from "./XcmBalance";
 import { toPolkadot } from "@snowbridge/api";
+import { LocationSelector } from "./LocationSelector";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -119,46 +111,6 @@ export const SwitchComponent: FC = () => {
       })) || [],
     [polkadotAccounts, destination.type],
   );
-
-  // to do: move this into a source and destination selector component
-  useEffect(() => {
-    if (!context || !source || source.destinationIds.length === 0) return;
-
-    const newDestinationId = source.destinationIds.filter(
-      (x) => x !== "ethereum",
-    )[0];
-    const selectedDestination = filteredLocations.find(
-      (v) => v.id === newDestinationId,
-    );
-    const currentDestination = form.getValues("destination");
-
-    if (currentDestination?.id !== newDestinationId && selectedDestination) {
-      form.setValue("destination", selectedDestination);
-
-      const newToken =
-        selectedDestination.erc20tokensReceivable[0]?.address || "";
-      if (form.getValues("token") !== newToken) {
-        form.setValue("token", newToken);
-        form.resetField("amount");
-        setFeeDisplay("");
-      }
-    }
-
-    if (source.id === "assethub" && selectedDestination?.id === "assethub") {
-      const nonAssetHubDestination = filteredLocations.find(
-        (v) => v.id !== "assethub",
-      );
-      if (nonAssetHubDestination) {
-        form.setValue("destination", nonAssetHubDestination);
-      }
-    }
-
-    if (source.id === "assethub") {
-      const { nativeTokenMetadata } =
-        parachainConfigs[selectedDestination?.name || ""];
-      setTokenSymbol(nativeTokenMetadata.symbol);
-    }
-  }, [source, filteredLocations, form, context]);
 
   const handleTransaction = useCallback(async () => {
     if (
@@ -322,98 +274,14 @@ export const SwitchComponent: FC = () => {
               onSubmit={form.handleSubmit(() => onSubmit())}
               className="space-y-2"
             >
-              {/* to do: move this into a selector component for source */}
-              <div className="grid grid-cols-2 space-x-2">
-                <FormField
-                  control={form.control}
-                  name="source"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Source</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={(value) => {
-                            const selectedSource = filteredLocations.find(
-                              (location) => location.id === value,
-                            );
-                            if (selectedSource) {
-                              field.onChange(selectedSource);
-                            }
-                          }}
-                          value={field.value.id}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a source" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              {filteredLocations.map((location) => (
-                                <SelectItem
-                                  key={location.id}
-                                  value={location.id}
-                                >
-                                  {location.name}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="destination"
-                  render={({ field }) => (
-                    <FormItem>
-                      {/* to do: move this into a selector component for destination */}
-                      <FormLabel>Destination</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={(value) => {
-                            const selectedDestination = filteredLocations.find(
-                              (location) => location.id === value,
-                            );
-                            if (selectedDestination) {
-                              field.onChange(selectedDestination);
-                            }
-                          }}
-                          value={field.value.id}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a destination" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              {source.destinationIds.map((destinationId) => {
-                                const availableDestination =
-                                  filteredLocations.find(
-                                    (v) => v.id === destinationId,
-                                  )!;
+              <LocationSelector
+                form={form}
+                filteredLocations={filteredLocations}
+                source={source}
+                setFeeDisplay={setFeeDisplay}
+                setTokenSymbol={setTokenSymbol}
+              />
 
-                                if (!availableDestination) {
-                                  return;
-                                }
-                                return (
-                                  <SelectItem
-                                    key={availableDestination.id}
-                                    value={availableDestination.id}
-                                  >
-                                    {availableDestination.name}
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
               <FormField
                 control={form.control}
                 name="sourceAccount"
@@ -488,7 +356,7 @@ export const SwitchComponent: FC = () => {
                 Transfer Fee: {feeDisplay}
               </div>
               <br />
-              {destination.id !== "assethub" && !sufficientTokenAvailable ? (
+              {destination.id === "assethub" && !sufficientTokenAvailable ? (
                 <XcmBalance
                   sourceAccount={sourceAccount}
                   source={source}
