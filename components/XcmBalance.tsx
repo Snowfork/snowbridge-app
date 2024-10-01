@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { environment } from "@snowbridge/api";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, FC } from "react";
 import { Button } from "./ui/button";
 import { ApiPromise } from "@polkadot/api";
 
@@ -37,16 +37,19 @@ async function submitXcmFeeTransfer({
     xcmFee.amount,
   );
 }
-const XcmBalance = ({
-  source,
-  destination,
-  sourceAccount,
-  beneficiary,
-}: {
+
+interface Props {
   sourceAccount: string;
   source: environment.TransferLocation;
   destination: environment.TransferLocation;
   beneficiary: string;
+}
+
+const XcmBalance: FC<Props> = ({
+  source,
+  destination,
+  sourceAccount,
+  beneficiary,
 }) => {
   const [context] = useSnowbridgeContext();
   const [xcmFee, setXcmFee] = useState<string>();
@@ -146,7 +149,7 @@ const XcmBalance = ({
           <DialogFooter>
             <Button
               className="w-full my-8"
-              variant="link"
+              type="submit"
               onClick={() => topUpXcmFee()}
             >
               Top Up

@@ -5,20 +5,22 @@ import { parachainConfigs } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
 
 import { assets, environment } from "@snowbridge/api";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, FC } from "react";
 
-const PolkadotBalance = ({
-  sourceAccount,
-  source,
-  destination,
-  beneficiary,
-  handleSufficientTokens,
-}: {
+interface Props {
   sourceAccount: string;
   source: environment.TransferLocation;
   destination: environment.TransferLocation;
   beneficiary: string;
   handleSufficientTokens: (result: boolean) => void;
+}
+
+const PolkadotBalance: FC<Props> = ({
+  sourceAccount,
+  source,
+  destination,
+  beneficiary,
+  handleSufficientTokens,
 }) => {
   const [context] = useSnowbridgeContext();
   const [balanceData, setBalanceData] = useState({
