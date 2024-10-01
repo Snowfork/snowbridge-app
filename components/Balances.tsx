@@ -11,10 +11,14 @@ const PolkadotBalance = ({
   sourceAccount,
   source,
   destination,
+  beneficiary,
+  handleSufficientTokens,
 }: {
   sourceAccount: string;
   source: environment.TransferLocation;
   destination: environment.TransferLocation;
+  beneficiary: string;
+  handleSufficientTokens: (result: boolean) => void;
 }) => {
   const [context] = useSnowbridgeContext();
   const [balanceData, setBalanceData] = useState({
@@ -27,6 +31,33 @@ const PolkadotBalance = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorInfo | null>(null);
 
+  useEffect(() => {
+    (async () => {
+      if (!context) return;
+      const api =
+        destination.id === "assethub"
+          ? context.polkadot.api.assetHub
+          : context.polkadot.api.parachains[destination.paraInfo?.paraId!];
+
+      const checkBalanceED = await api.query.system.account(beneficiary);
+      if (
+        // to do: handle the codec for this
+        checkBalanceED.toHuman()?.sufficients == 0 &&
+        checkBalanceED.toHuman()?.providers == 0
+      ) {
+        if (destination.id === "assethub") {
+          handleSufficientTokens(false);
+          return;
+        } else {
+          handleSufficientTokens(false);
+          return;
+        }
+      }
+      handleSufficientTokens(true);
+    })();
+  }, [context, destination, beneficiary, handleSufficientTokens]);
+
+  // to do: this should check the source and destinations balance of source account and the beneficary account
   const fetchBalanceData = useCallback(async () => {
     if (!context || !source || !sourceAccount || !destination) return;
     if (source.name === destination.name) return;
@@ -55,6 +86,7 @@ const PolkadotBalance = ({
           await assetHubApi.query.system.account(sourceAccount);
 
         sourceBalance = getFormattedBalance(
+          // to do: handle the codec for this
           checkBalance.isEmpty ? 0 : checkBalance.toHuman()?.data.free,
           tokenDecimal,
         );
@@ -107,7 +139,7 @@ const PolkadotBalance = ({
       });
       setLoading(false);
     }
-  }, [sourceAccount, context, source, destination]);
+  }, [context, source, sourceAccount, destination]);
 
   useEffect(() => {
     fetchBalanceData();
@@ -143,10 +175,12 @@ const PolkadotBalance = ({
   return (
     <>
       <div className="text-sm text-right text-muted-foreground px-1">
-        Source Balance: {balanceData.sourceBalance} {balanceData.sourceSymbol}
+        {source.name} Balance: {balanceData.sourceBalance}{" "}
+        {balanceData.sourceSymbol}
       </div>
       <div className="text-sm text-right text-muted-foreground px-1">
-        Switch Balance: {balanceData.switchBalance} {balanceData.switchSymbol}
+        {destination.name} Balance: {balanceData.switchBalance}{" "}
+        {balanceData.switchSymbol}
       </div>
     </>
   );

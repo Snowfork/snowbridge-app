@@ -54,7 +54,8 @@ import { toast } from "sonner";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 
 import { useRouter } from "next/navigation";
-import { formatBalance } from "@/utils/formatting";
+import XcmBalance from "./XcmBalance";
+import { toPolkadot } from "@snowbridge/api";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -66,13 +67,13 @@ export const SwitchComponent: FC = () => {
   const [feeDisplay, setFeeDisplay] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
+  const [sufficientTokenAvailable, setSufficientTokenAvailable] =
+    useState(true);
   const [transaction, setTransaction] = useState<SubmittableExtrinsic<
     "promise",
     ISubmittableResult
   > | null>(null);
-  const [xcmFeeSymbol, setXcmFeeSymbol] = useState<string | null>(null);
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
-  const [xcmFee, setXcmFee] = useState<string | null>(null);
 
   const filteredLocations = useMemo(
     () =>
@@ -83,7 +84,7 @@ export const SwitchComponent: FC = () => {
   );
 
   const initialDestination = useMemo(
-    () => filteredLocations.find((v) => v.id === "rilt"),
+    () => filteredLocations.find((v) => v.id === "KILT"),
     [filteredLocations],
   );
 
@@ -93,7 +94,8 @@ export const SwitchComponent: FC = () => {
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
       source: filteredLocations.find((v) => v.id === "assethub"),
-      destination: initialDestination,
+      // to do: handle this better
+      destination: initialDestination ?? "",
       token: initialDestination?.erc20tokensReceivable[0].id,
       beneficiary: polkadotAccount?.address ?? "",
       sourceAccount: polkadotAccount?.address ?? "",
@@ -118,6 +120,7 @@ export const SwitchComponent: FC = () => {
     [polkadotAccounts, destination.type],
   );
 
+  // to do: move this into a source and destination selector component
   useEffect(() => {
     if (!context || !source || source.destinationIds.length === 0) return;
 
@@ -137,7 +140,6 @@ export const SwitchComponent: FC = () => {
       if (form.getValues("token") !== newToken) {
         form.setValue("token", newToken);
         form.resetField("amount");
-        setXcmFee("");
         setFeeDisplay("");
       }
     }
@@ -155,28 +157,22 @@ export const SwitchComponent: FC = () => {
       const { nativeTokenMetadata } =
         parachainConfigs[selectedDestination?.name || ""];
       setTokenSymbol(nativeTokenMetadata.symbol);
-      setXcmFee(null);
-      setXcmFeeSymbol(null);
-    } else {
-      const { switchPair } = parachainConfigs[source.name];
-      const { xcmFee } = switchPair[0];
-      const formattedFee = formatBalance({
-        number: BigInt(xcmFee.amount),
-        decimals: xcmFee.decimals,
-        displayDecimals: 3,
-      });
-      setTokenSymbol(switchPair[0].tokenMetadata.symbol);
-      setXcmFee(formattedFee);
-      setXcmFeeSymbol(xcmFee.symbol);
     }
   }, [source, filteredLocations, form, context]);
 
   const handleTransaction = useCallback(async () => {
-    if (!context || !beneficiary || !source || !destination || !sourceAccount) {
+    if (
+      !context ||
+      !beneficiary ||
+      !source ||
+      !destination ||
+      !sourceAccount ||
+      !token
+    ) {
       return;
     }
 
-    const amountInSmallestUnit = parseUnits(amount, 12);
+    const amountInSmallestUnit = parseUnits(amount, source.paraInfo?.decimals);
     if (!amountInSmallestUnit) {
       return;
     }
@@ -218,17 +214,47 @@ export const SwitchComponent: FC = () => {
         sendTransaction,
       });
     }
-  }, [context, beneficiary, source, destination, sourceAccount, amount]);
+  }, [context, beneficiary, source, destination, sourceAccount, token, amount]);
 
   useEffect(() => {
     handleTransaction();
   }, [handleTransaction]);
 
+  const handleSufficientTokens = (result: boolean) => {
+    setSufficientTokenAvailable(result);
+  };
+
   const onSubmit = useCallback(async () => {
-    if (!transaction) {
+    if (!transaction || !context) {
       return;
     }
+
+    // to do: better error information for the user.
     try {
+      if (destination.id === "assethub" && !sufficientTokenAvailable) {
+        setError({
+          title: "Not Enough Sufficient tokens",
+          description: "Please follow the sufficient or existential deposit",
+          errors: [
+            {
+              kind: "toPolkadot",
+              code: toPolkadot.SendValidationCode.BeneficiaryAccountMissing,
+              message:
+                "Asset Hub requires that you hold specific tokens in order for an account to be active.",
+            },
+          ],
+        });
+        return;
+      } else if (!sufficientTokenAvailable) {
+        setError({
+          title: "Not Enough Sufficient tokens",
+          description:
+            "Please follow the sufficient or existential deposit, make sure the beneficiary has enough funds on the destination account.",
+          errors: [],
+        });
+        return;
+      }
+
       const { signer, address } = polkadotAccounts?.find(
         (val) => val.address === sourceAccount,
       )!;
@@ -270,7 +296,16 @@ export const SwitchComponent: FC = () => {
       });
       form.reset();
     }
-  }, [transaction, polkadotAccounts, form, sourceAccount, router]);
+  }, [
+    transaction,
+    context,
+    destination.id,
+    sufficientTokenAvailable,
+    polkadotAccounts,
+    form,
+    sourceAccount,
+    router,
+  ]);
 
   return (
     <>
@@ -287,6 +322,7 @@ export const SwitchComponent: FC = () => {
               onSubmit={form.handleSubmit(() => onSubmit())}
               className="space-y-2"
             >
+              {/* to do: move this into a selector component for source */}
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
@@ -332,6 +368,7 @@ export const SwitchComponent: FC = () => {
                   name="destination"
                   render={({ field }) => (
                     <FormItem>
+                      {/* to do: move this into a selector component for destination */}
                       <FormLabel>Destination</FormLabel>
                       <FormControl>
                         <Select
@@ -393,6 +430,8 @@ export const SwitchComponent: FC = () => {
                           sourceAccount={sourceAccount}
                           source={source}
                           destination={destination}
+                          beneficiary={beneficiary}
+                          handleSufficientTokens={handleSufficientTokens}
                         />
                       </>
                     </FormControl>
@@ -448,21 +487,29 @@ export const SwitchComponent: FC = () => {
               <div className="text-sm text-right text-muted-foreground px-1">
                 Transfer Fee: {feeDisplay}
               </div>
-              <div className="text-sm text-right text-muted-foreground px-1">
-                {xcmFee ? (
-                  <>
-                    XCM Fee: {xcmFee} {xcmFeeSymbol}
-                  </>
-                ) : null}
-              </div>
               <br />
-              <Button
-                disabled={!context || !token}
-                className="w-full my-8"
-                type="submit"
-              >
-                Submit
-              </Button>
+              {destination.id !== "assethub" && !sufficientTokenAvailable ? (
+                <XcmBalance
+                  sourceAccount={sourceAccount}
+                  source={source}
+                  beneficiary={beneficiary}
+                  destination={destination}
+                />
+              ) : (
+                <Button
+                  disabled={
+                    !context ||
+                    !token ||
+                    !amount ||
+                    !beneficiary ||
+                    !sourceAccount
+                  }
+                  className="w-full my-8"
+                  type="submit"
+                >
+                  Submit
+                </Button>
+              )}
             </form>
           </Form>
         </CardContent>
