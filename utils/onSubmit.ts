@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { track } from "@vercel/analytics";
 import { errorMessage } from "./errorMessage";
 import { AppRouter, FormData, ErrorInfo } from "@/utils/types";
-import { validateOFAC } from "@/components/Transfer";
+import { validateOFAC } from "@/utils/validateOFAC";
 
 export function onSubmit({
   context,

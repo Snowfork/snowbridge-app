@@ -21,7 +21,7 @@ import { assets, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useRouter } from "next/navigation";
 import { FC, useCallback, useEffect, useState } from "react";
-import { UseFormReturn, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { BusyDialog } from "./BusyDialog";
@@ -66,40 +66,6 @@ import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
 import { FormData, ErrorInfo, AccountInfo } from "@/utils/types";
 import { onSubmit } from "@/utils/onSubmit";
 import { filterParachainLocations } from "@/utils/parachainConfigs";
-
-export const validateOFAC = async (
-  data: FormData,
-  form: UseFormReturn<FormData>,
-): Promise<boolean> => {
-  const response = await fetch("/blocked/api", {
-    method: "POST",
-    body: JSON.stringify({
-      sourceAddress: data.sourceAccount,
-      beneficiaryAddress: data.beneficiary,
-    }),
-  });
-  if (!response.ok) {
-    throw Error(
-      `Error verifying ofac status: ${response.status} - ${response.statusText}`,
-    );
-  }
-  const result = await response.json();
-  if (result.beneficiaryBanned) {
-    form.setError(
-      "beneficiary",
-      { message: "Beneficiary banned." },
-      { shouldFocus: true },
-    );
-  }
-  if (result.sourceBanned) {
-    form.setError(
-      "sourceAccount",
-      { message: "Source Account banned." },
-      { shouldFocus: true },
-    );
-  }
-  return result.beneficiaryBanned === false && result.sourceBanned === false;
-};
 
 export const TransferComponent: FC = () => {
   const maintenance =
