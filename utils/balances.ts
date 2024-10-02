@@ -92,9 +92,9 @@ export function updateBalance(
     });
 }
 
-export function getFormattedBalance(balance: any, decimals: number) {
+export function getFormattedBalance(balance: bigint, decimals: number) {
   return formatBalance({
-    number: BigInt(balance.toString().replaceAll(",", "")),
+    number: balance,
     decimals,
     displayDecimals: 3,
   });
@@ -111,7 +111,7 @@ export async function fetchForeignAssetsBalances(
   );
 
   return getFormattedBalance(
-    foreignAssets.isEmpty ? 0 : foreignAssets?.toJSON()?.balance,
+    foreignAssets.unwrapOrDefault().balance.toBigInt(),
     decimals,
   );
 }

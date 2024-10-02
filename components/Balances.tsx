@@ -21,7 +21,7 @@ interface Props {
 // Utility function to query balances
 const getBalanceData = async (api: any, account: string, decimals: number) => {
   const balance = await api.query.system.account(account);
-  return getFormattedBalance(balance.toJSON()?.data.free, decimals);
+  return getFormattedBalance(balance.data.free, decimals);
 };
 
 const PolkadotBalance: FC<Props> = ({
@@ -50,17 +50,20 @@ const PolkadotBalance: FC<Props> = ({
       const { switchPair } = parachainConfigs[source.name];
       const api = context.polkadot.api.parachains[source.paraInfo?.paraId!];
       const { xcmFee } = switchPair[0];
-      const formattedFee = getFormattedBalance(xcmFee.amount, xcmFee.decimals);
+      const formattedFee = getFormattedBalance(
+        BigInt(xcmFee.amount),
+        xcmFee.decimals,
+      );
 
       const fungibleBalance = await api.query.fungibles.account(
         switchPair[0].xcmFee.remoteXcmFee.V4.id,
         sourceAccount,
       );
       const xcmBalance = getFormattedBalance(
-        fungibleBalance.isEmpty ? 0 : fungibleBalance.toJSON()!.balance,
+        fungibleBalance.unwrapOrDefault().balance.toBigInt(),
         xcmFee.decimals,
       );
-      handleTopUpCheck(xcmBalance <= formattedFee);
+      handleTopUpCheck(xcmBalance >= formattedFee);
     } catch (e) {
       console.error(e);
     }

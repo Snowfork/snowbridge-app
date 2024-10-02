@@ -52,7 +52,7 @@ export const TopUpXcmFee: FC<Props> = ({
         : parachainConfigs[source.name];
 
     const xcmFee1 = getFormattedBalance(
-      switchPair1[0].xcmFee.amount,
+      BigInt(switchPair1[0].xcmFee.amount),
       switchPair1[0].xcmFee.decimals,
     );
     setSwitchPair(switchPair1);
@@ -66,7 +66,7 @@ export const TopUpXcmFee: FC<Props> = ({
   const [error, setError] = useState<ErrorInfo | null>(null);
 
   const submitTopUp = useCallback(async () => {
-    if (!context) return;
+    if (!context || !switchPair || !xcmFee) return;
 
     if (source.name === destination.name) return;
 
@@ -182,12 +182,12 @@ export const TopUpXcmFee: FC<Props> = ({
             id="amountInput"
             type="text"
             value={amountInput}
-            placeholder={xcmFee}
+            placeholder={xcmFee ?? "0"}
             onChange={(e) => setAmountInput(e.target.value)}
           />
           <p>
             Current XCM Fee: {xcmFee}{" "}
-            {parachainConfigs[source.name].switchPair[0].xcmFee.symbol}
+            {switchPair ? switchPair[0].xcmFee.symbol : null}
           </p>
           <DialogFooter>
             <Button

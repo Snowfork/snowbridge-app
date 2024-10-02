@@ -28,7 +28,7 @@ export async function submitParachainToAssetHubTransfer({
   setBusyMessage: Dispatch<SetStateAction<string>>;
   sendTransaction: (
     transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
-    remoteXcmFee?: any,
+    remoteXcmFees: string,
   ) => void;
 }): Promise<void> {
   try {
@@ -94,7 +94,7 @@ export async function submitAssetHubToParachainTransfer({
   setBusyMessage: Dispatch<SetStateAction<string>>;
   sendTransaction: (
     transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
-    remoteXcmFee?: any,
+    remoteXcmFee: string,
   ) => void;
 }): Promise<void> {
   try {
@@ -144,8 +144,7 @@ export async function submitAssetHubToParachainTransfer({
         ],
       },
     };
-
-    const remoteAssetId = switchPair.unwrap().remoteAssetId.toJSON().v4;
+    const remoteAssetId = switchPair.unwrap().remoteAssetId.v4;
 
     const transfer = assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
       {
