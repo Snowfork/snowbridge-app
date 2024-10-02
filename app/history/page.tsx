@@ -79,6 +79,11 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     subscan_ah: "https://assethub-polkadot.subscan.io/",
     subscan_bh: "https://bridgehub-polkadot.subscan.io/",
   },
+  westend_sepolia: {
+    etherscan: "https://sepolia.etherscan.io/",
+    subscan_ah: "https://assethub-westend.subscan.io/",
+    subscan_bh: "https://bridgehub-westend.subscan.io/",
+  },
 };
 
 const isWalletTransaction = (
@@ -292,8 +297,8 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-        ? ""
-        : "bg-secondary";
+      ? ""
+      : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,
