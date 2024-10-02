@@ -45,7 +45,7 @@ import { toast } from "sonner";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 
 import { useRouter } from "next/navigation";
-import XcmBalance from "./XcmBalance";
+import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
 import { LocationSelector } from "./LocationSelector";
 
@@ -61,6 +61,7 @@ export const SwitchComponent: FC = () => {
   const [busyMessage, setBusyMessage] = useState("");
   const [sufficientTokenAvailable, setSufficientTokenAvailable] =
     useState(true);
+  const [topUpCheck, setTopUpCheck] = useState(false);
   const [transaction, setTransaction] = useState<SubmittableExtrinsic<
     "promise",
     ISubmittableResult
@@ -175,7 +176,9 @@ export const SwitchComponent: FC = () => {
   const handleSufficientTokens = (result: boolean) => {
     setSufficientTokenAvailable(result);
   };
-
+  const handleTopUpCheck = (result: boolean) => {
+    setTopUpCheck(result);
+  };
   const onSubmit = useCallback(async () => {
     if (!transaction || !context) {
       return;
@@ -300,6 +303,7 @@ export const SwitchComponent: FC = () => {
                           destination={destination}
                           beneficiary={beneficiary}
                           handleSufficientTokens={handleSufficientTokens}
+                          handleTopUpCheck={handleTopUpCheck}
                         />
                       </>
                     </FormControl>
@@ -356,12 +360,15 @@ export const SwitchComponent: FC = () => {
                 Transfer Fee: {feeDisplay}
               </div>
               <br />
-              {destination.id === "assethub" && !sufficientTokenAvailable ? (
-                <XcmBalance
+              {/* Checks the required XCM fee balance on the source account is too low, if too low it gives an option to top the XCM fee from source account*/}
+              {topUpCheck ? (
+                <TopUpXcmFee
                   sourceAccount={sourceAccount}
                   source={source}
                   beneficiary={beneficiary}
                   destination={destination}
+                  sufficientTokenAvailable={sufficientTokenAvailable}
+                  xcmFee={""}
                 />
               ) : (
                 <Button

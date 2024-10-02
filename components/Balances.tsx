@@ -1,10 +1,12 @@
-import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
-import { fetchBalances, getFormattedBalance } from "@/utils/balances";
-
+import { snowbridgeContextAtom } from "@/store/snowbridge";
+import {
+  fetchForeignAssetsBalances,
+  getFormattedBalance,
+} from "@/utils/balances";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
-
 import { assets, environment } from "@snowbridge/api";
+import { useAtomValue } from "jotai";
 import React, { useState, useEffect, useCallback, FC } from "react";
 
 interface Props {
@@ -13,7 +15,14 @@ interface Props {
   destination: environment.TransferLocation;
   beneficiary: string;
   handleSufficientTokens: (result: boolean) => void;
+  handleTopUpCheck: (result: boolean) => void;
 }
+
+// Utility function to query balances
+const getBalanceData = async (api: any, account: string, decimals: number) => {
+  const balance = await api.query.system.account(account);
+  return getFormattedBalance(balance.toJSON()?.data.free, decimals);
+};
 
 const PolkadotBalance: FC<Props> = ({
   sourceAccount,
@@ -21,110 +30,122 @@ const PolkadotBalance: FC<Props> = ({
   destination,
   beneficiary,
   handleSufficientTokens,
+  handleTopUpCheck,
 }) => {
-  const [context] = useSnowbridgeContext();
+  const context = useAtomValue(snowbridgeContextAtom);
   const [balanceData, setBalanceData] = useState({
-    switchBalance: "0",
-    switchSymbol: "",
+    destinationBalance: "0",
+    destinationSymbol: "",
     sourceBalance: "0",
     sourceSymbol: "",
   });
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorInfo | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      if (!context) return;
+  const checkXcmFee = useCallback(async () => {
+    if (!context || source.id === "assethub" || source.id === destination.id)
+      return;
+
+    try {
+      const { switchPair } = parachainConfigs[source.name];
+      const api = context.polkadot.api.parachains[source.paraInfo?.paraId!];
+      const { xcmFee } = switchPair[0];
+      const formattedFee = getFormattedBalance(xcmFee.amount, xcmFee.decimals);
+
+      const fungibleBalance = await api.query.fungibles.account(
+        switchPair[0].xcmFee.remoteXcmFee.V4.id,
+        sourceAccount,
+      );
+      const xcmBalance = getFormattedBalance(
+        fungibleBalance.isEmpty ? 0 : fungibleBalance.toJSON()!.balance,
+        xcmFee.decimals,
+      );
+      handleTopUpCheck(xcmBalance <= formattedFee);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [context, destination.id, handleTopUpCheck, source, sourceAccount]);
+
+  const checkSufficientTokens = useCallback(async () => {
+    if (!context) return;
+
+    try {
       const api =
         destination.id === "assethub"
           ? context.polkadot.api.assetHub
           : context.polkadot.api.parachains[destination.paraInfo?.paraId!];
 
       const checkBalanceED = await api.query.system.account(beneficiary);
-      if (
-        // to do: handle the codec for this
-        checkBalanceED.toHuman()?.sufficients == 0 &&
-        checkBalanceED.toHuman()?.providers == 0
-      ) {
-        if (destination.id === "assethub") {
-          handleSufficientTokens(false);
-          return;
-        } else {
-          handleSufficientTokens(false);
-          return;
-        }
-      }
-      handleSufficientTokens(true);
-    })();
+      const sufficient =
+        checkBalanceED.sufficients == 0 && checkBalanceED.providers == 0;
+      handleSufficientTokens(!sufficient);
+    } catch (e) {
+      console.error(e);
+      setError({
+        title: "Unable to retrieve sufficients",
+        description:
+          "Unable to get the accounts data and see if there are any tokens",
+        errors: [],
+      });
+    }
   }, [context, destination, beneficiary, handleSufficientTokens]);
 
-  // to do: this should check the source and destinations balance of source account and the beneficary account
   const fetchBalanceData = useCallback(async () => {
-    if (!context || !source || !sourceAccount || !destination) return;
-    if (source.name === destination.name) return;
+    if (!context || source.name === destination.name) return;
 
     try {
-      const assetHubApi = context.polkadot.api.assetHub;
-      const parachainApi =
-        context.polkadot.api.parachains[source.paraInfo?.paraId!];
-      let switchBalance, switchSymbol, sourceBalance, sourceSymbol;
+      const sourceApi =
+        source.id === "assethub"
+          ? context.polkadot.api.assetHub
+          : context.polkadot.api.parachains[source.paraInfo?.paraId!];
+
+      const destinationApi =
+        destination.id === "assethub"
+          ? context.polkadot.api.assetHub
+          : context.polkadot.api.parachains[destination.paraInfo?.paraId!];
+
+      let destinationBalance, destinationSymbol, sourceBalance, sourceSymbol;
 
       if (source.id === "assethub") {
         const { switchPair } = parachainConfigs[destination.name];
-        const { tokenMetadata, remoteAssetId } = switchPair[0];
-
-        switchBalance = await fetchBalances(
-          assetHubApi,
-          remoteAssetId,
+        sourceBalance = await fetchForeignAssetsBalances(
+          sourceApi,
+          switchPair[0].remoteAssetId,
           sourceAccount,
-          tokenMetadata.decimals,
+          switchPair[0].tokenMetadata.decimals,
         );
-        switchSymbol = tokenMetadata.symbol;
-
-        const { tokenDecimal, tokenSymbol } =
-          await assets.parachainNativeAsset(assetHubApi);
-        const checkBalance =
-          await assetHubApi.query.system.account(sourceAccount);
-
-        sourceBalance = getFormattedBalance(
-          // to do: handle the codec for this
-          checkBalance.isEmpty ? 0 : checkBalance.toHuman()?.data.free,
-          tokenDecimal,
+        sourceSymbol = switchPair[0].tokenMetadata.symbol;
+        destinationBalance = await getBalanceData(
+          destinationApi,
+          sourceAccount,
+          switchPair[0].tokenMetadata.decimals,
         );
-        sourceSymbol = tokenSymbol;
+        destinationSymbol = switchPair[0].tokenMetadata.symbol;
       } else {
-        // Handle other parachains
-        const { switchPair } = parachainConfigs[source.name];
-        const { tokenMetadata, remoteAssetId } = switchPair[0];
-
-        // Fetch balance for other parachain
-        switchBalance = await fetchBalances(
-          assetHubApi,
-          remoteAssetId,
-          sourceAccount,
-          tokenMetadata.decimals,
-        );
-        switchSymbol = tokenMetadata.symbol;
-
         const { tokenDecimal, tokenSymbol } =
-          await assets.parachainNativeAsset(parachainApi);
-        const checkBalance =
-          await parachainApi.query.system.account(sourceAccount);
-        sourceBalance = getFormattedBalance(
-          checkBalance.toHuman()?.data.free,
+          await assets.parachainNativeAsset(sourceApi);
+        sourceBalance = await getBalanceData(
+          sourceApi,
+          sourceAccount,
           tokenDecimal,
         );
         sourceSymbol = tokenSymbol;
+        const { switchPair } = parachainConfigs[source.name];
+        destinationBalance = await fetchForeignAssetsBalances(
+          destinationApi,
+          switchPair[0].remoteAssetId,
+          sourceAccount,
+          switchPair[0].tokenMetadata.decimals,
+        );
+        destinationSymbol = switchPair[0].tokenMetadata.symbol;
       }
 
       setBalanceData({
-        switchBalance,
-        switchSymbol,
+        destinationBalance,
+        destinationSymbol,
         sourceBalance,
         sourceSymbol,
       });
-
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -133,30 +154,15 @@ const PolkadotBalance: FC<Props> = ({
         description: "Could not fetch balance.",
         errors: [],
       });
-      setBalanceData({
-        switchBalance: "0",
-        switchSymbol: "",
-        sourceBalance: "0",
-        sourceSymbol: "",
-      });
       setLoading(false);
     }
   }, [context, source, sourceAccount, destination]);
 
   useEffect(() => {
+    checkXcmFee();
     fetchBalanceData();
-
-    return () => {
-      setBalanceData({
-        switchBalance: "0",
-        switchSymbol: "",
-        sourceBalance: "0",
-        sourceSymbol: "",
-      });
-      setError(null);
-      setLoading(true);
-    };
-  }, [fetchBalanceData]);
+    checkSufficientTokens();
+  }, [checkXcmFee, fetchBalanceData, checkSufficientTokens]);
 
   if (loading) {
     return (
@@ -181,8 +187,8 @@ const PolkadotBalance: FC<Props> = ({
         {balanceData.sourceSymbol}
       </div>
       <div className="text-sm text-right text-muted-foreground px-1">
-        {destination.name} Balance: {balanceData.switchBalance}{" "}
-        {balanceData.switchSymbol}
+        {destination.name} Balance: {balanceData.destinationBalance}{" "}
+        {balanceData.destinationSymbol}
       </div>
     </>
   );

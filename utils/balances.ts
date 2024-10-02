@@ -99,19 +99,19 @@ export function getFormattedBalance(balance: any, decimals: number) {
     displayDecimals: 3,
   });
 }
-export async function fetchBalances(
+export async function fetchForeignAssetsBalances(
   api: ApiPromise,
   remoteAssetId: any,
   sourceAccount: string,
   decimals: number,
 ) {
-  const fungibleBalance = await api.query.foreignAssets.account(
+  const foreignAssets = await api.query.foreignAssets.account(
     remoteAssetId,
     sourceAccount,
   );
 
   return getFormattedBalance(
-    fungibleBalance.isEmpty ? 0 : fungibleBalance?.toHuman()?.balance,
+    foreignAssets.isEmpty ? 0 : foreignAssets?.toJSON()?.balance,
     decimals,
   );
 }
