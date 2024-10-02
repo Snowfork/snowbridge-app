@@ -68,7 +68,14 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     etherscan: "https://sepolia.etherscan.io/",
     subscan_ah: "https://assethub-rococo.subscan.io/",
     subscan_bh: "https://bridgehub-rococo.subscan.io/",
-    subscan_kilt: "https://spiritnet.subscan.io/",
+    subscan_kilt: "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frilt.kilt.io/",
+  },
+  paseo_sepolia: {
+    etherscan: "https://sepolia.etherscan.io/",
+    subscan_ah: "https://assethub-paseo.subscan.io/",
+    subscan_bh: "https://bridgehub-paseo.subscan.io/",
+    subscan_kilt:
+      "https://polkadot.js.org/apps/?rpc=wss://peregrine.kilt.io/parachain-public-ws/",
   },
   polkadot_mainnet: {
     etherscan: "https://etherscan.io/",
