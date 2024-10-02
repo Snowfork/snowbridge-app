@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -172,12 +173,17 @@ export const TopUpXcmFee: FC<Props> = ({
           <DialogHeader>
             <DialogTitle>XCM Fee Transfer</DialogTitle>
           </DialogHeader>
-          <>
-            Balance too low for XCM transaction. Send funds from source account
-            to the beneficiary account
-          </>
-          <>Selected Account {sourceAccount}</>
-          <>Selected Beneficiary {beneficiary}</>
+          <p>
+            Not enough {switchPair ? switchPair[0].xcmFee.symbol : null} for XCM
+            transaction.
+          </p>
+          <p>Send required XCM funds from source account to the beneficiary</p>
+          <DialogDescription className="flex items-center py-2">
+            Selected Account: {sourceAccount}
+          </DialogDescription>
+          <DialogDescription className="flex items-center py-2">
+            Selected Beneficiary: {beneficiary}
+          </DialogDescription>
           <Input
             id="amountInput"
             type="text"
@@ -185,10 +191,11 @@ export const TopUpXcmFee: FC<Props> = ({
             placeholder={xcmFee ?? "0"}
             onChange={(e) => setAmountInput(e.target.value)}
           />
-          <p>
+          <DialogDescription className="flex items-center">
             Current XCM Fee: {xcmFee}{" "}
             {switchPair ? switchPair[0].xcmFee.symbol : null}
-          </p>
+          </DialogDescription>
+
           <DialogFooter>
             <Button
               className="w-full my-8"
