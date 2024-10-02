@@ -200,6 +200,7 @@ export function onSubmit({
               success: true,
             },
           };
+          console.log(result);
           break;
         }
         case "ethereum": {
@@ -232,6 +233,7 @@ export function onSubmit({
                 destination.paraInfo.skipExistentialDepositCheck,
             },
           );
+          console.log(plan);
           if (plan.failure) {
             track("Plan Failed", {
               ...data,
@@ -280,6 +282,7 @@ export function onSubmit({
               parentBeaconSlot: 0,
             },
           };
+          console.log(result);
           break;
         }
         default:
