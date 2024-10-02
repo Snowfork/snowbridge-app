@@ -368,7 +368,7 @@ export const SwitchComponent: FC = () => {
                   beneficiary={beneficiary}
                   destination={destination}
                   sufficientTokenAvailable={sufficientTokenAvailable}
-                  xcmFee={""}
+                  polkadotAccounts={polkadotAccounts!}
                 />
               ) : (
                 <Button
