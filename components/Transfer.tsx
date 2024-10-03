@@ -15,21 +15,16 @@ import {
 } from "@/store/snowbridge";
 import { transfersPendingLocalAtom } from "@/store/transferHistory";
 import { parseAmount, updateBalance } from "@/utils/balances";
+import { doApproveSpend } from "@/utils/doApproveSpend";
+import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
 import { errorMessage } from "@/utils/errorMessage";
 import { formatBalance } from "@/utils/formatting";
 import { formSchema } from "@/utils/formSchema";
 import { onSubmit } from "@/utils/onSubmit";
 import { AccountInfo, ErrorInfo, FormData } from "@/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Context,
-  assets,
-  environment,
-  toEthereum,
-  toPolkadot,
-} from "@snowbridge/api";
+import { assets, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
-import { BrowserProvider } from "ethers";
 import { useAtomValue, useSetAtom } from "jotai";
 import { LucideHardHat } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -68,8 +63,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
-import { doApproveSpend } from "@/utils/doApproveSpend";
 
 export const validateOFAC = async (
   data: FormData,
