@@ -167,9 +167,15 @@ const PolkadotBalance: FC<Props> = ({
 
   useEffect(() => {
     checkXcmFee();
+  }, [checkXcmFee]);
+
+  useEffect(() => {
     fetchBalanceData();
+  }, [fetchBalanceData]);
+
+  useEffect(() => {
     checkSufficientTokens();
-  }, [checkXcmFee, fetchBalanceData, checkSufficientTokens]);
+  }, [checkSufficientTokens]);
 
   if (loading) {
     return (
