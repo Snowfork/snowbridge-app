@@ -170,7 +170,8 @@ export const SwitchComponent: FC = () => {
   }, [context, beneficiary, source, destination, sourceAccount, token, amount]);
 
   useEffect(() => {
-    handleTransaction();
+    const timeout = setTimeout(handleTransaction, 1000);
+    return () => clearTimeout(timeout);
   }, [handleTransaction]);
 
   const handleSufficientTokens = (result: boolean) => {
