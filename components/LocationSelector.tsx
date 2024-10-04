@@ -1,5 +1,5 @@
 // SourceDestinationSelector.tsx
-import { FC, useEffect } from "react";
+import { FC, useEffect, useMemo } from "react";
 import {
   Select,
   SelectContent,
@@ -33,16 +33,16 @@ export const LocationSelector: FC<Props> = ({
   setTokenSymbol,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
+  const newDestinationId = useMemo(() => {
+    return source.destinationIds.find((x) => x !== "ethereum");
+  }, [source.destinationIds]);
+  const selectedDestination = useMemo(() => {
+    return filteredLocations.find((v) => v.id === newDestinationId);
+  }, [filteredLocations, newDestinationId]);
 
   useEffect(() => {
     if (!context || !source || source.destinationIds.length === 0) return;
 
-    const newDestinationId = source.destinationIds.filter(
-      (x) => x !== "ethereum",
-    )[0];
-    const selectedDestination = filteredLocations.find(
-      (v) => v.id === newDestinationId,
-    );
     const currentDestination = form.getValues("destination");
 
     if (currentDestination?.id !== newDestinationId && selectedDestination) {
