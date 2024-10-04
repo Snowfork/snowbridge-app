@@ -3,6 +3,7 @@ import {
   ethereumAccountsAtom,
   ethereumChainIdAtom,
   windowEthereumAtom,
+  windowEthereumErrorAtom,
 } from "@/store/ethereum";
 import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 import { useAtomValue, useAtom } from "jotai";
@@ -10,6 +11,7 @@ import { useEffect } from "react";
 
 export const useConnectEthereumWallet = () => {
   const windowEthereum = useAtomValue(windowEthereumAtom);
+  const windowEthereumError = useAtomValue(windowEthereumErrorAtom);
   const [ethereumAccount, setEthereumAccount] = useAtom(ethereumAccountAtom);
   const [ethereumAccounts, setEthereumAccounts] = useAtom(ethereumAccountsAtom);
   const [ethereumChainId, setEthereumChainId] = useAtom(ethereumChainIdAtom);
@@ -21,7 +23,8 @@ export const useConnectEthereumWallet = () => {
       !isConnected ||
       address === undefined ||
       status === "disconnected" ||
-      windowEthereum === null
+      windowEthereum === null ||
+      windowEthereumError !== null
     ) {
       setEthereumAccount(null);
       setEthereumAccounts([]);
@@ -48,6 +51,7 @@ export const useConnectEthereumWallet = () => {
       });
   }, [
     address,
+    windowEthereumError,
     chainId,
     isConnected,
     status,

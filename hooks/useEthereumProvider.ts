@@ -2,6 +2,7 @@ import { initializeWeb3Modal } from "@/lib/client/web3modal";
 import {
   ethersProviderAtom,
   windowEthereumAtom,
+  windowEthereumErrorAtom,
   windowEthereumTypeAtom,
 } from "@/store/ethereum";
 import {
@@ -16,6 +17,9 @@ export function useEthereumProvider() {
   initializeWeb3Modal();
 
   const [ethereumProvider, setEthereumProvider] = useAtom(windowEthereumAtom);
+  const [ethereumProviderError, setEthereumProviderError] = useAtom(
+    windowEthereumErrorAtom,
+  );
   const [ethereumProviderType, setEthereumProviderType] = useAtom(
     windowEthereumTypeAtom,
   );
@@ -24,7 +28,6 @@ export function useEthereumProvider() {
   const { error } = useWeb3ModalError();
 
   useEffect(() => {
-    console.log(error);
     if (walletProvider !== undefined && error === undefined) {
       setEthersProvider(new BrowserProvider(walletProvider));
       setEthereumProvider(walletProvider);
@@ -34,6 +37,16 @@ export function useEthereumProvider() {
       setEthereumProvider(null);
       setEthereumProviderType(null);
     }
+
+    if (typeof error === "string" || error instanceof String) {
+      setEthereumProviderError((error as string) ?? null);
+    }
+    if (error !== undefined && "message" in (error as any)) {
+      setEthereumProviderError((error as any).message);
+    }
+    if (error !== undefined) {
+      console.error(error);
+    }
   }, [
     error,
     walletProvider,
@@ -41,11 +54,12 @@ export function useEthereumProvider() {
     setEthereumProvider,
     setEthersProvider,
     setEthereumProviderType,
+    setEthereumProviderError,
   ]);
   return {
     ethereum: ethereumProvider,
     ethereumType: ethereumProviderType,
     ethers: ethersProvider,
-    error,
+    error: ethereumProviderError,
   };
 }

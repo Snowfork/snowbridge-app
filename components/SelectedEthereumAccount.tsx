@@ -3,16 +3,14 @@
 import { cn } from "@/lib/utils";
 import { trimAccount } from "@/utils/formatting";
 import { track } from "@vercel/analytics/react";
-import { FC, useState } from "react";
+import { FC } from "react";
 import { ErrorDialog } from "./ErrorDialog";
 import { Button } from "./ui/button";
-import {
-  useSwitchNetwork,
-  useWeb3Modal,
-  useWeb3ModalError,
-} from "@web3modal/ethers/react";
+import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
 import { getEnvironment } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
+import { windowEthereumErrorAtom } from "@/store/ethereum";
+import { useAtom } from "jotai";
 
 export type SelectedEthereumWalletProps = {
   className?: string;
@@ -26,16 +24,9 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const { account, chainId } = useConnectEthereumWallet();
   const { switchNetwork } = useSwitchNetwork();
   const { open } = useWeb3Modal();
-  const { error } = useWeb3ModalError();
-
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  if (error) {
-    console.error(error);
-    setErrorMessage(
-      "There was an error trying to access your wallet. Are you signed in?",
-    );
-  }
+  const [windowEthereumError, setWindowEthereumError] = useAtom(
+    windowEthereumErrorAtom,
+  );
 
   if (account === null) {
     return (
@@ -50,6 +41,15 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
         >
           Connect Ethereum
         </Button>
+        <ErrorDialog
+          open={windowEthereumError !== null}
+          dismiss={() => {
+            console.log(windowEthereumError);
+            setWindowEthereumError(null);
+          }}
+          title="Ethereum Wallet Error"
+          description={(windowEthereumError ?? "Unknown Error").toString()}
+        />
       </>
     );
   }
@@ -70,6 +70,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
       </>
     );
   }
+
   return (
     <>
       <div
@@ -84,11 +85,6 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
         </pre>
         <pre className="w-auto hidden md:inline">{account}</pre>
       </div>
-      <ErrorDialog
-        open={errorMessage !== null}
-        title="Ethereum Wallet Error"
-        description={errorMessage || "Unknown Error."}
-      />
     </>
   );
 };
