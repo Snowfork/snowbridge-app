@@ -40,6 +40,8 @@ import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
+import { windowEthereumTypeAtom } from "@/store/ethereum";
+import { useWeb3Modal } from "@web3modal/ethers/react";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
@@ -94,9 +96,22 @@ export const Menu: FC = () => {
   };
 
   const EthereumWallet = () => {
+    const walletType = useAtomValue(windowEthereumTypeAtom);
+    const { open } = useWeb3Modal();
     return (
       <>
         <h1 className="font-semibold py-2">Ethereum</h1>
+        <p className="text-xs">
+          Wallet:{" "}
+          <Button
+            className="w-full"
+            variant="outline"
+            onClick={async () => await open({ view: "Connect" })}
+          >
+            {walletType ?? "Unknown"}
+          </Button>{" "}
+        </p>
+        <p className="text-xs">Account:</p>
         <SelectedEthereumWallet className="text-sm" walletChars={24} />
       </>
     );
