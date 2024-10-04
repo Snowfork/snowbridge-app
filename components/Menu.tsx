@@ -42,6 +42,7 @@ import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { windowEthereumTypeAtom } from "@/store/ethereum";
 import { useWeb3Modal } from "@web3modal/ethers/react";
+import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
@@ -96,22 +97,25 @@ export const Menu: FC = () => {
   };
 
   const EthereumWallet = () => {
+    const { account } = useConnectEthereumWallet();
     const walletType = useAtomValue(windowEthereumTypeAtom);
     const { open } = useWeb3Modal();
     return (
       <>
-        <h1 className="font-semibold py-2">Ethereum</h1>
-        <p className="text-xs">
-          Wallet:{" "}
-          <Button
-            className="w-full"
-            variant="outline"
-            onClick={async () => await open({ view: "Connect" })}
-          >
-            {walletType ?? "Unknown"}
-          </Button>{" "}
-        </p>
-        <p className="text-xs">Account:</p>
+        <div className={account === null ? "hidden" : ""}>
+          <h1 className="font-semibold py-2">Ethereum</h1>
+          <p className="text-xs">
+            Wallet:{" "}
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={async () => await open({ view: "Connect" })}
+            >
+              {walletType ?? "Unknown"}
+            </Button>{" "}
+          </p>
+          <p className="text-xs">Account:</p>
+        </div>
         <SelectedEthereumWallet className="text-sm" walletChars={24} />
       </>
     );

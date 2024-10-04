@@ -78,7 +78,6 @@ export const initializeWeb3Modal = () => {
     chains: [network],
     projectId: walletConnectProjectId(),
     themeMode: "light",
-    hasMultipleAddresses: true,
   });
   initialized = true;
   console.log("Web3modal initialized.");

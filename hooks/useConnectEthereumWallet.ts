@@ -17,33 +17,35 @@ export const useConnectEthereumWallet = () => {
   const { address, isConnected, status, chainId } = useWeb3ModalAccount();
 
   useEffect(() => {
-    if (windowEthereum !== null) {
-      windowEthereum
-        .request({
-          method: "eth_requestAccounts",
-        })
-        .then((accounts) => {
-          if (Array.isArray(accounts) && accounts.length > 0) {
-            setEthereumAccount(accounts[0]);
-            setEthereumAccounts(accounts);
-          }
-
-          if (
-            !isConnected ||
-            address === undefined ||
-            status === "disconnected"
-          ) {
-            return;
-          }
-
-          if (address !== undefined) {
-            setEthereumAccount(address);
-          }
-          if (chainId !== undefined) {
-            setEthereumChainId(chainId);
-          }
-        });
+    if (
+      !isConnected ||
+      address === undefined ||
+      status === "disconnected" ||
+      windowEthereum === null
+    ) {
+      setEthereumAccount(null);
+      setEthereumAccounts([]);
+      setEthereumChainId(null);
+      return;
     }
+
+    windowEthereum
+      .request({
+        method: "eth_requestAccounts",
+      })
+      .then((accounts) => {
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          setEthereumAccount(accounts[0]);
+          setEthereumAccounts(accounts);
+        }
+
+        if (address !== undefined) {
+          setEthereumAccount(address);
+        }
+        if (chainId !== undefined) {
+          setEthereumChainId(chainId);
+        }
+      });
   }, [
     address,
     chainId,

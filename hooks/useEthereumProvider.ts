@@ -20,11 +20,12 @@ export function useEthereumProvider() {
   const { walletProvider, walletProviderType } = useWeb3ModalProvider();
 
   useEffect(() => {
+    setEthereumProvider(walletProvider ?? null);
+    setEthereumProviderType(walletProviderType ?? null);
     if (walletProvider !== undefined) {
-      setEthereumProvider(walletProvider);
-      setEthereumProviderType(walletProviderType ?? null);
-      const browserProvider = new BrowserProvider(walletProvider);
-      setEthersProvider(browserProvider);
+      setEthersProvider(new BrowserProvider(walletProvider));
+    } else {
+      setEthersProvider(null);
     }
   }, [
     walletProvider,
