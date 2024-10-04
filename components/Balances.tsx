@@ -3,6 +3,7 @@ import { fetchForeignAssetsBalances } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
+import { ApiPromise } from "@polkadot/api";
 import { assets, environment } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import React, { useState, useEffect, useCallback, FC } from "react";
@@ -17,8 +18,13 @@ interface Props {
 }
 
 // Utility function to query balances
-const getBalanceData = async (api: any, account: string, decimals: number) => {
+const getBalanceData = async (
+  api: ApiPromise,
+  account: string,
+  decimals: number,
+) => {
   const balance = await api.query.system.account(account);
+
   return formatBalance({
     number: balance.data.free.toBigInt(),
     decimals,
@@ -67,15 +73,23 @@ const PolkadotBalance: FC<Props> = ({
         decimals: xcmFee.decimals,
         displayDecimals: 3,
       });
+      setError(null);
       handleTopUpCheck(xcmBalance >= formattedFee);
     } catch (e) {
       console.error(e);
     }
-  }, [context, destination.id, handleTopUpCheck, source, sourceAccount]);
+  }, [
+    context,
+    destination.id,
+    handleTopUpCheck,
+    source.id,
+    source.name,
+    source.paraInfo?.paraId,
+    sourceAccount,
+  ]);
 
   const checkSufficientTokens = useCallback(async () => {
     if (!context) return;
-
     try {
       const api =
         destination.id === "assethub"
@@ -86,6 +100,7 @@ const PolkadotBalance: FC<Props> = ({
       const sufficient =
         checkBalanceED.sufficients == 0 && checkBalanceED.providers == 0;
       handleSufficientTokens(!sufficient);
+      setError(null);
     } catch (e) {
       console.error(e);
       setError({
@@ -95,7 +110,13 @@ const PolkadotBalance: FC<Props> = ({
         errors: [],
       });
     }
-  }, [context, destination, beneficiary, handleSufficientTokens]);
+  }, [
+    beneficiary,
+    context,
+    destination.id,
+    destination.paraInfo?.paraId,
+    handleSufficientTokens,
+  ]);
 
   const fetchBalanceData = useCallback(async () => {
     if (!context || source.name === destination.name) return;
@@ -153,6 +174,7 @@ const PolkadotBalance: FC<Props> = ({
         sourceBalance,
         sourceSymbol,
       });
+      setError(null);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -163,7 +185,16 @@ const PolkadotBalance: FC<Props> = ({
       });
       setLoading(false);
     }
-  }, [context, source, sourceAccount, destination]);
+  }, [
+    context,
+    destination.id,
+    destination.name,
+    destination.paraInfo?.paraId,
+    source.id,
+    source.name,
+    source.paraInfo?.paraId,
+    sourceAccount,
+  ]);
 
   useEffect(() => {
     checkXcmFee();
