@@ -61,7 +61,10 @@ export const SwitchComponent: FC = () => {
   const [busyMessage, setBusyMessage] = useState("");
   const [sufficientTokenAvailable, setSufficientTokenAvailable] =
     useState(true);
-  const [topUpCheck, setTopUpCheck] = useState(false);
+  const [topUpCheck, setTopUpCheck] = useState({
+    result: false,
+    xcmBalance: "",
+  });
   const [transaction, setTransaction] = useState<SubmittableExtrinsic<
     "promise",
     ISubmittableResult
@@ -190,9 +193,12 @@ export const SwitchComponent: FC = () => {
   const handleSufficientTokens = (result: boolean) => {
     setSufficientTokenAvailable(result);
   };
-  const handleTopUpCheck = (result: boolean) => {
-    setTopUpCheck(result);
-  };
+  const handleTopUpCheck = useCallback(
+    (result: boolean, xcmBalance: string) => {
+      setTopUpCheck({ result, xcmBalance });
+    },
+    [],
+  );
   const onSubmit = useCallback(async () => {
     if (!transaction || !context) {
       return;
@@ -392,8 +398,7 @@ export const SwitchComponent: FC = () => {
                 Transfer Fee: {feeDisplay}
               </div>
               <br />
-              {/* Checks the required XCM fee balance on the source account is too low, if too low it gives an option to top the XCM fee from source account*/}
-              {topUpCheck ? (
+              {!topUpCheck.result && source.id !== "assethub" ? (
                 <TopUpXcmFee
                   sourceAccount={sourceAccount}
                   source={source}
@@ -401,6 +406,8 @@ export const SwitchComponent: FC = () => {
                   destination={destination}
                   sufficientTokenAvailable={sufficientTokenAvailable}
                   polkadotAccounts={polkadotAccounts!}
+                  xcmBalance={topUpCheck.xcmBalance}
+                  formData={form.getValues()}
                 />
               ) : (
                 <Button
