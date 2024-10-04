@@ -30,10 +30,14 @@ export const useEthereumProvider = () => {
   const setEthereumChainId = useSetAtom(ethereumChainIdAtom);
 
   useEffect(() => {
-    if (ethereumProvider != null) return;
+    if (ethereumProvider != null) {
+      return;
+    }
     const init = async (): Promise<void> => {
       const provider = await getEthereumProvider();
-      if (provider == null) return;
+      if (provider == null) {
+        return;
+      }
       const updateAccounts = (accounts: string[]): void => {
         setEthereumAccount(accounts[0] ?? null);
         setEthereumAccounts(accounts);

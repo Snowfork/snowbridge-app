@@ -10,7 +10,9 @@ const polkadotAccountAddressAtom = atomWithStorage<string | null>(
 export const polkadotAccountAtom = atom(
   (get) => {
     const polkadotAccountAddress = get(polkadotAccountAddressAtom);
-    if (polkadotAccountAddress == null) return null;
+    if (polkadotAccountAddress == null) {
+      return null;
+    }
     return (
       get(polkadotAccountsAtom)?.find(
         (account) => account.address === get(polkadotAccountAddressAtom),

@@ -24,7 +24,9 @@ export function formatBalance({
 }): string {
   const replaceZeros = (str: string): string => {
     const newStr = str.replace(/(\.0+)$/, "").replace(/(0+)$/, "");
-    if (newStr !== "") return newStr;
+    if (newStr !== "") {
+      return newStr;
+    }
     return "0";
   };
 
@@ -42,8 +44,12 @@ export function formatTime(time: number): string {
   let minutes = Math.floor((time % 3600) / 60);
   let seconds = Math.floor(time % 60);
   let fmt = "";
-  if (hours > 0) fmt += `${hours}h `;
-  if (minutes > 0) fmt += `${minutes}m `;
+  if (hours > 0) {
+    fmt += `${hours}h `;
+  }
+  if (minutes > 0) {
+    fmt += `${minutes}m `;
+  }
   fmt += `${seconds}s`;
   return fmt;
 }

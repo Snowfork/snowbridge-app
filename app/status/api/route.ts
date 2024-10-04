@@ -19,7 +19,9 @@ const CACHE_REVALIDATE_IN_SECONDS = 60; // 1 minutes
 
 let context: Context | null = null;
 async function getContext() {
-  if (context) return context;
+  if (context) {
+    return context;
+  }
   const env = getEnvironment();
 
   const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;

@@ -39,7 +39,9 @@ export const useConnectEthereumWallet = (): [
       }
     } catch (err) {
       let message = "Unknown Error";
-      if (err instanceof Error) message = err.message;
+      if (err instanceof Error) {
+        message = err.message;
+      }
       setError(message);
     }
     setLoading(false);

@@ -15,7 +15,9 @@ const StatusCard = () => {
   const { data: bridgeStatus } = useBridgeStatus();
   const pathname = usePathname();
 
-  if (bridgeStatus == null) return <Loading />;
+  if (bridgeStatus == null) {
+    return <Loading />;
+  }
 
   const toPolkadotStyle =
     bridgeStatus.summary.toPolkadotOperatingMode === "Normal"

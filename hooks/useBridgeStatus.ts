@@ -20,7 +20,9 @@ const fetchStatus = async ([env, context]: [
 ]): Promise<BridgeStatus | null> => {
   if (process.env.NEXT_PUBLIC_USE_CLIENT_SIDE_HISTORY_FETCH === "true") {
     try {
-      if (context === null) return null;
+      if (context === null) {
+        return null;
+      }
       return await getBridgeStatus(context, env);
     } catch (err) {
       console.error(err);

@@ -6,7 +6,8 @@ Perform token transfers using Snowbridge.
 
 ### Configure
 
-On the `.env`-file, configure of your project by assigning the values that fit your needs.
+Copy the `.env.example`-file into an `.env`-file on the same scope.
+Then, on the `.env`-file, configure of your project by assigning the values that fit your needs.
 
 **NEXT_PUBLIC_SNOWBRIDGE_ENV** accepts:
 
@@ -19,7 +20,7 @@ On the `.env`-file, configure of your project by assigning the values that fit y
 NEXT_PUBLIC_SNOWBRIDGE_ENV=rococo_sepolia
 ```
 
-If you are not using local chains, create an `.env.local` to set the required A.P.I. keys.
+If you are not using local chains, set the required A.P.I. keys.
 
 ```env
 NEXT_PUBLIC_ALCHEMY_KEY=...
