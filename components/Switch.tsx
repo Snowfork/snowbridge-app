@@ -76,10 +76,13 @@ export const SwitchComponent: FC = () => {
     [snowbridgeEnvironment],
   );
 
-  const initialDestination = useMemo(
-    () => filteredLocations.find((v) => v.id === "KILT"),
-    [filteredLocations],
-  );
+  const initialDestination = useMemo(() => {
+    return (
+      filteredLocations.find((location) => {
+        return parachainConfigs[location.id];
+      }) || filteredLocations[0]
+    );
+  }, [filteredLocations]);
 
   const form: UseFormReturn<FormDataSwitch> = useForm<
     z.infer<typeof formSchemaSwitch>
@@ -87,8 +90,7 @@ export const SwitchComponent: FC = () => {
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
       source: filteredLocations.find((v) => v.id === "assethub"),
-      // to do: handle this better
-      destination: initialDestination ?? "",
+      destination: initialDestination,
       token: initialDestination?.erc20tokensReceivable[0].id,
       beneficiary: polkadotAccount?.address ?? "",
       sourceAccount: polkadotAccount?.address ?? "",
@@ -112,6 +114,10 @@ export const SwitchComponent: FC = () => {
       })) || [],
     [polkadotAccounts, destination.type],
   );
+  const amountInSmallestUnit = useMemo(() => {
+    if (!amount) return null;
+    return parseUnits(amount, source.paraInfo?.decimals);
+  }, [amount, source.paraInfo?.decimals]);
 
   const handleTransaction = useCallback(async () => {
     if (
@@ -125,7 +131,6 @@ export const SwitchComponent: FC = () => {
       return;
     }
 
-    const amountInSmallestUnit = parseUnits(amount, source.paraInfo?.decimals);
     if (!amountInSmallestUnit) {
       return;
     }
@@ -167,7 +172,15 @@ export const SwitchComponent: FC = () => {
         createTransaction,
       });
     }
-  }, [context, beneficiary, source, destination, sourceAccount, token, amount]);
+  }, [
+    context,
+    beneficiary,
+    source,
+    destination,
+    sourceAccount,
+    token,
+    amountInSmallestUnit,
+  ]);
 
   useEffect(() => {
     const timeout = setTimeout(handleTransaction, 1000);
@@ -189,23 +202,24 @@ export const SwitchComponent: FC = () => {
     try {
       if (destination.id === "assethub" && !sufficientTokenAvailable) {
         setError({
-          title: "Not Enough Sufficient tokens",
-          description: "Please follow the sufficient or existential deposit",
+          title: "Insufficient Tokens.",
+          description:
+            "Your account on Asset Hub does not have the required tokens. Please ensure you meet the sufficient or existential deposit requirements.",
           errors: [
             {
               kind: "toPolkadot",
               code: toPolkadot.SendValidationCode.BeneficiaryAccountMissing,
               message:
-                "Asset Hub requires that you hold specific tokens in order for an account to be active.",
+                "To complete the transaction, your Asset Hub account must hold specific tokens. Without these, the account cannot be activated or used.",
             },
           ],
         });
         return;
       } else if (!sufficientTokenAvailable) {
         setError({
-          title: "Not Enough Sufficient tokens",
+          title: "Insufficient Tokens.",
           description:
-            "Please follow the sufficient or existential deposit, make sure the beneficiary has enough funds on the destination account.",
+            "The beneficiary's account does not meet the sufficient or existential deposit requirements. Please ensure they have enough funds on the destination account to complete the transaction.",
           errors: [],
         });
         return;
@@ -229,6 +243,23 @@ export const SwitchComponent: FC = () => {
             duration: 60000,
             id: "transfer_success",
             description: "Token transfer was succesfully initiated.",
+            important: true,
+            action: {
+              label: "View",
+              onClick: () =>
+                router.push(
+                  `https://spiritnet.subscan.io/extrinsic/${result.txHash}`,
+                ),
+            },
+          });
+        } else if (result.isError) {
+          setBusyMessage("");
+          toast.info("Transfer unsuccessful", {
+            position: "bottom-center",
+            closeButton: true,
+            duration: 60000,
+            id: "transfer_success",
+            description: "Token transfer was unsuccesfully.",
             important: true,
             action: {
               label: "View",
