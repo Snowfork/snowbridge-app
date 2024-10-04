@@ -43,22 +43,22 @@ export const TopUpXcmFee: FC<Props> = ({
   const context = useAtomValue(snowbridgeContextAtom);
 
   const switchPair = useMemo(() => {
+    if (source.id === destination.id) return null;
     const config =
       source.id === "assethub"
         ? parachainConfigs[destination.name]
         : parachainConfigs[source.name];
     return config.switchPair;
-  }, [destination.name, source.id, source.name]);
+  }, [destination.id, destination.name, source.id, source.name]);
 
-  const xcmFee = useMemo(
-    () =>
-      formatBalance({
-        number: BigInt(switchPair[0].xcmFee.amount),
-        decimals: switchPair[0].xcmFee.decimals,
-        displayDecimals: 3,
-      }),
-    [switchPair],
-  );
+  const xcmFee = useMemo(() => {
+    if (!switchPair || !switchPair[0]) return null;
+    return formatBalance({
+      number: BigInt(switchPair[0].xcmFee.amount),
+      decimals: switchPair[0].xcmFee.decimals,
+      displayDecimals: 3,
+    });
+  }, [switchPair]);
 
   const [busyMessage, setBusyMessage] = useState("");
 
