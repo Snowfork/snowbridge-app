@@ -71,7 +71,16 @@ export const LocationSelector: FC<Props> = ({
         parachainConfigs[selectedDestination?.name || ""];
       setTokenSymbol(nativeTokenMetadata.symbol);
     }
-  }, [source, filteredLocations, form, context, setFeeDisplay, setTokenSymbol]);
+  }, [
+    source,
+    filteredLocations,
+    form,
+    context,
+    setFeeDisplay,
+    setTokenSymbol,
+    newDestinationId,
+    selectedDestination,
+  ]);
 
   return (
     <div className="grid grid-cols-2 space-x-2">
