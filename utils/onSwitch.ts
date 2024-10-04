@@ -16,7 +16,7 @@ export async function submitParachainToAssetHubTransfer({
   pallet,
   setError,
   setBusyMessage,
-  sendTransaction,
+  createTransaction,
 }: {
   context: Context | null;
   beneficiary: string;
@@ -26,7 +26,7 @@ export async function submitParachainToAssetHubTransfer({
   pallet: string;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
-  sendTransaction: (
+  createTransaction: (
     transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
     remoteXcmFees: string,
   ) => void;
@@ -61,7 +61,7 @@ export async function submitParachainToAssetHubTransfer({
     const transfer = parachainApi.tx[pallet].switch(amount, pathToBeneficiary);
     const transactionFee = await transfer.paymentInfo(sourceAccount);
 
-    sendTransaction(transfer, transactionFee.partialFee.toHuman());
+    createTransaction(transfer, transactionFee.partialFee.toHuman());
   } catch (err) {
     console.error(err);
     setBusyMessage("");
@@ -82,7 +82,7 @@ export async function submitAssetHubToParachainTransfer({
   sourceAccount,
   setError,
   setBusyMessage,
-  sendTransaction,
+  createTransaction,
 }: {
   context: Context | null;
   beneficiary: string;
@@ -92,7 +92,7 @@ export async function submitAssetHubToParachainTransfer({
   sourceAccount: string;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
-  sendTransaction: (
+  createTransaction: (
     transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
     remoteXcmFee: string,
   ) => void;
@@ -176,7 +176,7 @@ export async function submitAssetHubToParachainTransfer({
 
     const transactionFee = await transfer.paymentInfo(sourceAccount);
 
-    sendTransaction(transfer, transactionFee.partialFee.toHuman());
+    createTransaction(transfer, transactionFee.partialFee.toHuman());
   } catch (err) {
     console.error(err);
     setBusyMessage("");

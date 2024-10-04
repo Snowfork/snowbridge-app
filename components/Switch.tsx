@@ -129,7 +129,7 @@ export const SwitchComponent: FC = () => {
     if (!amountInSmallestUnit) {
       return;
     }
-    const sendTransaction = async (
+    const createTransaction = async (
       transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
       transactionFee: string,
     ) => {
@@ -150,7 +150,7 @@ export const SwitchComponent: FC = () => {
         sourceAccount,
         setError,
         setBusyMessage,
-        sendTransaction,
+        createTransaction,
       });
     } else {
       const { pallet } = parachainConfigs[source.name];
@@ -164,7 +164,7 @@ export const SwitchComponent: FC = () => {
         sourceAccount,
         setError,
         setBusyMessage,
-        sendTransaction,
+        createTransaction,
       });
     }
   }, [context, beneficiary, source, destination, sourceAccount, token, amount]);
