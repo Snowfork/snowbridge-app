@@ -20,7 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { assets, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useRouter } from "next/navigation";
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -63,9 +63,12 @@ import { updateBalance } from "@/utils/balances";
 import { parseUnits } from "ethers";
 import { doApproveSpend } from "@/utils/doApproveSpend";
 import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
-import { FormData, ErrorInfo, AccountInfo } from "@/utils/types";
+import { ErrorInfo, AccountInfo } from "@/utils/types";
 import { onSubmit } from "@/utils/onSubmit";
-import { filterParachainLocations } from "@/utils/parachainConfigs";
+import {
+  filterParachainLocations,
+  parachainConfigs,
+} from "@/utils/parachainConfigs";
 
 export const TransferComponent: FC = () => {
   const maintenance =
@@ -93,8 +96,9 @@ export const TransferForm: FC = () => {
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const appRouter = useRouter();
-  const filteredLocations = filterParachainLocations(
-    snowbridgeEnvironment.locations,
+  const filteredLocations = useMemo(
+    () => filterParachainLocations(snowbridgeEnvironment.locations),
+    [snowbridgeEnvironment.locations],
   );
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -581,7 +585,12 @@ export const TransferForm: FC = () => {
                           <SelectContent>
                             <SelectGroup>
                               {destinations
-                                .filter((val) => val.id !== "rilt")
+                                .filter(
+                                  (val) =>
+                                    !Object.keys(parachainConfigs).includes(
+                                      val.id,
+                                    ),
+                                )
                                 .map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
                                     {s.name}
