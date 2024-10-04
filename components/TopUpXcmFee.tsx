@@ -16,12 +16,14 @@ import { Input } from "./ui/input";
 import { ErrorInfo } from "@/utils/types";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { parachainConfigs, SwitchPair } from "@/utils/parachainConfigs";
+import { parachainConfigs } from "@/utils/parachainConfigs";
 
 import { parseUnits } from "ethers";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { formatBalance } from "@/utils/formatting";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface Props {
   sourceAccount: string;
@@ -41,6 +43,7 @@ export const TopUpXcmFee: FC<Props> = ({
   polkadotAccounts,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
+  const router = useRouter();
 
   const switchPair = useMemo(() => {
     if (source.id === destination.id) return null;
@@ -143,7 +146,26 @@ export const TopUpXcmFee: FC<Props> = ({
       setBusyMessage("Transaction in flight.");
 
       await tx.signAndSend(address, { signer }, (result) => {
-        result.isFinalized;
+        setBusyMessage("Currently in flight");
+
+        if (result.isFinalized) {
+          setBusyMessage("");
+          toast.info("Transfer Successful", {
+            position: "bottom-center",
+            closeButton: true,
+            duration: 60000,
+            id: "transfer_success",
+            description: "Token transfer was succesfully initiated.",
+            important: true,
+            action: {
+              label: "View",
+              onClick: () =>
+                router.push(
+                  `https://spiritnet.subscan.io/extrinsic/${result.txHash}`,
+                ),
+            },
+          });
+        }
       });
       setBusyMessage("");
     } catch (error) {
@@ -154,9 +176,11 @@ export const TopUpXcmFee: FC<Props> = ({
     amountInput,
     beneficiary,
     context,
-    destination,
+    destination.name,
     polkadotAccounts,
-    source,
+    router,
+    source.name,
+    source.paraInfo?.paraId,
     sourceAccount,
     sufficientTokenAvailable,
     switchPair,
