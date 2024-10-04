@@ -171,6 +171,11 @@ export const TopUpXcmFee: FC<Props> = ({
     } catch (error) {
       console.error(error);
       setBusyMessage("");
+      setError({
+        title: "Transaction Failed",
+        description: `Error occured while trying to send transaction.`,
+        errors: [],
+      });
     }
   }, [
     amountInput,
