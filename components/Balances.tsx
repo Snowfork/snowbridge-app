@@ -14,7 +14,7 @@ interface Props {
   destination: environment.TransferLocation;
   beneficiary: string;
   handleSufficientTokens: (result: boolean) => void;
-  handleTopUpCheck: (result: boolean) => void;
+  handleTopUpCheck: (result: boolean, xcmBalance: string) => void;
 }
 
 // Utility function to query balances
@@ -74,18 +74,18 @@ const PolkadotBalance: FC<Props> = ({
         displayDecimals: 3,
       });
       setError(null);
-      handleTopUpCheck(xcmBalance >= formattedFee);
+      handleTopUpCheck(formattedFee <= xcmBalance, xcmBalance);
     } catch (e) {
       console.error(e);
     }
   }, [
     context,
-    destination.id,
-    handleTopUpCheck,
     source.id,
     source.name,
     source.paraInfo?.paraId,
+    destination.id,
     sourceAccount,
+    handleTopUpCheck,
   ]);
 
   const checkSufficientTokens = useCallback(async () => {

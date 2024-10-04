@@ -13,7 +13,7 @@ import { Button } from "./ui/button";
 
 import { BusyDialog } from "./BusyDialog";
 import { Input } from "./ui/input";
-import { ErrorInfo } from "@/utils/types";
+import { ErrorInfo, FormDataSwitch, FormData } from "@/utils/types";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { parachainConfigs } from "@/utils/parachainConfigs";
@@ -24,6 +24,7 @@ import { WalletAccount } from "@talismn/connect-wallets";
 import { formatBalance } from "@/utils/formatting";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { SendErrorDialog } from "./SendErrorDialog";
 
 interface Props {
   sourceAccount: string;
@@ -32,6 +33,8 @@ interface Props {
   beneficiary: string;
   sufficientTokenAvailable: boolean;
   polkadotAccounts: WalletAccount[];
+  xcmBalance: string;
+  formData: FormData | FormDataSwitch;
 }
 
 export const TopUpXcmFee: FC<Props> = ({
@@ -41,6 +44,8 @@ export const TopUpXcmFee: FC<Props> = ({
   beneficiary,
   sufficientTokenAvailable,
   polkadotAccounts,
+  xcmBalance,
+  formData,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
   const router = useRouter();
@@ -74,7 +79,23 @@ export const TopUpXcmFee: FC<Props> = ({
 
     if (source.name === destination.name) return;
 
-    if (amountInput > xcmFee) return;
+    if (amountInput < xcmFee) {
+      setError({
+        title: "Not Enough to cover fees",
+        description: "The amount is too low to cover the XCM fees",
+        errors: [],
+      });
+      return;
+    }
+
+    if (xcmBalance < amountInput) {
+      setError({
+        title: "Balance too low",
+        description: "XCM Balance is too low for the amount specified",
+        errors: [],
+      });
+      return;
+    }
 
     try {
       if (!sufficientTokenAvailable) {
@@ -189,6 +210,7 @@ export const TopUpXcmFee: FC<Props> = ({
     sourceAccount,
     sufficientTokenAvailable,
     switchPair,
+    xcmBalance,
     xcmFee,
   ]);
 
@@ -209,6 +231,7 @@ export const TopUpXcmFee: FC<Props> = ({
           <p>Send required XCM funds from source account to the beneficiary</p>
           <DialogDescription className="flex items-center py-2">
             Selected Account: {sourceAccount}
+            XCM Fee Balance: {xcmBalance}
           </DialogDescription>
           <DialogDescription className="flex items-center py-2">
             Selected Beneficiary: {beneficiary}
@@ -240,6 +263,12 @@ export const TopUpXcmFee: FC<Props> = ({
         </DialogContent>
       </Dialog>
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
+      <SendErrorDialog
+        info={error}
+        formData={formData}
+        destination={destination}
+        dismiss={() => setError(null)}
+      />
     </>
   );
 };
