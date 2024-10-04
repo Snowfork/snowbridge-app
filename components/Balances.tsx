@@ -75,8 +75,14 @@ const PolkadotBalance: FC<Props> = ({
       });
       setError(null);
       handleTopUpCheck(formattedFee <= xcmBalance, xcmBalance);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
+      setError({
+        title: "Unable to retrieve XCM fee balance",
+        description:
+          "Unable to get the accounts data and see if there are any tokens for the XCM balance",
+        errors: [],
+      });
     }
   }, [
     context,
