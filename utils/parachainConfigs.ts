@@ -6,60 +6,70 @@ type SnowbridgeEnvironmentNames =
   | "polkadot_mainnet"
   | "paseo_sepolia";
 
-export type SwitchPair = Array<{
-  id: string;
-  tokenMetadata: {
-    symbol: string;
-    decimals: number;
-    address: string;
-    minimumTransferAmount: string;
-  };
-  xcmFee: {
-    symbol: string;
-    decimals: number;
-    locationId: string;
-    amount: string;
-    remoteXcmFee: {
-      V4: {
-        id: {
-          parents: number;
-          interior: any;
-        };
-        fun: {
-          Fungible: number;
-        };
+export type TokenMetadata = {
+  symbol: string;
+  decimals: number;
+  address: string;
+  minimumTransferAmount: string;
+};
+
+export type XcmFee = {
+  symbol: string;
+  decimals: number;
+  locationId: string;
+  amount: string;
+  remoteXcmFee: {
+    V4: {
+      id: {
+        parents: number;
+        interior: any;
+      };
+      fun: {
+        Fungible: number;
       };
     };
   };
-  remoteAssetId: {
-    parents: number;
-    interior: {
-      X2: (
-        | {
-            GlobalConsensus: {
-              Ethereum: {
-                chainId: string;
-              };
+};
+
+export type RemoteAssetId = {
+  parents: number;
+  interior: {
+    X2: (
+      | {
+          GlobalConsensus: {
+            Ethereum: {
+              chainId: string;
             };
-          }
-        | {
-            AccountKey20: {
-              network: null;
-              key: string;
-            };
-          }
-      )[];
-    };
+          };
+        }
+      | {
+          AccountKey20: {
+            network: null;
+            key: string;
+          };
+        }
+    )[];
   };
-  remoteReserveLocation: {
-    parents: number;
-    interior: {
-      X1: {
-        Parachain: number;
-      }[];
-    };
+};
+
+export type RemoteReserveLocation = {
+  parents: number;
+  interior: {
+    X1: {
+      Parachain: number;
+    }[];
   };
-}>;
+};
+
+export type SwitchPairEntry = {
+  id: string;
+  tokenMetadata: TokenMetadata;
+  xcmFee: XcmFee;
+  remoteAssetId: RemoteAssetId;
+  remoteReserveLocation: RemoteReserveLocation;
+};
+
+export type SwitchPair = SwitchPairEntry[];
 
 interface ParaConfig {
   name: string;
