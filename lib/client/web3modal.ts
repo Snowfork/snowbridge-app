@@ -1,14 +1,11 @@
 "use client";
 
-import { AppKit, CaipNetwork } from "@reown/appkit";
-import { createAppKit } from "@reown/appkit-ethers/react";
-import { allChains } from "@reown/appkit/networks";
 import { getEnvironment } from "@/lib/snowbridge";
 import { metadata } from "@/lib/metadata";
+import { createWeb3Modal, defaultConfig } from "@web3modal/ethers/react";
+import { Network } from "ethers";
 
-let modal: AppKit;
-
-export const walletConnectProjectId = () => {
+const walletConnectProjectId = () => {
   const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
 
   if (!projectId) {
@@ -18,12 +15,26 @@ export const walletConnectProjectId = () => {
   return projectId;
 };
 
-export const supportedEthNetworks = allChains.map((network) => ({
+export const supportedEthNetworks = [
+  {
+    chainId: 1,
+    name: "Ethereum",
+    currency: "ETH",
+    explorerUrl: "https://etherscan.io",
+  },
+  {
+    chainId: 11155111,
+    name: "Sepolia",
+    currency: "sepETH",
+    explorerUrl: "https://sepolia.etherscan.io",
+    rpcUrl: `https://rpc.walletconnect.org/v1/?chainId=eip155:11155111&projectId=${walletConnectProjectId()}`,
+  },
+].map((network) => ({
   ...network,
-  rpcUrl: `${network.rpcUrl}&projectId=${walletConnectProjectId()}`,
+  rpcUrl: `https://rpc.walletconnect.org/v1/?chainId=eip155:${network.chainId}&projectId=${walletConnectProjectId()}`,
 }));
 
-export function getEnvEthereumNetwork(): CaipNetwork {
+export function getEnvEthereumNetwork() {
   const env = getEnvironment();
   const network =
     supportedEthNetworks.find((n) => n.chainId === env.ethChainId) ?? null;
@@ -34,11 +45,11 @@ export function getEnvEthereumNetwork(): CaipNetwork {
   return network;
 }
 
-export const useWeb3Modal = () => {
-  if (modal) {
-    return modal;
+let initialized = false;
+export const initializeWeb3Modal = () => {
+  if (initialized) {
+    return;
   }
-
   const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
   if (!alchemyKey) {
     throw Error("NEXT_PUBLIC_ALCHEMY_KEY not specified.");
@@ -53,22 +64,22 @@ export const useWeb3Modal = () => {
     icons: [metadata.icon],
   };
 
-  //const ethersAdapter = new EthersAdapter();
-  modal = createAppKit({
-    //adapters: [ethersAdapter],
+  const ethersConfig = defaultConfig({
     metadata: web3meta,
-    networks: supportedEthNetworks,
-    defaultNetwork: network,
-    projectId: walletConnectProjectId(),
-    features: {
-      socials: false,
+    defaultChainId: network.chainId,
+    auth: {
       email: false,
-    },
-    themeMode: "light",
-    ethersConfig: {
-      metadata: web3meta,
+      socials: [],
     },
   });
 
-  return modal;
+  createWeb3Modal({
+    ethersConfig,
+    chains: [network],
+    projectId: walletConnectProjectId(),
+    themeMode: "light",
+    hasMultipleAddresses: true,
+  });
+  initialized = true;
+  console.log("Web3modal initialized.");
 };

@@ -53,15 +53,6 @@ importers:
       '@radix-ui/react-toggle':
         specifier: ^1.1.0
         version: 1.1.0(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@reown/appkit':
-        specifier: ^1.0.6
-        version: 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-adapter-ethers':
-        specifier: ^1.0.6
-        version: 1.0.6(@coinbase/wallet-sdk@4.0.3)(@ethersproject/sha2@5.7.0)(@types/react@18.3.11)(bufferutil@4.0.8)(ethers@6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-ethers':
-        specifier: ^1.0.6
-        version: 1.0.6(@ethersproject/sha2@5.7.0)(@types/react@18.3.11)(bufferutil@4.0.8)(ethers@6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)
       '@snowbridge/api':
         specifier: ^0.1.22
         version: 0.1.22(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.2))(typescript@5.6.2)(utf-8-validate@5.0.10)
@@ -86,6 +77,9 @@ importers:
       '@vercel/functions':
         specifier: ^1.4.1
         version: 1.4.1
+      '@web3modal/ethers':
+        specifier: ^5.1.11
+        version: 5.1.11(@types/react@18.3.11)(bufferutil@4.0.8)(ethers@6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)
       big.js:
         specifier: ^6.2.2
         version: 6.2.2
@@ -419,15 +413,6 @@ packages:
     resolution: {integrity: sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
-  '@ethersproject/bytes@5.7.0':
-    resolution: {integrity: sha512-nsbxwgFXWh9NyYWo+U8atvmMsSdKJprTcICAkvbBffT75qDocbuggBU0SJiVK2MuTrp0q+xvLkTnGMPK1+uA9A==}
-
-  '@ethersproject/logger@5.7.0':
-    resolution: {integrity: sha512-0odtFdXu/XHtjQXJYA3u9G0G8btm0ND5Cu8M7i5vhEcE8/HmF4Lbdqanwyv4uQTr2tx6b7fQRmgLrsnpQlmnig==}
-
-  '@ethersproject/sha2@5.7.0':
-    resolution: {integrity: sha512-gKlH42riwb3KYp0reLsFTokByAKoJdgFCwI+CCiX/k+Jm2mbNs6oOaCjYQSlI1+XBVejwH2KrmCbMAT/GnRDQw==}
-
   '@floating-ui/core@1.6.8':
     resolution: {integrity: sha512-7XJ9cPU+yI2QeLS+FCSlqNFZJq8arvswefkZrYI1yQBbftw6FyrZOxYSh+9S7z7TpeWlRt9zJ5IhM1WIL334jA==}
 
@@ -563,8 +548,36 @@ packages:
   '@lit-labs/ssr-dom-shim@1.2.1':
     resolution: {integrity: sha512-wx4aBmgeGvFmOKucFKY+8VFJSYZxs9poN3SDNQFF6lT6NrQUnHiPB2PWz2sc4ieEcAaYYzN+1uWahEeTq2aRIQ==}
 
+  '@lit/reactive-element@1.6.3':
+    resolution: {integrity: sha512-QuTgnG52Poic7uM1AN5yJ09QMe0O28e10XzSvWDz02TJiiKee4stsiownEIadWm8nYzyDAyT+gKzUoZmiWQtsQ==}
+
   '@lit/reactive-element@2.0.4':
     resolution: {integrity: sha512-GFn91inaUa2oHLak8awSIigYz0cU0Payr1rcFsrkf5OJ5eSPxElyZfKh0f2p9FsTiZWXQdWGJeXZICEfXXYSXQ==}
+
+  '@motionone/animation@10.18.0':
+    resolution: {integrity: sha512-9z2p5GFGCm0gBsZbi8rVMOAJCtw1WqBTIPw3ozk06gDvZInBPIsQcHgYogEJ4yuHJ+akuW8g1SEIOpTOvYs8hw==}
+
+  '@motionone/dom@10.18.0':
+    resolution: {integrity: sha512-bKLP7E0eyO4B2UaHBBN55tnppwRnaE3KFfh3Ps9HhnAkar3Cb69kUCJY9as8LrccVYKgHA+JY5dOQqJLOPhF5A==}
+
+  '@motionone/easing@10.18.0':
+    resolution: {integrity: sha512-VcjByo7XpdLS4o9T8t99JtgxkdMcNWD3yHU/n6CLEz3bkmKDRZyYQ/wmSf6daum8ZXqfUAgFeCZSpJZIMxaCzg==}
+
+  '@motionone/generators@10.18.0':
+    resolution: {integrity: sha512-+qfkC2DtkDj4tHPu+AFKVfR/C30O1vYdvsGYaR13W/1cczPrrcjdvYCj0VLFuRMN+lP1xvpNZHCRNM4fBzn1jg==}
+
+  '@motionone/svelte@10.16.4':
+    resolution: {integrity: sha512-zRVqk20lD1xqe+yEDZhMYgftsuHc25+9JSo+r0a0OWUJFocjSV9D/+UGhX4xgJsuwB9acPzXLr20w40VnY2PQA==}
+
+  '@motionone/types@10.17.1':
+    resolution: {integrity: sha512-KaC4kgiODDz8hswCrS0btrVrzyU2CSQKO7Ps90ibBVSQmjkrt2teqta6/sOG59v7+dPnKMAg13jyqtMKV2yJ7A==}
+
+  '@motionone/utils@10.18.0':
+    resolution: {integrity: sha512-3XVF7sgyTSI2KWvTf6uLlBJ5iAgRgmvp3bpuOiQJvInd4nZ19ET8lX5unn30SlmRH7hXbBbH+Gxd0m0klJ3Xtw==}
+
+  '@motionone/vue@10.16.4':
+    resolution: {integrity: sha512-z10PF9JV6SbjFq+/rYabM+8CVlMokgl8RFGvieSGNTmrkQanfHn+15XBrhG3BgUfvmTeSeyShfOHpG0i9zEdcg==}
+    deprecated: Motion One for Vue is deprecated. Use Oku Motion instead https://oku-ui.com/motion
 
   '@next/env@14.2.13':
     resolution: {integrity: sha512-s3lh6K8cbW1h5Nga7NNeXrbe0+2jIIYK9YaA9T7IufDWnZpozdFUp6Hf0d5rNWUKu4fEuSX2rCKlGjCrtylfDw==}
@@ -1315,57 +1328,6 @@ packages:
   '@radix-ui/rect@1.1.0':
     resolution: {integrity: sha512-A9+lCBZoaMJlVKcRBz2YByCG+Cp2t6nAnMnNba+XiWxnj6r4JUFqfsgwocMBZU9LPtdxC6wB56ySYpc7LQIoJg==}
 
-  '@reown/appkit-adapter-ethers@1.0.6':
-    resolution: {integrity: sha512-mLD1Aei2IxQXg5ET0HqClPY9sNNgNtYnqJ3hU0JBJIP8M40u6/sIBljy0eAN9w+xPLga1NYbHAcfBrA5zT5RXw==}
-    peerDependencies:
-      '@coinbase/wallet-sdk': 4.0.3
-      '@ethersproject/sha2': 5.7.0
-      ethers: '>=6'
-
-  '@reown/appkit-common@1.0.6':
-    resolution: {integrity: sha512-C5qRZ0x1uRopTRm9/tY1DqXOmIFnVBxDe0HioLyAIYABFWbN6+yCx83NKtQ4JSYsjuPE2peUJ02WeohtkQkvgg==}
-
-  '@reown/appkit-core@1.0.6':
-    resolution: {integrity: sha512-UKNfHOTPICq4Gh5c/88GLwSrIa8dJsq3XYRguMXjtu+ZXb5JdPAVHjC6H7xYYpRjry3+YLWROLm//pHNuS08+Q==}
-
-  '@reown/appkit-ethers@1.0.6':
-    resolution: {integrity: sha512-qFuYRS9ZU2mqnT6iYYVDlyurnyO3IttelaJOKXOBU8WrMe87HC95boK9BErD+HrkxVVXwzmV1C0ADxIShTdgxQ==}
-    peerDependencies:
-      ethers: '>=6.0.0'
-      react: '>=17'
-      react-dom: '>=17'
-      vue: '>=3'
-    peerDependenciesMeta:
-      react:
-        optional: true
-      react-dom:
-        optional: true
-      vue:
-        optional: true
-
-  '@reown/appkit-polyfills@1.0.6':
-    resolution: {integrity: sha512-hu+poIaGQ643UB/SG1KtyLZ427mUe3Jai80+tVcvCCDaIUtjxAw0ps7+bSVTLPkPMLN0TCIAZ33f84aQo+REYA==}
-
-  '@reown/appkit-scaffold-ui@1.0.6':
-    resolution: {integrity: sha512-PWWkftTa92Ig4me+5pAAeTS95R8+EkFmmmRAoiN4Mfw1hXpn9FdzcPFESlPAAQ3Zp9kOI8qpUIXPGHwWfeb86Q==}
-
-  '@reown/appkit-siwe@1.0.6':
-    resolution: {integrity: sha512-CEm1Pu5XVkpur7pzVxQVX6o/WuWRdFEVlbUgbRnn1TBh65xEoT6IhuqPsVvOo0n4gPlRMjzBt8YkdyNPy9Z0TA==}
-
-  '@reown/appkit-ui@1.0.6':
-    resolution: {integrity: sha512-xe8eLG0moo4azVqNTze1oAtehbD3HpfY+UergiFSs7d6xrZX97udiym0+sbuh0jrHNnHUO4jRgtaZ9zAJarKcw==}
-
-  '@reown/appkit-utils@1.0.6':
-    resolution: {integrity: sha512-sitXgI1GIgYlYyCQND2aAPBL5IvxJkIeqZaS2Vwp8vZqLPUebqzuQl543xNnNG5c/59uk/bJpwyzKlfBipJ0ZA==}
-    peerDependencies:
-      valtio: 1.11.2
-
-  '@reown/appkit-wallet@1.0.6':
-    resolution: {integrity: sha512-3jLP+04uUK82dELogmoFz217oXe7Lj9jgoZAo08zNgl6yL0QgRNtBnzi1Gj3A3/zGW9USnhw+FkkgZehafEIHw==}
-
-  '@reown/appkit@1.0.6':
-    resolution: {integrity: sha512-REr4LFyieInjhLStul4lnOLOhWRFsw4wmfYhsMvpJjwMG7+6zmaIsHl+P7TTfu34BcST9OM+p2eTyfpOXFtOCA==}
-
   '@rollup/pluginutils@4.2.1':
     resolution: {integrity: sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==}
     engines: {node: '>= 8.0.0'}
@@ -1694,12 +1656,15 @@ packages:
       '@aws-sdk/credential-provider-web-identity':
         optional: true
 
-  '@walletconnect/core@2.17.0':
-    resolution: {integrity: sha512-On+uSaCfWdsMIQsECwWHZBmUXfrnqmv6B8SXRRuTJgd8tUpEvBkLQH4X7XkSm3zW6ozEkQTCagZ2ox2YPn3kbw==}
+  '@walletconnect/core@2.16.1':
+    resolution: {integrity: sha512-UlsnEMT5wwFvmxEjX8s4oju7R3zadxNbZgsFeHEsjh7uknY2zgmUe1Lfc5XU6zyPb1Jx7Nqpdx1KN485ee8ogw==}
     engines: {node: '>=18'}
 
   '@walletconnect/environment@1.0.1':
     resolution: {integrity: sha512-T426LLZtHj8e8rYnKfzsw1aG6+M0BT1ZxayMdv/p8yM0MU+eJDISqNY3/bccxRr4LrF9csq02Rhqt08Ibl0VRg==}
+
+  '@walletconnect/ethereum-provider@2.16.1':
+    resolution: {integrity: sha512-oD7DNCssUX3plS5gGUZ9JQ63muQB/vxO68X6RzD2wd8gBsYtSPw4BqYFc7KTO6dUizD6gfPirw32yW2pTvy92w==}
 
   '@walletconnect/events@1.0.1':
     resolution: {integrity: sha512-NPTqaoi0oPBVNuLv7qPaJazmGHs5JGyO8eEAk5VGKmJzDR7AHzD4k6ilox5kxk1iwiOnFopBOOMLs86Oa76HpQ==}
@@ -1733,6 +1698,15 @@ packages:
   '@walletconnect/logger@2.1.2':
     resolution: {integrity: sha512-aAb28I3S6pYXZHQm5ESB+V6rDqIYfsnHaQyzFbwUUBFY4H0OXx/YtTl8lvhUNhMMfb9UxbwEBS253TlXUYJWSw==}
 
+  '@walletconnect/modal-core@2.6.2':
+    resolution: {integrity: sha512-cv8ibvdOJQv2B+nyxP9IIFdxvQznMz8OOr/oR/AaUZym4hjXNL/l1a2UlSQBXrVjo3xxbouMxLb3kBsHoYP2CA==}
+
+  '@walletconnect/modal-ui@2.6.2':
+    resolution: {integrity: sha512-rbdstM1HPGvr7jprQkyPggX7rP4XiCG85ZA+zWBEX0dVQg8PpAgRUqpeub4xQKDgY7pY/xLRXSiCVdWGqvG2HA==}
+
+  '@walletconnect/modal@2.6.2':
+    resolution: {integrity: sha512-eFopgKi8AjKf/0U4SemvcYw9zlLpx9njVN8sf6DAkowC2Md0gPU/UNEbH1Wwj407pEKnEds98pKWib1NN1ACoA==}
+
   '@walletconnect/relay-api@1.0.11':
     resolution: {integrity: sha512-tLPErkze/HmC9aCmdZOhtVmYZq1wKfWTJtygQHoWtgg722Jd4homo54Cs4ak2RUFUZIGO2RsOpIcWipaua5D5Q==}
 
@@ -1742,26 +1716,68 @@ packages:
   '@walletconnect/safe-json@1.0.2':
     resolution: {integrity: sha512-Ogb7I27kZ3LPC3ibn8ldyUr5544t3/STow9+lzz7Sfo808YD7SBWk7SAsdBFlYgP2zDRy2hS3sKRcuSRM0OTmA==}
 
-  '@walletconnect/sign-client@2.17.0':
-    resolution: {integrity: sha512-sErYwvSSHQolNXni47L3Bm10ptJc1s1YoJvJd34s5E9h9+d3rj7PrhbiW9X82deN+Dm5oA8X9tC4xty1yIBrVg==}
+  '@walletconnect/sign-client@2.16.1':
+    resolution: {integrity: sha512-s2Tx2n2duxt+sHtuWXrN9yZVaHaYqcEcjwlTD+55/vs5NUPlISf+fFmZLwSeX1kUlrSBrAuxPUcqQuRTKcjLOA==}
 
   '@walletconnect/time@1.0.2':
     resolution: {integrity: sha512-uzdd9woDcJ1AaBZRhqy5rNC9laqWGErfc4dxA9a87mPdKOgWMD85mcFo9dIYIts/Jwocfwn07EC6EzclKubk/g==}
 
-  '@walletconnect/types@2.17.0':
-    resolution: {integrity: sha512-i1pn9URpvt9bcjRDkabuAmpA9K7mzyKoLJlbsAujRVX7pfaG7wur7u9Jz0bk1HxvuABL5LHNncTnVKSXKQ5jZA==}
+  '@walletconnect/types@2.16.1':
+    resolution: {integrity: sha512-9P4RG4VoDEF+yBF/n2TF12gsvT/aTaeZTVDb/AOayafqiPnmrQZMKmNCJJjq1sfdsDcHXFcZWMGsuCeSJCmrXA==}
 
-  '@walletconnect/universal-provider@2.17.0':
-    resolution: {integrity: sha512-d3V5Be7AqLrvzcdMZSBS8DmGDRdqnyLk1DWmRKAGgR6ieUWykhhUKlvfeoZtvJrIXrY7rUGYpH1X41UtFkW5Pw==}
+  '@walletconnect/universal-provider@2.16.1':
+    resolution: {integrity: sha512-q/tyWUVNenizuClEiaekx9FZj/STU1F3wpDK4PUIh3xh+OmUI5fw2dY3MaNDjyb5AyrS0M8BuQDeuoSuOR/Q7w==}
 
-  '@walletconnect/utils@2.17.0':
-    resolution: {integrity: sha512-1aeQvjwsXy4Yh9G6g2eGmXrEl+BzkNjHRdCrGdMYqFTFa8ROEJfTGsSH3pLsNDlOY94CoBUvJvM55q/PMoN/FQ==}
+  '@walletconnect/utils@2.16.1':
+    resolution: {integrity: sha512-aoQirVoDoiiEtYeYDtNtQxFzwO/oCrz9zqeEEXYJaAwXlGVTS34KFe7W3/Rxd/pldTYKFOZsku2EzpISfH8Wsw==}
 
   '@walletconnect/window-getters@1.0.1':
     resolution: {integrity: sha512-vHp+HqzGxORPAN8gY03qnbTMnhqIwjeRJNOMOAzePRg4xVEEE2WvYsI9G2NMjOknA8hnuYbU3/hwLcKbjhc8+Q==}
 
   '@walletconnect/window-metadata@1.0.1':
     resolution: {integrity: sha512-9koTqyGrM2cqFRW517BPY/iEtUDx2r1+Pwwu5m7sJ7ka79wi3EyqhqcICk/yDmv6jAS1rjKgTKXlEhanYjijcA==}
+
+  '@web3modal/base@5.1.11':
+    resolution: {integrity: sha512-wJCsqQ1FG0Isiv0Exaz2Sv+FpijVmNPNay+sGdV5HP2SpBAR/1xxHca2/vLBdACX7rYAFAj723DYQE0fmUpIaw==}
+
+  '@web3modal/common@5.1.11':
+    resolution: {integrity: sha512-YfSklKjjiM1RGxFTQm3ycYZ2Ktb6vswt9eg8lGXRknxN+SC7bCtuvgtyyCO0Z9/f9dPMOGIAmoJ/y6WHXWQqcg==}
+
+  '@web3modal/core@5.1.11':
+    resolution: {integrity: sha512-ugUVFVml1vVW+V7yxkn/AYYdrUJzn4ulFbDlxDMpmukKY6sDYLMMGAJ84O8ZC/OPyC7009NYd3mKZurxEyWkHw==}
+
+  '@web3modal/ethers@5.1.11':
+    resolution: {integrity: sha512-xxZqk9nfrS96Wvver5ArrmxJ/uPdnEY/qduaSbpv9g6jlmbLNFrB3mREQJd7P05XKkVghWpDHmqsKLoRhZfKMQ==}
+    peerDependencies:
+      ethers: '>=6.0.0'
+      react: '>=17'
+      react-dom: '>=17'
+      vue: '>=3'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+      vue:
+        optional: true
+
+  '@web3modal/polyfills@5.1.11':
+    resolution: {integrity: sha512-BDIDYA2LGTCquahbZ+wyWQy4IBOPeKVSgt4ZpFir1fnVJUPkEluSwZStcKLtCzQvxJgER1sLicUrjJQHF36TOg==}
+
+  '@web3modal/scaffold-ui@5.1.11':
+    resolution: {integrity: sha512-fBqzd7DStUaEjtdbEU86rzY4XIgt8c8JN8oxS/xnUEopmjFYvBLCCVEfbTkZyJrRvAAphz7+oS4TVzXw9k6t5A==}
+
+  '@web3modal/scaffold-utils@5.1.11':
+    resolution: {integrity: sha512-4bcYpQ3oxak5mDZMW5/7ayrhpaJHy6dCfUio15AGPHnQlFjkqcfSuuG0Io8Oj8VUXcK2UBLch9YiEDz4Xgce9Q==}
+
+  '@web3modal/siwe@5.1.11':
+    resolution: {integrity: sha512-1aKEtMosACyY0SRjHjdcA/g3bRtMojTxlK7S/T6zBk57X/P3xcEZq9J8UM73plmGewjZdLaqGMgv6B/k/WleZQ==}
+
+  '@web3modal/ui@5.1.11':
+    resolution: {integrity: sha512-L0L+2YOK+ONx+W7GPtkSdKZuAQ8cjcS5N8kp+WZzKOMUTeDLuXKtSnES4p/ShOVmkpV6qB8r0pPA9xgFh1D3ow==}
+
+  '@web3modal/wallet@5.1.11':
+    resolution: {integrity: sha512-/ooQZXK1h7LGBUemebldYPAV2oJAgxkgSiCMoHWynhuS0LO3BzhOhGL+jV19w4iU81bS1GSNFTxYT9LL6Scesw==}
 
   abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
@@ -1952,6 +1968,12 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
+  base-x@3.0.10:
+    resolution: {integrity: sha512-7d0s06rR9rYaIWHkpfLIFICM/tkSVdoPC9qYAQRpxn9DdKNWNsKC0uk++akckyLq16Tx2WIinnZ6WRriAt6njQ==}
+
+  base-x@4.0.0:
+    resolution: {integrity: sha512-FuwxlW4H5kh37X/oW59pwTzzTKRzfrrQwhmyspRM7swOEZcHtDZSCt45U6oKgtuFE+WYPblePMVIPR4RZrh/hw==}
+
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
@@ -1974,6 +1996,9 @@ packages:
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
 
+  borsh@0.7.0:
+    resolution: {integrity: sha512-CLCsZGIBCFnPtkNnieW/a8wmreDmfUtjU2m9yHrzPXIlNbqVs0AQrSatSG6vdNYUqdc83tkQi2eHfF98ubzQLA==}
+
   brace-expansion@1.1.11:
     resolution: {integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==}
 
@@ -1995,6 +2020,12 @@ packages:
   bs-logger@0.2.6:
     resolution: {integrity: sha512-pd8DCoxmbgc7hyPKOvxtqNcjYoOsABPQdcCUjGp3d42VR2CX1ORhk2A87oqqu5R1kk+76nsxZupkmyd+MVtCog==}
     engines: {node: '>= 6'}
+
+  bs58@4.0.1:
+    resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
+
+  bs58@5.0.0:
+    resolution: {integrity: sha512-r+ihvQJvahgYT50JD05dyJNKlmmSlMoOGwn1lCcEzanPglg7TxYjioQUYehQ9mAR/+hOSd2jRc/Z2y5UxBymvQ==}
 
   bser@2.1.1:
     resolution: {integrity: sha512-gQxTNE/GAfIIrmHLUE3oJyp5FO6HRBfhjnw4/wMmA63ZGDJnWBmgY/lyQBpnDUkGmAhbSe39tx2d/iTOAfglwQ==}
@@ -2920,6 +2951,9 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
+  hey-listen@1.0.8:
+    resolution: {integrity: sha512-COpmrF2NOg4TBWUJ5UVyaCU2A88wEMkUPK4hNqyCkqHbxT92BbvfjoSozkAIIm6XhicGlJHhFdullInrdhwU8Q==}
+
   hmac-drbg@1.0.1:
     resolution: {integrity: sha512-Tti3gMqLdZfhOQY1Mzf/AanLiqh1WTiJgEj26ZuYQ9fbkLomzGchCws4FyrSd4VkpBfiNhaE1On+lOz894jvXg==}
 
@@ -3476,11 +3510,20 @@ packages:
     resolution: {integrity: sha512-Wj5hk++HPDqnG/0nc9++oXf8M3GlzObC6AJJJ9VYAVhVTdeW+t3HyeiKhK6Ro0GPhVd8lOYM75zsckrtzLB2Gw==}
     hasBin: true
 
+  lit-element@3.3.3:
+    resolution: {integrity: sha512-XbeRxmTHubXENkV4h8RIPyr8lXc+Ff28rkcQzw3G6up2xg5E8Zu1IgOWIwBLEQsu3cOVFqdYwiVi0hv0SlpqUA==}
+
   lit-element@4.1.0:
     resolution: {integrity: sha512-gSejRUQJuMQjV2Z59KAS/D4iElUhwKpIyJvZ9w+DIagIQjfJnhR20h2Q5ddpzXGS+fF0tMZ/xEYGMnKmaI/iww==}
 
+  lit-html@2.8.0:
+    resolution: {integrity: sha512-o9t+MQM3P4y7M7yNzqAyjp7z+mQGa4NS4CxiyLqFPyFWyc4O+nodLrkrxSaCTrla6M5YOLaT3RpbbqjszB5g3Q==}
+
   lit-html@3.2.0:
     resolution: {integrity: sha512-pwT/HwoxqI9FggTrYVarkBKFN9MlTUpLrDHubTmW4SrkL3kkqW5gxwbxMMUnbbRHBC0WTZnYHcjDSCM559VyfA==}
+
+  lit@2.8.0:
+    resolution: {integrity: sha512-4Sc3OFX9QHOJaHbmTMk28SYgVxLN3ePDjg7hofEft2zWlehFL3LiAuapWc4U/kYwMYJSh2hTCPZ6/LIC7ii0MA==}
 
   lit@3.1.0:
     resolution: {integrity: sha512-rzo/hmUqX8zmOdamDAeydfjsGXbbdtAFqMhmocnh2j9aDYqbu0fjXygjCa0T99Od9VQ/2itwaGrjZz/ZELVl7w==}
@@ -3622,6 +3665,9 @@ packages:
   mock-socket@9.3.1:
     resolution: {integrity: sha512-qxBgB7Qa2sEQgHFjj0dSigq7fX4k6Saisd5Nelwp2q8mlbAFh5dHV9JTTlF8viYJLSSWgMCZFUom8PJcMNBoJw==}
     engines: {node: '>= 8'}
+
+  motion@10.16.2:
+    resolution: {integrity: sha512-p+PurYqfUdcJZvtnmAqu5fJgV2kR0uLFQuBKtLeFVTrYEVllI99tiOTSefVNYuip9ELTEkepIIDftNdze76NAQ==}
 
   mri@1.2.0:
     resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
@@ -4726,6 +4772,9 @@ packages:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
     engines: {node: '>=8'}
 
+  text-encoding-utf-8@1.0.2:
+    resolution: {integrity: sha512-8bw4MY9WjdsD2aMtO0OzOCY3pXGYNx2d2FfHRVUKkiCPDWjKuOlhLVASS+pD7VkLTVjW268LYJHwsnPFlBpbAg==}
+
   text-table@0.2.0:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
 
@@ -5466,18 +5515,6 @@ snapshots:
 
   '@eslint/js@8.57.1': {}
 
-  '@ethersproject/bytes@5.7.0':
-    dependencies:
-      '@ethersproject/logger': 5.7.0
-
-  '@ethersproject/logger@5.7.0': {}
-
-  '@ethersproject/sha2@5.7.0':
-    dependencies:
-      '@ethersproject/bytes': 5.7.0
-      '@ethersproject/logger': 5.7.0
-      hash.js: 1.1.7
-
   '@floating-ui/core@1.6.8':
     dependencies:
       '@floating-ui/utils': 0.2.8
@@ -5716,9 +5753,58 @@ snapshots:
 
   '@lit-labs/ssr-dom-shim@1.2.1': {}
 
+  '@lit/reactive-element@1.6.3':
+    dependencies:
+      '@lit-labs/ssr-dom-shim': 1.2.1
+
   '@lit/reactive-element@2.0.4':
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.2.1
+
+  '@motionone/animation@10.18.0':
+    dependencies:
+      '@motionone/easing': 10.18.0
+      '@motionone/types': 10.17.1
+      '@motionone/utils': 10.18.0
+      tslib: 2.7.0
+
+  '@motionone/dom@10.18.0':
+    dependencies:
+      '@motionone/animation': 10.18.0
+      '@motionone/generators': 10.18.0
+      '@motionone/types': 10.17.1
+      '@motionone/utils': 10.18.0
+      hey-listen: 1.0.8
+      tslib: 2.7.0
+
+  '@motionone/easing@10.18.0':
+    dependencies:
+      '@motionone/utils': 10.18.0
+      tslib: 2.7.0
+
+  '@motionone/generators@10.18.0':
+    dependencies:
+      '@motionone/types': 10.17.1
+      '@motionone/utils': 10.18.0
+      tslib: 2.7.0
+
+  '@motionone/svelte@10.16.4':
+    dependencies:
+      '@motionone/dom': 10.18.0
+      tslib: 2.7.0
+
+  '@motionone/types@10.17.1': {}
+
+  '@motionone/utils@10.18.0':
+    dependencies:
+      '@motionone/types': 10.17.1
+      hey-listen: 1.0.8
+      tslib: 2.7.0
+
+  '@motionone/vue@10.16.4':
+    dependencies:
+      '@motionone/dom': 10.18.0
+      tslib: 2.7.0
 
   '@next/env@14.2.13': {}
 
@@ -6562,256 +6648,6 @@ snapshots:
 
   '@radix-ui/rect@1.1.0': {}
 
-  '@reown/appkit-adapter-ethers@1.0.6(@coinbase/wallet-sdk@4.0.3)(@ethersproject/sha2@5.7.0)(@types/react@18.3.11)(bufferutil@4.0.8)(ethers@6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@coinbase/wallet-sdk': 4.0.3
-      '@ethersproject/sha2': 5.7.0
-      '@reown/appkit': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-core': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-polyfills': 1.0.6
-      '@reown/appkit-scaffold-ui': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))
-      '@reown/appkit-siwe': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-ui': 1.0.6
-      '@reown/appkit-utils': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))
-      '@reown/appkit-wallet': 1.0.6
-      '@walletconnect/universal-provider': 2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      '@walletconnect/utils': 2.17.0
-      ethers: 6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@react-native-async-storage/async-storage'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/kv'
-      - bufferutil
-      - encoding
-      - ioredis
-      - react
-      - uWebSockets.js
-      - utf-8-validate
-
-  '@reown/appkit-common@1.0.6':
-    dependencies:
-      bignumber.js: 9.1.2
-      dayjs: 1.11.10
-
-  '@reown/appkit-core@1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-wallet': 1.0.6
-      '@walletconnect/universal-provider': 2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@react-native-async-storage/async-storage'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/kv'
-      - bufferutil
-      - encoding
-      - ioredis
-      - react
-      - uWebSockets.js
-      - utf-8-validate
-
-  '@reown/appkit-ethers@1.0.6(@ethersproject/sha2@5.7.0)(@types/react@18.3.11)(bufferutil@4.0.8)(ethers@6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@coinbase/wallet-sdk': 4.0.3
-      '@reown/appkit': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-adapter-ethers': 1.0.6(@coinbase/wallet-sdk@4.0.3)(@ethersproject/sha2@5.7.0)(@types/react@18.3.11)(bufferutil@4.0.8)(ethers@6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-polyfills': 1.0.6
-      '@reown/appkit-siwe': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-utils': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))
-      '@reown/appkit-wallet': 1.0.6
-      '@walletconnect/utils': 2.17.0
-      ethers: 6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
-    optionalDependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@ethersproject/sha2'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@react-native-async-storage/async-storage'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/kv'
-      - bufferutil
-      - encoding
-      - ioredis
-      - uWebSockets.js
-      - utf-8-validate
-
-  '@reown/appkit-polyfills@1.0.6':
-    dependencies:
-      buffer: 6.0.3
-
-  '@reown/appkit-scaffold-ui@1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))':
-    dependencies:
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-core': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-siwe': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-ui': 1.0.6
-      '@reown/appkit-utils': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))
-      '@reown/appkit-wallet': 1.0.6
-      lit: 3.1.0
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@react-native-async-storage/async-storage'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/kv'
-      - bufferutil
-      - encoding
-      - ioredis
-      - react
-      - uWebSockets.js
-      - utf-8-validate
-      - valtio
-
-  '@reown/appkit-siwe@1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-core': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-ui': 1.0.6
-      '@reown/appkit-utils': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))
-      '@reown/appkit-wallet': 1.0.6
-      '@walletconnect/utils': 2.17.0
-      lit: 3.1.0
-      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@react-native-async-storage/async-storage'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/kv'
-      - bufferutil
-      - encoding
-      - ioredis
-      - react
-      - uWebSockets.js
-      - utf-8-validate
-
-  '@reown/appkit-ui@1.0.6':
-    dependencies:
-      lit: 3.1.0
-      qrcode: 1.5.3
-
-  '@reown/appkit-utils@1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))':
-    dependencies:
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-core': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-polyfills': 1.0.6
-      '@reown/appkit-wallet': 1.0.6
-      '@walletconnect/logger': 2.1.2
-      '@walletconnect/universal-provider': 2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@react-native-async-storage/async-storage'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/kv'
-      - bufferutil
-      - encoding
-      - ioredis
-      - react
-      - uWebSockets.js
-      - utf-8-validate
-
-  '@reown/appkit-wallet@1.0.6':
-    dependencies:
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-polyfills': 1.0.6
-      '@walletconnect/logger': 2.1.2
-      zod: 3.22.4
-
-  '@reown/appkit@1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@reown/appkit-common': 1.0.6
-      '@reown/appkit-core': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-polyfills': 1.0.6
-      '@reown/appkit-scaffold-ui': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))
-      '@reown/appkit-siwe': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
-      '@reown/appkit-ui': 1.0.6
-      '@reown/appkit-utils': 1.0.6(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)(valtio@1.11.2(@types/react@18.3.11)(react@18.3.1))
-      '@reown/appkit-wallet': 1.0.6
-      '@walletconnect/types': 2.17.0
-      '@walletconnect/universal-provider': 2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      '@walletconnect/utils': 2.17.0
-      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@react-native-async-storage/async-storage'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/kv'
-      - bufferutil
-      - encoding
-      - ioredis
-      - react
-      - uWebSockets.js
-      - utf-8-validate
-
   '@rollup/pluginutils@4.2.1':
     dependencies:
       estree-walker: 2.0.2
@@ -7230,7 +7066,7 @@ snapshots:
 
   '@vercel/functions@1.4.1': {}
 
-  '@walletconnect/core@2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@walletconnect/core@2.16.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-provider': 1.0.14
@@ -7243,8 +7079,8 @@ snapshots:
       '@walletconnect/relay-auth': 1.0.4
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.17.0
-      '@walletconnect/utils': 2.17.0
+      '@walletconnect/types': 2.16.1
+      '@walletconnect/utils': 2.16.1
       events: 3.3.0
       lodash.isequal: 4.5.0
       uint8arrays: 3.1.0
@@ -7269,6 +7105,39 @@ snapshots:
   '@walletconnect/environment@1.0.1':
     dependencies:
       tslib: 1.14.1
+
+  '@walletconnect/ethereum-provider@2.16.1(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@walletconnect/jsonrpc-http-connection': 1.0.8
+      '@walletconnect/jsonrpc-provider': 1.0.14
+      '@walletconnect/jsonrpc-types': 1.0.4
+      '@walletconnect/jsonrpc-utils': 1.0.8
+      '@walletconnect/modal': 2.6.2(@types/react@18.3.11)(react@18.3.1)
+      '@walletconnect/sign-client': 2.16.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@walletconnect/types': 2.16.1
+      '@walletconnect/universal-provider': 2.16.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@walletconnect/utils': 2.16.1
+      events: 3.3.0
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@react-native-async-storage/async-storage'
+      - '@types/react'
+      - '@upstash/redis'
+      - '@vercel/kv'
+      - bufferutil
+      - encoding
+      - ioredis
+      - react
+      - uWebSockets.js
+      - utf-8-validate
 
   '@walletconnect/events@1.0.1':
     dependencies:
@@ -7342,6 +7211,31 @@ snapshots:
       '@walletconnect/safe-json': 1.0.2
       pino: 7.11.0
 
+  '@walletconnect/modal-core@2.6.2(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - react
+
+  '@walletconnect/modal-ui@2.6.2(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      '@walletconnect/modal-core': 2.6.2(@types/react@18.3.11)(react@18.3.1)
+      lit: 2.8.0
+      motion: 10.16.2
+      qrcode: 1.5.3
+    transitivePeerDependencies:
+      - '@types/react'
+      - react
+
+  '@walletconnect/modal@2.6.2(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      '@walletconnect/modal-core': 2.6.2(@types/react@18.3.11)(react@18.3.1)
+      '@walletconnect/modal-ui': 2.6.2(@types/react@18.3.11)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - react
+
   '@walletconnect/relay-api@1.0.11':
     dependencies:
       '@walletconnect/jsonrpc-types': 1.0.4
@@ -7359,16 +7253,16 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/sign-client@2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@walletconnect/sign-client@2.16.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@walletconnect/core': 2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@walletconnect/core': 2.16.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 2.1.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.17.0
-      '@walletconnect/utils': 2.17.0
+      '@walletconnect/types': 2.16.1
+      '@walletconnect/utils': 2.16.1
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -7392,7 +7286,7 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/types@2.17.0':
+  '@walletconnect/types@2.16.1':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
@@ -7416,16 +7310,16 @@ snapshots:
       - ioredis
       - uWebSockets.js
 
-  '@walletconnect/universal-provider@2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@walletconnect/universal-provider@2.16.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@walletconnect/jsonrpc-http-connection': 1.0.8
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 2.1.2
-      '@walletconnect/sign-client': 2.17.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      '@walletconnect/types': 2.17.0
-      '@walletconnect/utils': 2.17.0
+      '@walletconnect/sign-client': 2.16.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@walletconnect/types': 2.16.1
+      '@walletconnect/utils': 2.16.1
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -7446,7 +7340,7 @@ snapshots:
       - uWebSockets.js
       - utf-8-validate
 
-  '@walletconnect/utils@2.17.0':
+  '@walletconnect/utils@2.16.1':
     dependencies:
       '@stablelib/chacha20poly1305': 1.0.1
       '@stablelib/hkdf': 1.0.1
@@ -7457,7 +7351,7 @@ snapshots:
       '@walletconnect/relay-auth': 1.0.4
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.17.0
+      '@walletconnect/types': 2.16.1
       '@walletconnect/window-getters': 1.0.1
       '@walletconnect/window-metadata': 1.0.1
       detect-browser: 5.3.0
@@ -7488,6 +7382,170 @@ snapshots:
     dependencies:
       '@walletconnect/window-getters': 1.0.1
       tslib: 1.14.1
+
+  '@web3modal/base@5.1.11(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      '@walletconnect/utils': 2.16.1
+      '@web3modal/common': 5.1.11
+      '@web3modal/core': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/polyfills': 5.1.11
+      '@web3modal/scaffold-ui': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/scaffold-utils': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/siwe': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/ui': 5.1.11
+      '@web3modal/wallet': 5.1.11
+    optionalDependencies:
+      borsh: 0.7.0
+      bs58: 5.0.0
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@react-native-async-storage/async-storage'
+      - '@types/react'
+      - '@upstash/redis'
+      - '@vercel/kv'
+      - ioredis
+      - react
+      - uWebSockets.js
+
+  '@web3modal/common@5.1.11':
+    dependencies:
+      bignumber.js: 9.1.2
+      dayjs: 1.11.10
+
+  '@web3modal/core@5.1.11(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      '@web3modal/common': 5.1.11
+      '@web3modal/wallet': 5.1.11
+      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - react
+
+  '@web3modal/ethers@5.1.11(@types/react@18.3.11)(bufferutil@4.0.8)(ethers@6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@coinbase/wallet-sdk': 4.0.3
+      '@walletconnect/ethereum-provider': 2.16.1(@types/react@18.3.11)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
+      '@walletconnect/utils': 2.16.1
+      '@web3modal/base': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/common': 5.1.11
+      '@web3modal/polyfills': 5.1.11
+      '@web3modal/scaffold-utils': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/siwe': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/wallet': 5.1.11
+      ethers: 6.13.3(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
+    optionalDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@react-native-async-storage/async-storage'
+      - '@types/react'
+      - '@upstash/redis'
+      - '@vercel/kv'
+      - bufferutil
+      - encoding
+      - ioredis
+      - uWebSockets.js
+      - utf-8-validate
+
+  '@web3modal/polyfills@5.1.11':
+    dependencies:
+      buffer: 6.0.3
+
+  '@web3modal/scaffold-ui@5.1.11(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      '@web3modal/common': 5.1.11
+      '@web3modal/core': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/scaffold-utils': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/siwe': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/ui': 5.1.11
+      '@web3modal/wallet': 5.1.11
+      lit: 3.1.0
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@react-native-async-storage/async-storage'
+      - '@types/react'
+      - '@upstash/redis'
+      - '@vercel/kv'
+      - ioredis
+      - react
+      - uWebSockets.js
+
+  '@web3modal/scaffold-utils@5.1.11(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      '@web3modal/common': 5.1.11
+      '@web3modal/core': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/polyfills': 5.1.11
+      '@web3modal/wallet': 5.1.11
+      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - react
+
+  '@web3modal/siwe@5.1.11(@types/react@18.3.11)(react@18.3.1)':
+    dependencies:
+      '@walletconnect/utils': 2.16.1
+      '@web3modal/common': 5.1.11
+      '@web3modal/core': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/scaffold-utils': 5.1.11(@types/react@18.3.11)(react@18.3.1)
+      '@web3modal/ui': 5.1.11
+      '@web3modal/wallet': 5.1.11
+      lit: 3.1.0
+      valtio: 1.11.2(@types/react@18.3.11)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@azure/app-configuration'
+      - '@azure/cosmos'
+      - '@azure/data-tables'
+      - '@azure/identity'
+      - '@azure/keyvault-secrets'
+      - '@azure/storage-blob'
+      - '@capacitor/preferences'
+      - '@netlify/blobs'
+      - '@planetscale/database'
+      - '@react-native-async-storage/async-storage'
+      - '@types/react'
+      - '@upstash/redis'
+      - '@vercel/kv'
+      - ioredis
+      - react
+      - uWebSockets.js
+
+  '@web3modal/ui@5.1.11':
+    dependencies:
+      lit: 3.1.0
+      qrcode: 1.5.3
+
+  '@web3modal/wallet@5.1.11':
+    dependencies:
+      '@walletconnect/logger': 2.1.2
+      '@web3modal/common': 5.1.11
+      '@web3modal/polyfills': 5.1.11
+      zod: 3.22.4
 
   abab@2.0.6: {}
 
@@ -7716,6 +7774,14 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
+  base-x@3.0.10:
+    dependencies:
+      safe-buffer: 5.2.1
+    optional: true
+
+  base-x@4.0.0:
+    optional: true
+
   base64-js@1.5.1: {}
 
   big.js@6.2.2: {}
@@ -7729,6 +7795,13 @@ snapshots:
   bn.js@5.2.1: {}
 
   boolbase@1.0.0: {}
+
+  borsh@0.7.0:
+    dependencies:
+      bn.js: 5.2.1
+      bs58: 4.0.1
+      text-encoding-utf-8: 1.0.2
+    optional: true
 
   brace-expansion@1.1.11:
     dependencies:
@@ -7755,6 +7828,16 @@ snapshots:
   bs-logger@0.2.6:
     dependencies:
       fast-json-stable-stringify: 2.1.0
+
+  bs58@4.0.1:
+    dependencies:
+      base-x: 3.0.10
+    optional: true
+
+  bs58@5.0.0:
+    dependencies:
+      base-x: 4.0.0
+    optional: true
 
   bser@2.1.1:
     dependencies:
@@ -8898,6 +8981,8 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  hey-listen@1.0.8: {}
+
   hmac-drbg@1.0.1:
     dependencies:
       hash.js: 1.1.7
@@ -9661,15 +9746,31 @@ snapshots:
     transitivePeerDependencies:
       - uWebSockets.js
 
+  lit-element@3.3.3:
+    dependencies:
+      '@lit-labs/ssr-dom-shim': 1.2.1
+      '@lit/reactive-element': 1.6.3
+      lit-html: 2.8.0
+
   lit-element@4.1.0:
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.2.1
       '@lit/reactive-element': 2.0.4
       lit-html: 3.2.0
 
+  lit-html@2.8.0:
+    dependencies:
+      '@types/trusted-types': 2.0.7
+
   lit-html@3.2.0:
     dependencies:
       '@types/trusted-types': 2.0.7
+
+  lit@2.8.0:
+    dependencies:
+      '@lit/reactive-element': 1.6.3
+      lit-element: 3.3.3
+      lit-html: 2.8.0
 
   lit@3.1.0:
     dependencies:
@@ -9784,6 +9885,15 @@ snapshots:
       ufo: 1.5.4
 
   mock-socket@9.3.1: {}
+
+  motion@10.16.2:
+    dependencies:
+      '@motionone/animation': 10.18.0
+      '@motionone/dom': 10.18.0
+      '@motionone/svelte': 10.16.4
+      '@motionone/types': 10.17.1
+      '@motionone/utils': 10.18.0
+      '@motionone/vue': 10.16.4
 
   mri@1.2.0: {}
 
@@ -10914,6 +11024,9 @@ snapshots:
       '@istanbuljs/schema': 0.1.3
       glob: 7.2.3
       minimatch: 3.1.2
+
+  text-encoding-utf-8@1.0.2:
+    optional: true
 
   text-table@0.2.0: {}
 

@@ -28,7 +28,6 @@ export const SelectedPolkadotAccount: FC = () => {
         variant="link"
         className="w-full"
         onClick={(e) => {
-          console.log("abc");
           e.preventDefault();
           setPolkadotWalletModalOpen(true);
         }}

@@ -14,6 +14,12 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV === "production") {
     case "polkadot_mainnet":
       subdomain = "app";
       break;
+    case "paseo_sepolia":
+      subdomain = "paseo-app";
+      break;
+    case "westend_sepolia":
+      subdomain = "westend-app";
+      break;
   }
   url = `https://${subdomain}.snowbridge.network`;
 }

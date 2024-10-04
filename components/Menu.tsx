@@ -39,16 +39,15 @@ import { trimAccount } from "@/utils/formatting";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useAssetMetadata } from "@/hooks/useAssetMetadata";
-import { useWeb3Modal } from "@/lib/client/web3modal";
+import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
 
+  useEthereumProvider();
   useAssetMetadata();
   const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
-
-  useWeb3Modal();
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
