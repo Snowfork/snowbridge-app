@@ -3,6 +3,7 @@ import { Context, assets, environment } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ErrorInfo } from "./types";
 import { ApiPromise } from "@polkadot/api";
+import { RemoteAssetId } from "./types";
 
 async function getTokenBalance({
   context,
@@ -94,7 +95,7 @@ export function updateBalance(
 
 export async function fetchForeignAssetsBalances(
   api: ApiPromise,
-  remoteAssetId: any,
+  remoteAssetId: RemoteAssetId,
   sourceAccount: string,
   decimals: number,
 ) {

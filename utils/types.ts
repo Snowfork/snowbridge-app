@@ -29,8 +29,74 @@ export type FormData = {
   amount: string;
   beneficiary: string;
 };
+
 export type AccountInfo = {
   key: string;
   name: string;
   type: "substrate" | "ethereum";
 };
+
+export type TokenMetadata = {
+  symbol: string;
+  decimals: number;
+  address: string;
+  minimumTransferAmount: string;
+};
+
+export type XcmFee = {
+  symbol: string;
+  decimals: number;
+  locationId: string;
+  amount: string;
+  remoteXcmFee: {
+    V4: {
+      id: {
+        parents: number;
+        interior: any;
+      };
+      fun: {
+        Fungible: number;
+      };
+    };
+  };
+};
+
+export type RemoteAssetId = {
+  parents: number;
+  interior: {
+    X2: (
+      | {
+          GlobalConsensus: {
+            Ethereum: {
+              chainId: string;
+            };
+          };
+        }
+      | {
+          AccountKey20: {
+            network: null;
+            key: string;
+          };
+        }
+    )[];
+  };
+};
+
+export type RemoteReserveLocation = {
+  parents: number;
+  interior: {
+    X1: {
+      Parachain: number;
+    }[];
+  };
+};
+
+export type SwitchPairEntry = {
+  id: string;
+  tokenMetadata: TokenMetadata;
+  xcmFee: XcmFee;
+  remoteAssetId: RemoteAssetId;
+  remoteReserveLocation: RemoteReserveLocation;
+};
+
+export type SwitchPair = SwitchPairEntry[];
