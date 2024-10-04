@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { environment, toPolkadot } from "@snowbridge/api";
-import React, { useState, useEffect, useCallback, FC } from "react";
+import React, { useState, useEffect, useCallback, FC, useMemo } from "react";
 import { Button } from "./ui/button";
 
 import { BusyDialog } from "./BusyDialog";
@@ -42,24 +42,23 @@ export const TopUpXcmFee: FC<Props> = ({
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
 
-  const [switchPair, setSwitchPair] = useState<SwitchPair | null>(null);
-  const [xcmFee, setXcmFee] = useState<string | null>(null);
-
-  // Getting the correct XCM fee and switch pair based on the props.
-  useEffect(() => {
-    const { switchPair: switchPair1 } =
+  const switchPair = useMemo(() => {
+    const config =
       source.id === "assethub"
         ? parachainConfigs[destination.name]
         : parachainConfigs[source.name];
+    return config.switchPair;
+  }, [destination.name, source.id, source.name]);
 
-    const xcmFee1 = formatBalance({
-      number: BigInt(switchPair1[0].xcmFee.amount),
-      decimals: switchPair1[0].xcmFee.decimals,
-      displayDecimals: 3,
-    });
-    setSwitchPair(switchPair1);
-    setXcmFee(xcmFee1);
-  }, [source.id, source.name, destination.name]);
+  const xcmFee = useMemo(
+    () =>
+      formatBalance({
+        number: BigInt(switchPair[0].xcmFee.amount),
+        decimals: switchPair[0].xcmFee.decimals,
+        displayDecimals: 3,
+      }),
+    [switchPair],
+  );
 
   const [busyMessage, setBusyMessage] = useState("");
 
