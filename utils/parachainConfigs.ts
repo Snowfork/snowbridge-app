@@ -5,7 +5,7 @@ type SnowbridgeEnvironmentNames =
   | "rococo_sepolia"
   | "polkadot_mainnet"
   | "paseo_sepolia";
-type SwitchPair = Array<{
+
   id: string;
   tokenMetadata: {
     symbol: string;
