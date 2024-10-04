@@ -92,13 +92,6 @@ export function updateBalance(
     });
 }
 
-export function getFormattedBalance(balance: bigint, decimals: number) {
-  return formatBalance({
-    number: balance,
-    decimals,
-    displayDecimals: 3,
-  });
-}
 export async function fetchForeignAssetsBalances(
   api: ApiPromise,
   remoteAssetId: any,
@@ -110,8 +103,8 @@ export async function fetchForeignAssetsBalances(
     sourceAccount,
   );
 
-  return getFormattedBalance(
-    foreignAssets.unwrapOrDefault().balance.toBigInt(),
+  return formatBalance({
+    number: foreignAssets.unwrapOrDefault().balance.toBigInt(),
     decimals,
-  );
+  });
 }

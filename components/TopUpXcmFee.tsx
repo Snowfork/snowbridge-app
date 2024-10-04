@@ -18,10 +18,10 @@ import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { parachainConfigs, SwitchPair } from "@/utils/parachainConfigs";
 
-import { getFormattedBalance } from "@/utils/balances";
 import { parseUnits } from "ethers";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { WalletAccount } from "@talismn/connect-wallets";
+import { formatBalance } from "@/utils/formatting";
 
 interface Props {
   sourceAccount: string;
@@ -52,10 +52,10 @@ export const TopUpXcmFee: FC<Props> = ({
         ? parachainConfigs[destination.name]
         : parachainConfigs[source.name];
 
-    const xcmFee1 = getFormattedBalance(
-      BigInt(switchPair1[0].xcmFee.amount),
-      switchPair1[0].xcmFee.decimals,
-    );
+    const xcmFee1 = formatBalance({
+      number: BigInt(switchPair1[0].xcmFee.amount),
+      decimals: switchPair1[0].xcmFee.decimals,
+    });
     setSwitchPair(switchPair1);
     setXcmFee(xcmFee1);
   }, [source.id, source.name, destination.name]);

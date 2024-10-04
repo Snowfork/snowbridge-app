@@ -1,8 +1,6 @@
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import {
-  fetchForeignAssetsBalances,
-  getFormattedBalance,
-} from "@/utils/balances";
+import { fetchForeignAssetsBalances } from "@/utils/balances";
+import { formatBalance } from "@/utils/formatting";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
 import { assets, environment } from "@snowbridge/api";
@@ -21,7 +19,7 @@ interface Props {
 // Utility function to query balances
 const getBalanceData = async (api: any, account: string, decimals: number) => {
   const balance = await api.query.system.account(account);
-  return getFormattedBalance(balance.data.free, decimals);
+  return formatBalance({ number: balance.data.free.toBigInt(), decimals });
 };
 
 const PolkadotBalance: FC<Props> = ({
@@ -50,19 +48,19 @@ const PolkadotBalance: FC<Props> = ({
       const { switchPair } = parachainConfigs[source.name];
       const api = context.polkadot.api.parachains[source.paraInfo?.paraId!];
       const { xcmFee } = switchPair[0];
-      const formattedFee = getFormattedBalance(
-        BigInt(xcmFee.amount),
-        xcmFee.decimals,
-      );
+      const formattedFee = formatBalance({
+        number: BigInt(xcmFee.amount),
+        decimals: xcmFee.decimals,
+      });
 
       const fungibleBalance = await api.query.fungibles.account(
         switchPair[0].xcmFee.remoteXcmFee.V4.id,
         sourceAccount,
       );
-      const xcmBalance = getFormattedBalance(
-        fungibleBalance.unwrapOrDefault().balance.toBigInt(),
-        xcmFee.decimals,
-      );
+      const xcmBalance = formatBalance({
+        number: fungibleBalance.unwrapOrDefault().balance.toBigInt(),
+        decimals: xcmFee.decimals,
+      });
       handleTopUpCheck(xcmBalance >= formattedFee);
     } catch (e) {
       console.error(e);
