@@ -6,6 +6,7 @@ type SnowbridgeEnvironmentNames =
   | "polkadot_mainnet"
   | "paseo_sepolia";
 
+export type SwitchPair = Array<{
   id: string;
   tokenMetadata: {
     symbol: string;
@@ -18,6 +19,17 @@ type SnowbridgeEnvironmentNames =
     decimals: number;
     locationId: string;
     amount: string;
+    remoteXcmFee: {
+      V4: {
+        id: {
+          parents: number;
+          interior: any;
+        };
+        fun: {
+          Fungible: number;
+        };
+      };
+    };
   };
   remoteAssetId: {
     parents: number;
@@ -69,8 +81,8 @@ interface RegisterOfParaConfigs {
 
 export const parachainConfigs: RegisterOfParaConfigs = {
   // Kilt on Polkadot
-  Kilt: {
-    name: "Kilt",
+  KILT: {
+    name: "KILT",
     snowEnv: "polkadot_mainnet",
     endpoint: "wss://spiritnet.kilt.io/",
     pallet: "assetSwitchPool1",
@@ -78,16 +90,27 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       {
         id: "assetSwitchPool1",
         tokenMetadata: {
-          symbol: "wKILT",
+          symbol: "KILT",
           decimals: 15,
-          address: "",
-          minimumTransferAmount: BigInt(33333333),
+          address: "0x5d3d01fd6d2ad1169b17918eb4f153c6616288eb",
+          minimumTransferAmount: "33333333",
         },
         xcmFee: {
           symbol: "DOT",
           decimals: 10,
           locationId: "assethub",
-          amount: BigInt(10000000000),
+          amount: "10000000000",
+          remoteXcmFee: {
+            V4: {
+              id: {
+                parents: 1,
+                interior: "Here",
+              },
+              fun: {
+                Fungible: 1000000000000,
+              },
+            },
+          },
         },
         remoteAssetId: {
           parents: 2,
@@ -96,14 +119,14 @@ export const parachainConfigs: RegisterOfParaConfigs = {
               {
                 GlobalConsensus: {
                   Ethereum: {
-                    chainId: "11155111",
+                    chainId: "1",
                   },
                 },
               },
               {
                 AccountKey20: {
                   network: null,
-                  key: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+                  key: "0x5d3d01fd6d2ad1169b17918eb4f153c6616288eb",
                 },
               },
             ],
@@ -121,10 +144,10 @@ export const parachainConfigs: RegisterOfParaConfigs = {
         },
       },
     ],
-    parachainId: 4504,
+    parachainId: 2086,
     location: {
-      id: "kilt",
-      name: "Kilt",
+      id: "KILT",
+      name: "KILT",
       type: "substrate",
       destinationIds: ["assethub"],
       paraInfo: {
@@ -137,8 +160,8 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       },
       erc20tokensReceivable: [
         {
-          id: "wKILT",
-          address: "",
+          id: "KILT",
+          address: "0x5d3d01fd6d2ad1169b17918eb4f153c6616288eb",
           minimumTransferAmount: 1n,
         },
       ],
@@ -148,9 +171,9 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       decimals: 15,
     },
   },
-  // Kilt on paseo_sepolia
-  Rilt: {
-    name: "Rilt",
+  // Kilt on rococo_sepolia
+  RILT: {
+    name: "RILT",
     snowEnv: "rococo_sepolia",
     endpoint: "wss://rilt.kilt.io",
     pallet: "assetSwitchPool1",
@@ -158,9 +181,9 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       {
         id: "assetSwitchPool1",
         tokenMetadata: {
-          symbol: "wRILT",
+          symbol: "RILT",
           decimals: 15,
-          address: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+          address: "0x45Ffe5A44Dae5438Ee7FdD26EE5bEFaD13d52832",
           minimumTransferAmount: "10000000000000",
         },
         xcmFee: {
@@ -168,6 +191,17 @@ export const parachainConfigs: RegisterOfParaConfigs = {
           decimals: 10,
           locationId: "assethub",
           amount: "10000000000",
+          remoteXcmFee: {
+            V4: {
+              id: {
+                parents: 1,
+                interior: "Here",
+              },
+              fun: {
+                Fungible: 1000000000000,
+              },
+            },
+          },
         },
         remoteAssetId: {
           parents: 2,
@@ -183,7 +217,7 @@ export const parachainConfigs: RegisterOfParaConfigs = {
               {
                 AccountKey20: {
                   network: null,
-                  key: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+                  key: "0x45Ffe5A44Dae5438Ee7FdD26EE5bEFaD13d52832",
                 },
               },
             ],
@@ -203,8 +237,8 @@ export const parachainConfigs: RegisterOfParaConfigs = {
     ],
     parachainId: 4504,
     location: {
-      id: "rilt",
-      name: "Rilt",
+      id: "RILT",
+      name: "RILT",
       type: "substrate",
       destinationIds: ["assethub"],
       paraInfo: {
@@ -217,8 +251,8 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       },
       erc20tokensReceivable: [
         {
-          id: "wRILT",
-          address: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+          id: "RILT",
+          address: "0x45Ffe5A44Dae5438Ee7FdD26EE5bEFaD13d52832",
           minimumTransferAmount: 1n,
         },
       ],
@@ -229,8 +263,8 @@ export const parachainConfigs: RegisterOfParaConfigs = {
     },
   },
   // Kilt on paseo_sepolia
-  Pilt: {
-    name: "Pilt",
+  PILT: {
+    name: "PILT",
     snowEnv: "paseo_sepolia",
     endpoint: "wss://peregrine.kilt.io/parachain-public-ws/",
     pallet: "assetSwitchPool1",
@@ -238,16 +272,27 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       {
         id: "assetSwitchPool1",
         tokenMetadata: {
-          symbol: "wPILT",
+          symbol: "PILT",
           decimals: 15,
-          address: "0x22E12ed4e6BCdE652A73552dDe340FCb972EEf89",
-          minimumTransferAmount: BigInt(10000000000000),
+          address: "0x99E743964C036bc28931Fb564817db428Aa7f752",
+          minimumTransferAmount: "10000000000000",
         },
         xcmFee: {
-          symbol: "ROC",
+          symbol: "PAS",
           decimals: 10,
           locationId: "assethub",
-          amount: BigInt(10000000000),
+          amount: "500000000",
+          remoteXcmFee: {
+            V4: {
+              id: {
+                parents: 1,
+                interior: "Here",
+              },
+              fun: {
+                Fungible: 500000000,
+              },
+            },
+          },
         },
         remoteAssetId: {
           parents: 2,
@@ -263,7 +308,7 @@ export const parachainConfigs: RegisterOfParaConfigs = {
               {
                 AccountKey20: {
                   network: null,
-                  key: "0xadd76ee7fb5b3d2d774b5fed4ac20b87f830db91",
+                  key: "0x99E743964C036bc28931Fb564817db428Aa7f752",
                 },
               },
             ],
@@ -282,14 +327,14 @@ export const parachainConfigs: RegisterOfParaConfigs = {
         },
       },
     ],
-    parachainId: 4504,
+    parachainId: 2086,
     location: {
-      id: "rilt",
-      name: "Pilt",
+      id: "PILT",
+      name: "PILT",
       type: "substrate",
       destinationIds: ["assethub"],
       paraInfo: {
-        paraId: 4504,
+        paraId: 2086,
         destinationFeeDOT: 0n,
         skipExistentialDepositCheck: false,
         addressType: "32byte",
@@ -298,8 +343,8 @@ export const parachainConfigs: RegisterOfParaConfigs = {
       },
       erc20tokensReceivable: [
         {
-          id: "wPILT",
-          address: "0x22E12ed4e6BCdE652A73552dDe340FCb972EEf89",
+          id: "PILT",
+          address: "0x99E743964C036bc28931Fb564817db428Aa7f752",
           minimumTransferAmount: 1n,
         },
       ],
