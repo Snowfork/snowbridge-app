@@ -106,5 +106,6 @@ export async function fetchForeignAssetsBalances(
   return formatBalance({
     number: foreignAssets.unwrapOrDefault().balance.toBigInt(),
     decimals,
+    displayDecimals: 3,
   });
 }

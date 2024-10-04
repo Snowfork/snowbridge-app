@@ -55,6 +55,7 @@ export const TopUpXcmFee: FC<Props> = ({
     const xcmFee1 = formatBalance({
       number: BigInt(switchPair1[0].xcmFee.amount),
       decimals: switchPair1[0].xcmFee.decimals,
+      displayDecimals: 3,
     });
     setSwitchPair(switchPair1);
     setXcmFee(xcmFee1);

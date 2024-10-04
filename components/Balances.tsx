@@ -19,7 +19,11 @@ interface Props {
 // Utility function to query balances
 const getBalanceData = async (api: any, account: string, decimals: number) => {
   const balance = await api.query.system.account(account);
-  return formatBalance({ number: balance.data.free.toBigInt(), decimals });
+  return formatBalance({
+    number: balance.data.free.toBigInt(),
+    decimals,
+    displayDecimals: 3,
+  });
 };
 
 const PolkadotBalance: FC<Props> = ({
@@ -51,6 +55,7 @@ const PolkadotBalance: FC<Props> = ({
       const formattedFee = formatBalance({
         number: BigInt(xcmFee.amount),
         decimals: xcmFee.decimals,
+        displayDecimals: 3,
       });
 
       const fungibleBalance = await api.query.fungibles.account(
@@ -60,6 +65,7 @@ const PolkadotBalance: FC<Props> = ({
       const xcmBalance = formatBalance({
         number: fungibleBalance.unwrapOrDefault().balance.toBigInt(),
         decimals: xcmFee.decimals,
+        displayDecimals: 3,
       });
       handleTopUpCheck(xcmBalance >= formattedFee);
     } catch (e) {
