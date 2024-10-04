@@ -60,7 +60,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
           className="w-full"
           type="button"
           variant="destructive"
-          onClick={async (e) => {
+          onClick={async (_) => {
             await switchNetwork(env.ethChainId);
             track("Switch Network");
           }}
