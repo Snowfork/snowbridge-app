@@ -213,7 +213,7 @@ export function onSubmit({
             throw Error(`Wallet account not selected.`);
           if (ethereumAccount !== data.sourceAccount)
             throw Error(`Selected account does not match source data.`);
-          const signer = await ethereumProvider.getSigner();
+          const signer = await ethereumProvider.getSigner(ethereumAccount);
           if (signer.address.toLowerCase() !== data.sourceAccount.toLowerCase())
             throw Error(`Source account mismatch.`);
           const plan = await toPolkadot.validateSend(

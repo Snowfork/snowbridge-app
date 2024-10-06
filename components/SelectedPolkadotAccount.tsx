@@ -14,13 +14,19 @@ import {
   polkadotWalletModalOpenAtom,
 } from "@/store/polkadot";
 import { trimAccount } from "@/utils/formatting";
-import { FC } from "react";
+import { FC, useEffect } from "react";
 
 export const SelectedPolkadotAccount: FC = () => {
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+
+  useEffect(() => {
+    if (!polkadotAccount && polkadotAccounts) {
+      setPolkadotAccount(polkadotAccounts[0].address);
+    }
+  }, [setPolkadotAccount, polkadotAccounts, polkadotAccount]);
 
   if (!polkadotAccounts || polkadotAccounts.length == 0) {
     return (
@@ -35,10 +41,6 @@ export const SelectedPolkadotAccount: FC = () => {
         Connect Polkadot
       </Button>
     );
-  } else {
-    if (!polkadotAccount) {
-      setPolkadotAccount(polkadotAccounts[0].address);
-    }
   }
   return (
     <Select

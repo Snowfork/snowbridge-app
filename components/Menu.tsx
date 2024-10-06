@@ -4,29 +4,14 @@ import {
   Menubar,
   MenubarContent,
   MenubarMenu,
-  MenubarSeparator,
   MenubarTrigger,
+  MenubarSeparator,
 } from "@/components/ui/menubar";
-import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
-import {
-  getEthereumProvider,
-  useEthereumProvider,
-} from "@/hooks/useEthereumProvider";
-import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { cn } from "@/lib/utils";
-import { trimAccount } from "@/utils/formatting";
-import {
-  polkadotAccountAtom,
-  polkadotAccountsAtom,
-  polkadotWalletModalOpenAtom,
-  walletAtom,
-} from "@/store/polkadot";
 import {
   relayChainNativeAssetAtom,
   snowbridgeEnvNameAtom,
 } from "@/store/snowbridge";
-import { WalletSelect } from "@talismn/connect-components";
 import { useAtom, useAtomValue } from "jotai";
 import {
   Github,
@@ -40,102 +25,32 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { FC, useEffect, useState } from "react";
-import { ErrorDialog } from "./ErrorDialog";
-import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
-import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
+import { FC } from "react";
 import { Button } from "./ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import { track } from "@vercel/analytics/react";
-
-const PolkadotWalletDialog: FC = () => {
-  const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
-  const [, setPolkadotAccount] = useAtom(polkadotAccountAtom);
-  const [, setPolkadotAccounts] = useAtom(polkadotAccountsAtom);
-  const [, setWallet] = useAtom(walletAtom);
-  return (
-    <WalletSelect
-      dappName="Snowbridge"
-      open={open}
-      showAccountsList
-      onWalletConnectClose={() => {
-        setOpen(false);
-      }}
-      onWalletSelected={(wallet) => {
-        if (wallet.installed === true) {
-          setWallet(wallet);
-        }
-      }}
-      onUpdatedAccounts={(accounts) => {
-        if (accounts != null) {
-          setPolkadotAccounts(accounts);
-        }
-      }}
-      onAccountSelected={(account) => {
-        setPolkadotAccount(account.address);
-      }}
-    />
-  );
-};
-
-const InstallMetamaskDialog: FC = () => {
-  let [show, setShow] = useState(false);
-  useEffect(() => {
-    getEthereumProvider().then((p) => setShow(p === null));
-  });
-  if (show) {
-    track("Install MetaMask");
-  }
-  return (
-    <Dialog open={show}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Metamask Is Not Installed</DialogTitle>
-          <DialogDescription>
-            Please install the Metamask extension and refresh the page.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button
-            variant="link"
-            onClick={() => window.open("https://metamask.io/")}
-          >
-            Install Metamask
-          </Button>
-          <Button
-            variant="link"
-            onClick={() => {
-              window.location.reload();
-            }}
-          >
-            Refresh
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
+  polkadotAccountAtom,
+  polkadotAccountsAtom,
+  polkadotWalletModalOpenAtom,
+  walletAtom,
+} from "@/store/polkadot";
+import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
+import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
+import { trimAccount } from "@/utils/formatting";
+import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
+import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
+import { useAssetMetadata } from "@/hooks/useAssetMetadata";
+import { useEthereumProvider } from "@/hooks/useEthereumProvider";
+import { windowEthereumTypeAtom } from "@/store/ethereum";
+import { useWeb3Modal } from "@web3modal/ethers/react";
+import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 
 export const Menu: FC = () => {
-  useEthereumProvider();
-  const [_, contextLoading, contextError] = useSnowbridgeContext();
   const envName = useAtomValue(snowbridgeEnvNameAtom);
-  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
-  const [errorMessage, setErrorMessage] = useState(contextError);
-  useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
-  useConnectEthereumWallet();
 
-  if (errorMessage) {
-    console.error(errorMessage);
-    setErrorMessage("There was an error connecting to Snowbridge.");
-  }
+  useEthereumProvider();
+  useAssetMetadata();
+  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
+  useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
@@ -182,9 +97,25 @@ export const Menu: FC = () => {
   };
 
   const EthereumWallet = () => {
+    const { account } = useConnectEthereumWallet();
+    const walletType = useAtomValue(windowEthereumTypeAtom);
+    const { open } = useWeb3Modal();
     return (
       <>
-        <h1 className="font-semibold py-2">Ethereum</h1>
+        <div className={account === null ? "hidden" : ""}>
+          <h1 className="font-semibold py-2">Ethereum</h1>
+          <p className="text-xs">
+            Wallet:{" "}
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={async () => await open({ view: "Connect" })}
+            >
+              {walletType ?? "Unknown"}
+            </Button>{" "}
+          </p>
+          <p className="text-xs">Account:</p>
+        </div>
         <SelectedEthereumWallet className="text-sm" walletChars={24} />
       </>
     );
@@ -287,12 +218,6 @@ export const Menu: FC = () => {
           </MenubarTrigger>
         </MenubarMenu>
       </Menubar>
-      <InstallMetamaskDialog />
-      <ErrorDialog
-        open={!contextLoading && errorMessage !== null}
-        title="Connection Error"
-        description={errorMessage || "Unknown Error."}
-      />
       <PolkadotWalletDialog />
     </div>
   );

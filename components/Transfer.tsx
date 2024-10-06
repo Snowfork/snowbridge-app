@@ -1,11 +1,9 @@
 "use client";
 
 import { useTransferHistory } from "@/hooks/useTransferHistory";
-import { formatBalance } from "@/utils/formatting";
 import {
   ethereumAccountAtom,
   ethereumAccountsAtom,
-  ethereumChainIdAtom,
   ethersProviderAtom,
 } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
@@ -16,17 +14,29 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { transfersPendingLocalAtom } from "@/store/transferHistory";
+import { parseAmount, updateBalance } from "@/utils/balances";
+import { doApproveSpend } from "@/utils/doApproveSpend";
+import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
+import { errorMessage } from "@/utils/errorMessage";
+import { formatBalance } from "@/utils/formatting";
+import { formSchema } from "@/utils/formSchema";
+import { onSubmit } from "@/utils/onSubmit";
+import { AccountInfo, ErrorInfo, FormData } from "@/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { assets, environment, toEthereum, toPolkadot } from "@snowbridge/api";
+import { track } from "@vercel/analytics";
 import { useAtomValue, useSetAtom } from "jotai";
+import { LucideHardHat } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FC, useCallback, useEffect, useState } from "react";
 import { UseFormReturn, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { BusyDialog } from "./BusyDialog";
+import { SelectAccount } from "./SelectAccount";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
+import { SendErrorDialog } from "./SendErrorDialog";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -53,18 +63,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { LucideHardHat } from "lucide-react";
-import { track } from "@vercel/analytics";
-import { formSchema } from "@/utils/formSchema";
-import { SelectAccount } from "./SelectAccount";
-import { SendErrorDialog } from "./SendErrorDialog";
-import { errorMessage } from "@/utils/errorMessage";
-import { updateBalance, parseAmount } from "@/utils/balances";
-
-import { doApproveSpend } from "@/utils/doApproveSpend";
-import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
-import { FormData, ErrorInfo, AccountInfo, AppRouter } from "@/utils/types";
-import { onSubmit } from "@/utils/onSubmit";
 
 export const validateOFAC = async (
   data: FormData,
@@ -120,7 +118,6 @@ export const TransferComponent: FC = () => {
 
 export const TransferForm: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
-  const ethereumChainId = useAtomValue(ethereumChainIdAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
@@ -177,6 +174,7 @@ export const TransferForm: FC = () => {
               formatBalance({
                 number: fee,
                 decimals: assetHubNativeToken?.tokenDecimal ?? 0,
+                displayDecimals: 8,
               }) +
                 " " +
                 assetHubNativeToken?.tokenSymbol,
@@ -213,7 +211,8 @@ export const TransferForm: FC = () => {
           )
           .then((fee) => {
             setFeeDisplay(
-              formatBalance({ number: fee, decimals: 18 }) + " ETH",
+              formatBalance({ number: fee, decimals: 18, displayDecimals: 8 }) +
+                " ETH",
             );
           })
           .catch((err) => {
@@ -291,8 +290,11 @@ export const TransferForm: FC = () => {
 
   useEffect(() => {
     if (context == null) return;
-    if (assetErc20MetaData !== null && assetErc20MetaData[token]) {
-      setTokenMetadata(assetErc20MetaData[token]);
+    if (
+      assetErc20MetaData !== null &&
+      assetErc20MetaData[token.toLowerCase()]
+    ) {
+      setTokenMetadata(assetErc20MetaData[token.toLowerCase()]);
       return;
     }
 
@@ -325,14 +327,13 @@ export const TransferForm: FC = () => {
     if (
       context == null ||
       newSourceAccount === undefined ||
-      ethereumChainId == null ||
       token === "" ||
       tokenMetadata == null
     )
       return;
     updateBalance(
       context,
-      ethereumChainId,
+      snowbridgeEnvironment,
       source,
       newSourceAccount,
       token,
@@ -349,7 +350,7 @@ export const TransferForm: FC = () => {
     setSourceAccount,
     token,
     context,
-    ethereumChainId,
+    snowbridgeEnvironment,
     tokenMetadata,
   ]);
 
@@ -357,7 +358,6 @@ export const TransferForm: FC = () => {
     if (
       tokenMetadata == null ||
       context == null ||
-      ethereumChainId == null ||
       sourceAccount == undefined
     ) {
       return;
@@ -382,7 +382,7 @@ export const TransferForm: FC = () => {
       });
       updateBalance(
         context,
-        ethereumChainId,
+        snowbridgeEnvironment,
         source,
         sourceAccount,
         token,
@@ -413,6 +413,7 @@ export const TransferForm: FC = () => {
     }
   }, [
     context,
+    snowbridgeEnvironment,
     ethereumProvider,
     form,
     setBusyMessage,
@@ -421,17 +422,11 @@ export const TransferForm: FC = () => {
     sourceAccount,
     setBalanceDisplay,
     token,
-    ethereumChainId,
     source,
   ]);
 
   const approveSpend = useCallback(async () => {
-    if (
-      tokenMetadata == null ||
-      context == null ||
-      ethereumChainId == null ||
-      sourceAccount == undefined
-    )
+    if (tokenMetadata == null || context == null || sourceAccount == undefined)
       return;
     const toastTitle = "Approve Token Spend";
     setBusyMessage("Approving spend...");
@@ -453,7 +448,7 @@ export const TransferForm: FC = () => {
       });
       updateBalance(
         context,
-        ethereumChainId,
+        snowbridgeEnvironment,
         source,
         sourceAccount,
         token,
@@ -484,6 +479,7 @@ export const TransferForm: FC = () => {
     }
   }, [
     context,
+    snowbridgeEnvironment,
     ethereumProvider,
     form,
     setBusyMessage,
@@ -491,7 +487,6 @@ export const TransferForm: FC = () => {
     sourceAccount,
     setBalanceDisplay,
     token,
-    ethereumChainId,
     source,
     tokenMetadata,
   ]);
