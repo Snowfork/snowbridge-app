@@ -53,14 +53,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     );
   }
 
-  let accountFound = false;
-  for (let account of accounts) {
-    if (account.key === field.value) {
-      accountFound = true;
-      break;
-    }
-  }
-  if (!accountFound) {
+  if (!accounts.find((account) => account.key === field.value)) {
     field.onChange(undefined);
   }
 
