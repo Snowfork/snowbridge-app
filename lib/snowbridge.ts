@@ -398,27 +398,23 @@ export async function assetMetadata(
         .map((l) => l.address.toLowerCase()),
     ),
   ];
-  const [relaychainNativeAsset, assetMetadataList] = await Promise.all([
-    assets.parachainNativeAsset(context.polkadot.api.relaychain),
-    Promise.all(
-      tokens.map((t) =>
-        assets
-          .assetErc20Metadata(context, t)
-          .then((m) => ({ token: t, metadata: m }))
-          .catch((error) => {
-            getErrorMessage(error);
-            return null;
-          }),
-      ),
-    ),
-  ]);
 
   const erc20Metadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
-  for (const am of assetMetadataList) {
-    if (am !== null) {
-      erc20Metadata[am!.token.toLowerCase()] = am!.metadata;
-    }
-  }
+  const [relaychainNativeAsset] = await Promise.all([
+    assets.parachainNativeAsset(context.polkadot.api.relaychain),
+    (async () => {
+      for (const token of tokens) {
+        try {
+          erc20Metadata[token.toLowerCase()] = await assets.assetErc20Metadata(
+            context,
+            token,
+          );
+        } catch (error) {
+          getErrorMessage(error);
+        }
+      }
+    })(),
+  ]);
 
   return {
     relaychainNativeAsset,
