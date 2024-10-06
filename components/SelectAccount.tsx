@@ -52,6 +52,18 @@ export const SelectAccount: FC<SelectAccountProps> = ({
       </Button>
     );
   }
+
+  let accountFound = false;
+  for (let account of accounts) {
+    if (account.key === field.value) {
+      accountFound = true;
+      break;
+    }
+  }
+  if (!accountFound) {
+    field.onChange(undefined);
+  }
+
   let input: JSX.Element;
   if (!allowManualInput && accountFromWallet && accounts.length > 0) {
     input = (
