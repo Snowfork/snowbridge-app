@@ -405,7 +405,10 @@ export async function assetMetadata(
         assets
           .assetErc20Metadata(context, t)
           .then((m) => ({ token: t, metadata: m }))
-          .catch((_) => null),
+          .catch((error) => {
+            getErrorMessage(error);
+            return null;
+          }),
       ),
     ),
   ]);
