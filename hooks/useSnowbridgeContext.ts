@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { AlchemyProvider } from "ethers";
 import { createContext } from "@/lib/snowbridge";
 
-const connectSnowbridgeContext = async (
+const createSnowbridgeContext = async (
   env: environment.SnowbridgeEnvironment,
   alchemyKey: string,
 ) => {
@@ -41,7 +41,7 @@ export const useSnowbridgeContext = (): [
       return;
     }
     setLoading(true);
-    connectSnowbridgeContext(env, alchemyKey)
+    createSnowbridgeContext(env, alchemyKey)
       .then((context) => {
         setLoading(false);
         setContext(context);
