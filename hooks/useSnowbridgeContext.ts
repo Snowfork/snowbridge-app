@@ -34,6 +34,7 @@ export const useSnowbridgeContext = (): [
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (context !== null) return;
     const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
     if (!alchemyKey) {
       setContext(null);
@@ -52,7 +53,7 @@ export const useSnowbridgeContext = (): [
         setLoading(false);
         setError(message);
       });
-  }, [env, setContext, setError, setLoading]);
+  }, [context, env, setContext, setError, setLoading]);
 
   return [context, loading, error];
 };
