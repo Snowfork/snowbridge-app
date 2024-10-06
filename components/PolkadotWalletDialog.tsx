@@ -5,14 +5,14 @@ import {
   walletAtom,
 } from "@/store/polkadot";
 import { WalletSelect } from "@talismn/connect-components";
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { FC } from "react";
 
 export const PolkadotWalletDialog: FC = () => {
   const [open, setOpen] = useAtom(polkadotWalletModalOpenAtom);
-  const [, setPolkadotAccount] = useAtom(polkadotAccountAtom);
-  const [, setPolkadotAccounts] = useAtom(polkadotAccountsAtom);
-  const [, setWallet] = useAtom(walletAtom);
+  const setPolkadotAccount = useSetAtom(polkadotAccountAtom);
+  const setPolkadotAccounts = useSetAtom(polkadotAccountsAtom);
+  const setWallet = useSetAtom(walletAtom);
   return (
     <WalletSelect
       dappName="Snowbridge"
