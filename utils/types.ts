@@ -1,5 +1,8 @@
 import { type useRouter } from "next/navigation";
 import { toPolkadot, toEthereum, environment } from "@snowbridge/api";
+import { Struct, u128 } from "@polkadot/types";
+import { AccountId32 } from "@polkadot/types/interfaces";
+import { Codec } from "@polkadot/types/types";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
@@ -100,3 +103,15 @@ export type SwitchPairEntry = {
 };
 
 export type SwitchPair = SwitchPairEntry[];
+
+export interface PalletAssetSwitchSwitchSwitchPairInfo extends Struct {
+  readonly poolAccount: AccountId32;
+  readonly remoteAssetCirculatingSupply: u128;
+  readonly remoteAssetEd: u128;
+  readonly remoteAssetId: Codec;
+  readonly remoteAssetTotalSupply: u128;
+  readonly remoteReserveLocation: Codec;
+  readonly remoteXcmFee: Codec;
+  readonly status: Codec;
+  readonly remoteAssetSovereignTotalBalance: u128;
+}

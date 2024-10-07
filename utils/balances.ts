@@ -5,6 +5,8 @@ import { formatBalance } from "@/utils/formatting";
 import { ErrorInfo } from "./types";
 import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
+import { Option } from "@polkadot/types";
+import { AssetBalance } from "@polkadot/types/interfaces";
 
 async function getTokenBalance({
   context,
@@ -100,10 +102,9 @@ export async function fetchForeignAssetsBalances(
   sourceAccount: string,
   decimals: number,
 ) {
-  const foreignAssets = await api.query.foreignAssets.account(
-    remoteAssetId,
-    sourceAccount,
-  );
+  const foreignAssets = await api.query.foreignAssets.account<
+    Option<AssetBalance>
+  >(remoteAssetId, sourceAccount);
 
   return formatBalance({
     number: foreignAssets.unwrapOrDefault().balance.toBigInt(),

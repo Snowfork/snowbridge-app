@@ -4,6 +4,8 @@ import { formatBalance } from "@/utils/formatting";
 import { parachainConfigs } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
 import { ApiPromise } from "@polkadot/api";
+import { Option } from "@polkadot/types";
+import { AccountInfo, AssetBalance } from "@polkadot/types/interfaces";
 import { assets, environment } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import React, { useState, useEffect, useCallback, FC } from "react";
@@ -23,7 +25,7 @@ const getBalanceData = async (
   account: string,
   decimals: number,
 ) => {
-  const balance = await api.query.system.account(account);
+  const balance = await api.query.system.account<AccountInfo>(account);
 
   return formatBalance({
     number: balance.data.free.toBigInt(),
@@ -64,10 +66,9 @@ const PolkadotBalance: FC<Props> = ({
         displayDecimals: 3,
       });
 
-      const fungibleBalance = await api.query.fungibles.account(
-        switchPair[0].xcmFee.remoteXcmFee.V4.id,
-        sourceAccount,
-      );
+      const fungibleBalance = await api.query.fungibles.account<
+        Option<AssetBalance>
+      >(switchPair[0].xcmFee.remoteXcmFee.V4.id, sourceAccount);
       const xcmBalance = formatBalance({
         number: fungibleBalance.unwrapOrDefault().balance.toBigInt(),
         decimals: xcmFee.decimals,
@@ -102,9 +103,11 @@ const PolkadotBalance: FC<Props> = ({
           ? context.polkadot.api.assetHub
           : context.polkadot.api.parachains[destination.paraInfo?.paraId!];
 
-      const checkBalanceED = await api.query.system.account(beneficiary);
+      const checkBalanceED =
+        await api.query.system.account<AccountInfo>(beneficiary);
+
       const sufficient =
-        checkBalanceED.sufficients == 0 && checkBalanceED.providers == 0;
+        checkBalanceED.sufficients.eqn(0) && checkBalanceED.providers.eqn(0);
       handleSufficientTokens(!sufficient);
       setError(null);
     } catch (e) {

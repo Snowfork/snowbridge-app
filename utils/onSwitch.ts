@@ -2,10 +2,14 @@
 import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { Context, environment } from "@snowbridge/api";
 import { Dispatch, SetStateAction } from "react";
-import { ErrorInfo } from "@/utils/types";
+import {
+  ErrorInfo,
+  PalletAssetSwitchSwitchSwitchPairInfo,
+} from "@/utils/types";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { parachainConfigs } from "./parachainConfigs";
+import { Option } from "@polkadot/types";
 
 export async function submitParachainToAssetHubTransfer({
   context,
@@ -120,7 +124,10 @@ export async function submitAssetHubToParachainTransfer({
     const parachainApi =
       context.polkadot.api.parachains[destination.paraInfo?.paraId];
 
-    const switchPair = await parachainApi.query[pallet].switchPair();
+    const switchPair =
+      await parachainApi.query[pallet].switchPair<
+        Option<PalletAssetSwitchSwitchSwitchPairInfo>
+      >();
 
     const pathToBeneficiary = {
       parents: 0,
@@ -144,7 +151,9 @@ export async function submitAssetHubToParachainTransfer({
         ],
       },
     };
-    const remoteAssetId = switchPair.unwrap().remoteAssetId.v4;
+
+    //@ts-ignore Due to the custom KILT typing
+    const remoteAssetId = switchPair.unwrap().remoteAssetId.asV4;
 
     const transfer = assetHubApi.tx.polkadotXcm.transferAssetsUsingTypeAndThen(
       {
