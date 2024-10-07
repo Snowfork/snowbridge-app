@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { geolocation, ipAddress } from "@vercel/edge";
+import { geolocation } from "@vercel/functions";
 import { NextResponse } from "next/server";
 
 const BLOCKED_COUNTRIES = [
@@ -38,7 +38,7 @@ export function middleware(req: NextRequest) {
   // Block regions
   if (
     BLOCKED_REGIONS.find(
-      (x) => x.country === country && x.region === region,
+      (x) => x.country === country && x.region === region
     ) !== undefined
   ) {
     blocked = true;

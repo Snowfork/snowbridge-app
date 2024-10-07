@@ -9,6 +9,7 @@ import {
   contextFactory,
   Context,
   utils,
+  assets,
 } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import {
@@ -333,9 +334,23 @@ export type BridgeStatus = {
   };
 };
 
+export type BridgedAssetsMetadata = {
+  relaychainNativeAsset: assets.NativeAsset;
+  erc20Metadata: {
+    [tokenAddress: string]: assets.ERC20Metadata;
+  };
+};
+
+export type ContextOverrides = {
+  bridgeHub?: string;
+  assetHub?: string;
+  relaychain?: string;
+};
+
 export async function createContext(
   ethereumProvider: AbstractProvider,
   { config }: SnowbridgeEnvironment,
+  overrides?: ContextOverrides,
 ) {
   return contextFactory({
     ethereum: {
@@ -344,11 +359,9 @@ export async function createContext(
     },
     polkadot: {
       url: {
-        bridgeHub:
-          process.env.NEXT_PUBLIC_BRIDGE_HUB_URL ?? config.BRIDGE_HUB_URL,
-        assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL ?? config.ASSET_HUB_URL,
-        relaychain:
-          process.env.NEXT_PUBLIC_RELAY_CHAIN_URL ?? config.RELAY_CHAIN_URL,
+        bridgeHub: overrides?.bridgeHub ?? config.BRIDGE_HUB_URL,
+        assetHub: overrides?.assetHub ?? config.ASSET_HUB_URL,
+        relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
         parachains: config.PARACHAINS,
       },
     },
@@ -516,4 +529,39 @@ export function getErrorMessage(err: any) {
   }
   console.error(message, err);
   return message;
+}
+
+export async function assetMetadata(
+  context: Context,
+  env: SnowbridgeEnvironment,
+): Promise<BridgedAssetsMetadata> {
+  const tokens = [
+    ...new Set(
+      env.locations
+        .flatMap((l) => l.erc20tokensReceivable)
+        .map((l) => l.address.toLowerCase()),
+    ),
+  ];
+
+  const erc20Metadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
+  const [relaychainNativeAsset] = await Promise.all([
+    assets.parachainNativeAsset(context.polkadot.api.relaychain),
+    (async () => {
+      for (const token of tokens) {
+        try {
+          erc20Metadata[token.toLowerCase()] = await assets.assetErc20Metadata(
+            context,
+            token,
+          );
+        } catch (error) {
+          getErrorMessage(error);
+        }
+      }
+    })(),
+  ]);
+
+  return {
+    relaychainNativeAsset,
+    erc20Metadata,
+  };
 }

@@ -25,17 +25,14 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
+import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { cn } from "@/lib/utils";
 import { formatBalance } from "@/utils/formatting";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
-import {
-  assetErc20MetaDataAtom,
-  relayChainNativeAssetAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import {
   Transfer,
   transferHistoryCacheAtom,
@@ -46,6 +43,7 @@ import { encodeAddress } from "@polkadot/util-crypto";
 import { assets, environment, history } from "@snowbridge/api";
 import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { WalletAccount } from "@talismn/connect-wallets";
+import { track } from "@vercel/analytics";
 import { parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
 import {
@@ -78,11 +76,21 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     polkadot_js_kilt:
       "https://polkadot.js.org/apps/?rpc=wss://peregrine.kilt.io/parachain-public-ws/",
   },
+  paseo_sepolia: {
+    etherscan: "https://sepolia.etherscan.io/",
+    subscan_ah: "https://assethub-paseo.subscan.io/",
+    subscan_bh: "https://bridgehub-paseo.subscan.io/",
+  },
   polkadot_mainnet: {
     etherscan: "https://etherscan.io/",
     subscan_ah: "https://assethub-polkadot.subscan.io/",
     subscan_bh: "https://bridgehub-polkadot.subscan.io/",
     subscan_kilt: "https://spiritnet.subscan.io/",
+  },
+  westend_sepolia: {
+    etherscan: "https://sepolia.etherscan.io/",
+    subscan_ah: "https://assethub-westend.subscan.io/",
+    subscan_bh: "https://bridgehub-westend.subscan.io/",
   },
 };
 
@@ -288,7 +296,7 @@ const formatTokenData = (
 const transferTitle = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+  assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const when = new Date(transfer.info.when);
@@ -297,12 +305,12 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-        ? ""
-        : "bg-secondary";
+      ? ""
+      : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,
-    assetErc20MetaData,
+    assetErc20Metadata,
     destination,
   );
 
@@ -334,7 +342,7 @@ const transferDetail = (
   transfer: Transfer,
   env: environment.SnowbridgeEnvironment,
   ss58Format: number,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+  assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
   const urls = EXPLORERS[env.name];
@@ -364,7 +372,7 @@ const transferDetail = (
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
-    assetErc20MetaData,
+    assetErc20Metadata,
     destination,
   );
   return (
@@ -435,8 +443,6 @@ const transferDetail = (
 
 export default function History() {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
-  const relaychainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
@@ -446,6 +452,9 @@ export default function History() {
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
   );
+
+  const { relaychainNativeAsset, erc20Metadata } = useAssetMetadata();
+
   const {
     data: transfers,
     mutate,
@@ -453,6 +462,7 @@ export default function History() {
     isValidating: isTransfersValidating,
     error: transfersError,
   } = useTransferHistory();
+
   const isRefreshing = isTransfersLoading || isTransfersValidating;
   const [transfersErrorMessage, setTransfersErrorMessage] = useState<
     string | null
@@ -461,6 +471,7 @@ export default function History() {
   useEffect(() => {
     if (transfersError) {
       console.error(transfersError);
+      track("History Page Failed", transfersError);
       setTransfersErrorMessage(
         "The history service is under heavy load, so this may take a while...",
       );
@@ -561,7 +572,7 @@ export default function History() {
     (pages.length === 0 &&
       isTransfersLoading &&
       transferHistoryCache.length === 0) ||
-    assetErc20MetaData === null
+    erc20Metadata === null
   ) {
     return <Loading />;
   }
@@ -627,14 +638,14 @@ export default function History() {
                 value={v.id?.toString() ?? i.toString()}
               >
                 <AccordionTrigger>
-                  {transferTitle(v, env, assetErc20MetaData)}
+                  {transferTitle(v, env, erc20Metadata)}
                 </AccordionTrigger>
                 <AccordionContent>
                   {transferDetail(
                     v,
                     env,
                     relaychainNativeAsset?.ss58Format ?? 42,
-                    assetErc20MetaData,
+                    erc20Metadata,
                   )}
                 </AccordionContent>
               </AccordionItem>

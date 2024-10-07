@@ -105,7 +105,6 @@ const StatusCard = () => {
     status.summary.overallStatus === "Normal"
       ? "text-green-700 font-semibold"
       : "text-red-700 font-semibold";
-  if (status == null) return <Loading />;
 
   return (
     <>

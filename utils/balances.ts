@@ -1,5 +1,6 @@
 "use client";
 import { Context, assets, environment } from "@snowbridge/api";
+import SnowbridgeEnvironment = environment.SnowbridgeEnvironment;
 import { formatBalance } from "@/utils/formatting";
 import { ErrorInfo } from "./types";
 import { ApiPromise } from "@polkadot/api";
@@ -52,7 +53,7 @@ async function getTokenBalance({
 
 export function updateBalance(
   context: Context,
-  ethereumChainId: number,
+  env: SnowbridgeEnvironment,
   source: environment.TransferLocation,
   sourceAccount: string,
   token: string,
@@ -63,7 +64,7 @@ export function updateBalance(
   getTokenBalance({
     context,
     token,
-    ethereumChainId: BigInt(ethereumChainId),
+    ethereumChainId: BigInt(env.ethChainId),
     source,
     sourceAccount,
   })

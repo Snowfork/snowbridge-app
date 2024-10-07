@@ -12,7 +12,8 @@ On the `.env`-file, configure of your project by assigning the values that fit y
 
 - `local_e2e` for local environment.
 - `rococo_sepolia` for Rococo <=> Sepolia bridge.
-- `kusama_mainnet` for Kusama <=> Ethereum bridge. (TBD)
+- `paseo_sepolia` for Paseo <=> Sepolia bridge.
+- `westend_sepolia` for Westend <=> Sepolia bridge.
 - `polkadot_mainnet` for Polkadot <=> Ethereum bridge.
 
 ```env
@@ -25,6 +26,7 @@ If you are not using local chains, create an `.env.local` to set the required A.
 NEXT_PUBLIC_ALCHEMY_KEY=...
 NEXT_PUBLIC_SUBSCAN_KEY=...
 CHAINALYSIS_KEY=...
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=...
 ```
 
 ### Run

@@ -1,17 +1,18 @@
-import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { useSwitchEthereumNetwork } from "@/hooks/useSwitchEthereumNetwork";
+"use client";
+
 import { cn } from "@/lib/utils";
 import { trimAccount } from "@/utils/formatting";
-import { ethereumAccountAtom } from "@/store/ethereum";
-import { useAtomValue } from "jotai";
-import { Button } from "./ui/button";
-import { toast } from "sonner";
-import { BusyDialog } from "./BusyDialog";
-import { ErrorDialog } from "./ErrorDialog";
-import { FC, useState } from "react";
 import { track } from "@vercel/analytics/react";
+import { FC } from "react";
+import { ErrorDialog } from "./ErrorDialog";
+import { Button } from "./ui/button";
+import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
+import { getEnvironment } from "@/lib/snowbridge";
+import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
+import { windowEthereumErrorAtom } from "@/store/ethereum";
+import { useAtom } from "jotai";
 
-type SelectedEthereumWalletProps = {
+export type SelectedEthereumWalletProps = {
   className?: string;
   walletChars?: number;
 };
@@ -19,41 +20,48 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   className,
   walletChars,
 }) => {
-  const ethereumAccount = useAtomValue(ethereumAccountAtom);
-  const [connectToEthereumWallet, ethereumLoading, ethereumError] =
-    useConnectEthereumWallet();
-  const { shouldSwitchNetwork, switchNetwork } = useSwitchEthereumNetwork();
-  const [errorMessage, setErrorMessage] = useState(ethereumError);
+  const env = getEnvironment();
+  const { account, chainId } = useConnectEthereumWallet();
+  const { switchNetwork } = useSwitchNetwork();
+  const { open } = useWeb3Modal();
+  const [windowEthereumError, setWindowEthereumError] = useAtom(
+    windowEthereumErrorAtom,
+  );
 
-  if (errorMessage) {
-    console.error(errorMessage);
-    setErrorMessage(
-      "There was an error trying to access your wallet. Are you signed in?",
-    );
-  }
-
-  if (!ethereumAccount) {
+  if (account === null) {
     return (
-      <Button
-        className="w-full"
-        type="button"
-        variant="link"
-        onClick={connectToEthereumWallet}
-      >
-        Connect Ethereum
-      </Button>
+      <>
+        <Button
+          className="w-full"
+          type="button"
+          variant="link"
+          onClick={async (e) => {
+            await open({ view: "Connect" });
+          }}
+        >
+          Connect Ethereum
+        </Button>
+        <ErrorDialog
+          open={windowEthereumError !== null}
+          dismiss={() => {
+            console.log(windowEthereumError);
+            setWindowEthereumError(null);
+          }}
+          title="Ethereum Wallet Error"
+          description={(windowEthereumError ?? "Unknown Error").toString()}
+        />
+      </>
     );
   }
-  if (shouldSwitchNetwork) {
+  if (chainId === null || chainId !== env.ethChainId) {
     return (
       <>
         <Button
           className="w-full"
           type="button"
           variant="destructive"
-          onClick={(e) => {
-            e.preventDefault();
-            switchNetwork();
+          onClick={async (_) => {
+            await switchNetwork(env.ethChainId);
             track("Switch Network");
           }}
         >
@@ -62,6 +70,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
       </>
     );
   }
+
   return (
     <>
       <div
@@ -69,30 +78,13 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
           "hover:underline hover:cursor-pointer overflow-clip text-ellipsis",
           className,
         )}
-        onClick={() => {
-          toast.info("Select account in wallet.", {
-            position: "bottom-center",
-            closeButton: true,
-            dismissible: true,
-            id: "wallet_select",
-          });
-        }}
+        onClick={async () => await open({ view: "Account" })}
       >
         <pre className="inline md:hidden">
-          {trimAccount(ethereumAccount, walletChars ?? 26)}
+          {trimAccount(account, walletChars ?? 26)}
         </pre>
-        <pre className="w-auto hidden md:inline">{ethereumAccount}</pre>
+        <pre className="w-auto hidden md:inline">{account}</pre>
       </div>
-      <BusyDialog
-        open={ethereumLoading}
-        title="Ethereum Wallet"
-        description="Waiting for Ethereum wallet..."
-      />
-      <ErrorDialog
-        open={!ethereumLoading && errorMessage !== null}
-        title="Ethereum Wallet Error"
-        description={errorMessage || "Unknown Error."}
-      />
     </>
   );
 };

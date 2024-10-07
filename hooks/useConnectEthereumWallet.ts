@@ -1,54 +1,69 @@
-"use client";
-
 import {
   ethereumAccountAtom,
   ethereumAccountsAtom,
+  ethereumChainIdAtom,
   windowEthereumAtom,
+  windowEthereumErrorAtom,
 } from "@/store/ethereum";
-import { useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useState } from "react";
+import { useWeb3ModalAccount } from "@web3modal/ethers/react";
+import { useAtomValue, useAtom } from "jotai";
+import { useEffect } from "react";
 
-export const useConnectEthereumWallet = (): [
-  () => Promise<void>,
-  boolean,
-  string | null,
-] => {
+export const useConnectEthereumWallet = () => {
   const windowEthereum = useAtomValue(windowEthereumAtom);
-  const setEthereumAccount = useSetAtom(ethereumAccountAtom);
-  const setEthereumAccounts = useSetAtom(ethereumAccountsAtom);
+  const windowEthereumError = useAtomValue(windowEthereumErrorAtom);
+  const [ethereumAccount, setEthereumAccount] = useAtom(ethereumAccountAtom);
+  const [ethereumAccounts, setEthereumAccounts] = useAtom(ethereumAccountsAtom);
+  const [ethereumChainId, setEthereumChainId] = useAtom(ethereumChainIdAtom);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { address, isConnected, status, chainId } = useWeb3ModalAccount();
 
-  const connectWallet = useCallback(async () => {
-    if (windowEthereum == null) {
+  useEffect(() => {
+    if (
+      !isConnected ||
+      address === undefined ||
+      status === "disconnected" ||
+      windowEthereum === null ||
+      windowEthereumError !== null
+    ) {
+      setEthereumAccount(null);
+      setEthereumAccounts([]);
+      setEthereumChainId(null);
       return;
     }
-    setLoading(true);
-    try {
-      const accounts: string[] = await windowEthereum.request({
-        method: "eth_requestAccounts",
-      });
 
-      if (Array.isArray(accounts) && accounts.length > 0) {
-        setEthereumAccount(accounts[0]);
-        setEthereumAccounts(accounts);
-      } else {
-        setEthereumAccount(null);
-        setEthereumAccounts([]);
-      }
-    } catch (err) {
-      let message = "Unknown Error";
-      if (err instanceof Error) message = err.message;
-      setError(message);
-    }
-    setLoading(false);
+    windowEthereum
+      .request({
+        method: "eth_requestAccounts",
+      })
+      .then((accounts) => {
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          setEthereumAccount(accounts[0]);
+          setEthereumAccounts(accounts);
+        }
+
+        if (address !== undefined) {
+          setEthereumAccount(address);
+        }
+        if (chainId !== undefined) {
+          setEthereumChainId(chainId);
+        }
+      });
   }, [
+    address,
+    windowEthereumError,
+    chainId,
+    isConnected,
+    status,
     windowEthereum,
+    setEthereumChainId,
     setEthereumAccount,
     setEthereumAccounts,
-    setError,
-    setLoading,
   ]);
-  return [connectWallet, loading, error];
+
+  return {
+    account: ethereumAccount,
+    accounts: ethereumAccounts,
+    chainId: ethereumChainId,
+  };
 };
