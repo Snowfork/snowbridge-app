@@ -76,11 +76,6 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     polkadot_js_kilt:
       "https://polkadot.js.org/apps/?rpc=wss://peregrine.kilt.io/parachain-public-ws/",
   },
-  paseo_sepolia: {
-    etherscan: "https://sepolia.etherscan.io/",
-    subscan_ah: "https://assethub-paseo.subscan.io/",
-    subscan_bh: "https://bridgehub-paseo.subscan.io/",
-  },
   polkadot_mainnet: {
     etherscan: "https://etherscan.io/",
     subscan_ah: "https://assethub-polkadot.subscan.io/",
@@ -305,8 +300,8 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-      ? ""
-      : "bg-secondary";
+        ? ""
+        : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,
