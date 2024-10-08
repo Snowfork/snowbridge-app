@@ -1,5 +1,10 @@
+import { ContextComponent } from "@/components/Context";
 import { SwitchComponent } from "@/components/Switch";
 
 export default function Switch() {
-  return <SwitchComponent />;
+  return (
+    <ContextComponent>
+      <SwitchComponent />
+    </ContextComponent>
+  );
 }

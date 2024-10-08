@@ -128,40 +128,40 @@ const PolkadotBalance: FC<Props> = ({
     if (!context) return;
 
     try {
-      const destinationParachain = parachainInfo.find(
-        (val) => val.id === destinationId,
-      );
-      const sourceParachain = parachainInfo.find((val) => val.id === sourceId);
-      if (!destinationParachain || !sourceParachain) {
+      const parachain =
+        sourceId === "assethub"
+          ? parachainInfo.find((val) => val.id === destinationId)
+          : parachainInfo.find((val) => val.id === sourceId);
+
+      if (!parachain) {
         return;
       }
       const sourceApi =
         sourceId === "assethub"
           ? context.polkadot.api.assetHub
-          : context.polkadot.api.parachains[sourceParachain.parachainId!];
+          : context.polkadot.api.parachains[parachain.parachainId!];
 
       const destinationApi =
         destinationId === "assethub"
           ? context.polkadot.api.assetHub
-          : context.polkadot.api.parachains[destinationParachain?.parachainId!];
+          : context.polkadot.api.parachains[parachain.parachainId!];
 
       let destinationBalance, destinationSymbol, sourceBalance, sourceSymbol;
 
       if (sourceId === "assethub") {
         sourceBalance = await fetchForeignAssetsBalances(
           sourceApi,
-          destinationParachain.switchPair[0].remoteAssetId,
+          parachain.switchPair[0].remoteAssetId,
           sourceAccount,
-          destinationParachain.switchPair[0].tokenMetadata.decimals,
+          parachain.switchPair[0].tokenMetadata.decimals,
         );
-        sourceSymbol = destinationParachain.switchPair[0].tokenMetadata.symbol;
+        sourceSymbol = parachain.switchPair[0].tokenMetadata.symbol;
         destinationBalance = await getBalanceData(
           destinationApi,
           sourceAccount,
-          destinationParachain.switchPair[0].tokenMetadata.decimals,
+          parachain.switchPair[0].tokenMetadata.decimals,
         );
-        destinationSymbol =
-          destinationParachain.switchPair[0].tokenMetadata.symbol;
+        destinationSymbol = parachain.switchPair[0].tokenMetadata.symbol;
       } else {
         const { tokenDecimal, tokenSymbol } =
           await assets.parachainNativeAsset(sourceApi);
@@ -174,11 +174,11 @@ const PolkadotBalance: FC<Props> = ({
 
         destinationBalance = await fetchForeignAssetsBalances(
           destinationApi,
-          sourceParachain.switchPair[0].remoteAssetId,
+          parachain.switchPair[0].remoteAssetId,
           sourceAccount,
-          sourceParachain.switchPair[0].tokenMetadata.decimals,
+          parachain.switchPair[0].tokenMetadata.decimals,
         );
-        destinationSymbol = sourceParachain.switchPair[0].tokenMetadata.symbol;
+        destinationSymbol = parachain.switchPair[0].tokenMetadata.symbol;
       }
 
       setBalanceData({
