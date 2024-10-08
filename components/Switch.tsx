@@ -17,6 +17,14 @@ import {
   FormMessage,
 } from "./ui/form";
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
   submitAssetHubToParachainTransfer,
   submitParachainToAssetHubTransfer,
 } from "@/utils/onSwitch";
@@ -50,7 +58,6 @@ import {
 import { useRouter } from "next/navigation";
 import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
-import { LocationSelector } from "./LocationSelector";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -106,15 +113,21 @@ export const SwitchComponent: FC = () => {
       })) || [],
     [polkadotAccounts],
   );
-  // const amountInSmallestUnit = useMemo(() => {
-  //   if (!amount) return null;
-  //   const decimals =
-  //     sourceId === "assethub"
-  //       ? snowbridgeEnvironment.locations.find(({ id }) => id === "assethub")!
-  //           .paraInfo?.decimals
-  //       : parachainsInfo.find(({ id }) => id === sourceId)?.switchPair;
-  //   return parseUnits(amount, decimals);
-  // }, [amount, sourceId]);
+
+  useEffect(() => {
+    if (sourceId === "assethub") {
+      if (!parachainsInfo.some(({ id }) => id === destinationId)) {
+        form.resetField("destinationId", {
+          defaultValue: parachainsInfo[0].id,
+        });
+        console.log();
+      }
+    } else {
+      form.resetField("destinationId", {
+        defaultValue: "assethub",
+      });
+    }
+  }, [destinationId, form, parachainsInfo, sourceId]);
 
   const handleTransaction = useCallback(async () => {
     if (
@@ -316,7 +329,75 @@ export const SwitchComponent: FC = () => {
               onSubmit={form.handleSubmit(() => onSubmit())}
               className="space-y-2"
             >
-              <LocationSelector form={form} parachainsInfo={parachainsInfo} />
+              <div className="grid grid-cols-2 space-x-2">
+                <FormField
+                  control={form.control}
+                  name="sourceId"
+                  render={({ field }) => (
+                    <FormItem {...field}>
+                      <FormLabel>Source</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a source" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {[
+                                { id: "assethub", name: "Asset Hub" },
+                                ...parachainsInfo,
+                              ].map(({ id, name }) => (
+                                <SelectItem key={id} value={id}>
+                                  {name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="destinationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Destination</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a destination" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {sourceId !== "assethub" ? (
+                                <SelectItem key={"assethub"} value={"assethub"}>
+                                  Asset Hub
+                                </SelectItem>
+                              ) : (
+                                parachainsInfo.map(({ id, name }) => (
+                                  <SelectItem key={id} value={id}>
+                                    {name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
