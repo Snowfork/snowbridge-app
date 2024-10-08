@@ -55,7 +55,6 @@ import {
   SnowbridgeEnvironmentNames,
 } from "@/utils/parachainConfigs";
 
-import { useRouter } from "next/navigation";
 import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
@@ -65,7 +64,6 @@ export const SwitchComponent: FC = () => {
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
-  const router = useRouter();
 
   const [feeDisplay, setFeeDisplay] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -270,10 +268,15 @@ export const SwitchComponent: FC = () => {
         throw new Error("Signer is not available");
       }
       setBusyMessage("Waiting for transaction to be confirmed by wallet.");
+
+      const subscanHost =
+        sourceId === "assethub"
+          ? "https://assethub-polkadot.subscan.io"
+          : "https://spiritnet.subscan.io";
       await transaction.signAndSend(address, { signer }, (result) => {
         setBusyMessage("Currently in flight");
 
-        if (result.isFinalized) {
+        if (result.isFinalized && !result.dispatchError) {
           setBusyMessage("");
           toast.info("Transfer Successful", {
             position: "bottom-center",
@@ -285,25 +288,27 @@ export const SwitchComponent: FC = () => {
             action: {
               label: "View",
               onClick: () =>
-                router.push(
-                  `https://spiritnet.subscan.io/extrinsic/${result.txHash}`,
+                window.open(
+                  `${subscanHost}/extrinsic/${result.txHash}`,
+                  "_blank",
                 ),
             },
           });
-        } else if (result.isError) {
+        } else if (result.isError || result.dispatchError) {
           setBusyMessage("");
           toast.info("Transfer unsuccessful", {
             position: "bottom-center",
             closeButton: true,
             duration: 60000,
-            id: "transfer_success",
-            description: "Token transfer was unsuccesfully.",
+            id: "transfer_error",
+            description: "Token transfer was unsuccesful.",
             important: true,
             action: {
               label: "View",
               onClick: () =>
-                router.push(
-                  `https://spiritnet.subscan.io/extrinsic/${result.txHash}`,
+                window.open(
+                  `${subscanHost}/extrinsic/${result.txHash}`,
+                  "_blank",
                 ),
             },
           });
@@ -326,8 +331,8 @@ export const SwitchComponent: FC = () => {
     assetHubSufficientTokenAvailable,
     parachainSufficientTokenAvailable,
     polkadotAccounts,
+    sourceId,
     sourceAccount,
-    router,
   ]);
 
   return (
