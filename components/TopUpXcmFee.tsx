@@ -168,6 +168,9 @@ export const TopUpXcmFee: FC<Props> = ({
 
         if (result.isFinalized) {
           setBusyMessage("");
+          // close top up dialog
+          setOpen(false);
+
           toast.info("Transfer Successful", {
             position: "bottom-center",
             closeButton: true,
@@ -262,11 +265,7 @@ export const TopUpXcmFee: FC<Props> = ({
             <Button
               className="w-full my-8"
               type="submit"
-              onClick={() => {
-                submitTopUp().then(() =>
-                  setTimeout(() => setOpen(false), 1000),
-                );
-              }}
+              onClick={() => submitTopUp()}
               disabled={
                 !context || !beneficiary || !sourceAccount || !amountInput
               }
