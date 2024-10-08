@@ -129,6 +129,10 @@ export const SwitchComponent: FC = () => {
     }
   }, [destinationId, form, parachainsInfo, sourceId]);
 
+  useEffect(() => {
+    form.resetField("beneficiary", { defaultValue: sourceAccount });
+  }, [form, sourceAccount]);
+
   const handleTransaction = useCallback(async () => {
     if (
       !context ||
@@ -160,6 +164,7 @@ export const SwitchComponent: FC = () => {
       )!;
       // take first switch pair - may be selectable in future version
       const switchPair = destination.switchPair[0];
+      setTokenSymbol(switchPair.tokenMetadata.symbol);
 
       await submitAssetHubToParachainTransfer({
         context,
@@ -176,6 +181,8 @@ export const SwitchComponent: FC = () => {
       const { parachainId, switchPair } = parachainsInfo.find(
         ({ id }) => id === sourceId,
       )!; // TODO: handle not exists?
+
+      setTokenSymbol(switchPair[0].tokenMetadata.symbol);
 
       submitParachainToAssetHubTransfer({
         context,
@@ -430,7 +437,7 @@ export const SwitchComponent: FC = () => {
                 control={form.control}
                 name="beneficiary"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem {...field}>
                     <FormLabel>Beneficiary</FormLabel>
                     <FormDescription className="hidden md:flex">
                       Receiver account on the destination.
@@ -440,6 +447,7 @@ export const SwitchComponent: FC = () => {
                         accounts={beneficiaries}
                         field={field}
                         allowManualInput={false}
+                        disabled={true}
                       />
                     </FormControl>
                     <FormMessage />
