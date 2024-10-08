@@ -147,7 +147,7 @@ export const SwitchComponent: FC = () => {
       return;
     }
 
-    if (!amount) {
+    if (!(Number(amount) > 0)) {
       return;
     }
     const createTransaction = async (
@@ -539,7 +539,10 @@ export const SwitchComponent: FC = () => {
               ) : (
                 <Button
                   disabled={
-                    !context || !amount || !beneficiary || !sourceAccount
+                    !context ||
+                    !(Number(amount) > 0) ||
+                    !beneficiary ||
+                    !sourceAccount
                   }
                   className="w-full my-8"
                   type="submit"
