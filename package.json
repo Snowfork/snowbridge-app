@@ -26,8 +26,8 @@
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toggle": "^1.1.0",
-    "@snowbridge/api": "^0.1.22",
-    "@snowbridge/contract-types": "^0.1.22",
+    "@snowbridge/api": "^0.1.23",
+    "@snowbridge/contract-types": "^0.1.23",
     "@talismn/connect-components": "^1.1.8",
     "@talismn/connect-wallets": "^1.2.5",
     "@types/big.js": "^6.2.2",
@@ -76,5 +76,6 @@
     "ts-mockito": "^2.6.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
-  }
+  },
+  "packageManager": "pnpm@9.12.0+sha512.4abf725084d7bcbafbd728bfc7bee61f2f791f977fd87542b3579dcb23504d170d46337945e4c66485cd12d588a0c0e570ed9c477e7ccdd8507cf05f3f92eaca"
 }
