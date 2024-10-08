@@ -30,10 +30,11 @@ interface Props {
   sourceAccount: string;
   targetChainInfo: ParaConfig;
   beneficiary: string;
-  sufficientTokenAvailable: boolean;
+  parachainSufficientTokenAvailable: boolean;
+  assetHubSufficientTokenAvailable: boolean;
   polkadotAccounts: WalletAccount[];
-  xcmBalance: string;
-  xcmBalanceDestination: string;
+  xcmBalance: bigint;
+  xcmBalanceDestination: bigint;
   formData: FormData | FormDataSwitch;
 }
 
@@ -41,7 +42,8 @@ export const TopUpXcmFee: FC<Props> = ({
   sourceAccount,
   targetChainInfo,
   beneficiary,
-  sufficientTokenAvailable,
+  parachainSufficientTokenAvailable,
+  assetHubSufficientTokenAvailable,
   polkadotAccounts,
   xcmBalance,
   xcmBalanceDestination,
@@ -71,27 +73,31 @@ export const TopUpXcmFee: FC<Props> = ({
 
   const submitTopUp = useCallback(async () => {
     if (!context || !switchPair || !xcmFee) return;
-
-    if (amountInput < xcmFee) {
-      setError({
-        title: "Not Enough to cover fees",
-        description: "The amount is too low to cover the XCM fees",
-        errors: [],
-      });
-      return;
-    }
-
-    if (xcmBalance < amountInput) {
-      setError({
-        title: "Balance too low",
-        description: "XCM Balance is too low for the amount specified",
-        errors: [],
-      });
-      return;
-    }
-
     try {
-      if (!sufficientTokenAvailable) {
+      const parsedInput = parseUnits(
+        amountInput,
+        switchPair[0].xcmFee.decimals,
+      );
+
+      if (parsedInput < parseUnits(xcmFee, switchPair[0].xcmFee.decimals)) {
+        setError({
+          title: "Not Enough to cover fees",
+          description: "The amount is too low to cover the XCM fees",
+          errors: [],
+        });
+        return;
+      }
+
+      if (xcmBalanceDestination < parsedInput) {
+        setError({
+          title: "Balance too low",
+          description: "XCM Balance is too low for the amount specified",
+          errors: [],
+        });
+        return;
+      }
+
+      if (!parachainSufficientTokenAvailable) {
         setError({
           title: "Not Enough Sufficient tokens",
           description: "Please follow the sufficient or existential deposit",
@@ -104,6 +110,7 @@ export const TopUpXcmFee: FC<Props> = ({
             },
           ],
         });
+        return;
       }
 
       setBusyMessage("Transaction being created.");
@@ -137,10 +144,7 @@ export const TopUpXcmFee: FC<Props> = ({
             {
               id: switchPair[0].xcmFee.remoteXcmFee.V4.id,
               fun: {
-                Fungible: parseUnits(
-                  amountInput,
-                  switchPair[0].xcmFee.decimals,
-                ),
+                Fungible: parsedInput,
               },
             },
           ],
@@ -192,17 +196,17 @@ export const TopUpXcmFee: FC<Props> = ({
       });
     }
   }, [
-    amountInput,
-    beneficiary,
     context,
-    parachainId,
-    polkadotAccounts,
-    router,
-    sourceAccount,
-    sufficientTokenAvailable,
     switchPair,
-    xcmBalance,
     xcmFee,
+    amountInput,
+    xcmBalanceDestination,
+    parachainSufficientTokenAvailable,
+    parachainId,
+    beneficiary,
+    polkadotAccounts,
+    sourceAccount,
+    router,
   ]);
 
   return (
@@ -223,15 +227,28 @@ export const TopUpXcmFee: FC<Props> = ({
           <DialogDescription className="flex items-center py-2">
             Source Account: {sourceAccount}
             <br />
-            XCM Fee Balance: {xcmBalance}
+            XCM Fee Balance:{" "}
+            {formatBalance({
+              number: BigInt(xcmBalance),
+              decimals: switchPair[0].xcmFee.decimals,
+              displayDecimals: 3,
+            })}{" "}
+            {switchPair[0].xcmFee.symbol}
           </DialogDescription>
           <DialogDescription className="flex items-center py-2">
             Destination Beneficiary: {beneficiary}
-            XCM Fee Balance: {xcmBalanceDestination}
+            <br />
+            Destination XCM Fee Balance:{" "}
+            {formatBalance({
+              number: BigInt(xcmBalanceDestination),
+              decimals: switchPair[0].xcmFee.decimals,
+              displayDecimals: 3,
+            })}{" "}
+            {switchPair[0].xcmFee.symbol}
           </DialogDescription>
           <Input
             id="amountInput"
-            type="text"
+            type="string"
             value={amountInput}
             placeholder={xcmFee ?? "0"}
             onChange={(e) => setAmountInput(e.target.value)}

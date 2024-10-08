@@ -1,7 +1,7 @@
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { fetchForeignAssetsBalances } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
-import { ParaConfig } from "@/utils/parachainConfigs";
+import { parachainConfigs, ParaConfig } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
 import { ApiPromise } from "@polkadot/api";
 import { Option } from "@polkadot/types";
@@ -16,7 +16,10 @@ interface Props {
   destinationId: string;
   beneficiary: string;
   parachainInfo: ParaConfig[];
-  handleSufficientTokens: (result: boolean) => void;
+  handleSufficientTokens: (
+    assetHubSufficient: boolean,
+    parachainSufficient: boolean,
+  ) => void;
   handleTopUpCheck: (
     xcmFee: bigint,
     xcmBalance: bigint,
@@ -98,20 +101,29 @@ const PolkadotBalance: FC<Props> = ({
   const checkSufficientTokens = useCallback(async () => {
     if (!context) return;
     try {
-      const parachain = parachainInfo.find((val) => val.id === destinationId);
-      if (!parachain) return;
+      const parachainId =
+        destinationId === "assethub" ? sourceId : destinationId;
 
-      const api =
-        destinationId === "assethub"
-          ? context.polkadot.api.assetHub
-          : context.polkadot.api.parachains[parachain.parachainId];
+      const assetHubApi = context.polkadot.api.assetHub;
+      const finder = parachainInfo.find((val) => val.id === parachainId);
+      if (!finder) return;
+      const parachainApi = context.polkadot.api.parachains[finder.parachainId];
 
-      const checkBalanceED =
-        await api.query.system.account<AccountInfo>(beneficiary);
+      const checkAssetHubBalanceED =
+        await assetHubApi.query.system.account<AccountInfo>(beneficiary);
 
-      const sufficient =
-        checkBalanceED.sufficients.eqn(0) && checkBalanceED.providers.eqn(0);
-      handleSufficientTokens(!sufficient);
+      const assetHubSufficient =
+        checkAssetHubBalanceED.sufficients.gtn(0) ||
+        checkAssetHubBalanceED.providers.gtn(0);
+
+      const checkParachainBalanceED =
+        await parachainApi.query.system.account<AccountInfo>(beneficiary);
+
+      const parachainSufficient =
+        checkParachainBalanceED.sufficients.gtn(0) ||
+        checkParachainBalanceED.providers.gtn(0);
+
+      handleSufficientTokens(assetHubSufficient, parachainSufficient);
       setError(null);
     } catch (e) {
       console.error(e);
@@ -128,6 +140,7 @@ const PolkadotBalance: FC<Props> = ({
     destinationId,
     handleSufficientTokens,
     parachainInfo,
+    sourceId,
   ]);
 
   const fetchBalanceData = useCallback(async () => {
@@ -177,12 +190,7 @@ const PolkadotBalance: FC<Props> = ({
           tokenDecimal,
         );
         sourceSymbol = tokenSymbol;
-        console.log(
-          destinationApi,
-          parachain.switchPair[0].remoteAssetId,
-          sourceAccount,
-          parachain.switchPair[0].tokenMetadata.decimals,
-        );
+
         destinationBalance = await fetchForeignAssetsBalances(
           destinationApi,
           parachain.switchPair[0].remoteAssetId,

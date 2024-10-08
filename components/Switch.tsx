@@ -58,6 +58,7 @@ import {
 import { useRouter } from "next/navigation";
 import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
+import { formatBalance } from "@/utils/formatting";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -69,8 +70,14 @@ export const SwitchComponent: FC = () => {
   const [feeDisplay, setFeeDisplay] = useState("");
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
-  const [sufficientTokenAvailable, setSufficientTokenAvailable] =
-    useState(true);
+  const [
+    assetHubSufficientTokenAvailable,
+    setAssetHubSufficientTokenAvailable,
+  ] = useState(true);
+  const [
+    parachainSufficientTokenAvailable,
+    setParachainSufficientTokenAvailable,
+  ] = useState(true);
   const [topUpCheck, setTopUpCheck] = useState({
     xcmFee: 0n,
     xcmBalance: 0n,
@@ -212,8 +219,13 @@ export const SwitchComponent: FC = () => {
     return () => clearTimeout(timeout);
   }, [handleTransaction]);
 
-  const handleSufficientTokens = (result: boolean) => {
-    setSufficientTokenAvailable(result);
+  const handleSufficientTokens = (
+    assetHubSufficient: boolean,
+    parachainSufficient: boolean,
+  ) => {
+    console.log(assetHubSufficient, parachainSufficient);
+    setAssetHubSufficientTokenAvailable(assetHubSufficient);
+    setParachainSufficientTokenAvailable(parachainSufficient);
   };
   const handleTopUpCheck = useCallback(
     (xcmFee: bigint, xcmBalance: bigint, xcmBalanceDestination: bigint) => {
@@ -228,7 +240,7 @@ export const SwitchComponent: FC = () => {
 
     // to do: better error information for the user.
     try {
-      if (destinationId === "assethub" && !sufficientTokenAvailable) {
+      if (destinationId === "assethub" && !assetHubSufficientTokenAvailable) {
         setError({
           title: "Insufficient Tokens.",
           description:
@@ -243,7 +255,7 @@ export const SwitchComponent: FC = () => {
           ],
         });
         return;
-      } else if (!sufficientTokenAvailable) {
+      } else if (!parachainSufficientTokenAvailable) {
         setError({
           title: "Insufficient Tokens.",
           description:
@@ -301,7 +313,6 @@ export const SwitchComponent: FC = () => {
       });
 
       setBusyMessage("");
-      form.reset();
     } catch (err) {
       setBusyMessage("");
       setError({
@@ -309,15 +320,14 @@ export const SwitchComponent: FC = () => {
         description: `Error occured while trying to send transaction.`,
         errors: [],
       });
-      form.reset();
     }
   }, [
     transaction,
     context,
     destinationId,
-    sufficientTokenAvailable,
+    assetHubSufficientTokenAvailable,
+    parachainSufficientTokenAvailable,
     polkadotAccounts,
-    form,
     sourceAccount,
     router,
   ]);
@@ -485,7 +495,22 @@ export const SwitchComponent: FC = () => {
               <div className="text-sm text-right text-muted-foreground px-1">
                 Transfer Fee: {feeDisplay}
                 <br />
-                XCM Fee: {topUpCheck.xcmFee}
+                {sourceId === "assethub" ? null : (
+                  <>
+                    {" "}
+                    XCM Fee:{" "}
+                    {formatBalance({
+                      number: BigInt(topUpCheck.xcmFee),
+                      decimals: parachainsInfo.find(({ id }) => id === sourceId)
+                        ?.switchPair[0].xcmFee.decimals,
+                      displayDecimals: 3,
+                    })}{" "}
+                    {
+                      parachainsInfo.find(({ id }) => id === sourceId)
+                        ?.switchPair[0].xcmFee.symbol
+                    }
+                  </>
+                )}
               </div>
               <br />
               {topUpCheck.xcmFee > topUpCheck.xcmBalance &&
@@ -497,7 +522,12 @@ export const SwitchComponent: FC = () => {
                     // target for transfer is source of switch
                     parachainsInfo.find(({ id }) => id === sourceId)! // TODO: what to do when not exists?
                   }
-                  sufficientTokenAvailable={sufficientTokenAvailable}
+                  parachainSufficientTokenAvailable={
+                    parachainSufficientTokenAvailable
+                  }
+                  assetHubSufficientTokenAvailable={
+                    assetHubSufficientTokenAvailable
+                  }
                   polkadotAccounts={polkadotAccounts!}
                   xcmBalance={topUpCheck.xcmBalance}
                   xcmBalanceDestination={topUpCheck.xcmBalanceDestination}
