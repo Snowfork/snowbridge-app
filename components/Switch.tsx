@@ -332,8 +332,9 @@ export const SwitchComponent: FC = () => {
                         <SelectedPolkadotAccount />
                         <PolkadotBalance
                           sourceAccount={sourceAccount}
-                          source={source}
-                          destination={destination}
+                          sourceId={sourceId}
+                          destinationId={destinationId}
+                          parachainInfo={parachainsInfo}
                           beneficiary={beneficiary}
                           handleSufficientTokens={handleSufficientTokens}
                           handleTopUpCheck={handleTopUpCheck}
@@ -396,9 +397,11 @@ export const SwitchComponent: FC = () => {
               {!topUpCheck.result && sourceId !== "assethub" ? (
                 <TopUpXcmFee
                   sourceAccount={sourceAccount}
-                  source={source}
                   beneficiary={beneficiary}
-                  destination={destination}
+                  targetChainInfo={
+                    // target for transfer is source of switch
+                    parachainsInfo.find(({ id }) => id === sourceId)! // TODO: what to do when not exists?
+                  }
                   sufficientTokenAvailable={sufficientTokenAvailable}
                   polkadotAccounts={polkadotAccounts!}
                   xcmBalance={topUpCheck.xcmBalance}

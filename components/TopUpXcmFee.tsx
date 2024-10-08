@@ -28,8 +28,7 @@ import { SendErrorDialog } from "./SendErrorDialog";
 
 interface Props {
   sourceAccount: string;
-  destinationId: string;
-  parachainInfo: ParaConfig[];
+  targetChainInfo: ParaConfig;
   beneficiary: string;
   sufficientTokenAvailable: boolean;
   polkadotAccounts: WalletAccount[];
@@ -38,9 +37,8 @@ interface Props {
 }
 
 export const TopUpXcmFee: FC<Props> = ({
-  destinationId,
   sourceAccount,
-  parachainInfo,
+  targetChainInfo,
   beneficiary,
   sufficientTokenAvailable,
   polkadotAccounts,
@@ -50,9 +48,7 @@ export const TopUpXcmFee: FC<Props> = ({
   const context = useAtomValue(snowbridgeContextAtom);
   const router = useRouter();
 
-  const { switchPair, parachainId } = parachainInfo.find(
-    ({ id }) => id === destinationId,
-  )!;
+  const { switchPair, parachainId } = targetChainInfo;
 
   const xcmFee = useMemo(() => {
     if (!switchPair || !switchPair[0]) return null;
@@ -71,8 +67,6 @@ export const TopUpXcmFee: FC<Props> = ({
 
   const submitTopUp = useCallback(async () => {
     if (!context || !switchPair || !xcmFee) return;
-
-    if (destinationId === "assethub") return;
 
     if (amountInput < xcmFee) {
       setError({
@@ -197,7 +191,6 @@ export const TopUpXcmFee: FC<Props> = ({
     amountInput,
     beneficiary,
     context,
-    destinationId,
     parachainId,
     polkadotAccounts,
     router,
@@ -260,7 +253,7 @@ export const TopUpXcmFee: FC<Props> = ({
       <SendErrorDialog
         info={error}
         formData={formData}
-        destination={destination}
+        destination={targetChainInfo.name}
         dismiss={() => setError(null)}
       />
     </>
