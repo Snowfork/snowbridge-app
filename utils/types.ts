@@ -16,9 +16,9 @@ export type ErrorInfo = {
 };
 
 export type FormDataSwitch = {
-  source: environment.TransferLocation;
+  sourceId: string;
   sourceAccount: string;
-  destination: environment.TransferLocation;
+  destinationId: string;
   token: string;
   amount: string;
   beneficiary: string;
@@ -42,7 +42,6 @@ export type AccountInfo = {
 export type TokenMetadata = {
   symbol: string;
   decimals: number;
-  address: string;
   minimumTransferAmount: string;
 };
 

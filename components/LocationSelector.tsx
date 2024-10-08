@@ -1,5 +1,5 @@
 // SourceDestinationSelector.tsx
-import { FC, useEffect, useMemo } from "react";
+import { FC, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -8,158 +8,111 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { FormControl, FormItem, FormLabel, FormMessage } from "./ui/form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./ui/form";
 import { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { environment } from "@snowbridge/api";
 import { formSchemaSwitch } from "@/utils/formSchema";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { parachainConfigs } from "@/utils/parachainConfigs";
+import { ParaConfig } from "@/utils/parachainConfigs";
 import { useAtomValue } from "jotai";
 
 interface Props {
   form: UseFormReturn<z.infer<typeof formSchemaSwitch>>;
-  filteredLocations: environment.TransferLocation[];
-  source: environment.TransferLocation;
-  setFeeDisplay: (value: string) => void;
-  setTokenSymbol: (value: string) => void;
+  parachainsInfo: ParaConfig[];
 }
 
-export const LocationSelector: FC<Props> = ({
-  form,
-  filteredLocations,
-  source,
-  setFeeDisplay,
-  setTokenSymbol,
-}) => {
+export const LocationSelector: FC<Props> = ({ form, parachainsInfo }) => {
   const context = useAtomValue(snowbridgeContextAtom);
-  const newDestinationId = useMemo(() => {
-    return source.destinationIds.find((x) => x !== "ethereum");
-  }, [source.destinationIds]);
-  const selectedDestination = useMemo(() => {
-    return filteredLocations.find((v) => v.id === newDestinationId);
-  }, [filteredLocations, newDestinationId]);
+
+  const sourceId = form.watch("sourceId");
 
   useEffect(() => {
-    if (!context || !source || source.destinationIds.length === 0) return;
+    if (!context) return;
 
-    const currentDestination = form.getValues("destination");
+    const currentDestination = form.getValues("destinationId");
 
-    if (currentDestination?.id !== newDestinationId && selectedDestination) {
-      form.setValue("destination", selectedDestination);
-
-      const newToken =
-        selectedDestination.erc20tokensReceivable[0]?.address || "";
-      if (form.getValues("token") !== newToken) {
-        form.setValue("token", newToken);
-        form.resetField("amount");
-        setFeeDisplay("");
+    if (sourceId === "assethub") {
+      if (!parachainsInfo.some(({ id }) => id === currentDestination)) {
+        form.resetField("destinationId", {
+          defaultValue: parachainsInfo[0].id,
+        });
       }
+    } else {
+      form.resetField("destinationId", {
+        defaultValue: "assethub",
+      });
     }
-
-    if (source.id === "assethub" && selectedDestination?.id === "assethub") {
-      const nonAssetHubDestination = filteredLocations.find(
-        (v) => v.id !== "assethub",
-      );
-      if (nonAssetHubDestination) {
-        form.setValue("destination", nonAssetHubDestination);
-      }
-    }
-
-    if (source.id === "assethub") {
-      const { nativeTokenMetadata } =
-        parachainConfigs[selectedDestination?.name || ""];
-      setTokenSymbol(nativeTokenMetadata.symbol);
-    }
-  }, [
-    source,
-    filteredLocations,
-    form,
-    context,
-    setFeeDisplay,
-    setTokenSymbol,
-    newDestinationId,
-    selectedDestination,
-  ]);
+  }, [context, form, parachainsInfo, sourceId]);
 
   return (
     <div className="grid grid-cols-2 space-x-2">
-      {/* Source Selector */}
-      <FormItem>
-        <FormLabel>Source</FormLabel>
-        <FormControl>
-          <Select
-            onValueChange={(value) => {
-              const selectedSource = filteredLocations.find(
-                (location) => location.id === value,
-              );
-              if (selectedSource) {
-                form.setValue("source", selectedSource);
-              }
-            }}
-            value={form.watch("source").id}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a source" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {filteredLocations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-
-      {/* Destination Selector */}
-      <FormItem>
-        <FormLabel>Destination</FormLabel>
-        <FormControl>
-          <Select
-            onValueChange={(value) => {
-              const selectedDestination = filteredLocations.find(
-                (location) => location.id === value,
-              );
-              if (selectedDestination) {
-                form.setValue("destination", selectedDestination);
-              }
-            }}
-            value={form.watch("destination").id}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a destination" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {source.destinationIds.map((destinationId) => {
-                  const availableDestination = filteredLocations.find(
-                    (v) => v.id === destinationId,
-                  );
-
-                  if (!availableDestination) {
-                    return null;
-                  }
-
-                  return (
-                    <SelectItem
-                      key={availableDestination.id}
-                      value={availableDestination.id}
-                    >
-                      {availableDestination.name}
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </FormControl>
-        <FormMessage />
-      </FormItem>
+      <FormField
+        control={form.control}
+        name="sourceId"
+        render={({ field }) => (
+          <FormItem {...field}>
+            <FormLabel>Source</FormLabel>
+            <FormControl>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {[
+                      { id: "assethub", name: "Asset Hub" },
+                      ...parachainsInfo,
+                    ].map(({ id, name }) => (
+                      <SelectItem key={id} value={id}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="destinationId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Destination</FormLabel>
+            <FormControl>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a destination" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {sourceId === "assethub" ? (
+                      <SelectItem key={"assethub"} value={"assethub"}>
+                        Asset Hub
+                      </SelectItem>
+                    ) : (
+                      parachainsInfo.map(({ id, name }) => (
+                        <SelectItem key={id} value={id}>
+                          {name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };

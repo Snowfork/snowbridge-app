@@ -15,9 +15,9 @@ export async function submitParachainToAssetHubTransfer({
   context,
   beneficiary,
   sourceAccount,
-  source,
+  parachainId,
   amount,
-  pallet,
+  palletName,
   setError,
   setBusyMessage,
   createTransaction,
@@ -25,9 +25,9 @@ export async function submitParachainToAssetHubTransfer({
   context: Context | null;
   beneficiary: string;
   sourceAccount: string;
-  source: environment.TransferLocation;
+  parachainId: number;
   amount: bigint;
-  pallet: string;
+  palletName: string;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
   setBusyMessage: Dispatch<SetStateAction<string>>;
   createTransaction: (
@@ -39,15 +39,8 @@ export async function submitParachainToAssetHubTransfer({
     if (!context) {
       throw Error("Invalid context: please update context");
     }
-    if (source.type !== "substrate") {
-      throw Error(`Invalid form state: source type mismatch.`);
-    }
-    if (!source.paraInfo) {
-      throw Error(`Invalid form state: source does not have parachain id.`);
-    }
 
-    const parachainApi =
-      context.polkadot.api.parachains[source.paraInfo?.paraId];
+    const parachainApi = context.polkadot.api.parachains[parachainId];
 
     const pathToBeneficiary = {
       V3: {
@@ -62,7 +55,10 @@ export async function submitParachainToAssetHubTransfer({
       },
     };
 
-    const transfer = parachainApi.tx[pallet].switch(amount, pathToBeneficiary);
+    const transfer = parachainApi.tx[palletName].switch(
+      amount,
+      pathToBeneficiary,
+    );
     const transactionFee = await transfer.paymentInfo(sourceAccount);
 
     createTransaction(transfer, transactionFee.partialFee.toHuman());
@@ -80,8 +76,8 @@ export async function submitParachainToAssetHubTransfer({
 export async function submitAssetHubToParachainTransfer({
   context,
   beneficiary,
-  source,
-  destination,
+  paraId,
+  palletName,
   amount,
   sourceAccount,
   setError,
@@ -90,8 +86,8 @@ export async function submitAssetHubToParachainTransfer({
 }: {
   context: Context | null;
   beneficiary: string;
-  source: environment.TransferLocation;
-  destination: environment.TransferLocation;
+  paraId: number;
+  palletName: string;
   amount: bigint;
   sourceAccount: string;
   setError: Dispatch<SetStateAction<ErrorInfo | null>>;
@@ -105,27 +101,12 @@ export async function submitAssetHubToParachainTransfer({
     if (!context) {
       throw Error("Invalid context: please update context");
     }
-    if (source.type !== "substrate") {
-      throw Error(`Invalid form state: source type mismatch.`);
-    }
-    if (!source.paraInfo) {
-      throw Error(`Invalid form state: source does not have parachain id.`);
-    }
-    if (destination.type !== "substrate") {
-      throw Error(`Invalid form state: destination type mismatch.`);
-    }
-    if (destination.paraInfo === undefined) {
-      throw Error(
-        `Invalid form state: destination does not have parachain id.`,
-      );
-    }
-    const { pallet } = parachainConfigs[destination.name];
+
     const assetHubApi = context.polkadot.api.assetHub;
-    const parachainApi =
-      context.polkadot.api.parachains[destination.paraInfo?.paraId];
+    const parachainApi = context.polkadot.api.parachains[paraId];
 
     const switchPair =
-      await parachainApi.query[pallet].switchPair<
+      await parachainApi.query[palletName].switchPair<
         Option<PalletAssetSwitchSwitchSwitchPairInfo>
       >();
 
@@ -146,7 +127,7 @@ export async function submitAssetHubToParachainTransfer({
       interior: {
         X1: [
           {
-            Parachain: destination.paraInfo?.paraId,
+            Parachain: paraId,
           },
         ],
       },

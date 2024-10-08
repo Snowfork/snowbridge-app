@@ -42,7 +42,10 @@ import { ISubmittableResult } from "@polkadot/types/types";
 import PolkadotBalance from "./Balances";
 import { parseUnits } from "ethers";
 import { toast } from "sonner";
-import { parachainConfigs } from "@/utils/parachainConfigs";
+import {
+  parachainConfigs,
+  SnowbridgeEnvironmentNames,
+} from "@/utils/parachainConfigs";
 
 import { useRouter } from "next/navigation";
 import { TopUpXcmFee } from "./TopUpXcmFee";
@@ -71,70 +74,60 @@ export const SwitchComponent: FC = () => {
   > | null>(null);
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
 
-  const filteredLocations = useMemo(
-    () =>
-      snowbridgeEnvironment.locations
-        .filter((x) => x.type !== "ethereum")
-        .filter((x) => x.name !== "Muse"),
-    [snowbridgeEnvironment],
-  );
-
-  const initialDestination = useMemo(() => {
-    return (
-      filteredLocations.find((location) => {
-        return parachainConfigs[location.id];
-      }) || filteredLocations[0]
-    );
-  }, [filteredLocations]);
+  const parachainsInfo =
+    parachainConfigs[snowbridgeEnvironment.name as SnowbridgeEnvironmentNames];
 
   const form: UseFormReturn<FormDataSwitch> = useForm<
     z.infer<typeof formSchemaSwitch>
   >({
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
-      source: filteredLocations.find((v) => v.id === "assethub"),
-      destination: initialDestination,
-      token: initialDestination?.erc20tokensReceivable[0].id,
+      sourceId: "assethub",
+      destinationId: parachainsInfo[0].id,
+      token: parachainsInfo[0].switchPair[0].tokenMetadata.symbol,
       beneficiary: polkadotAccount?.address ?? "",
       sourceAccount: polkadotAccount?.address ?? "",
       amount: "0.0",
     },
   });
 
-  const source = form.watch("source");
-  const destination = form.watch("destination");
+  const sourceId = form.watch("sourceId");
+  const destinationId = form.watch("destinationId");
   const sourceAccount = form.watch("sourceAccount");
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
-  const token = form.watch("token");
 
   const beneficiaries: AccountInfo[] = useMemo(
     () =>
       polkadotAccounts?.map((x) => ({
         key: x.address,
         name: x.name || "",
-        type: destination.type,
+        type: "substrate",
       })) || [],
-    [polkadotAccounts, destination.type],
+    [polkadotAccounts],
   );
-  const amountInSmallestUnit = useMemo(() => {
-    if (!amount) return null;
-    return parseUnits(amount, source.paraInfo?.decimals);
-  }, [amount, source.paraInfo?.decimals]);
+  // const amountInSmallestUnit = useMemo(() => {
+  //   if (!amount) return null;
+  //   const decimals =
+  //     sourceId === "assethub"
+  //       ? snowbridgeEnvironment.locations.find(({ id }) => id === "assethub")!
+  //           .paraInfo?.decimals
+  //       : parachainsInfo.find(({ id }) => id === sourceId)?.switchPair;
+  //   return parseUnits(amount, decimals);
+  // }, [amount, sourceId]);
 
   const handleTransaction = useCallback(async () => {
     if (
       !context ||
       !beneficiary ||
-      !source ||
-      !destination ||
-      !sourceAccount ||
-      !token
+      !sourceId ||
+      !destinationId ||
+      !sourceAccount
     ) {
       return;
     }
 
-    if (!amountInSmallestUnit) {
+    if (!amount) {
       return;
     }
     const createTransaction = async (
@@ -145,30 +138,38 @@ export const SwitchComponent: FC = () => {
       setFeeDisplay(transactionFee);
     };
 
-    if (source.id === "assethub") {
-      if (destination.id === "assethub") {
+    if (sourceId === "assethub") {
+      if (destinationId === "assethub") {
         return;
       }
+      const destination = parachainsInfo.find(
+        ({ id }) => id === destinationId,
+      )!;
+      // take first switch pair - may be selectable in future version
+      const switchPair = destination.switchPair[0];
+
       await submitAssetHubToParachainTransfer({
         context,
         beneficiary,
-        source,
-        destination,
-        amount: amountInSmallestUnit,
+        paraId: destination.parachainId,
+        palletName: switchPair.id,
+        amount: parseUnits(amount, switchPair.tokenMetadata.decimals),
         sourceAccount,
         setError,
         setBusyMessage,
         createTransaction,
       });
     } else {
-      const { pallet } = parachainConfigs[source.name];
+      const { parachainId, switchPair } = parachainsInfo.find(
+        ({ id }) => id === sourceId,
+      )!; // TODO: handle not exists?
 
       submitParachainToAssetHubTransfer({
         context,
         beneficiary,
-        source,
-        amount: amountInSmallestUnit,
-        pallet,
+        amount: parseUnits(amount, switchPair[0].tokenMetadata.decimals),
+        parachainId,
+        palletName: switchPair[0].id,
         sourceAccount,
         setError,
         setBusyMessage,
@@ -178,11 +179,11 @@ export const SwitchComponent: FC = () => {
   }, [
     context,
     beneficiary,
-    source,
-    destination,
+    sourceId,
+    destinationId,
     sourceAccount,
-    token,
-    amountInSmallestUnit,
+    amount,
+    parachainsInfo,
   ]);
 
   useEffect(() => {
@@ -206,7 +207,7 @@ export const SwitchComponent: FC = () => {
 
     // to do: better error information for the user.
     try {
-      if (destination.id === "assethub" && !sufficientTokenAvailable) {
+      if (destinationId === "assethub" && !sufficientTokenAvailable) {
         setError({
           title: "Insufficient Tokens.",
           description:
@@ -292,7 +293,7 @@ export const SwitchComponent: FC = () => {
   }, [
     transaction,
     context,
-    destination.id,
+    destinationId,
     sufficientTokenAvailable,
     polkadotAccounts,
     form,
@@ -315,13 +316,7 @@ export const SwitchComponent: FC = () => {
               onSubmit={form.handleSubmit(() => onSubmit())}
               className="space-y-2"
             >
-              <LocationSelector
-                form={form}
-                filteredLocations={filteredLocations}
-                source={source}
-                setFeeDisplay={setFeeDisplay}
-                setTokenSymbol={setTokenSymbol}
-              />
+              <LocationSelector form={form} parachainsInfo={parachainsInfo} />
 
               <FormField
                 control={form.control}
@@ -398,7 +393,7 @@ export const SwitchComponent: FC = () => {
                 Transfer Fee: {feeDisplay}
               </div>
               <br />
-              {!topUpCheck.result && source.id !== "assethub" ? (
+              {!topUpCheck.result && sourceId !== "assethub" ? (
                 <TopUpXcmFee
                   sourceAccount={sourceAccount}
                   source={source}
@@ -412,11 +407,7 @@ export const SwitchComponent: FC = () => {
               ) : (
                 <Button
                   disabled={
-                    !context ||
-                    !token ||
-                    !amount ||
-                    !beneficiary ||
-                    !sourceAccount
+                    !context || !amount || !beneficiary || !sourceAccount
                   }
                   className="w-full my-8"
                   type="submit"

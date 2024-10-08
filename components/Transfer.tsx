@@ -28,7 +28,7 @@ import { track } from "@vercel/analytics";
 import { useAtomValue, useSetAtom } from "jotai";
 import { LucideHardHat } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -64,10 +64,6 @@ import {
   SelectValue,
 } from "./ui/select";
 import { parseUnits } from "ethers";
-import {
-  filterParachainLocations,
-  parachainConfigs,
-} from "@/utils/parachainConfigs";
 
 export const TransferComponent: FC = () => {
   const maintenance =
@@ -94,10 +90,6 @@ export const TransferForm: FC = () => {
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const appRouter = useRouter();
-  const filteredLocations = useMemo(
-    () => filterParachainLocations(snowbridgeEnvironment.locations),
-    [snowbridgeEnvironment.locations],
-  );
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
@@ -108,7 +100,7 @@ export const TransferForm: FC = () => {
   const transfersPendingLocal = useSetAtom(transfersPendingLocalAtom);
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
-  const [source, setSource] = useState(filteredLocations[0]);
+  const [source, setSource] = useState(snowbridgeEnvironment.locations[0]);
   const [sourceAccount, setSourceAccount] = useState<string>();
   const [destinations, setDestinations] = useState(
     source.destinationIds.map(
@@ -221,7 +213,6 @@ export const TransferForm: FC = () => {
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
 
-  // to do: introduce the location component into transfer to reduce code to make it easier to read
   useEffect(() => {
     let newDestinations = destinations;
     if (source.id !== watchSource) {
@@ -549,7 +540,7 @@ export const TransferForm: FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {filteredLocations
+                              {snowbridgeEnvironment.locations
                                 .filter((s) => s.destinationIds.length > 0)
                                 .map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
@@ -580,18 +571,11 @@ export const TransferForm: FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {destinations
-                                .filter(
-                                  (val) =>
-                                    !Object.keys(parachainConfigs).includes(
-                                      val.id,
-                                    ),
-                                )
-                                .map((s) => (
-                                  <SelectItem key={s.id} value={s.id}>
-                                    {s.name}
-                                  </SelectItem>
-                                ))}
+                              {destinations.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {s.name}
+                                </SelectItem>
+                              ))}
                             </SelectGroup>
                           </SelectContent>
                         </Select>
