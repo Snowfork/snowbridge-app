@@ -7,8 +7,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { environment, toPolkadot } from "@snowbridge/api";
-import React, { useState, useEffect, useCallback, FC, useMemo } from "react";
+import { toPolkadot } from "@snowbridge/api";
+import { useState, useCallback, FC, useMemo } from "react";
 import { Button } from "./ui/button";
 
 import { BusyDialog } from "./BusyDialog";
@@ -16,7 +16,7 @@ import { Input } from "./ui/input";
 import { ErrorInfo, FormDataSwitch, FormData } from "@/utils/types";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { parachainConfigs } from "@/utils/parachainConfigs";
+import { ParaConfig } from "@/utils/parachainConfigs";
 
 import { parseUnits } from "ethers";
 import { decodeAddress } from "@polkadot/util-crypto";
@@ -28,8 +28,8 @@ import { SendErrorDialog } from "./SendErrorDialog";
 
 interface Props {
   sourceAccount: string;
-  source: environment.TransferLocation;
-  destination: environment.TransferLocation;
+  destinationId: string;
+  parachainInfo: ParaConfig[];
   beneficiary: string;
   sufficientTokenAvailable: boolean;
   polkadotAccounts: WalletAccount[];
@@ -38,9 +38,9 @@ interface Props {
 }
 
 export const TopUpXcmFee: FC<Props> = ({
-  source,
-  destination,
+  destinationId,
   sourceAccount,
+  parachainInfo,
   beneficiary,
   sufficientTokenAvailable,
   polkadotAccounts,
@@ -50,14 +50,9 @@ export const TopUpXcmFee: FC<Props> = ({
   const context = useAtomValue(snowbridgeContextAtom);
   const router = useRouter();
 
-  const switchPair = useMemo(() => {
-    if (source.id === destination.id) return null;
-    const config =
-      source.id === "assethub"
-        ? parachainConfigs[destination.name]
-        : parachainConfigs[source.name];
-    return config.switchPair;
-  }, [destination.id, destination.name, source.id, source.name]);
+  const { switchPair, parachainId } = parachainInfo.find(
+    ({ id }) => id === destinationId,
+  )!;
 
   const xcmFee = useMemo(() => {
     if (!switchPair || !switchPair[0]) return null;
@@ -77,7 +72,7 @@ export const TopUpXcmFee: FC<Props> = ({
   const submitTopUp = useCallback(async () => {
     if (!context || !switchPair || !xcmFee) return;
 
-    if (source.name === destination.name) return;
+    if (destinationId === "assethub") return;
 
     if (amountInput < xcmFee) {
       setError({
@@ -121,7 +116,7 @@ export const TopUpXcmFee: FC<Props> = ({
           V4: {
             parents: 1,
             interior: {
-              X1: [{ Parachain: source.paraInfo?.paraId! }],
+              X1: [{ Parachain: parachainId }],
             },
           },
         },
@@ -202,11 +197,10 @@ export const TopUpXcmFee: FC<Props> = ({
     amountInput,
     beneficiary,
     context,
-    destination.name,
+    destinationId,
+    parachainId,
     polkadotAccounts,
     router,
-    source.name,
-    source.paraInfo?.paraId,
     sourceAccount,
     sufficientTokenAvailable,
     switchPair,
