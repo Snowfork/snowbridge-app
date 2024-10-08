@@ -128,7 +128,6 @@ export const SwitchComponent: FC = () => {
         form.resetField("destination", {
           defaultValue: parachainsInfo[0].id,
         });
-        console.log();
       }
     } else {
       form.resetField("destination", {
@@ -223,7 +222,6 @@ export const SwitchComponent: FC = () => {
     assetHubSufficient: boolean,
     parachainSufficient: boolean,
   ) => {
-    console.log(assetHubSufficient, parachainSufficient);
     setAssetHubSufficientTokenAvailable(assetHubSufficient);
     setParachainSufficientTokenAvailable(parachainSufficient);
   };
