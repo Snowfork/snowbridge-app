@@ -25,8 +25,8 @@ import {
   SelectValue,
 } from "./ui/select";
 import {
-  submitAssetHubToParachainTransfer,
-  submitParachainToAssetHubTransfer,
+  assetHubToParachainTransfer,
+  parachainToAssetHubTransfer,
 } from "@/utils/onSwitch";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
@@ -150,56 +150,55 @@ export const SwitchComponent: FC = () => {
     if (!(Number(amount) > 0)) {
       return;
     }
-    const createTransaction = async (
-      transaction: SubmittableExtrinsic<"promise", ISubmittableResult>,
-      transactionFee: string,
-    ) => {
+    try {
+      let transaction;
+
+      if (sourceId === "assethub") {
+        if (destinationId === "assethub") {
+          return;
+        }
+        const destination = parachainsInfo.find(
+          ({ id }) => id === destinationId,
+        )!;
+        // take first switch pair - may be selectable in future version
+        const switchPair = destination.switchPair[0];
+        setTokenSymbol(switchPair.tokenMetadata.symbol);
+
+        transaction = await assetHubToParachainTransfer({
+          context,
+          beneficiary,
+          paraId: destination.parachainId,
+          palletName: switchPair.id,
+          amount: parseUnits(amount, switchPair.tokenMetadata.decimals),
+        });
+      } else {
+        if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
+          return;
+        }
+        const { parachainId, switchPair } = parachainsInfo.find(
+          ({ id }) => id === sourceId,
+        )!; // TODO: handle not exists?
+
+        setTokenSymbol(switchPair[0].tokenMetadata.symbol);
+
+        transaction = await parachainToAssetHubTransfer({
+          context,
+          beneficiary,
+          amount: parseUnits(amount, switchPair[0].tokenMetadata.decimals),
+          parachainId,
+          palletName: switchPair[0].id,
+        });
+      }
+      const transactionFee = await transaction.paymentInfo(sourceAccount);
+
       setTransaction(transaction);
-      setFeeDisplay(transactionFee);
-    };
-
-    if (sourceId === "assethub") {
-      if (destinationId === "assethub") {
-        return;
-      }
-      const destination = parachainsInfo.find(
-        ({ id }) => id === destinationId,
-      )!;
-      // take first switch pair - may be selectable in future version
-      const switchPair = destination.switchPair[0];
-      setTokenSymbol(switchPair.tokenMetadata.symbol);
-
-      await submitAssetHubToParachainTransfer({
-        context,
-        beneficiary,
-        paraId: destination.parachainId,
-        palletName: switchPair.id,
-        amount: parseUnits(amount, switchPair.tokenMetadata.decimals),
-        sourceAccount,
-        setError,
-        setBusyMessage,
-        createTransaction,
-      });
-    } else {
-      if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
-        return;
-      }
-      const { parachainId, switchPair } = parachainsInfo.find(
-        ({ id }) => id === sourceId,
-      )!; // TODO: handle not exists?
-
-      setTokenSymbol(switchPair[0].tokenMetadata.symbol);
-
-      submitParachainToAssetHubTransfer({
-        context,
-        beneficiary,
-        amount: parseUnits(amount, switchPair[0].tokenMetadata.decimals),
-        parachainId,
-        palletName: switchPair[0].id,
-        sourceAccount,
-        setError,
-        setBusyMessage,
-        createTransaction,
+      setFeeDisplay(transactionFee.partialFee.toHuman());
+    } catch (err) {
+      console.error(err);
+      setError({
+        title: "Send Error",
+        description: `Error occured while trying to create transaction.`,
+        errors: [],
       });
     }
   }, [
