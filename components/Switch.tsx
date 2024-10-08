@@ -129,6 +129,10 @@ export const SwitchComponent: FC = () => {
     }
   }, [destinationId, form, parachainsInfo, sourceId]);
 
+  useEffect(() => {
+    form.resetField("beneficiary", { defaultValue: sourceAccount });
+  }, [form, sourceAccount]);
+
   const handleTransaction = useCallback(async () => {
     if (
       !context ||
@@ -430,7 +434,7 @@ export const SwitchComponent: FC = () => {
                 control={form.control}
                 name="beneficiary"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem {...field}>
                     <FormLabel>Beneficiary</FormLabel>
                     <FormDescription className="hidden md:flex">
                       Receiver account on the destination.
@@ -440,6 +444,7 @@ export const SwitchComponent: FC = () => {
                         accounts={beneficiaries}
                         field={field}
                         allowManualInput={false}
+                        disabled={true}
                       />
                     </FormControl>
                     <FormMessage />

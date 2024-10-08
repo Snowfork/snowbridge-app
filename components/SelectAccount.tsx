@@ -23,12 +23,14 @@ type SelectAccountProps = {
   field: any;
   allowManualInput: boolean;
   accounts: AccountInfo[];
+  disabled?: boolean;
 };
 
 export const SelectAccount: FC<SelectAccountProps> = ({
   field,
   allowManualInput,
   accounts,
+  disabled = false,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -64,6 +66,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
         key="controlled"
         onValueChange={field.onChange}
         value={field.value}
+        disabled={disabled}
       >
         <SelectTrigger>
           <SelectValue placeholder="Select account" />
