@@ -94,7 +94,7 @@ export const LocationSelector: FC<Props> = ({ form, parachainsInfo }) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {sourceId === "assethub" ? (
+                    {sourceId !== "assethub" ? (
                       <SelectItem key={"assethub"} value={"assethub"}>
                         Asset Hub
                       </SelectItem>
