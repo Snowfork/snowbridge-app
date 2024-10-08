@@ -33,6 +33,7 @@ interface Props {
   sufficientTokenAvailable: boolean;
   polkadotAccounts: WalletAccount[];
   xcmBalance: string;
+  xcmBalanceDestination: string;
   formData: FormData | FormDataSwitch;
 }
 
@@ -43,6 +44,7 @@ export const TopUpXcmFee: FC<Props> = ({
   sufficientTokenAvailable,
   polkadotAccounts,
   xcmBalance,
+  xcmBalanceDestination,
   formData,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
@@ -217,11 +219,13 @@ export const TopUpXcmFee: FC<Props> = ({
           </p>
           <p>Send required XCM funds from source account to the beneficiary</p>
           <DialogDescription className="flex items-center py-2">
-            Selected Account: {sourceAccount}
+            Source Account: {sourceAccount}
+            <br />
             XCM Fee Balance: {xcmBalance}
           </DialogDescription>
           <DialogDescription className="flex items-center py-2">
-            Selected Beneficiary: {beneficiary}
+            Destination Beneficiary: {beneficiary}
+            XCM Fee Balance: {xcmBalanceDestination}
           </DialogDescription>
           <Input
             id="amountInput"
@@ -250,12 +254,12 @@ export const TopUpXcmFee: FC<Props> = ({
         </DialogContent>
       </Dialog>
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
-      <SendErrorDialog
+      {/* <SendErrorDialog
         info={error}
         formData={formData}
         destination={targetChainInfo.name}
         dismiss={() => setError(null)}
-      />
+      /> */}
     </>
   );
 };

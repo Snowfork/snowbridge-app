@@ -17,7 +17,11 @@ interface Props {
   beneficiary: string;
   parachainInfo: ParaConfig[];
   handleSufficientTokens: (result: boolean) => void;
-  handleTopUpCheck: (result: boolean, xcmBalance: string) => void;
+  handleTopUpCheck: (
+    xcmFee: string,
+    xcmBalance: string,
+    xcmBalanceDestination: string,
+  ) => void;
 }
 
 // Utility function to query balances
@@ -59,6 +63,7 @@ const PolkadotBalance: FC<Props> = ({
 
     try {
       const parachain = parachainInfo.find((val) => val.id === sourceId);
+
       if (!parachain) return;
       const api = context.polkadot.api.parachains[parachain.parachainId];
       const { xcmFee } = parachain.switchPair[0];
@@ -76,8 +81,13 @@ const PolkadotBalance: FC<Props> = ({
         decimals: xcmFee.decimals,
         displayDecimals: 3,
       });
+      const xcmBalanceDestination = formatBalance({
+        number: fungibleBalance.unwrapOrDefault().balance.toBigInt(),
+        decimals: xcmFee.decimals,
+        displayDecimals: 3,
+      });
       setError(null);
-      handleTopUpCheck(formattedFee <= xcmBalance, xcmBalance);
+      handleTopUpCheck(formattedFee, xcmBalance, xcmBalanceDestination);
     } catch (error) {
       console.error(error);
       setError({
@@ -171,7 +181,12 @@ const PolkadotBalance: FC<Props> = ({
           tokenDecimal,
         );
         sourceSymbol = tokenSymbol;
-
+        console.log(
+          destinationApi,
+          parachain.switchPair[0].remoteAssetId,
+          sourceAccount,
+          parachain.switchPair[0].tokenMetadata.decimals,
+        );
         destinationBalance = await fetchForeignAssetsBalances(
           destinationApi,
           parachain.switchPair[0].remoteAssetId,

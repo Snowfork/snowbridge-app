@@ -72,8 +72,9 @@ export const SwitchComponent: FC = () => {
   const [sufficientTokenAvailable, setSufficientTokenAvailable] =
     useState(true);
   const [topUpCheck, setTopUpCheck] = useState({
-    result: false,
+    xcmFee: "",
     xcmBalance: "",
+    xcmBalanceDestination: "",
   });
   const [transaction, setTransaction] = useState<SubmittableExtrinsic<
     "promise",
@@ -215,8 +216,8 @@ export const SwitchComponent: FC = () => {
     setSufficientTokenAvailable(result);
   };
   const handleTopUpCheck = useCallback(
-    (result: boolean, xcmBalance: string) => {
-      setTopUpCheck({ result, xcmBalance });
+    (xcmFee: string, xcmBalance: string, xcmBalanceDestination: string) => {
+      setTopUpCheck({ xcmFee, xcmBalance, xcmBalanceDestination });
     },
     [],
   );
@@ -433,6 +434,7 @@ export const SwitchComponent: FC = () => {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="beneficiary"
@@ -454,6 +456,7 @@ export const SwitchComponent: FC = () => {
                   </FormItem>
                 )}
               />
+
               <div className="flex space-x-2">
                 <div className="w-2/3">
                   <FormField
@@ -481,9 +484,12 @@ export const SwitchComponent: FC = () => {
               </div>
               <div className="text-sm text-right text-muted-foreground px-1">
                 Transfer Fee: {feeDisplay}
+                <br />
+                XCM Fee: {topUpCheck.xcmFee}
               </div>
               <br />
-              {!topUpCheck.result && sourceId !== "assethub" ? (
+              {topUpCheck.xcmFee < topUpCheck.xcmBalance &&
+              sourceId !== "assethub" ? (
                 <TopUpXcmFee
                   sourceAccount={sourceAccount}
                   beneficiary={beneficiary}
@@ -494,6 +500,7 @@ export const SwitchComponent: FC = () => {
                   sufficientTokenAvailable={sufficientTokenAvailable}
                   polkadotAccounts={polkadotAccounts!}
                   xcmBalance={topUpCheck.xcmBalance}
+                  xcmBalanceDestination={topUpCheck.xcmBalanceDestination}
                   formData={form.getValues()}
                 />
               ) : (
@@ -512,12 +519,12 @@ export const SwitchComponent: FC = () => {
         </CardContent>
       </Card>
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
-      <SendErrorDialog
+      {/* <SendErrorDialog
         info={error}
         formData={form.getValues()}
         destination={destination}
         dismiss={() => setError(null)}
-      />
+      /> */}
     </>
   );
 };
