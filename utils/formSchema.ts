@@ -24,14 +24,14 @@ export const TransferLocationSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: SourceTypeSchema,
-  destinationIds: z.array(z.string()),
+  destinations: z.array(z.string()),
   paraInfo: ParachainInfoSchema.optional(),
   erc20tokensReceivable: z.array(TransferTokenSchema),
 });
 
 export const formSchemaSwitch = z.object({
-  sourceId: z.string(),
-  destinationId: z.string(),
+  source: z.string(),
+  destination: z.string(),
   token: z.string().min(1, "Select token."),
   amount: z
     .string()

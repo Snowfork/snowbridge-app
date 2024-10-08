@@ -14,8 +14,8 @@ import {
 
 export const SendErrorDialog: FC<{
   info: ErrorInfo | null;
-  formData: FormData | FormDataSwitch;
-  destination: environment.TransferLocation;
+  formData: FormData;
+  destination?: environment.TransferLocation;
   onDepositAndApproveWeth?: () => Promise<void>;
   onApproveSpend?: () => Promise<void>;
   dismiss: () => void;

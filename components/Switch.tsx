@@ -90,8 +90,8 @@ export const SwitchComponent: FC = () => {
   >({
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
-      sourceId: "assethub",
-      destinationId: parachainsInfo[0].id,
+      source: "assethub",
+      destination: parachainsInfo[0].id,
       token: parachainsInfo[0].switchPair[0].tokenMetadata.symbol,
       beneficiary: polkadotAccount?.address ?? "",
       sourceAccount: polkadotAccount?.address ?? "",
@@ -99,8 +99,8 @@ export const SwitchComponent: FC = () => {
     },
   });
 
-  const sourceId = form.watch("sourceId");
-  const destinationId = form.watch("destinationId");
+  const sourceId = form.watch("source");
+  const destinationId = form.watch("destination");
   const sourceAccount = form.watch("sourceAccount");
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
@@ -118,13 +118,13 @@ export const SwitchComponent: FC = () => {
   useEffect(() => {
     if (sourceId === "assethub") {
       if (!parachainsInfo.some(({ id }) => id === destinationId)) {
-        form.resetField("destinationId", {
+        form.resetField("destination", {
           defaultValue: parachainsInfo[0].id,
         });
         console.log();
       }
     } else {
-      form.resetField("destinationId", {
+      form.resetField("destination", {
         defaultValue: "assethub",
       });
     }
@@ -340,7 +340,7 @@ export const SwitchComponent: FC = () => {
               <div className="grid grid-cols-2 space-x-2">
                 <FormField
                   control={form.control}
-                  name="sourceId"
+                  name="source"
                   render={({ field }) => (
                     <FormItem {...field}>
                       <FormLabel>Source</FormLabel>
@@ -372,7 +372,7 @@ export const SwitchComponent: FC = () => {
                 />
                 <FormField
                   control={form.control}
-                  name="destinationId"
+                  name="destination"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Destination</FormLabel>
@@ -519,12 +519,11 @@ export const SwitchComponent: FC = () => {
         </CardContent>
       </Card>
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
-      {/* <SendErrorDialog
+      <SendErrorDialog
         info={error}
         formData={form.getValues()}
-        destination={destination}
         dismiss={() => setError(null)}
-      /> */}
+      />
     </>
   );
 };

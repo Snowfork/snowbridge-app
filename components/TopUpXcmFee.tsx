@@ -260,12 +260,11 @@ export const TopUpXcmFee: FC<Props> = ({
         </DialogContent>
       </Dialog>
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
-      {/* <SendErrorDialog
+      <SendErrorDialog
         info={error}
         formData={formData}
-        destination={targetChainInfo.name}
         dismiss={() => setError(null)}
-      /> */}
+      />
     </>
   );
 };
