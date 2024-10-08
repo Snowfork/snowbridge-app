@@ -72,9 +72,9 @@ export const SwitchComponent: FC = () => {
   const [sufficientTokenAvailable, setSufficientTokenAvailable] =
     useState(true);
   const [topUpCheck, setTopUpCheck] = useState({
-    xcmFee: "",
-    xcmBalance: "",
-    xcmBalanceDestination: "",
+    xcmFee: 0n,
+    xcmBalance: 0n,
+    xcmBalanceDestination: 0n,
   });
   const [transaction, setTransaction] = useState<SubmittableExtrinsic<
     "promise",
@@ -216,7 +216,7 @@ export const SwitchComponent: FC = () => {
     setSufficientTokenAvailable(result);
   };
   const handleTopUpCheck = useCallback(
-    (xcmFee: string, xcmBalance: string, xcmBalanceDestination: string) => {
+    (xcmFee: bigint, xcmBalance: bigint, xcmBalanceDestination: bigint) => {
       setTopUpCheck({ xcmFee, xcmBalance, xcmBalanceDestination });
     },
     [],
@@ -488,7 +488,7 @@ export const SwitchComponent: FC = () => {
                 XCM Fee: {topUpCheck.xcmFee}
               </div>
               <br />
-              {topUpCheck.xcmFee < topUpCheck.xcmBalance &&
+              {topUpCheck.xcmFee > topUpCheck.xcmBalance &&
               sourceId !== "assethub" ? (
                 <TopUpXcmFee
                   sourceAccount={sourceAccount}

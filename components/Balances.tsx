@@ -18,9 +18,9 @@ interface Props {
   parachainInfo: ParaConfig[];
   handleSufficientTokens: (result: boolean) => void;
   handleTopUpCheck: (
-    xcmFee: BigInt,
-    xcmBalance: BigInt,
-    xcmBalanceDestination: BigInt,
+    xcmFee: bigint,
+    xcmBalance: bigint,
+    xcmBalanceDestination: bigint,
   ) => void;
 }
 
