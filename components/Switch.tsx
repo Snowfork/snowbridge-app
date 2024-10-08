@@ -164,6 +164,7 @@ export const SwitchComponent: FC = () => {
       )!;
       // take first switch pair - may be selectable in future version
       const switchPair = destination.switchPair[0];
+      setTokenSymbol(switchPair.tokenMetadata.symbol);
 
       await submitAssetHubToParachainTransfer({
         context,
@@ -180,6 +181,8 @@ export const SwitchComponent: FC = () => {
       const { parachainId, switchPair } = parachainsInfo.find(
         ({ id }) => id === sourceId,
       )!; // TODO: handle not exists?
+
+      setTokenSymbol(switchPair[0].tokenMetadata.symbol);
 
       submitParachainToAssetHubTransfer({
         context,
