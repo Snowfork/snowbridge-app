@@ -18,9 +18,9 @@ interface Props {
   parachainInfo: ParaConfig[];
   handleSufficientTokens: (result: boolean) => void;
   handleTopUpCheck: (
-    xcmFee: string,
-    xcmBalance: string,
-    xcmBalanceDestination: string,
+    xcmFee: BigInt,
+    xcmBalance: BigInt,
+    xcmBalanceDestination: BigInt,
   ) => void;
 }
 
@@ -67,27 +67,23 @@ const PolkadotBalance: FC<Props> = ({
       if (!parachain) return;
       const api = context.polkadot.api.parachains[parachain.parachainId];
       const { xcmFee } = parachain.switchPair[0];
-      const formattedFee = formatBalance({
-        number: BigInt(xcmFee.amount),
-        decimals: xcmFee.decimals,
-        displayDecimals: 3,
-      });
+
+      const fungibleBalanceDestination =
+        await context.polkadot.api.assetHub.query.system.account<AccountInfo>(
+          sourceAccount,
+        );
 
       const fungibleBalance = await api.query.fungibles.account<
         Option<AssetBalance>
       >(parachain.switchPair[0].xcmFee.remoteXcmFee.V4.id, sourceAccount);
-      const xcmBalance = formatBalance({
-        number: fungibleBalance.unwrapOrDefault().balance.toBigInt(),
-        decimals: xcmFee.decimals,
-        displayDecimals: 3,
-      });
-      const xcmBalanceDestination = formatBalance({
-        number: fungibleBalance.unwrapOrDefault().balance.toBigInt(),
-        decimals: xcmFee.decimals,
-        displayDecimals: 3,
-      });
+
       setError(null);
-      handleTopUpCheck(formattedFee, xcmBalance, xcmBalanceDestination);
+
+      handleTopUpCheck(
+        BigInt(xcmFee.amount),
+        fungibleBalance.unwrapOrDefault().balance.toBigInt(),
+        fungibleBalanceDestination.data.free.toBigInt(),
+      );
     } catch (error) {
       console.error(error);
       setError({
