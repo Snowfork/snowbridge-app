@@ -67,6 +67,8 @@ export const TopUpXcmFee: FC<Props> = ({
 
   const [error, setError] = useState<ErrorInfo | null>(null);
 
+  const [openState, setOpen] = useState(false);
+
   const submitTopUp = useCallback(async () => {
     if (!context || !switchPair || !xcmFee) return;
 
@@ -205,7 +207,7 @@ export const TopUpXcmFee: FC<Props> = ({
 
   return (
     <>
-      <Dialog>
+      <Dialog open={openState} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button className="w-full my-8">Top Up Balance</Button>
         </DialogTrigger>
@@ -243,7 +245,11 @@ export const TopUpXcmFee: FC<Props> = ({
             <Button
               className="w-full my-8"
               type="submit"
-              onClick={() => submitTopUp()}
+              onClick={() => {
+                submitTopUp().then(() =>
+                  setTimeout(() => setOpen(false), 1000),
+                );
+              }}
               disabled={
                 !context || !beneficiary || !sourceAccount || !amountInput
               }
