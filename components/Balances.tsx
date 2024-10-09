@@ -64,7 +64,7 @@ const PolkadotBalance: FC<Props> = ({
   const [error, setError] = useState<ErrorInfo | null>(null);
 
   const checkXcmFee = useCallback(async () => {
-    if (!context) return;
+    if (!context || !sourceAccount) return;
     if (sourceId === destinationId) return;
 
     try {
@@ -111,7 +111,7 @@ const PolkadotBalance: FC<Props> = ({
   ]);
 
   const checkSufficientTokens = useCallback(async () => {
-    if (!context) return;
+    if (!context || !beneficiary) return;
     try {
       const parachainId =
         destinationId === "assethub" ? sourceId : destinationId;
@@ -156,7 +156,7 @@ const PolkadotBalance: FC<Props> = ({
   ]);
 
   const fetchBalanceData = useCallback(async () => {
-    if (!context) return;
+    if (!context || !sourceAccount) return;
     if (sourceId === destinationId) return;
 
     try {
