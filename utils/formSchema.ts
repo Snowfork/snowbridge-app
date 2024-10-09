@@ -1,34 +1,6 @@
 "use client";
 import { z } from "zod";
 
-export const AddressTypeSchema = z.enum(["20byte", "32byte", "both"]);
-
-export const SourceTypeSchema = z.enum(["substrate", "ethereum"]);
-
-export const TransferTokenSchema = z.object({
-  id: z.string(),
-  address: z.string(),
-  minimumTransferAmount: z.bigint(),
-});
-
-export const ParachainInfoSchema = z.object({
-  paraId: z.number(),
-  destinationFeeDOT: z.bigint(),
-  skipExistentialDepositCheck: z.boolean(),
-  addressType: AddressTypeSchema,
-  decimals: z.number(),
-  maxConsumers: z.number(),
-});
-
-export const TransferLocationSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  type: SourceTypeSchema,
-  destinations: z.array(z.string()),
-  paraInfo: ParachainInfoSchema.optional(),
-  erc20tokensReceivable: z.array(TransferTokenSchema),
-});
-
 export const formSchemaSwitch = z.object({
   source: z.string(),
   destination: z.string(),
