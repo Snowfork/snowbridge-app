@@ -5,7 +5,8 @@ export type SnowbridgeEnvironmentNames =
   | "local_e2e"
   | "rococo_sepolia"
   | "polkadot_mainnet"
-  | "paseo_sepolia";
+  | "paseo_sepolia"
+  | "westend_sepolia";
 
 export interface ParaConfig {
   id: string;
@@ -23,6 +24,7 @@ type ParaConfigsForSnowEnv = Record<SnowbridgeEnvironmentNames, ParaConfig[]>;
 
 export const parachainConfigs: ParaConfigsForSnowEnv = {
   local_e2e: [],
+  westend_sepolia: [],
   polkadot_mainnet: [
     {
       // Kilt on Polkadot

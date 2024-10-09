@@ -90,7 +90,7 @@ export const SwitchComponent: FC = () => {
     parachainConfigs[snowbridgeEnvironment.name as SnowbridgeEnvironmentNames];
 
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(
-    parachainsInfo[0].switchPair[0].tokenMetadata.symbol,
+    parachainsInfo[0]?.switchPair[0]?.tokenMetadata.symbol,
   );
 
   const form: UseFormReturn<FormDataSwitch> = useForm<
@@ -99,8 +99,8 @@ export const SwitchComponent: FC = () => {
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
       source: "assethub",
-      destination: parachainsInfo[0].id,
-      token: parachainsInfo[0].switchPair[0].tokenMetadata.symbol,
+      destination: parachainsInfo[0]?.id,
+      token: parachainsInfo[0]?.switchPair[0]?.tokenMetadata.symbol,
       amount: "0.0",
     },
   });
@@ -125,7 +125,7 @@ export const SwitchComponent: FC = () => {
     if (sourceId === "assethub") {
       if (!parachainsInfo.some(({ id }) => id === destinationId)) {
         form.resetField("destination", {
-          defaultValue: parachainsInfo[0].id,
+          defaultValue: parachainsInfo[0]?.id,
         });
       }
     } else {

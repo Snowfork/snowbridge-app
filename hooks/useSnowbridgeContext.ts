@@ -19,11 +19,11 @@ const createSnowbridgeContext = async (
   const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
   const parachainEndpoints = new Set(env.config.PARACHAINS);
   // merge transfer and switch component parachain endpoints
-  Object.values(
-    parachainConfigs[env.name as SnowbridgeEnvironmentNames],
-  ).forEach(({ endpoint }) => {
-    parachainEndpoints.add(endpoint);
-  });
+  parachainConfigs[env.name as SnowbridgeEnvironmentNames].forEach(
+    ({ endpoint }) => {
+      parachainEndpoints.add(endpoint);
+    },
+  );
   const context = await createContext(ethereumProvider, env, {
     bridgeHub: process.env.NEXT_PUBLIC_BRIDGE_HUB_URL,
     assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL,
