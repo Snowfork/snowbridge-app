@@ -87,10 +87,13 @@ export const SwitchComponent: FC = () => {
     "promise",
     ISubmittableResult
   > | null>(null);
-  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
 
   const parachainsInfo =
     parachainConfigs[snowbridgeEnvironment.name as SnowbridgeEnvironmentNames];
+
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(
+    parachainsInfo[0]?.switchPair[0]?.tokenMetadata.symbol,
+  );
 
   const form: UseFormReturn<FormDataSwitch> = useForm<
     z.infer<typeof formSchemaSwitch>
@@ -98,8 +101,8 @@ export const SwitchComponent: FC = () => {
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
       source: "assethub",
-      destination: parachainsInfo[0].id,
-      token: parachainsInfo[0].switchPair[0].tokenMetadata.symbol,
+      destination: parachainsInfo[0]?.id,
+      token: parachainsInfo[0]?.switchPair[0]?.tokenMetadata.symbol,
       amount: "0.0",
     },
   });
@@ -124,7 +127,7 @@ export const SwitchComponent: FC = () => {
     if (sourceId === "assethub") {
       if (!parachainsInfo.some(({ id }) => id === destinationId)) {
         form.resetField("destination", {
-          defaultValue: parachainsInfo[0].id,
+          defaultValue: parachainsInfo[0]?.id,
         });
       }
     } else {
@@ -138,7 +141,7 @@ export const SwitchComponent: FC = () => {
     form.resetField("beneficiary", { defaultValue: sourceAccount });
   }, [form, sourceAccount, beneficiaries]);
 
-  const handleTransaction = useCallback(async () => {
+  const buildTransaction = useCallback(async () => {
     if (
       !context ||
       !beneficiary ||
@@ -217,9 +220,9 @@ export const SwitchComponent: FC = () => {
 
   useEffect(() => {
     setTransaction(null);
-    const timeout = setTimeout(handleTransaction, 1000);
+    const timeout = setTimeout(buildTransaction, 1000);
     return () => clearTimeout(timeout);
-  }, [handleTransaction]);
+  }, [buildTransaction]);
 
   const handleSufficientTokens = (
     assetHubSufficient: boolean,
