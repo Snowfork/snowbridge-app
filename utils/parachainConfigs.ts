@@ -37,13 +37,13 @@ export const parachainConfigs: ParaConfigsForSnowEnv = {
           tokenMetadata: {
             symbol: "KILT",
             decimals: 15,
-            minimumTransferAmount: "33333333",
+            minimumTransferAmount: "10000000000000",
           },
           xcmFee: {
             symbol: "DOT",
             decimals: 10,
             locationId: "assethub",
-            amount: "10000000000",
+            amount: "5000000000",
             remoteXcmFee: {
               V4: {
                 id: {
@@ -51,7 +51,7 @@ export const parachainConfigs: ParaConfigsForSnowEnv = {
                   interior: "Here",
                 },
                 fun: {
-                  Fungible: 1000000000000,
+                  Fungible: 5000000000,
                 },
               },
             },
