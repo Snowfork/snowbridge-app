@@ -98,17 +98,15 @@ export const SwitchComponent: FC = () => {
       source: "assethub",
       destination: parachainsInfo[0].id,
       token: parachainsInfo[0].switchPair[0].tokenMetadata.symbol,
-      beneficiary: polkadotAccount?.address ?? "",
-      sourceAccount: polkadotAccount?.address ?? "",
       amount: "0.0",
     },
   });
 
   const sourceId = form.watch("source");
   const destinationId = form.watch("destination");
-  const sourceAccount = form.watch("sourceAccount");
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
+  const sourceAccount = polkadotAccount?.address ?? "";
 
   const beneficiaries: AccountInfo[] = useMemo(
     () =>
@@ -136,7 +134,7 @@ export const SwitchComponent: FC = () => {
 
   useEffect(() => {
     form.resetField("beneficiary", { defaultValue: sourceAccount });
-  }, [form, sourceAccount]);
+  }, [form, sourceAccount, beneficiaries]);
 
   const handleTransaction = useCallback(async () => {
     if (
