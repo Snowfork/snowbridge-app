@@ -66,6 +66,8 @@ export const SwitchComponent: FC = () => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
 
   const [feeDisplay, setFeeDisplay] = useState("");
+  const [balanceCheck, setBalanceCheck] = useState("");
+
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
   const [
@@ -226,6 +228,9 @@ export const SwitchComponent: FC = () => {
     setAssetHubSufficientTokenAvailable(assetHubSufficient);
     setParachainSufficientTokenAvailable(parachainSufficient);
   };
+  const handleBalanceCheck = (fetchBalance: string) => {
+    setBalanceCheck(fetchBalance);
+  };
   const handleTopUpCheck = useCallback(
     (xcmFee: bigint, xcmBalance: bigint, xcmBalanceDestination: bigint) => {
       setTopUpCheck({ xcmFee, xcmBalance, xcmBalanceDestination });
@@ -237,7 +242,6 @@ export const SwitchComponent: FC = () => {
       return;
     }
 
-    // to do: better error information for the user.
     try {
       if (destinationId === "assethub" && !assetHubSufficientTokenAvailable) {
         setError({
@@ -254,11 +258,23 @@ export const SwitchComponent: FC = () => {
           ],
         });
         return;
-      } else if (!parachainSufficientTokenAvailable) {
+      }
+
+      if (!parachainSufficientTokenAvailable) {
         setError({
           title: "Insufficient Tokens.",
           description:
             "The beneficiary's account does not meet the sufficient or existential deposit requirements. Please ensure they have enough funds on the destination account to complete the transaction.",
+          errors: [],
+        });
+        return;
+      }
+
+      if (Number(balanceCheck) < Number(amount)) {
+        setError({
+          title: "Transfer amount below balance.",
+          description:
+            "The source's account does have enough balance to complete the transaction. Please ensure you have enough funds to complete the transaction.",
           errors: [],
         });
         return;
@@ -333,6 +349,8 @@ export const SwitchComponent: FC = () => {
     destinationId,
     assetHubSufficientTokenAvailable,
     parachainSufficientTokenAvailable,
+    balanceCheck,
+    amount,
     polkadotAccounts,
     sourceId,
     sourceAccount,
@@ -443,6 +461,7 @@ export const SwitchComponent: FC = () => {
                           beneficiary={beneficiary}
                           handleSufficientTokens={handleSufficientTokens}
                           handleTopUpCheck={handleTopUpCheck}
+                          handleBalanceCheck={handleBalanceCheck}
                         />
                       </>
                     </FormControl>
@@ -528,7 +547,7 @@ export const SwitchComponent: FC = () => {
                   beneficiary={beneficiary}
                   targetChainInfo={
                     // target for transfer is source of switch
-                    parachainsInfo.find(({ id }) => id === sourceId)! // TODO: what to do when not exists?
+                    parachainsInfo.find(({ id }) => id === sourceId)!
                   }
                   parachainSufficientTokenAvailable={
                     parachainSufficientTokenAvailable

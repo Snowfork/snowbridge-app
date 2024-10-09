@@ -25,6 +25,7 @@ interface Props {
     xcmBalance: bigint,
     xcmBalanceDestination: bigint,
   ) => void;
+  handleBalanceCheck: (fetchBalance: string) => void;
 }
 
 // Utility function to query balances
@@ -50,6 +51,7 @@ const PolkadotBalance: FC<Props> = ({
   parachainInfo,
   handleSufficientTokens,
   handleTopUpCheck,
+  handleBalanceCheck,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
   const [balanceData, setBalanceData] = useState({
@@ -200,6 +202,7 @@ const PolkadotBalance: FC<Props> = ({
           sourceSymbol: parachain.switchPair[0].tokenMetadata.symbol,
           sourceName: "Asset Hub",
         });
+        handleBalanceCheck(sourceBalance);
       } else {
         const { tokenDecimal, tokenSymbol } =
           await assets.parachainNativeAsset(sourceApi);
@@ -224,6 +227,7 @@ const PolkadotBalance: FC<Props> = ({
           sourceSymbol: tokenSymbol,
           sourceName: parachain.name,
         });
+        handleBalanceCheck(sourceBalance);
       }
 
       setError(null);
@@ -237,7 +241,14 @@ const PolkadotBalance: FC<Props> = ({
       });
       setLoading(false);
     }
-  }, [context, destinationId, parachainInfo, sourceAccount, sourceId]);
+  }, [
+    context,
+    destinationId,
+    handleBalanceCheck,
+    parachainInfo,
+    sourceAccount,
+    sourceId,
+  ]);
 
   useEffect(() => {
     checkXcmFee();
