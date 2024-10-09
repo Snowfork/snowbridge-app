@@ -147,7 +147,9 @@ export const SwitchComponent: FC = () => {
       return;
     }
 
-    if (!amount) {
+    if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
+      return;
+    }
       return;
     }
     const createTransaction = async (
@@ -205,6 +207,8 @@ export const SwitchComponent: FC = () => {
     sourceId,
     destinationId,
     sourceAccount,
+    topUpCheck.xcmFee,
+    topUpCheck.xcmBalance,
     amount,
     parachainsInfo,
   ]);
@@ -516,7 +520,7 @@ export const SwitchComponent: FC = () => {
                 )}
               </div>
               <br />
-              {topUpCheck.xcmFee > topUpCheck.xcmBalance &&
+              {topUpCheck.xcmFee >= topUpCheck.xcmBalance &&
               sourceId !== "assethub" ? (
                 <TopUpXcmFee
                   sourceAccount={sourceAccount}

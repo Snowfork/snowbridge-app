@@ -64,10 +64,13 @@ const PolkadotBalance: FC<Props> = ({
   const [error, setError] = useState<ErrorInfo | null>(null);
 
   const checkXcmFee = useCallback(async () => {
-    if (!context || sourceId === "assethub") return;
+    if (!context) return;
+    if (sourceId === destinationId) return;
 
     try {
-      const parachain = parachainInfo.find((val) => val.id === sourceId);
+      const parachainId =
+        destinationId === "assethub" ? sourceId : destinationId;
+      const parachain = parachainInfo.find((val) => val.id === parachainId);
 
       if (!parachain) return;
       const api = context.polkadot.api.parachains[parachain.parachainId];
@@ -98,7 +101,14 @@ const PolkadotBalance: FC<Props> = ({
         errors: [],
       });
     }
-  }, [context, handleTopUpCheck, parachainInfo, sourceAccount, sourceId]);
+  }, [
+    context,
+    destinationId,
+    handleTopUpCheck,
+    parachainInfo,
+    sourceAccount,
+    sourceId,
+  ]);
 
   const checkSufficientTokens = useCallback(async () => {
     if (!context) return;
@@ -147,6 +157,7 @@ const PolkadotBalance: FC<Props> = ({
 
   const fetchBalanceData = useCallback(async () => {
     if (!context) return;
+    if (sourceId === destinationId) return;
 
     try {
       const parachain =
