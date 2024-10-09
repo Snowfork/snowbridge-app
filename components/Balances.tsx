@@ -55,8 +55,10 @@ const PolkadotBalance: FC<Props> = ({
   const [balanceData, setBalanceData] = useState({
     destinationBalance: "0",
     destinationSymbol: "",
+    destinationName: "",
     sourceBalance: "0",
     sourceSymbol: "",
+    sourceName: "",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -165,47 +167,54 @@ const PolkadotBalance: FC<Props> = ({
           ? context.polkadot.api.assetHub
           : context.polkadot.api.parachains[parachain.parachainId!];
 
-      let destinationBalance, destinationSymbol, sourceBalance, sourceSymbol;
-
       if (sourceId === "assethub") {
-        sourceBalance = await fetchForeignAssetsBalances(
+        const sourceBalance = await fetchForeignAssetsBalances(
           sourceApi,
           parachain.switchPair[0].remoteAssetId,
           sourceAccount,
           parachain.switchPair[0].tokenMetadata.decimals,
         );
-        sourceSymbol = parachain.switchPair[0].tokenMetadata.symbol;
-        destinationBalance = await getBalanceData(
+
+        const destinationBalance = await getBalanceData(
           destinationApi,
           sourceAccount,
           parachain.switchPair[0].tokenMetadata.decimals,
         );
-        destinationSymbol = parachain.switchPair[0].tokenMetadata.symbol;
+
+        setBalanceData({
+          destinationBalance,
+          destinationSymbol: parachain.switchPair[0].tokenMetadata.symbol,
+          destinationName: parachain.name,
+          sourceBalance,
+          sourceSymbol: parachain.switchPair[0].tokenMetadata.symbol,
+          sourceName: "Asset Hub",
+        });
       } else {
         const { tokenDecimal, tokenSymbol } =
           await assets.parachainNativeAsset(sourceApi);
-        sourceBalance = await getBalanceData(
+        const sourceBalance = await getBalanceData(
           sourceApi,
           sourceAccount,
           tokenDecimal,
         );
-        sourceSymbol = tokenSymbol;
 
-        destinationBalance = await fetchForeignAssetsBalances(
+        const destinationBalance = await fetchForeignAssetsBalances(
           destinationApi,
           parachain.switchPair[0].remoteAssetId,
           sourceAccount,
           parachain.switchPair[0].tokenMetadata.decimals,
         );
-        destinationSymbol = parachain.switchPair[0].tokenMetadata.symbol;
+
+        setBalanceData({
+          destinationBalance,
+          destinationSymbol: parachain.switchPair[0].tokenMetadata.symbol,
+          destinationName: "Asset Hub",
+          sourceBalance,
+          sourceSymbol: tokenSymbol,
+          sourceName: parachain.name,
+        });
       }
 
-      setBalanceData({
-        destinationBalance,
-        destinationSymbol,
-        sourceBalance,
-        sourceSymbol,
-      });
       setError(null);
       setLoading(false);
     } catch (err) {
@@ -246,16 +255,22 @@ const PolkadotBalance: FC<Props> = ({
       </div>
     );
   }
+  const {
+    destinationBalance,
+    destinationSymbol,
+    destinationName,
+    sourceBalance,
+    sourceSymbol,
+    sourceName,
+  } = balanceData;
 
   return (
     <>
       <div className="text-sm text-right text-muted-foreground px-1">
-        {sourceId} Balance: {balanceData.sourceBalance}{" "}
-        {balanceData.sourceSymbol}
+        {sourceName} Balance: {sourceBalance} {sourceSymbol}
       </div>
       <div className="text-sm text-right text-muted-foreground px-1">
-        {destinationId} Balance: {balanceData.destinationBalance}{" "}
-        {balanceData.destinationSymbol}
+        {destinationName} Balance: {destinationBalance} {destinationSymbol}
       </div>
     </>
   );
