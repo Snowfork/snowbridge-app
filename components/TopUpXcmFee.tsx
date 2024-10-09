@@ -23,7 +23,6 @@ import { decodeAddress } from "@polkadot/util-crypto";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { formatBalance } from "@/utils/formatting";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { SendErrorDialog } from "./SendErrorDialog";
 
 interface Props {
@@ -43,14 +42,12 @@ export const TopUpXcmFee: FC<Props> = ({
   targetChainInfo,
   beneficiary,
   parachainSufficientTokenAvailable,
-  assetHubSufficientTokenAvailable,
   polkadotAccounts,
   xcmBalance,
   xcmBalanceDestination,
   formData,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
-  const router = useRouter();
 
   const { switchPair, parachainId } = targetChainInfo;
 
@@ -184,8 +181,9 @@ export const TopUpXcmFee: FC<Props> = ({
             action: {
               label: "View",
               onClick: () =>
-                router.push(
-                  `https://spiritnet.subscan.io/extrinsic/${result.txHash}`,
+                window.open(
+                  `https://assethub-polkadot.subscan.io/extrinsic/${result.txHash}`,
+                  "_blank",
                 ),
             },
           });
@@ -213,7 +211,6 @@ export const TopUpXcmFee: FC<Props> = ({
     beneficiary,
     polkadotAccounts,
     sourceAccount,
-    router,
   ]);
 
   return (

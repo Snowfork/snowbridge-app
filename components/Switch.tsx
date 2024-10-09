@@ -147,9 +147,6 @@ export const SwitchComponent: FC = () => {
       return;
     }
 
-    if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
-      return;
-    }
     if (!(Number(amount) > 0)) {
       return;
     }
@@ -184,6 +181,9 @@ export const SwitchComponent: FC = () => {
         createTransaction,
       });
     } else {
+      if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
+        return;
+      }
       const { parachainId, switchPair } = parachainsInfo.find(
         ({ id }) => id === sourceId,
       )!; // TODO: handle not exists?
