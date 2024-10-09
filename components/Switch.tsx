@@ -454,7 +454,6 @@ export const SwitchComponent: FC = () => {
               <FormField
                 control={form.control}
                 name="beneficiary"
-                disabled={true}
                 render={({ field }) => (
                   <FormItem {...field}>
                     <FormLabel>Beneficiary</FormLabel>
@@ -466,6 +465,7 @@ export const SwitchComponent: FC = () => {
                         accounts={beneficiaries}
                         field={field}
                         allowManualInput={false}
+                        disabled={true}
                       />
                     </FormControl>
                     <FormMessage />
