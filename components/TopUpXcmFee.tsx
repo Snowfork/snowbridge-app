@@ -79,7 +79,10 @@ export const TopUpXcmFee: FC<Props> = ({
         switchPair[0].xcmFee.decimals,
       );
 
-      if (parsedInput < parseUnits(xcmFee, switchPair[0].xcmFee.decimals)) {
+      if (
+        parsedInput + xcmBalance <
+        parseUnits(xcmFee, switchPair[0].xcmFee.decimals)
+      ) {
         setError({
           title: "Not Enough to cover fees",
           description: "The amount is too low to cover the XCM fees",
@@ -203,6 +206,7 @@ export const TopUpXcmFee: FC<Props> = ({
     switchPair,
     xcmFee,
     amountInput,
+    xcmBalance,
     xcmBalanceDestination,
     parachainSufficientTokenAvailable,
     parachainId,
