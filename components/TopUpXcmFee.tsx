@@ -35,6 +35,7 @@ interface Props {
   xcmBalance: bigint;
   xcmBalanceDestination: bigint;
   formData: FormData | FormDataSwitch;
+  destinationId: string;
 }
 
 export const TopUpXcmFee: FC<Props> = ({
@@ -46,6 +47,7 @@ export const TopUpXcmFee: FC<Props> = ({
   xcmBalance,
   xcmBalanceDestination,
   formData,
+  destinationId,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
 
@@ -162,15 +164,15 @@ export const TopUpXcmFee: FC<Props> = ({
       }
 
       setBusyMessage("Transaction in flight.");
-
+      const subscanHost =
+        destinationId === "assethub"
+          ? "https://assethub-polkadot.subscan.io"
+          : "https://spiritnet.subscan.io";
       await tx.signAndSend(address, { signer }, (result) => {
         setBusyMessage("Currently in flight");
 
-        if (result.isFinalized) {
+        if (result.isFinalized && !result.dispatchError) {
           setBusyMessage("");
-          // close top up dialog
-          setOpen(false);
-
           toast.info("Transfer Successful", {
             position: "bottom-center",
             closeButton: true,
@@ -182,7 +184,25 @@ export const TopUpXcmFee: FC<Props> = ({
               label: "View",
               onClick: () =>
                 window.open(
-                  `https://assethub-polkadot.subscan.io/extrinsic/${result.txHash}`,
+                  `${subscanHost}/extrinsic/${result.txHash}`,
+                  "_blank",
+                ),
+            },
+          });
+        } else if (result.isError || result.dispatchError) {
+          setBusyMessage("");
+          toast.info("Transfer unsuccessful", {
+            position: "bottom-center",
+            closeButton: true,
+            duration: 60000,
+            id: "transfer_error",
+            description: "Token transfer was unsuccesful.",
+            important: true,
+            action: {
+              label: "View",
+              onClick: () =>
+                window.open(
+                  `${subscanHost}/extrinsic/${result.txHash}`,
                   "_blank",
                 ),
             },
@@ -203,6 +223,7 @@ export const TopUpXcmFee: FC<Props> = ({
     context,
     switchPair,
     xcmFee,
+    destinationId,
     amountInput,
     xcmBalance,
     xcmBalanceDestination,

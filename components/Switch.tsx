@@ -541,6 +541,7 @@ export const SwitchComponent: FC = () => {
                   xcmBalance={topUpCheck.xcmBalance}
                   xcmBalanceDestination={topUpCheck.xcmBalanceDestination}
                   formData={form.getValues()}
+                  destinationId={destinationId}
                 />
               ) : (
                 <Button
