@@ -34,10 +34,13 @@ const getBalanceData = async (
   account: string,
   decimals: number,
 ) => {
-  const balance = await api.query.system.account<AccountInfo>(account);
+  const {
+    //@ts-ignore -- Unfortunately, the typing isn't upto date
+    data: { free, frozen },
+  } = await api.query.system.account<AccountInfo>(account);
 
   return formatBalance({
-    number: balance.data.free.toBigInt(),
+    number: free.toBigInt() - frozen.toBigInt(),
     decimals,
     displayDecimals: 3,
   });
@@ -78,7 +81,7 @@ const PolkadotBalance: FC<Props> = ({
       const api = context.polkadot.api.parachains[parachain.parachainId];
       const { xcmFee } = parachain.switchPair[0];
 
-      const fungibleBalanceDestination =
+      const assetHubBalanceDestination =
         await context.polkadot.api.assetHub.query.system.account<AccountInfo>(
           sourceAccount,
         );
@@ -92,7 +95,9 @@ const PolkadotBalance: FC<Props> = ({
       handleTopUpCheck(
         BigInt(xcmFee.amount),
         fungibleBalance.unwrapOrDefault().balance.toBigInt(),
-        fungibleBalanceDestination.data.free.toBigInt(),
+        assetHubBalanceDestination.data.free.toBigInt() -
+          //@ts-ignore -- Unfortunately, doesn't exist in the polkadot typing
+          assetHubBalanceDestination.data.frozen.toBigInt(),
       );
     } catch (error) {
       console.error(error);
