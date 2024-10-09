@@ -136,7 +136,7 @@ export const SwitchComponent: FC = () => {
     form.resetField("beneficiary", { defaultValue: sourceAccount });
   }, [form, sourceAccount, beneficiaries]);
 
-  const handleTransaction = useCallback(async () => {
+  const buildTransaction = useCallback(async () => {
     if (
       !context ||
       !beneficiary ||
@@ -215,9 +215,9 @@ export const SwitchComponent: FC = () => {
 
   useEffect(() => {
     setTransaction(null);
-    const timeout = setTimeout(handleTransaction, 1000);
+    const timeout = setTimeout(buildTransaction, 1000);
     return () => clearTimeout(timeout);
-  }, [handleTransaction]);
+  }, [buildTransaction]);
 
   const handleSufficientTokens = (
     assetHubSufficient: boolean,
