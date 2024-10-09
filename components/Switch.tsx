@@ -111,7 +111,19 @@ export const SwitchComponent: FC = () => {
   const destinationId = form.watch("destination");
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
-  const sourceAccount = polkadotAccount?.address ?? "";
+  const watchSourceAccount = form.watch("sourceAccount");
+
+  const [sourceAccount, setSourceAccount] = useState<string | undefined>(
+    polkadotAccount?.address,
+  );
+
+  useEffect(() => {
+    setSourceAccount(polkadotAccount?.address);
+    form.resetField("sourceAccount", {
+      defaultValue: polkadotAccount?.address,
+    });
+    form.resetField("beneficiary", { defaultValue: polkadotAccount?.address });
+  }, [watchSourceAccount, polkadotAccount, form]);
 
   const beneficiaries: AccountInfo[] = useMemo(
     () =>
@@ -136,10 +148,6 @@ export const SwitchComponent: FC = () => {
       });
     }
   }, [destinationId, form, parachainsInfo, sourceId]);
-
-  useEffect(() => {
-    form.resetField("beneficiary", { defaultValue: sourceAccount });
-  }, [form, sourceAccount, beneficiaries]);
 
   const buildTransaction = useCallback(async () => {
     if (
@@ -177,9 +185,6 @@ export const SwitchComponent: FC = () => {
           amount: parseUnits(amount, switchPair.tokenMetadata.decimals),
         });
       } else {
-        if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
-          return;
-        }
         const { parachainId, switchPair } = parachainsInfo.find(
           ({ id }) => id === sourceId,
         )!; // TODO: handle not exists?
@@ -212,8 +217,6 @@ export const SwitchComponent: FC = () => {
     sourceId,
     destinationId,
     sourceAccount,
-    topUpCheck.xcmFee,
-    topUpCheck.xcmBalance,
     amount,
     parachainsInfo,
   ]);
@@ -246,21 +249,34 @@ export const SwitchComponent: FC = () => {
     }
 
     try {
-      if (destinationId === "assethub" && !assetHubSufficientTokenAvailable) {
-        setError({
-          title: "Insufficient Tokens.",
-          description:
-            "Your account on Asset Hub does not have the required tokens. Please ensure you meet the sufficient or existential deposit requirements.",
-          errors: [
-            {
-              kind: "toPolkadot",
-              code: toPolkadot.SendValidationCode.BeneficiaryAccountMissing,
-              message:
-                "To complete the transaction, your Asset Hub account must hold specific tokens. Without these, the account cannot be activated or used.",
-            },
-          ],
-        });
-        return;
+      if (destinationId === "assethub") {
+        if (!assetHubSufficientTokenAvailable) {
+          setError({
+            title: "Insufficient Tokens.",
+            description:
+              "Your account on Asset Hub does not have the required tokens. Please ensure you meet the sufficient or existential deposit requirements.",
+            errors: [
+              {
+                kind: "toPolkadot",
+                code: toPolkadot.SendValidationCode.BeneficiaryAccountMissing,
+                message:
+                  "To complete the transaction, your Asset Hub account must hold specific tokens. Without these, the account cannot be activated or used.",
+              },
+            ],
+          });
+          return;
+        }
+        if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
+          // this shouldn't really happen because it should be caught by the top up dialogue
+          setError({
+            title: "Insufficient XCM Remote Fee Payment Tokens.",
+            description:
+              "Switches with destination Asset Hub require you to hold Relay Chain native tokens (e.g., DOT) on the source chain. You can teleport or reserve-transfer tokens to meet these requirements.",
+            errors: [],
+          });
+
+          return;
+        }
       }
 
       if (!parachainSufficientTokenAvailable) {
@@ -350,12 +366,14 @@ export const SwitchComponent: FC = () => {
     transaction,
     context,
     destinationId,
-    assetHubSufficientTokenAvailable,
     parachainSufficientTokenAvailable,
     balanceCheck,
     amount,
     polkadotAccounts,
     sourceId,
+    assetHubSufficientTokenAvailable,
+    topUpCheck.xcmFee,
+    topUpCheck.xcmBalance,
     sourceAccount,
   ]);
 
@@ -457,7 +475,7 @@ export const SwitchComponent: FC = () => {
                       <>
                         <SelectedPolkadotAccount />
                         <PolkadotBalance
-                          sourceAccount={sourceAccount}
+                          sourceAccount={sourceAccount ?? ""}
                           sourceId={sourceId}
                           destinationId={destinationId}
                           parachainInfo={parachainsInfo}
@@ -546,7 +564,7 @@ export const SwitchComponent: FC = () => {
               {topUpCheck.xcmFee >= topUpCheck.xcmBalance &&
               sourceId !== "assethub" ? (
                 <TopUpXcmFee
-                  sourceAccount={sourceAccount}
+                  sourceAccount={sourceAccount ?? ""}
                   beneficiary={beneficiary}
                   targetChainInfo={
                     // target for transfer is source of switch
