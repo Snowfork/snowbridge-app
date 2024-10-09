@@ -85,10 +85,13 @@ export const SwitchComponent: FC = () => {
     "promise",
     ISubmittableResult
   > | null>(null);
-  const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
 
   const parachainsInfo =
     parachainConfigs[snowbridgeEnvironment.name as SnowbridgeEnvironmentNames];
+
+  const [tokenSymbol, setTokenSymbol] = useState<string | null>(
+    parachainsInfo[0].switchPair[0].tokenMetadata.symbol,
+  );
 
   const form: UseFormReturn<FormDataSwitch> = useForm<
     z.infer<typeof formSchemaSwitch>
