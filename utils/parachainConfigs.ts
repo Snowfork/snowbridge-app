@@ -181,7 +181,7 @@ export const parachainConfigs: ParaConfigsForSnowEnv = {
             symbol: "PAS",
             decimals: 10,
             locationId: "assethub",
-            amount: "500000000",
+            amount: "5000000000",
             remoteXcmFee: {
               V4: {
                 id: {
@@ -189,7 +189,7 @@ export const parachainConfigs: ParaConfigsForSnowEnv = {
                   interior: "Here",
                 },
                 fun: {
-                  Fungible: 500000000,
+                  Fungible: 5000000000,
                 },
               },
             },
