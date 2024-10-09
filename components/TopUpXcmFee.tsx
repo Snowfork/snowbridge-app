@@ -172,6 +172,7 @@ export const TopUpXcmFee: FC<Props> = ({
         setBusyMessage("Currently in flight");
 
         if (result.isFinalized && !result.dispatchError) {
+          setOpen(false);
           setBusyMessage("");
           toast.info("Transfer Successful", {
             position: "bottom-center",
