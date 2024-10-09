@@ -252,14 +252,20 @@ const PolkadotBalance: FC<Props> = ({
 
   useEffect(() => {
     checkXcmFee();
+    const iv = setInterval(checkXcmFee, 10000);
+    return () => clearInterval(iv);
   }, [checkXcmFee]);
 
   useEffect(() => {
     fetchBalanceData();
+    const iv = setInterval(fetchBalanceData, 10000);
+    return () => clearInterval(iv);
   }, [fetchBalanceData]);
 
   useEffect(() => {
     checkSufficientTokens();
+    const iv = setInterval(checkSufficientTokens, 10000);
+    return () => clearInterval(iv);
   }, [checkSufficientTokens]);
 
   if (loading) {
@@ -277,14 +283,8 @@ const PolkadotBalance: FC<Props> = ({
       </div>
     );
   }
-  const {
-    destinationBalance,
-    destinationSymbol,
-    destinationName,
-    sourceBalance,
-    sourceSymbol,
-    sourceName,
-  } = balanceData;
+  const { destinationBalance, destinationSymbol, sourceBalance, sourceSymbol } =
+    balanceData;
 
   return (
     <>
