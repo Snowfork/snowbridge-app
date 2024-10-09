@@ -223,7 +223,7 @@ export const SwitchComponent: FC = () => {
 
   useEffect(() => {
     setTransaction(null);
-    const timeout = setTimeout(buildTransaction, 1000);
+    const timeout = setTimeout(buildTransaction, 700);
     return () => clearTimeout(timeout);
   }, [buildTransaction]);
 
