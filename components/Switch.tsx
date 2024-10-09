@@ -342,7 +342,7 @@ export const SwitchComponent: FC = () => {
     <>
       <Card className="w-auto md:w-2/3">
         <CardHeader>
-          <CardTitle>Switch</CardTitle>
+          <CardTitle>Polar Path</CardTitle>
           <CardDescription className="hidden md:flex">
             Switch Parachain tokens for ERC20 Parachain tokens via Asset Hub.
           </CardDescription>
