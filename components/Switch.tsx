@@ -215,6 +215,7 @@ export const SwitchComponent: FC = () => {
   ]);
 
   useEffect(() => {
+    setTransaction(null);
     const timeout = setTimeout(handleTransaction, 1000);
     return () => clearTimeout(timeout);
   }, [handleTransaction]);
@@ -543,12 +544,7 @@ export const SwitchComponent: FC = () => {
                 />
               ) : (
                 <Button
-                  disabled={
-                    !context ||
-                    !(Number(amount) > 0) ||
-                    !beneficiary ||
-                    !sourceAccount
-                  }
+                  disabled={!transaction}
                   className="w-full my-8"
                   type="submit"
                 >
