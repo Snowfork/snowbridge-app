@@ -1,7 +1,7 @@
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { fetchForeignAssetsBalances } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
-import { parachainConfigs, ParaConfig } from "@/utils/parachainConfigs";
+import { ParaConfig } from "@/utils/parachainConfigs";
 import { ErrorInfo } from "@/utils/types";
 import { ApiPromise } from "@polkadot/api";
 import { Option } from "@polkadot/types";
@@ -278,10 +278,10 @@ const PolkadotBalance: FC<Props> = ({
   return (
     <>
       <div className="text-sm text-right text-muted-foreground px-1">
-        {sourceName} Balance: {sourceBalance} {sourceSymbol}
+        Source Balance: {sourceBalance} {sourceSymbol}
       </div>
       <div className="text-sm text-right text-muted-foreground px-1">
-        {destinationName} Balance: {destinationBalance} {destinationSymbol}
+        Destination Balance: {destinationBalance} {destinationSymbol}
       </div>
     </>
   );

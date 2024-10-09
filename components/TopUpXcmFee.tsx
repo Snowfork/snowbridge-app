@@ -238,7 +238,7 @@ export const TopUpXcmFee: FC<Props> = ({
     <>
       <Dialog open={openState} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className="w-full my-8">Top Up Balance</Button>
+          <Button className="w-full my-8">Submit</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
@@ -248,9 +248,9 @@ export const TopUpXcmFee: FC<Props> = ({
             Not enough {switchPair ? switchPair[0].xcmFee.symbol : null} for XCM
             transaction.
           </p>
-          <p>Send required XCM funds from source account to the beneficiary</p>
+          <p>Send required XCM funds from Asset Hub to Source Parachain.</p>
           <DialogDescription className="flex items-center py-2">
-            Source Account: {sourceAccount}
+            From: {sourceAccount}
             <br />
             XCM Fee Balance:{" "}
             {formatBalance({
@@ -261,9 +261,9 @@ export const TopUpXcmFee: FC<Props> = ({
             {switchPair[0].xcmFee.symbol}
           </DialogDescription>
           <DialogDescription className="flex items-center py-2">
-            Destination Beneficiary: {beneficiary}
+            To: {beneficiary}
             <br />
-            Destination XCM Fee Balance:{" "}
+            XCM Fee Balance:{" "}
             {formatBalance({
               number: BigInt(xcmBalanceDestination),
               decimals: switchPair[0].xcmFee.decimals,
