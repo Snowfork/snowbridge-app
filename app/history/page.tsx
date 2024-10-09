@@ -61,7 +61,7 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     etherscan: "https://no-expolorers-for-local-e2e/",
     subscan_ah: "https://no-expolorers-for-local-e2e/",
     subscan_bh: "https://no-expolorers-for-local-e2e/",
-    polkadot_js_kilt: "https://no-expolorers-for-local-e2e/",
+    polkadot_js_kilt: "https://no-expolorers-for-westend/",
   },
   rococo_sepolia: {
     etherscan: "https://sepolia.etherscan.io/",
