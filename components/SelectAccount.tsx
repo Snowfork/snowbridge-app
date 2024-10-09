@@ -5,7 +5,7 @@ import {
   polkadotWalletModalOpenAtom,
 } from "@/store/polkadot";
 import { useAtom, useAtomValue } from "jotai";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -35,6 +35,18 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+
+  useEffect(() => {
+    // unset account selection if selected account is no longer found in accounts
+    if (
+      !allowManualInput &&
+      !accounts.find((account) => account.key === field.value)
+    ) {
+      field.onChange(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
+  }, [accounts, field.value, allowManualInput]);
+
   if (
     !allowManualInput &&
     accountFromWallet &&
@@ -53,10 +65,6 @@ export const SelectAccount: FC<SelectAccountProps> = ({
         Connect Polkadot
       </Button>
     );
-  }
-
-  if (!accounts.find((account) => account.key === field.value)) {
-    field.onChange(undefined);
   }
 
   let input: JSX.Element;
