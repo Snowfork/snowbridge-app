@@ -1,7 +1,7 @@
 "use client";
 
 import { acceptedTermsOfUseAtom } from "@/store/termsOfUse";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import {
   Dialog,
   DialogContent,
