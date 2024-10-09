@@ -499,8 +499,10 @@ export const SwitchComponent: FC = () => {
                     XCM Fee:{" "}
                     {formatBalance({
                       number: BigInt(topUpCheck.xcmFee),
-                      decimals: parachainsInfo.find(({ id }) => id === sourceId)
-                        ?.switchPair[0].xcmFee.decimals,
+                      decimals:
+                        parachainsInfo.find(({ id }) => id === sourceId)
+                          ?.switchPair?.[0].xcmFee.decimals ?? 10, // fallback to denomination of polkadot.
+
                       displayDecimals: 3,
                     })}{" "}
                     {
