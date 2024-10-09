@@ -111,7 +111,19 @@ export const SwitchComponent: FC = () => {
   const destinationId = form.watch("destination");
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
-  const sourceAccount = polkadotAccount?.address ?? "";
+  const watchSourceAccount = form.watch("sourceAccount");
+
+  const [sourceAccount, setSourceAccount] = useState<string | undefined>(
+    polkadotAccount?.address,
+  );
+
+  useEffect(() => {
+    setSourceAccount(polkadotAccount?.address);
+    form.resetField("sourceAccount", {
+      defaultValue: polkadotAccount?.address,
+    });
+    form.resetField("beneficiary", { defaultValue: polkadotAccount?.address });
+  }, [watchSourceAccount, polkadotAccount, form]);
 
   const beneficiaries: AccountInfo[] = useMemo(
     () =>
@@ -136,10 +148,6 @@ export const SwitchComponent: FC = () => {
       });
     }
   }, [destinationId, form, parachainsInfo, sourceId]);
-
-  useEffect(() => {
-    form.resetField("beneficiary", { defaultValue: sourceAccount });
-  }, [form, sourceAccount, beneficiaries]);
 
   const buildTransaction = useCallback(async () => {
     if (
@@ -467,7 +475,7 @@ export const SwitchComponent: FC = () => {
                       <>
                         <SelectedPolkadotAccount />
                         <PolkadotBalance
-                          sourceAccount={sourceAccount}
+                          sourceAccount={sourceAccount ?? ""}
                           sourceId={sourceId}
                           destinationId={destinationId}
                           parachainInfo={parachainsInfo}
@@ -556,7 +564,7 @@ export const SwitchComponent: FC = () => {
               {topUpCheck.xcmFee >= topUpCheck.xcmBalance &&
               sourceId !== "assethub" ? (
                 <TopUpXcmFee
-                  sourceAccount={sourceAccount}
+                  sourceAccount={sourceAccount ?? ""}
                   beneficiary={beneficiary}
                   targetChainInfo={
                     // target for transfer is source of switch
