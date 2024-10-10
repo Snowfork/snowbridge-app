@@ -14,14 +14,14 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { transfersPendingLocalAtom } from "@/store/transferHistory";
-import { parseAmount, updateBalance } from "@/utils/balances";
+import { updateBalance } from "@/utils/balances";
 import { doApproveSpend } from "@/utils/doApproveSpend";
 import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
 import { errorMessage } from "@/utils/errorMessage";
 import { formatBalance } from "@/utils/formatting";
 import { formSchema } from "@/utils/formSchema";
 import { onSubmit } from "@/utils/onSubmit";
-import { AccountInfo, ErrorInfo, FormData } from "@/utils/types";
+import { AccountInfo, ErrorInfo } from "@/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { assets, environment, toEthereum, toPolkadot } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
@@ -29,7 +29,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { LucideHardHat } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FC, useCallback, useEffect, useState } from "react";
-import { UseFormReturn, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { BusyDialog } from "./BusyDialog";
@@ -63,40 +63,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-
-export const validateOFAC = async (
-  data: FormData,
-  form: UseFormReturn<FormData>,
-): Promise<boolean> => {
-  const response = await fetch("/blocked/api", {
-    method: "POST",
-    body: JSON.stringify({
-      sourceAddress: data.sourceAccount,
-      beneficiaryAddress: data.beneficiary,
-    }),
-  });
-  if (!response.ok) {
-    throw Error(
-      `Error verifying ofac status: ${response.status} - ${response.statusText}`,
-    );
-  }
-  const result = await response.json();
-  if (result.beneficiaryBanned) {
-    form.setError(
-      "beneficiary",
-      { message: "Beneficiary banned." },
-      { shouldFocus: true },
-    );
-  }
-  if (result.sourceBanned) {
-    form.setError(
-      "sourceAccount",
-      { message: "Source Account banned." },
-      { shouldFocus: true },
-    );
-  }
-  return result.beneficiaryBanned === false && result.sourceBanned === false;
-};
+import { parseUnits } from "ethers";
 
 export const TransferComponent: FC = () => {
   const maintenance =
@@ -123,7 +90,6 @@ export const TransferForm: FC = () => {
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const appRouter = useRouter();
-
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
@@ -371,7 +337,7 @@ export const TransferForm: FC = () => {
         context,
         ethereumProvider,
         formData.token,
-        parseAmount(formData.amount, tokenMetadata),
+        parseUnits(formData.amount, tokenMetadata.decimals),
       );
       toast.info(toastTitle, {
         position: "bottom-center",
@@ -437,7 +403,7 @@ export const TransferForm: FC = () => {
         context,
         ethereumProvider,
         formData.token,
-        parseAmount(formData.amount, tokenMetadata),
+        parseUnits(formData.amount, tokenMetadata.decimals),
       );
       toast.info(toastTitle, {
         position: "bottom-center",

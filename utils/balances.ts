@@ -3,14 +3,10 @@ import { Context, assets, environment } from "@snowbridge/api";
 import SnowbridgeEnvironment = environment.SnowbridgeEnvironment;
 import { formatBalance } from "@/utils/formatting";
 import { ErrorInfo } from "./types";
-import { parseUnits } from "ethers";
-
-export function parseAmount(
-  decimals: string,
-  metadata: assets.ERC20Metadata,
-): bigint {
-  return parseUnits(decimals, metadata.decimals);
-}
+import { ApiPromise } from "@polkadot/api";
+import { RemoteAssetId } from "./types";
+import { Option } from "@polkadot/types";
+import { AssetBalance } from "@polkadot/types/interfaces";
 
 async function getTokenBalance({
   context,
@@ -98,4 +94,21 @@ export function updateBalance(
         errors: [],
       });
     });
+}
+
+export async function fetchForeignAssetsBalances(
+  api: ApiPromise,
+  remoteAssetId: RemoteAssetId,
+  sourceAccount: string,
+  decimals: number,
+) {
+  const foreignAssets = await api.query.foreignAssets.account<
+    Option<AssetBalance>
+  >(remoteAssetId, sourceAccount);
+
+  return formatBalance({
+    number: foreignAssets.unwrapOrDefault().balance.toBigInt(),
+    decimals,
+    displayDecimals: 3,
+  });
 }

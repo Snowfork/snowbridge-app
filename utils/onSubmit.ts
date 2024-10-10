@@ -10,6 +10,7 @@ import {
   toEthereum,
   toPolkadot,
 } from "@snowbridge/api";
+import { parseUnits } from "ethers";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { BrowserProvider } from "ethers";
 import { Dispatch, SetStateAction } from "react";
@@ -17,9 +18,8 @@ import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { track } from "@vercel/analytics";
 import { errorMessage } from "./errorMessage";
-import { parseAmount } from "@/utils/balances";
 import { AppRouter, FormData, ErrorInfo } from "@/utils/types";
-import { validateOFAC } from "@/components/Transfer";
+import { validateOFAC } from "@/utils/validateOFAC";
 
 export function onSubmit({
   context,
@@ -56,7 +56,10 @@ export function onSubmit({
     try {
       if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
 
-      const amountInSmallestUnit = parseAmount(data.amount, tokenMetadata);
+      const amountInSmallestUnit = parseUnits(
+        data.amount,
+        tokenMetadata.decimals,
+      );
       if (amountInSmallestUnit === 0n) {
         const errorMessage = "Amount must be greater than 0.";
         form.setError("amount", { message: errorMessage });

@@ -30,7 +30,9 @@ export function getEnvironmentName() {
 
 export function getEnvironment() {
   const envName = getEnvironmentName();
-  const env = environment.SNOWBRIDGE_ENV[envName];
+  const env: environment.SnowbridgeEnvironment =
+    environment.SNOWBRIDGE_ENV[envName];
+
   if (env === undefined)
     throw new Error(
       `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${envName}'`,
@@ -201,6 +203,7 @@ export type ContextOverrides = {
   bridgeHub?: string;
   assetHub?: string;
   relaychain?: string;
+  parachains?: string[];
 };
 
 export async function createContext(
@@ -208,7 +211,7 @@ export async function createContext(
   { config }: SnowbridgeEnvironment,
   overrides?: ContextOverrides,
 ) {
-  return await contextFactory({
+  return contextFactory({
     ethereum: {
       execution_url: ethereumProvider,
       beacon_url: config.BEACON_HTTP_API,
@@ -218,7 +221,7 @@ export async function createContext(
         bridgeHub: overrides?.bridgeHub ?? config.BRIDGE_HUB_URL,
         assetHub: overrides?.assetHub ?? config.ASSET_HUB_URL,
         relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
-        parachains: config.PARACHAINS,
+        parachains: overrides?.parachains ?? config.PARACHAINS,
       },
     },
     appContracts: {

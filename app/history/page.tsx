@@ -61,26 +61,33 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     etherscan: "https://no-expolorers-for-local-e2e/",
     subscan_ah: "https://no-expolorers-for-local-e2e/",
     subscan_bh: "https://no-expolorers-for-local-e2e/",
+    polkadot_js_kilt: "https://no-expolorers-for-westend/",
   },
   rococo_sepolia: {
     etherscan: "https://sepolia.etherscan.io/",
     subscan_ah: "https://assethub-rococo.subscan.io/",
     subscan_bh: "https://bridgehub-rococo.subscan.io/",
+    polkadot_js_kilt:
+      "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frilt.kilt.io/",
   },
   paseo_sepolia: {
     etherscan: "https://sepolia.etherscan.io/",
     subscan_ah: "https://assethub-paseo.subscan.io/",
     subscan_bh: "https://bridgehub-paseo.subscan.io/",
+    polkadot_js_kilt:
+      "https://polkadot.js.org/apps/?rpc=wss://peregrine.kilt.io/parachain-public-ws/",
   },
   polkadot_mainnet: {
     etherscan: "https://etherscan.io/",
     subscan_ah: "https://assethub-polkadot.subscan.io/",
     subscan_bh: "https://bridgehub-polkadot.subscan.io/",
+    subscan_kilt: "https://spiritnet.subscan.io/",
   },
   westend_sepolia: {
     etherscan: "https://sepolia.etherscan.io/",
     subscan_ah: "https://assethub-westend.subscan.io/",
     subscan_bh: "https://bridgehub-westend.subscan.io/",
+    polkadot_js_kilt: "https://no-expolorers-for-westend/",
   },
 };
 
@@ -295,8 +302,8 @@ const transferTitle = (
     history.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
       : history.TransferStatus.Pending == transfer.status
-      ? ""
-      : "bg-secondary";
+        ? ""
+        : "bg-secondary";
 
   const { tokenName, amount } = formatTokenData(
     transfer,

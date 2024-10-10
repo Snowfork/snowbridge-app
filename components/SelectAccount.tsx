@@ -5,7 +5,7 @@ import {
   polkadotWalletModalOpenAtom,
 } from "@/store/polkadot";
 import { useAtom, useAtomValue } from "jotai";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
@@ -23,16 +23,30 @@ type SelectAccountProps = {
   field: any;
   allowManualInput: boolean;
   accounts: AccountInfo[];
+  disabled?: boolean;
 };
 
 export const SelectAccount: FC<SelectAccountProps> = ({
   field,
   allowManualInput,
   accounts,
+  disabled = false,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+
+  useEffect(() => {
+    // unset account selection if selected account is no longer found in accounts
+    if (
+      !allowManualInput &&
+      !accounts.find((account) => account.key === field.value)
+    ) {
+      field.onChange(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
+  }, [accounts, field.value, allowManualInput]);
+
   if (
     !allowManualInput &&
     accountFromWallet &&
@@ -53,10 +67,6 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     );
   }
 
-  if (!accounts.find((account) => account.key === field.value)) {
-    field.onChange(undefined);
-  }
-
   let input: JSX.Element;
   if (!allowManualInput && accountFromWallet && accounts.length > 0) {
     input = (
@@ -64,6 +74,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
         key="controlled"
         onValueChange={field.onChange}
         value={field.value}
+        disabled={disabled}
       >
         <SelectTrigger>
           <SelectValue placeholder="Select account" />
