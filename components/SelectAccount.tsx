@@ -18,7 +18,7 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { AccountInfo } from "@/utils/types";
-import { ConnectPolkadotButton } from "./ConnectPolkadotButton";
+import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 
 type SelectAccountProps = {
   field: any;
@@ -54,7 +54,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     accounts.length == 0 &&
     (polkadotAccounts == null || polkadotAccounts.length == 0)
   ) {
-    return <ConnectPolkadotButton />;
+    return <ConnectPolkadotWalletButton />;
   }
 
   let input: JSX.Element;

@@ -11,6 +11,7 @@ import { getEnvironment } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { windowEthereumErrorAtom } from "@/store/ethereum";
 import { useAtom } from "jotai";
+import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
 
 export type SelectedEthereumWalletProps = {
   className?: string;
@@ -24,34 +25,9 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const { account, chainId } = useConnectEthereumWallet();
   const { switchNetwork } = useSwitchNetwork();
   const { open } = useWeb3Modal();
-  const [windowEthereumError, setWindowEthereumError] = useAtom(
-    windowEthereumErrorAtom,
-  );
 
   if (account === null) {
-    return (
-      <>
-        <Button
-          className="w-full"
-          type="button"
-          variant="link"
-          onClick={async (e) => {
-            await open({ view: "Connect" });
-          }}
-        >
-          Connect Ethereum
-        </Button>
-        <ErrorDialog
-          open={windowEthereumError !== null}
-          dismiss={() => {
-            console.log(windowEthereumError);
-            setWindowEthereumError(null);
-          }}
-          title="Ethereum Wallet Error"
-          description={(windowEthereumError ?? "Unknown Error").toString()}
-        />
-      </>
-    );
+    return <ConnectEthereumWalletButton />;
   }
   if (chainId === null || chainId !== env.ethChainId) {
     return (

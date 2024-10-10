@@ -2,7 +2,7 @@ import { polkadotWalletModalOpenAtom } from "@/store/polkadot";
 import { Button } from "./ui/button";
 import { useAtom } from "jotai";
 
-export function ConnectPolkadotButton() {
+export function ConnectPolkadotWalletButton() {
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
   return (
     <Button
