@@ -18,6 +18,7 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { AccountInfo } from "@/utils/types";
+import { ConnectPolkadotButton } from "./ConnectPolkadotButton";
 
 type SelectAccountProps = {
   field: any;
@@ -53,18 +54,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     accounts.length == 0 &&
     (polkadotAccounts == null || polkadotAccounts.length == 0)
   ) {
-    return (
-      <Button
-        className="w-full"
-        variant="link"
-        onClick={(e) => {
-          e.preventDefault();
-          setPolkadotWalletModalOpen(true);
-        }}
-      >
-        Connect Polkadot
-      </Button>
-    );
+    return <ConnectPolkadotButton />;
   }
 
   let input: JSX.Element;

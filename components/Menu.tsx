@@ -134,14 +134,14 @@ export const Menu: FC = () => {
           </MenubarTrigger>
         </MenubarMenu>
         {envName === "westend_sepolia" ? null : (
-        <MenubarMenu>
-          <MenubarTrigger>
-            <Link href="/switch" className="flex items-center">
-              <LucideArrowRightLeft />
+          <MenubarMenu>
+            <MenubarTrigger>
+              <Link href="/switch" className="flex items-center">
+                <LucideArrowRightLeft />
                 <p className="pl-2 hidden md:flex">Polar Path</p>
-            </Link>
-          </MenubarTrigger>
-        </MenubarMenu>
+              </Link>
+            </MenubarTrigger>
+          </MenubarMenu>
         )}
         <MenubarMenu>
           <MenubarTrigger>
