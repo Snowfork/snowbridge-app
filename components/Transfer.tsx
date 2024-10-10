@@ -634,6 +634,7 @@ export const TransferForm: FC = () => {
                         accounts={beneficiaries}
                         field={field}
                         allowManualInput={false}
+                        destination={destination.id}
                       />
                     </FormControl>
                     <FormMessage />

@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   icons: [
     {
       rel: "icon",
-      url: "/app/icon.svg",
+      url: "/icon.svg",
     },
   ],
 };

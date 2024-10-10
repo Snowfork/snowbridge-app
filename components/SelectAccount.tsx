@@ -1,12 +1,8 @@
 "use client";
 import { trimAccount } from "@/utils/formatting";
-import {
-  polkadotAccountsAtom,
-  polkadotWalletModalOpenAtom,
-} from "@/store/polkadot";
-import { useAtom, useAtomValue } from "jotai";
+import { polkadotAccountsAtom } from "@/store/polkadot";
+import { useAtomValue } from "jotai";
 import { FC, useEffect, useState } from "react";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
   Select,
@@ -19,12 +15,15 @@ import {
 import { Toggle } from "./ui/toggle";
 import { AccountInfo } from "@/utils/types";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
+import { ethereumAccountsAtom } from "@/store/ethereum";
+import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
 
 type SelectAccountProps = {
   field: any;
   allowManualInput: boolean;
   accounts: AccountInfo[];
   disabled?: boolean;
+  destination?: string;
 };
 
 export const SelectAccount: FC<SelectAccountProps> = ({
@@ -32,10 +31,11 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   allowManualInput,
   accounts,
   disabled = false,
+  destination,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
 
   useEffect(() => {
     // unset account selection if selected account is no longer found in accounts
@@ -48,13 +48,16 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
   }, [accounts, field.value, allowManualInput]);
 
-  if (
-    !allowManualInput &&
-    accountFromWallet &&
-    accounts.length == 0 &&
-    (polkadotAccounts == null || polkadotAccounts.length == 0)
-  ) {
-    return <ConnectPolkadotWalletButton />;
+  if (!allowManualInput && accountFromWallet && accounts.length == 0) {
+    if (
+      (ethereumAccounts == null || ethereumAccounts.length == 0) &&
+      destination === "ethereum"
+    ) {
+      return <ConnectEthereumWalletButton />;
+    }
+    if (polkadotAccounts == null || polkadotAccounts.length == 0) {
+      return <ConnectPolkadotWalletButton />;
+    }
   }
 
   let input: JSX.Element;
