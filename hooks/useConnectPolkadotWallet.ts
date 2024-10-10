@@ -8,9 +8,10 @@ import {
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtom, useSetAtom } from "jotai";
 import { useEffect } from "react";
+import { metadata } from "@/lib/metadata";
+import { getWalletBySource } from "@talismn/connect-wallets";
 
 export const useConnectPolkadotWallet = (ss58Format?: number): void => {
-  const dappName = "Snowbridge";
   const setAccounts = useSetAtom(polkadotAccountsAtom);
   const [wallet, setWallet] = useAtom(walletAtom);
   const [walletName] = useAtom(walletNameAtom);
@@ -19,11 +20,10 @@ export const useConnectPolkadotWallet = (ss58Format?: number): void => {
     if (wallet != null || walletName == null) return;
     let unmounted = false;
     const connect = async (): Promise<void> => {
-      const { getWalletBySource } = await import("@talismn/connect-wallets");
       const newWallet = getWalletBySource(walletName);
       if (newWallet != null) {
         try {
-          await newWallet.enable(dappName);
+          await newWallet.enable(metadata.title);
           if (!unmounted) {
             setWallet(newWallet);
           }
@@ -37,7 +37,7 @@ export const useConnectPolkadotWallet = (ss58Format?: number): void => {
     return () => {
       unmounted = true;
     };
-  }, [setWallet, dappName, walletName, wallet]);
+  }, [setWallet, walletName, wallet]);
 
   useEffect(() => {
     let unsub: () => void;

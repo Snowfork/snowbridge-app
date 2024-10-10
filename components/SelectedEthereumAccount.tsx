@@ -3,14 +3,12 @@
 import { cn } from "@/lib/utils";
 import { trimAccount } from "@/utils/formatting";
 import { track } from "@vercel/analytics/react";
-import { FC } from "react";
-import { ErrorDialog } from "./ErrorDialog";
+import { FC, useEffect } from "react";
 import { Button } from "./ui/button";
 import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
 import { getEnvironment } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { windowEthereumErrorAtom } from "@/store/ethereum";
-import { useAtom } from "jotai";
+import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
 
 export type SelectedEthereumWalletProps = {
   className?: string;
@@ -22,53 +20,10 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
 }) => {
   const env = getEnvironment();
   const { account, chainId } = useConnectEthereumWallet();
-  const { switchNetwork } = useSwitchNetwork();
   const { open } = useWeb3Modal();
-  const [windowEthereumError, setWindowEthereumError] = useAtom(
-    windowEthereumErrorAtom,
-  );
 
-  if (account === null) {
-    return (
-      <>
-        <Button
-          className="w-full"
-          type="button"
-          variant="link"
-          onClick={async (e) => {
-            await open({ view: "Connect" });
-          }}
-        >
-          Connect Ethereum
-        </Button>
-        <ErrorDialog
-          open={windowEthereumError !== null}
-          dismiss={() => {
-            console.log(windowEthereumError);
-            setWindowEthereumError(null);
-          }}
-          title="Ethereum Wallet Error"
-          description={(windowEthereumError ?? "Unknown Error").toString()}
-        />
-      </>
-    );
-  }
-  if (chainId === null || chainId !== env.ethChainId) {
-    return (
-      <>
-        <Button
-          className="w-full"
-          type="button"
-          variant="destructive"
-          onClick={async (_) => {
-            await switchNetwork(env.ethChainId);
-            track("Switch Network");
-          }}
-        >
-          Switch Network
-        </Button>
-      </>
-    );
+  if (account === null || chainId === null || chainId !== env.ethChainId) {
+    return <ConnectEthereumWalletButton />;
   }
 
   return (

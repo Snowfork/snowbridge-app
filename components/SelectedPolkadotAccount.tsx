@@ -1,5 +1,4 @@
 import { useAtom, useAtomValue } from "jotai";
-import { Button } from "./ui/button";
 import {
   Select,
   SelectContent,
@@ -8,39 +7,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import {
-  polkadotAccountAtom,
-  polkadotAccountsAtom,
-  polkadotWalletModalOpenAtom,
-} from "@/store/polkadot";
+import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { trimAccount } from "@/utils/formatting";
 import { FC, useEffect } from "react";
+import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 
 export const SelectedPolkadotAccount: FC = () => {
-  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
-
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
   useEffect(() => {
-    if (!polkadotAccount && polkadotAccounts) {
+    if (!polkadotAccount && polkadotAccounts && polkadotAccounts.length > 0) {
       setPolkadotAccount(polkadotAccounts[0].address);
     }
   }, [setPolkadotAccount, polkadotAccounts, polkadotAccount]);
 
   if (!polkadotAccounts || polkadotAccounts.length == 0) {
-    return (
-      <Button
-        variant="link"
-        className="w-full"
-        onClick={(e) => {
-          e.preventDefault();
-          setPolkadotWalletModalOpen(true);
-        }}
-      >
-        Connect Polkadot
-      </Button>
-    );
+    return <ConnectPolkadotWalletButton />;
   }
   return (
     <Select

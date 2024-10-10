@@ -1,3 +1,4 @@
+import { metadata } from "@/lib/metadata";
 import {
   polkadotAccountAtom,
   polkadotAccountsAtom,
@@ -15,7 +16,7 @@ export const PolkadotWalletDialog: FC = () => {
   const setWallet = useSetAtom(walletAtom);
   return (
     <WalletSelect
-      dappName="Snowbridge"
+      dappName={metadata.title}
       open={open}
       showAccountsList
       onWalletConnectClose={() => {
