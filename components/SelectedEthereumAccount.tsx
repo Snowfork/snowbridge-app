@@ -3,14 +3,11 @@
 import { cn } from "@/lib/utils";
 import { trimAccount } from "@/utils/formatting";
 import { track } from "@vercel/analytics/react";
-import { FC } from "react";
-import { ErrorDialog } from "./ErrorDialog";
+import { FC, useEffect } from "react";
 import { Button } from "./ui/button";
 import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
 import { getEnvironment } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { windowEthereumErrorAtom } from "@/store/ethereum";
-import { useAtom } from "jotai";
 import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
 
 export type SelectedEthereumWalletProps = {
@@ -23,28 +20,10 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
 }) => {
   const env = getEnvironment();
   const { account, chainId } = useConnectEthereumWallet();
-  const { switchNetwork } = useSwitchNetwork();
   const { open } = useWeb3Modal();
 
-  if (account === null) {
+  if (account === null || chainId === null || chainId !== env.ethChainId) {
     return <ConnectEthereumWalletButton />;
-  }
-  if (chainId === null || chainId !== env.ethChainId) {
-    return (
-      <>
-        <Button
-          className="w-full"
-          type="button"
-          variant="destructive"
-          onClick={async (_) => {
-            await switchNetwork(env.ethChainId);
-            track("Switch Network");
-          }}
-        >
-          Switch Network
-        </Button>
-      </>
-    );
   }
 
   return (
