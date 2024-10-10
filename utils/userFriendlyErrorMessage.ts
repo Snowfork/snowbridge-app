@@ -1,13 +1,13 @@
 "use client";
 import { toEthereum, toPolkadot } from "@snowbridge/api";
-import { ValidationError, FormData } from "./types";
+import { ValidationError, FormData, FormDataSwitch } from "./types";
 
 export function userFriendlyErrorMessage({
   error,
   formData,
 }: {
   error: ValidationError;
-  formData: FormData;
+  formData: FormData | FormDataSwitch;
 }) {
   if (error.kind === "toPolkadot") {
     if (

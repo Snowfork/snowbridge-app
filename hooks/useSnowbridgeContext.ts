@@ -7,16 +7,28 @@ import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 import { AlchemyProvider } from "ethers";
 import { createContext } from "@/lib/snowbridge";
+import {
+  parachainConfigs,
+  SnowbridgeEnvironmentNames,
+} from "@/utils/parachainConfigs";
 
 const createSnowbridgeContext = async (
   env: environment.SnowbridgeEnvironment,
   alchemyKey: string,
 ) => {
   const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
+  const parachainEndpoints = new Set(env.config.PARACHAINS);
+  // merge transfer and switch component parachain endpoints
+  parachainConfigs[env.name as SnowbridgeEnvironmentNames].forEach(
+    ({ endpoint }) => {
+      parachainEndpoints.add(endpoint);
+    },
+  );
   const context = await createContext(ethereumProvider, env, {
     bridgeHub: process.env.NEXT_PUBLIC_BRIDGE_HUB_URL,
     assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL,
     relaychain: process.env.NEXT_PUBLIC_RELAY_CHAIN_URL,
+    parachains: Array.from(parachainEndpoints),
   });
   return context;
 };
