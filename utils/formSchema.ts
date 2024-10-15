@@ -27,7 +27,7 @@ export const formSchemaSwitch = z.object({
     ),
 });
 
-export const formSchema = z.object({
+export const transferFormSchema = z.object({
   source: z.string().min(1, "Select source."),
   destination: z.string().min(1, "Select destination."),
   token: z.string().min(1, "Select token."),
@@ -52,3 +52,5 @@ export const formSchema = z.object({
       "Invalid address format.",
     ),
 });
+
+export type TransferFormData = z.infer<typeof transferFormSchema>;

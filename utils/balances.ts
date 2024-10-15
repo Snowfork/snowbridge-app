@@ -8,7 +8,7 @@ import { RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
 
-async function getTokenBalance({
+export async function getTokenBalance({
   context,
   token,
   ethereumChainId,
@@ -51,49 +51,6 @@ async function getTokenBalance({
     default:
       throw Error(`Unknown source type ${source.type}.`);
   }
-}
-
-export function updateBalance(
-  context: Context,
-  env: SnowbridgeEnvironment,
-  source: environment.TransferLocation,
-  sourceAccount: string,
-  token: string,
-  tokenMetadata: assets.ERC20Metadata,
-  setBalanceDisplay: (_: string) => void,
-  setError: (_: ErrorInfo | null) => void,
-) {
-  getTokenBalance({
-    context,
-    token,
-    ethereumChainId: BigInt(env.ethChainId),
-    source,
-    sourceAccount,
-  })
-    .then((result) => {
-      let allowance = "";
-      if (result.gatewayAllowance !== undefined) {
-        allowance = ` (Allowance: ${formatBalance({
-          number: result.gatewayAllowance ?? 0n,
-          decimals: Number(tokenMetadata.decimals),
-        })} ${tokenMetadata.symbol})`;
-      }
-      setBalanceDisplay(
-        `${formatBalance({
-          number: result.balance,
-          decimals: Number(tokenMetadata.decimals),
-        })} ${tokenMetadata.symbol} ${allowance}`,
-      );
-    })
-    .catch((err) => {
-      console.error(err);
-      setBalanceDisplay("unknown");
-      setError({
-        title: "Error",
-        description: `Could not fetch asset balance.`,
-        errors: [],
-      });
-    });
 }
 
 export async function fetchForeignAssetsBalances(
