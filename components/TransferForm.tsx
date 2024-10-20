@@ -2,7 +2,6 @@ import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
-  snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
@@ -91,17 +90,16 @@ function getBeneficiaries(
 
 interface TransferFormProps {
   onValidated: SubmitHandler<TransferFormData>;
-  onMessage: (message: string) => Promise<unknown> | unknown;
-  onError: (error: unknown) => Promise<unknown> | unknown;
+  onError: (error: any) => Promise<unknown> | unknown;
+  formData: TransferFormData | null;
 }
 
 export const TransferForm: FC<TransferFormProps> = ({
   onValidated,
-  onMessage,
   onError,
+  formData,
 }) => {
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
-  const context = useAtomValue(snowbridgeContextAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
@@ -119,6 +117,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const [token, setToken] = useState(
     destination.erc20tokensReceivable[0].address,
   );
+  const [validating, setValidating] = useState(false);
 
   const beneficiaries = getBeneficiaries(
     destination,
@@ -129,12 +128,12 @@ export const TransferForm: FC<TransferFormProps> = ({
   const form = useForm<TransferFormData>({
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
-      source: source.id,
-      destination: destination.id,
-      token: token,
-      beneficiary: "",
-      sourceAccount: sourceAccount,
-      amount: "0.0",
+      source: formData?.source ?? source.id,
+      destination: formData?.destination ?? destination.id,
+      token: formData?.token ?? token,
+      beneficiary: formData?.beneficiary,
+      sourceAccount: formData?.sourceAccount ?? sourceAccount,
+      amount: formData?.amount ?? "0.0",
     },
   });
 
@@ -160,7 +159,9 @@ export const TransferForm: FC<TransferFormProps> = ({
         .filter((s) => s !== undefined)
         .map((s) => s!);
       setDestinations(newDestinations);
-      form.resetField("beneficiary", { defaultValue: "" });
+      form.resetField("beneficiary", {
+        defaultValue: formData?.beneficiary ?? "",
+      });
     }
     const newDestination =
       newDestinations.find((d) => d.id == watchDestination) ??
@@ -182,6 +183,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchSource,
     environment,
     watchDestination,
+    watchSourceAccount,
     watchToken,
     setSource,
     setDestinations,
@@ -189,6 +191,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     setToken,
     ethereumAccount,
     polkadotAccount?.address,
+    formData?.beneficiary,
   ]);
 
   const tokenMetadata = assetErc20MetaData
@@ -197,7 +200,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   const submit = useCallback(
     async (formData: TransferFormData) => {
-      onMessage("Validating...");
+      setValidating(true);
       track("Validate Send", formData);
       try {
         if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
@@ -209,6 +212,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         if (amountInSmallestUnit === 0n) {
           const errorMessage = "Amount must be greater than 0.";
           form.setError("amount", { message: errorMessage });
+          setValidating(false);
           return;
         }
 
@@ -231,11 +235,13 @@ export const TransferForm: FC<TransferFormProps> = ({
             { shouldFocus: true },
           );
           track("Validate Failed", { ...formData, errorMessage });
+          setValidating(false);
           return;
         }
 
         if (!(await validateOFAC(formData, form))) {
           track("OFAC Validation.", formData);
+          setValidating(false);
           return;
         }
 
@@ -247,21 +253,20 @@ export const TransferForm: FC<TransferFormProps> = ({
           throw Error(
             `Invalid form state: source mismatch ${destination.id} and ${formData.destination}.`,
           );
-        if (context === null) throw Error(`Context not connected.`);
       } catch (err: any) {
         console.error(err);
         await onError(err);
       }
       await onValidated(formData);
+      setValidating(false);
     },
     [
-      context,
       destination.erc20tokensReceivable,
       destination.id,
       form,
       onValidated,
+      setValidating,
       onError,
-      onMessage,
       source.id,
       tokenMetadata,
     ],
@@ -427,11 +432,11 @@ export const TransferForm: FC<TransferFormProps> = ({
         />
         <br />
         <Button
-          disabled={context === null || tokenMetadata === null}
+          disabled={tokenMetadata === null || validating}
           className="w-full my-8"
           type="submit"
         >
-          {context === null ? "Connecting..." : "Submit"}
+          {validating ? "Validating" : "Submit"}
         </Button>
       </form>
     </Form>

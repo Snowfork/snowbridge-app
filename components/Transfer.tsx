@@ -1,36 +1,6 @@
 "use client";
 
-import { useTransferHistory } from "@/hooks/useTransferHistory";
-import {
-  ethereumAccountAtom,
-  ethereumAccountsAtom,
-  ethersProviderAtom,
-} from "@/store/ethereum";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
-import {
-  assetErc20MetaDataAtom,
-  relayChainNativeAssetAtom,
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
-import { transfersPendingLocalAtom } from "@/store/transferHistory";
-import { doApproveSpend } from "@/utils/doApproveSpend";
-import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
-import { errorMessage } from "@/utils/errorMessage";
-import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
-import { onSubmit } from "@/utils/onSubmit";
-import { ErrorInfo } from "@/utils/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { assets } from "@snowbridge/api";
-import { track } from "@vercel/analytics";
-import { parseUnits } from "ethers";
-import { useAtomValue, useSetAtom } from "jotai";
-import { useRouter } from "next/navigation";
-import { FC, useCallback, useState } from "react";
-import { useForm, UseFormReturn } from "react-hook-form";
-import { toast } from "sonner";
-import { BusyDialog } from "./BusyDialog";
-import { SendErrorDialog } from "./SendErrorDialog";
+import { FC, useState } from "react";
 import { TransferForm } from "./TransferForm";
 import {
   Card,
@@ -39,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { TransferFormData } from "@/utils/formSchema";
 
 export const Transfer: FC = () => {
   // const depositAndApproveWeth = useCallback(async () => {
@@ -168,6 +139,42 @@ export const Transfer: FC = () => {
   //   tokenMetadata,
   // ]);
 
+  const [formData, setFormData] = useState<TransferFormData | null>(null);
+  const [validation, setValidationData] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  let content;
+  if (busy !== null) {
+    content = <div>Busy</div>;
+  } else if (validation === null) {
+    content = (
+      <TransferForm
+        formData={formData}
+        onValidated={async (form) => {
+          setFormData(form);
+          console.log("validated", form);
+          setBusy("Validating");
+          setBusy(null);
+          setValidationData(true);
+        }}
+        onError={async (error) => {
+          console.log("error", error);
+          setError(error.toString());
+          setBusy(null);
+        }}
+      />
+    );
+  } else if (error !== null) {
+    content = <div onClick={() => setError(null)}>Bad Bad</div>;
+  } else {
+    content = (
+      <div onClick={() => setValidationData(null)}>
+        Form data... click to go back
+      </div>
+    );
+  }
+
   return (
     <Card className="w-auto md:w-2/3">
       <CardHeader>
@@ -176,19 +183,7 @@ export const Transfer: FC = () => {
           Transfer tokens between Ethereum and Polkadot parachains.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <TransferForm
-          onValidated={async (form) => {
-            console.log("validated", form);
-          }}
-          onError={async (error) => {
-            console.log("error", error);
-          }}
-          onMessage={async (message) => {
-            console.log("message", message);
-          }}
-        />
-      </CardContent>
+      <CardContent>{content}</CardContent>
     </Card>
   );
 };
