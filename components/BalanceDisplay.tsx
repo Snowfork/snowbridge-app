@@ -3,42 +3,38 @@ import { assets, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { getTokenBalance } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
+import { useAtomValue } from "jotai";
+import {
+  assetErc20MetaDataAtom,
+  snowbridgeContextAtom,
+  snowbridgeEnvironmentAtom,
+} from "@/store/snowbridge";
 
 interface BalanceDisplayProps {
   source: environment.TransferLocation;
-  ethereumAccount: string | null;
-  polkadotAccount: WalletAccount | null;
+  sourceAccount: string;
   token: string;
-  context: Context;
   displayDecimals: number;
-  environment: environment.SnowbridgeEnvironment;
-  assetErc20MetaData: {
-    [tokenAddress: string]: assets.ERC20Metadata;
-  };
 }
 
 export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   source,
-  ethereumAccount,
-  polkadotAccount,
-  context,
   token,
-  environment,
-  assetErc20MetaData,
+  sourceAccount,
 }) => {
   const [balanceDisplay, setBalanceDisplay] = useState<string | null>(
     "Fetching...",
   );
+  const environment = useAtomValue(snowbridgeEnvironmentAtom);
+  const context = useAtomValue(snowbridgeContextAtom);
+  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
 
-  const tokenMetadata = assetErc20MetaData[token.toLowerCase()];
-  const sourceAccount =
-    source.type == "ethereum"
-      ? (ethereumAccount ?? undefined)
-      : polkadotAccount?.address;
+  const tokenMetadata = assetErc20MetaData
+    ? assetErc20MetaData[token.toLowerCase()]
+    : null;
 
   useEffect(() => {
-    if (!sourceAccount) return;
-    if (!tokenMetadata) return;
+    if (!sourceAccount || !tokenMetadata || !context) return;
     getTokenBalance({
       context,
       token,
@@ -65,24 +61,12 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         console.error(err);
         setBalanceDisplay(null);
       });
-  }, [
-    source,
-    ethereumAccount,
-    polkadotAccount,
-    token,
-    context,
-    environment,
-    sourceAccount,
-    tokenMetadata,
-  ]);
+  }, [source, sourceAccount, token, context, environment, tokenMetadata]);
   return (
     <div
       className={
         "text-sm text-right text-muted-foreground px-1 " +
-        ((source.type == "ethereum" && ethereumAccount !== null) ||
-        (source.type == "substrate" && polkadotAccount !== null)
-          ? " visible"
-          : " hidden")
+        (sourceAccount == null ? " visible" : " hidden")
       }
     >
       Balance: {balanceDisplay ?? "Error"}

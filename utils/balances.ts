@@ -1,26 +1,25 @@
 "use client";
 import { Context, assets, environment } from "@snowbridge/api";
-import SnowbridgeEnvironment = environment.SnowbridgeEnvironment;
 import { formatBalance } from "@/utils/formatting";
-import { ErrorInfo } from "./types";
 import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
 
+interface TokenBalanceProps {
+  context: Context;
+  token: string;
+  ethereumChainId: bigint;
+  source: environment.TransferLocation;
+  sourceAccount: string;
+}
 export async function getTokenBalance({
   context,
   token,
   ethereumChainId,
   source,
   sourceAccount,
-}: {
-  context: Context;
-  token: string;
-  ethereumChainId: bigint;
-  source: environment.TransferLocation;
-  sourceAccount: string;
-}): Promise<{
+}: TokenBalanceProps): Promise<{
   balance: bigint;
   gatewayAllowance?: bigint;
 }> {

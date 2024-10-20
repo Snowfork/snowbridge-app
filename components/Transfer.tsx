@@ -17,26 +17,21 @@ import { transfersPendingLocalAtom } from "@/store/transferHistory";
 import { doApproveSpend } from "@/utils/doApproveSpend";
 import { doDepositAndApproveWeth } from "@/utils/doDepositAndApproveWeth";
 import { errorMessage } from "@/utils/errorMessage";
-import { formatBalance } from "@/utils/formatting";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
 import { onSubmit } from "@/utils/onSubmit";
-import { AccountInfo, ErrorInfo } from "@/utils/types";
+import { ErrorInfo } from "@/utils/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { assets, environment, toEthereum, toPolkadot } from "@snowbridge/api";
+import { assets } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
+import { parseUnits } from "ethers";
 import { useAtomValue, useSetAtom } from "jotai";
-import { LucideHardHat } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useState } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import { BusyDialog } from "./BusyDialog";
-import { SelectAccount } from "./SelectAccount";
-import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
-import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { SendErrorDialog } from "./SendErrorDialog";
-import { Button } from "./ui/button";
+import { TransferForm } from "./TransferForm";
 import {
   Card,
   CardContent,
@@ -44,28 +39,8 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "./ui/form";
-import { Input } from "./ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import { parseUnits } from "ethers";
-import { WalletAccount } from "@talismn/connect-wallets";
 
-export const TransferForm1: FC = () => {
+export const Transfer: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
@@ -108,53 +83,6 @@ export const TransferForm1: FC = () => {
       amount: "0.0",
     },
   });
-
-  const watchToken = form.watch("token");
-  const watchSource = form.watch("source");
-  const watchDestination = form.watch("destination");
-
-  useEffect(() => {
-    let newDestinations = destinations;
-    if (source.id !== watchSource) {
-      const newSource = snowbridgeEnvironment.locations.find(
-        (s) => s.id == watchSource,
-      )!;
-      setSource(newSource);
-      newDestinations = newSource.destinationIds
-        .map((d) => snowbridgeEnvironment.locations.find((s) => d === s.id))
-        .filter((s) => s !== undefined)
-        .map((s) => s!);
-      setDestinations(newDestinations);
-    }
-    const newDestination =
-      newDestinations.find((d) => d.id == watchDestination) ??
-      newDestinations[0];
-    setDestination(newDestination);
-    form.resetField("destination", { defaultValue: newDestination.id });
-    form.resetField("beneficiary", { defaultValue: "" });
-
-    const newTokens = newDestination.erc20tokensReceivable;
-    const newToken =
-      newTokens.find(
-        (x) => x.address.toLowerCase() == watchToken.toLowerCase(),
-      ) ?? newTokens[0];
-    setToken(newToken.address);
-    form.resetField("token", { defaultValue: newToken.address });
-  }, [
-    form,
-    source,
-    destinations,
-    watchSource,
-    snowbridgeEnvironment,
-    watchDestination,
-    watchToken,
-    setSource,
-    setDestinations,
-    setDestination,
-    setToken,
-  ]);
-
-  const watchSourceAccount = form.watch("sourceAccount");
 
   const depositAndApproveWeth = useCallback(async () => {
     if (
@@ -280,12 +208,6 @@ export const TransferForm1: FC = () => {
     tokenMetadata,
   ]);
 
-  const beneficiaries = getBeneficiaries(
-    destination,
-    polkadotAccounts ?? [],
-    ethereumAccounts,
-  );
-
   return (
     <>
       <Card className="w-auto md:w-2/3">
@@ -295,7 +217,26 @@ export const TransferForm1: FC = () => {
             Transfer tokens between Ethereum and Polkadot parachains.
           </CardDescription>
         </CardHeader>
-        <CardContent></CardContent>
+        <CardContent>
+          <TransferForm
+            form={form}
+            onSubmit={onSubmit({
+              context,
+              source,
+              destination,
+              setError,
+              setBusyMessage,
+              polkadotAccount,
+              ethereumAccount,
+              ethereumProvider,
+              tokenMetadata,
+              appRouter,
+              form,
+              refreshHistory,
+              addPendingTransaction: transfersPendingLocal,
+            })}
+          />
+        </CardContent>
       </Card>
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
       <SendErrorDialog
@@ -309,50 +250,3 @@ export const TransferForm1: FC = () => {
     </>
   );
 };
-
-function getBeneficiaries(
-  destination: environment.TransferLocation,
-  polkadotAccounts: WalletAccount[],
-  ethereumAccounts: string[],
-) {
-  const beneficiaries: AccountInfo[] = [];
-  if (
-    destination.type === "substrate" &&
-    (destination.paraInfo?.addressType === "32byte" ||
-      destination.paraInfo?.addressType === "both")
-  ) {
-    polkadotAccounts
-      .map((x) => {
-        return { key: x.address, name: x.name || "", type: destination.type };
-      })
-      .forEach((x) => beneficiaries.push(x));
-  }
-  if (
-    destination.type === "ethereum" ||
-    destination.paraInfo?.addressType === "20byte" ||
-    destination.paraInfo?.addressType === "both"
-  ) {
-    ethereumAccounts
-      ?.map((x) => {
-        return {
-          key: x,
-          name: x,
-          type: "ethereum" as environment.SourceType,
-        };
-      })
-      .forEach((x) => beneficiaries.push(x));
-
-    polkadotAccounts
-      .filter((x: any) => x.type === "ethereum")
-      .map((x) => {
-        return {
-          key: x.address,
-          name: `${x.name} (${x.source})` || "",
-          type: destination.type,
-        };
-      })
-      .forEach((x) => beneficiaries.push(x));
-  }
-
-  return beneficiaries;
-}
