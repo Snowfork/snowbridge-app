@@ -9,32 +9,36 @@ import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
+import { polkadotAccountAtom } from "@/store/polkadot";
+import { ethereumAccountAtom } from "@/store/ethereum";
 
 interface BalanceDisplayProps {
   source: environment.TransferLocation;
-  sourceAccount: string;
   token: string;
   displayDecimals: number;
+  tokenMetadata: assets.ERC20Metadata | null;
 }
 
 export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   source,
   token,
-  sourceAccount,
+  tokenMetadata,
 }) => {
+  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const ethereumAccount = useAtomValue(ethereumAccountAtom);
+
+  const sourceAccount =
+    source.type == "ethereum"
+      ? (ethereumAccount ?? undefined)
+      : polkadotAccount?.address;
   const [balanceDisplay, setBalanceDisplay] = useState<string | null>(
     "Fetching...",
   );
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
-  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
-
-  const tokenMetadata = assetErc20MetaData
-    ? assetErc20MetaData[token.toLowerCase()]
-    : null;
 
   useEffect(() => {
-    if (!sourceAccount || !tokenMetadata || !context) return;
+    if (!sourceAccount || !context || !tokenMetadata) return;
     getTokenBalance({
       context,
       token,
@@ -66,7 +70,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     <div
       className={
         "text-sm text-right text-muted-foreground px-1 " +
-        (sourceAccount == null ? " visible" : " hidden")
+        (sourceAccount !== null ? " visible" : " hidden")
       }
     >
       Balance: {balanceDisplay ?? "Error"}

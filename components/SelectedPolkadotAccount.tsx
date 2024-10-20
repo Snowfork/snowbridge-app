@@ -28,7 +28,6 @@ export const SelectedPolkadotAccount: FC = () => {
   return (
     <Select
       onValueChange={(v) => {
-        console.log(v);
         setPolkadotAccount(v);
       }}
       value={(polkadotAccount ?? polkadotAccounts[0]).address}
