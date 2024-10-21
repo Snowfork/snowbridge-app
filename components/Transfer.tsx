@@ -143,6 +143,7 @@ export const Transfer: FC = () => {
   const [validation, setValidationData] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   let content;
   if (busy !== null) {
@@ -167,10 +168,39 @@ export const Transfer: FC = () => {
     );
   } else if (error !== null) {
     content = <div onClick={() => setError(null)}>Bad Bad</div>;
+  } else if (success !== null) {
+    content = (
+      <div>
+        <div>Success</div>
+        <div>Estimate delivery time</div>
+        <div>Link to history page.</div>
+        <div
+          onClick={() => {
+            setValidationData(null);
+            setFormData(null);
+          }}
+        >
+          Back to Transfer
+        </div>
+      </div>
+    );
   } else {
     content = (
-      <div onClick={() => setValidationData(null)}>
-        Form data... click to go back
+      <div>
+        <div>Transfer Summary with fees and estimated delivery time</div>
+        <div>Step 1: Deposit</div>
+        <div>Step 2: Approve</div>
+        <div>Step 3: Existential Deposit</div>
+        <div onClick={() => setSuccess("")}>Step 4: Transfer</div>
+        <div onClick={() => setValidationData(null)}>back</div>
+        <div
+          onClick={() => {
+            setValidationData(null);
+            setFormData(null);
+          }}
+        >
+          cancel
+        </div>
       </div>
     );
   }
