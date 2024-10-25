@@ -178,6 +178,7 @@ export const Transfer: FC = () => {
           onClick={() => {
             setValidationData(null);
             setFormData(null);
+            setSuccess(null);
           }}
         >
           Back to Transfer
