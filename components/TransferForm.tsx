@@ -90,7 +90,7 @@ function getBeneficiaries(
 
 interface TransferFormProps {
   onValidated: SubmitHandler<TransferFormData>;
-  onError: (error: any) => Promise<unknown> | unknown;
+  onError: (from: TransferFormData, error: Error) => Promise<unknown> | unknown;
   formData: TransferFormData | null;
 }
 
@@ -245,20 +245,23 @@ export const TransferForm: FC<TransferFormProps> = ({
           return;
         }
 
-        if (source.id !== formData.source)
+        if (source.id !== formData.source) {
           throw Error(
             `Invalid form state: source mismatch ${source.id} and ${formData.source}.`,
           );
-        if (destination.id !== formData.destination)
+        }
+        if (destination.id !== formData.destination) {
           throw Error(
             `Invalid form state: source mismatch ${destination.id} and ${formData.destination}.`,
           );
-      } catch (err: any) {
+        }
+        await onValidated(formData);
+        setValidating(false);
+      } catch (err: unknown) {
         console.error(err);
-        await onError(err);
+        await onError(formData, err as Error);
+        setValidating(false);
       }
-      await onValidated(formData);
-      setValidating(false);
     },
     [
       destination.erc20tokensReceivable,

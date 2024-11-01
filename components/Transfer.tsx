@@ -10,6 +10,9 @@ import {
   CardTitle,
 } from "./ui/card";
 import { TransferFormData } from "@/utils/formSchema";
+import { track } from "@vercel/analytics";
+import { planSend } from "@/utils/onSubmit";
+import { errorMessage } from "@/utils/errorMessage";
 
 export const Transfer: FC = () => {
   // const depositAndApproveWeth = useCallback(async () => {
@@ -147,27 +150,55 @@ export const Transfer: FC = () => {
 
   let content;
   if (busy !== null) {
-    content = <div>Busy</div>;
+    content = (
+      <div
+        onClick={() => {
+          setBusy(null);
+          setValidationData(null);
+        }}
+      >
+        {busy}
+      </div>
+    );
+  } else if (error !== null) {
+    content = <div onClick={() => setError(null)}>{error}</div>;
   } else if (validation === null) {
     content = (
       <TransferForm
         formData={formData}
         onValidated={async (form) => {
           setFormData(form);
-          console.log("validated", form);
           setBusy("Validating");
-          setBusy(null);
-          setValidationData(true);
+
+          try {
+            track("Validate Send", form);
+            await planSend(
+              context,
+              source,
+              destination,
+              tokenMetadata,
+              form,
+              {},
+            );
+            setBusy(null);
+            setValidationData(true);
+          } catch (err) {
+            console.error(err);
+            const message = errorMessage(err);
+            track("Plan Failed Exception", {
+              ...formData,
+              message,
+            });
+            setError(message);
+          }
         }}
-        onError={async (error) => {
-          console.log("error", error);
-          setError(error.toString());
+        onError={async (form, error) => {
+          setError(errorMessage(error));
+          setFormData(form);
           setBusy(null);
         }}
       />
     );
-  } else if (error !== null) {
-    content = <div onClick={() => setError(null)}>Bad Bad</div>;
   } else if (success !== null) {
     content = (
       <div>

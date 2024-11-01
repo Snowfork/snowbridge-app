@@ -15,7 +15,8 @@ export const validateOFAC = async (
   });
   if (!response.ok) {
     throw Error(
-      `Error verifying ofac status: ${response.status} - ${response.statusText}`,
+      `Error verifying OFAC status of source and beneficiary accounts.`,
+      { cause: { response } },
     );
   }
   const result = await response.json();
