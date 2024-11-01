@@ -7,14 +7,14 @@ import { getDestinationTokenIdByAddress } from "../utils/getDestinationTokenIdBy
 import { userFriendlyErrorMessage } from "../utils/userFriendlyErrorMessage";
 import {
   ErrorInfo,
-  FormData,
+  TransferFormData,
   FormDataSwitch,
   ValidationError,
 } from "@/utils/types";
 
 export const SendErrorDialog: FC<{
   info: ErrorInfo | null;
-  formData: FormData;
+  formData: TransferFormData;
   destination?: environment.TransferLocation;
   onDepositAndApproveWeth?: () => Promise<void>;
   onApproveSpend?: () => Promise<void>;

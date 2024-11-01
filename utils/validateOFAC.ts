@@ -1,10 +1,10 @@
 "use client";
 import { UseFormReturn } from "react-hook-form";
-import { FormData } from "./types";
+import { TransferFormData } from "./types";
 
 export const validateOFAC = async (
-  data: FormData,
-  form: UseFormReturn<FormData>,
+  data: TransferFormData,
+  form: UseFormReturn<TransferFormData>,
 ): Promise<boolean> => {
   const response = await fetch("/blocked/api", {
     method: "POST",

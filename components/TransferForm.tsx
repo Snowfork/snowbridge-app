@@ -5,12 +5,12 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
-import { AccountInfo } from "@/utils/types";
-import { environment } from "@snowbridge/api";
+import { AccountInfo, ValidationData } from "@/utils/types";
+import { environment, assets } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useState } from "react";
-import { SubmitHandler, useForm, UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { BalanceDisplay } from "./BalanceDisplay";
 import { FeeDisplay } from "./FeeDisplay";
 import { SelectAccount } from "./SelectAccount";
@@ -89,9 +89,9 @@ function getBeneficiaries(
 }
 
 interface TransferFormProps {
-  onValidated: SubmitHandler<TransferFormData>;
-  onError: (from: TransferFormData, error: Error) => Promise<unknown> | unknown;
-  formData: TransferFormData | null;
+  onValidated: (data: ValidationData) => Promise<unknown> | unknown;
+  onError: (form: TransferFormData, error: Error) => Promise<unknown> | unknown;
+  formData?: TransferFormData;
 }
 
 export const TransferForm: FC<TransferFormProps> = ({
@@ -255,7 +255,13 @@ export const TransferForm: FC<TransferFormProps> = ({
             `Invalid form state: source mismatch ${destination.id} and ${formData.destination}.`,
           );
         }
-        await onValidated(formData);
+        await onValidated({
+          source,
+          destination,
+          formData,
+          tokenMetadata,
+          amountInSmallestUnit,
+        });
         setValidating(false);
       } catch (err: unknown) {
         console.error(err);
@@ -264,13 +270,12 @@ export const TransferForm: FC<TransferFormProps> = ({
       }
     },
     [
-      destination.erc20tokensReceivable,
-      destination.id,
+      destination,
       form,
       onValidated,
       setValidating,
       onError,
-      source.id,
+      source,
       tokenMetadata,
     ],
   );

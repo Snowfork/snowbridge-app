@@ -1,8 +1,11 @@
 import { type useRouter } from "next/navigation";
-import { toPolkadot, toEthereum, environment } from "@snowbridge/api";
+import { toPolkadot, toEthereum, environment, assets } from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
 import { Codec } from "@polkadot/types/types";
+import { TransferFormData } from "./formSchema";
+import { WalletAccount } from "@talismn/connect-wallets";
+import { BrowserProvider } from "ethers";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
@@ -24,7 +27,7 @@ export type FormDataSwitch = {
   beneficiary: string;
 };
 
-export type FormData = {
+export type TransferFormData = {
   source: string;
   sourceAccount: string;
   destination: string;
@@ -113,4 +116,17 @@ export interface PalletAssetSwitchSwitchSwitchPairInfo extends Struct {
   readonly remoteXcmFee: Codec;
   readonly status: Codec;
   readonly remoteAssetSovereignTotalBalance: u128;
+}
+
+export interface SignerInfo {
+  polkadotAccount?: WalletAccount;
+  ethereumAccount?: string;
+  ethereumProvider?: BrowserProvider;
+}
+export interface ValidationData {
+  formData: TransferFormData;
+  source: environment.TransferLocation;
+  destination: environment.TransferLocation;
+  tokenMetadata: assets.ERC20Metadata;
+  amountInSmallestUnit: bigint;
 }

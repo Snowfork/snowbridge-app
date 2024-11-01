@@ -18,7 +18,12 @@ import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { track } from "@vercel/analytics";
 import { errorMessage } from "./errorMessage";
-import { AppRouter, FormData, ErrorInfo } from "@/utils/types";
+import {
+  AppRouter,
+  TransferFormData as TransferFormData,
+  ErrorInfo,
+  SignerInfo,
+} from "@/utils/types";
 import { validateOFAC } from "@/utils/validateOFAC";
 
 export function onSubmit({
@@ -46,10 +51,10 @@ export function onSubmit({
   ethereumProvider: BrowserProvider | null;
   tokenMetadata: assets.ERC20Metadata | null;
   appRouter: AppRouter;
-  form: UseFormReturn<FormData>;
+  form: UseFormReturn<TransferFormData>;
   refreshHistory: () => void;
   addPendingTransaction: (_: PendingTransferAction) => void;
-}): (data: FormData) => Promise<void> {
+}): (data: TransferFormData) => Promise<void> {
   return async (data) => {
     track("Validate Send", data);
 
@@ -329,105 +334,4 @@ export function onSubmit({
       });
     }
   };
-}
-
-interface SignerInfo {
-  polkadotAccount?: WalletAccount;
-  ethereumAccount?: string;
-  ethereumProvider?: BrowserProvider;
-}
-
-export async function planSend(
-  context: Context,
-  source: environment.TransferLocation,
-  destination: environment.TransferLocation,
-  tokenMetadata: assets.ERC20Metadata,
-  formData: FormData,
-  { polkadotAccount, ethereumAccount, ethereumProvider }: SignerInfo,
-): Promise<toPolkadot.SendValidationResult | toEthereum.SendValidationResult> {
-  track("Validate Send", formData);
-
-  const amountInSmallestUnit = parseUnits(
-    formData.amount,
-    tokenMetadata.decimals,
-  );
-
-  switch (source.type) {
-    case "substrate": {
-      if (destination.type !== "ethereum") {
-        throw Error(`Invalid form state: destination type mismatch.`);
-      }
-      if (source.paraInfo === undefined) {
-        throw Error(`Invalid form state: source does not have parachain info.`);
-      }
-      if (!polkadotAccount) {
-        throw Error(`Polkadot Wallet not connected.`);
-      }
-      if (polkadotAccount.address !== formData.sourceAccount) {
-        throw Error(`Source account mismatch.`);
-      }
-      const walletSigner = {
-        address: polkadotAccount.address,
-        signer: polkadotAccount.signer! as Signer,
-      };
-      const plan = await toEthereum.validateSend(
-        context,
-        walletSigner,
-        source.paraInfo.paraId,
-        formData.beneficiary,
-        formData.token,
-        amountInSmallestUnit,
-      );
-      console.log(plan);
-      if (plan.failure) {
-        track("Plan Failed", {
-          ...formData,
-          errors: JSON.stringify(plan.failure.errors),
-        });
-      }
-      return plan;
-    }
-    case "ethereum": {
-      if (destination.type !== "substrate") {
-        throw Error(`Invalid form state: destination type mismatch.`);
-      }
-      if (destination.paraInfo === undefined) {
-        throw Error(
-          `Invalid form state: destination does not have parachain id.`,
-        );
-      }
-      if (!ethereumProvider) throw Error(`Ethereum Wallet not connected.`);
-      if (!ethereumAccount) throw Error(`Wallet account not selected.`);
-      if (ethereumAccount !== formData.sourceAccount) {
-        throw Error(`Selected account does not match source data.`);
-      }
-      const signer = await ethereumProvider.getSigner(ethereumAccount);
-      if (signer.address.toLowerCase() !== formData.sourceAccount.toLowerCase())
-        throw Error(`Source account mismatch.`);
-      const plan = await toPolkadot.validateSend(
-        context,
-        signer,
-        formData.beneficiary,
-        formData.token,
-        destination.paraInfo.paraId,
-        amountInSmallestUnit,
-        destination.paraInfo.destinationFeeDOT,
-        {
-          maxConsumers: destination.paraInfo.maxConsumers,
-          ignoreExistentialDeposit:
-            destination.paraInfo.skipExistentialDepositCheck,
-        },
-      );
-      console.log(plan);
-      if (plan.failure) {
-        track("Plan Failed", {
-          ...formData,
-          errors: JSON.stringify(plan.failure.errors),
-        });
-      }
-      return plan;
-    }
-    default:
-      throw Error(`Invalid form state: cannot infer source type.`);
-  }
 }
