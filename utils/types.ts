@@ -123,6 +123,7 @@ export interface SignerInfo {
   ethereumAccount?: string;
   ethereumProvider?: BrowserProvider;
 }
+
 export interface ValidationData {
   formData: TransferFormData;
   source: environment.TransferLocation;
@@ -130,3 +131,9 @@ export interface ValidationData {
   tokenMetadata: assets.ERC20Metadata;
   amountInSmallestUnit: bigint;
 }
+
+export type SendValidationResult =
+  | toPolkadot.SendValidationResult
+  | toEthereum.SendValidationResult;
+
+export type SendResult = toPolkadot.SendResult | toEthereum.SendResult;

@@ -183,6 +183,7 @@ export const Transfer: FC = () => {
     setBusy(null);
     setPlanData(null);
     setSuccess(null);
+    requestId.current = requestId.current + 1;
   };
 
   let content;
@@ -190,7 +191,28 @@ export const Transfer: FC = () => {
     content = <div onClick={() => backToForm(formData)}>{error}</div>;
   } else if (busy !== null) {
     content = <div onClick={() => backToForm(formData)}>{busy}</div>;
-  } else if (plan === null) {
+  } else if (plan !== null && success !== null) {
+    content = (
+      <div>
+        <div>Success</div>
+        <div>Estimate delivery time</div>
+        <div>Link to history page.</div>
+        <div onClick={() => cancelForm()}>Make another Transfer</div>
+      </div>
+    );
+  } else if (plan !== null && success === null) {
+    content = (
+      <div>
+        <div>Transfer Summary with fees and estimated delivery time</div>
+        <div>Step 1: Deposit</div>
+        <div>Step 2: Approve</div>
+        <div>Step 3: Existential Deposit</div>
+        <div onClick={() => setSuccess("")}>Step 4: Transfer</div>
+        <div onClick={() => backToForm(formData)}>Back</div>
+        <div onClick={() => cancelForm()}>Cancel</div>
+      </div>
+    );
+  } else if (plan === null && success === null) {
     content = (
       <TransferForm
         formData={validationData?.formData ?? formData}
@@ -219,29 +241,6 @@ export const Transfer: FC = () => {
         onError={async (form, error) => showError(errorMessage(error), form)}
       />
     );
-  } else if (success !== null) {
-    content = (
-      <div>
-        <div>Success</div>
-        <div>Estimate delivery time</div>
-        <div>Link to history page.</div>
-        <div onClick={() => cancelForm()}>Make another Transfer</div>
-      </div>
-    );
-  } else if (plan !== null) {
-    content = (
-      <div>
-        <div>Transfer Summary with fees and estimated delivery time</div>
-        <div>Step 1: Deposit</div>
-        <div>Step 2: Approve</div>
-        <div>Step 3: Existential Deposit</div>
-        <div onClick={() => setSuccess("")}>Step 4: Transfer</div>
-        <div onClick={() => backToForm(formData)}>Back</div>
-        <div onClick={() => cancelForm()}>Cancel</div>
-      </div>
-    );
-  } else {
-    content = <div>Should never reach</div>;
   }
 
   return (
