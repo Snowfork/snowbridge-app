@@ -27,15 +27,6 @@ export type FormDataSwitch = {
   beneficiary: string;
 };
 
-export type TransferFormData = {
-  source: string;
-  sourceAccount: string;
-  destination: string;
-  token: string;
-  amount: string;
-  beneficiary: string;
-};
-
 export type AccountInfo = {
   key: string;
   name: string;
