@@ -4,20 +4,15 @@ import {
   TransferStepKind,
   ValidationData,
 } from "@/utils/types";
-import {
-  Dispatch,
-  FC,
-  MouseEventHandler,
-  SetStateAction,
-  useState,
-} from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { FC, MouseEventHandler, useState } from "react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
-interface TrasnferStepProps {
+interface TransferStepsProps {
   plan: TransferPlanSteps;
   data: ValidationData;
-  onBack?: MouseEventHandler | undefined;
+  onBack?: MouseEventHandler;
+  onCompleteTransfer?: (data: ValidationData) => Promise<unknown> | unknown;
 }
 
 interface StepData {
@@ -25,7 +20,7 @@ interface StepData {
   step: TransferStep;
   data: ValidationData;
   currentStep: number;
-  nextStep: () => void;
+  nextStep: () => Promise<unknown> | unknown;
 }
 
 function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
@@ -44,7 +39,7 @@ function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
   );
 }
 
-function DepositWETHStep({ id, step, data, currentStep, nextStep }: StepData) {
+function DepositWETHStep({ id, data, currentStep, nextStep }: StepData) {
   return (
     <div key={id} className="flex flex-col gap-2 justify-between">
       <div className={currentStep < id ? " text-zinc-400" : ""}>
@@ -62,7 +57,6 @@ function DepositWETHStep({ id, step, data, currentStep, nextStep }: StepData) {
 
 function SubstrateTransferEDStep({
   id,
-  step,
   data,
   currentStep,
   nextStep,
@@ -119,10 +113,11 @@ function TransferStepView(data: StepData) {
   }
 }
 
-export const TransferSteps: FC<TrasnferStepProps> = ({
+export const TransferSteps: FC<TransferStepsProps> = ({
   plan,
   data,
   onBack,
+  onCompleteTransfer,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep(currentStep + 1);
@@ -163,7 +158,14 @@ export const TransferSteps: FC<TrasnferStepProps> = ({
               (currentStep !== plan.steps.length + 1 ? " hidden" : "")
             }
           >
-            <Button size="sm">Transfer</Button>
+            <Button
+              size="sm"
+              onClick={async () => {
+                if (onCompleteTransfer) await onCompleteTransfer(data);
+              }}
+            >
+              Transfer
+            </Button>
           </div>
         </div>
       </div>

@@ -50,7 +50,7 @@ export function ConnectEthereumWalletButton() {
       <ErrorDialog
         open={windowEthereumError !== null}
         dismiss={() => {
-          console.log(windowEthereumError);
+          console.error(windowEthereumError);
           setWindowEthereumError(null);
         }}
         title="Ethereum Wallet Error"

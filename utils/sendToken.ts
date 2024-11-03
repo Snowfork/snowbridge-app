@@ -39,14 +39,14 @@ export function createStepsFromPlan(
           case toPolkadot.SendValidationCode.BeneficiaryAccountMissing: {
             steps.push({
               kind: TransferStepKind.SubstrateTransferED,
-              displayOrder: 10,
+              displayOrder: 11,
             });
             break;
           }
           case toPolkadot.SendValidationCode.ERC20SpendNotApproved: {
             steps.push({
               kind: TransferStepKind.ApproveERC20,
-              displayOrder: 20,
+              displayOrder: 30,
             });
             break;
           }
@@ -54,7 +54,7 @@ export function createStepsFromPlan(
             if (data.tokenMetadata.symbol.toLowerCase() === "weth") {
               steps.push({
                 kind: TransferStepKind.DepositWETH,
-                displayOrder: 30,
+                displayOrder: 20,
               });
             } else {
               errors.push(error);

@@ -38,7 +38,7 @@ export function middleware(req: NextRequest) {
   // Block regions
   if (
     BLOCKED_REGIONS.find(
-      (x) => x.country === country && x.region === region
+      (x) => x.country === country && x.region === region,
     ) !== undefined
   ) {
     blocked = true;

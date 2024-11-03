@@ -13,7 +13,7 @@ const fetchTranferHistory = async (): Promise<Transfer[] | null> => {
     return await result.json();
   } else {
     throw Error(
-      `Could not fetch history. ${result.status} ${result.statusText} ${result.body}`
+      `Could not fetch history. ${result.status} ${result.statusText} ${result.body}`,
     );
   }
 };

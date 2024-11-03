@@ -6,17 +6,17 @@ import {
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
 import { AccountInfo, ValidationData } from "@/utils/types";
-import { environment, assets } from "@snowbridge/api";
+import { environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { BalanceDisplay } from "./BalanceDisplay";
-import { FeeDisplay } from "./FeeDisplay";
-import { SelectAccount } from "./SelectAccount";
-import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
-import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
-import { Button } from "./ui/button";
+import { BalanceDisplay } from "../BalanceDisplay";
+import { FeeDisplay } from "../FeeDisplay";
+import { SelectAccount } from "../SelectAccount";
+import { SelectedEthereumWallet } from "../SelectedEthereumAccount";
+import { SelectedPolkadotAccount } from "../SelectedPolkadotAccount";
+import { Button } from "../ui/button";
 import {
   Form,
   FormControl,
@@ -25,8 +25,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form";
-import { Input } from "./ui/input";
+} from "../ui/form";
+import { Input } from "../ui/input";
 import {
   Select,
   SelectContent,
@@ -34,7 +34,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 import { track } from "@vercel/analytics";
 import { validateOFAC } from "@/utils/validateOFAC";
 import { parseUnits } from "ethers";

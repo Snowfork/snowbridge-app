@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "./ui/card";
+} from "../ui/card";
 import { TransferFormData } from "@/utils/formSchema";
 import { track } from "@vercel/analytics";
 import { errorMessage } from "@/utils/errorMessage";
@@ -16,8 +16,10 @@ import { useSendToken } from "@/hooks/useSendToken";
 import { TransferPlanSteps, ValidationData } from "@/utils/types";
 import { createStepsFromPlan } from "@/utils/sendToken";
 import { TransferSteps } from "./TransferSteps";
+import { TransferBusy } from "./TransferBusy";
+import { TransferError } from "./TransferError";
 
-export const Transfer: FC = () => {
+export const TransferComponent: FC = () => {
   // const depositAndApproveWeth = useCallback(async () => {
   //   if (
   //     tokenMetadata == null ||
@@ -154,15 +156,6 @@ export const Transfer: FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [planSend, sendToken] = useSendToken();
 
-  const cancelForm = () => {
-    setSuccess(null);
-    setError(null);
-    setBusy(null);
-    setValidationData(undefined);
-    setPlanData(undefined);
-    setFormData(undefined);
-    requestId.current = requestId.current + 1;
-  };
   const backToForm = (formData?: TransferFormData) => {
     setFormData(formData);
     setValidationData(undefined);
@@ -181,27 +174,75 @@ export const Transfer: FC = () => {
     setSuccess(null);
     requestId.current = requestId.current + 1;
   };
+  const validateAndSubmit = async (data: ValidationData) => {
+    const req = requestId.current;
+    try {
+      setBusy("Doing some preflight checks...");
+      track("Validate Send", { ...data?.formData });
 
-  console.log(error, busy, plan, success, formData, validationData);
+      setValidationData(data);
+      setFormData(data.formData);
+
+      //return;
+
+      const plan = await planSend(data);
+      if (requestId.current != req) return;
+
+      const steps = createStepsFromPlan(data, plan);
+      setPlanData(steps);
+
+      if (steps.errors.length > 0) {
+        setError("Some preflight checks failed...");
+        setBusy(null);
+        return;
+      }
+      if (steps.steps.length > 0 || !plan.success) {
+        setBusy(null);
+        return;
+      }
+
+      setBusy("Submitting transfer...");
+      track("Sending Token", { ...data?.formData });
+
+      const result = await sendToken(data, plan);
+      if (requestId.current != req) return;
+      setBusy(null);
+      const messageId = result.success?.messageId ?? "0x";
+      setSuccess(messageId);
+      track("Sending Complete", { ...data?.formData, messageId });
+    } catch (err) {
+      if (requestId.current != req) return;
+      console.error(err);
+      const message = errorMessage(err);
+      track("Plan Failed Exception", {
+        ...data?.formData,
+        message,
+      });
+      showError(errorMessage(error), data.formData);
+    }
+  };
+
   let content;
   if (error !== null) {
     content = (
-      <>
-        <div onClick={() => backToForm(formData)}>{error}</div>
-        <div hidden={!plan?.errors}>
-          {plan?.errors.map((x, key) => <div key={key}>{x.message}</div>)}
-        </div>
-      </>
+      <TransferError
+        message={error}
+        plan={plan}
+        data={validationData}
+        onBack={() => backToForm(formData)}
+      />
     );
   } else if (busy !== null) {
-    content = <div onClick={() => backToForm(formData)}>{busy}</div>;
-  } else if (plan && success !== null) {
+    content = (
+      <TransferBusy message={busy} onBack={() => backToForm(formData)} />
+    );
+  } else if (success !== null) {
     content = (
       <div>
         <div>Success</div>
         <div>Estimate delivery time</div>
         <div>Link to history page.</div>
-        <div onClick={() => cancelForm()}>Make another Transfer</div>
+        <div onClick={() => backToForm()}>Make another Transfer</div>
       </div>
     );
   } else if (plan && validationData && !success) {
@@ -210,38 +251,14 @@ export const Transfer: FC = () => {
         plan={plan}
         data={validationData}
         onBack={() => backToForm(formData)}
+        onCompleteTransfer={async () => await validateAndSubmit(validationData)}
       />
     );
   } else if (!plan && !success) {
     content = (
       <TransferForm
         formData={validationData?.formData ?? formData}
-        onValidated={async (data) => {
-          const req = requestId.current;
-          try {
-            setValidationData(data);
-            setFormData(data.formData);
-            setBusy("Doing some preflight checks...");
-            track("Validate Send", { ...data?.formData });
-            const plan = await planSend(data);
-            if (requestId.current != req) return;
-            const steps = createStepsFromPlan(data, plan);
-            setPlanData(steps);
-            if (steps.errors.length > 0) {
-              setError("Some preflight checks failed...");
-            }
-            setBusy(null);
-          } catch (err) {
-            if (requestId.current != req) return;
-            console.error(err);
-            const message = errorMessage(err);
-            track("Plan Failed Exception", {
-              ...data?.formData,
-              message,
-            });
-            showError(errorMessage(error), data.formData);
-          }
-        }}
+        onValidated={async (data) => await validateAndSubmit(data)}
         onError={async (form, error) => showError(errorMessage(error), form)}
       />
     );
