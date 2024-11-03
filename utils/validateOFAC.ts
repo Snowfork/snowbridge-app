@@ -1,6 +1,6 @@
 "use client";
 import { UseFormReturn } from "react-hook-form";
-import { TransferFormData } from "./types";
+import { TransferFormData } from "./formSchema";
 
 export const validateOFAC = async (
   data: TransferFormData,

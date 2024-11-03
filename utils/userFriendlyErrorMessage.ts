@@ -1,6 +1,7 @@
 "use client";
 import { toEthereum, toPolkadot } from "@snowbridge/api";
-import { ValidationError, TransferFormData, FormDataSwitch } from "./types";
+import { ValidationError, FormDataSwitch } from "./types";
+import { TransferFormData } from "./formSchema";
 
 export function userFriendlyErrorMessage({
   error,
