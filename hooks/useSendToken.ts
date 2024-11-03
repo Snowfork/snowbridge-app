@@ -86,11 +86,6 @@ async function planSend(
         amountInSmallestUnit,
       );
       console.log(plan);
-      if (plan.failure) {
-        throw Error(`Invalid form state: cannot infer source type.`, {
-          cause: plan.failure,
-        });
-      }
       return plan;
     }
     case "ethereum": {
@@ -109,11 +104,6 @@ async function planSend(
         },
       );
       console.log(plan);
-      if (plan.failure) {
-        throw Error(`Invalid form state: cannot infer source type.`, {
-          cause: plan.failure,
-        });
-      }
       return plan;
     }
     default:
@@ -127,6 +117,12 @@ async function sendToken(
   plan: SendValidationResult,
   signerInfo: SignerInfo,
 ): Promise<SendResult> {
+  if (plan.failure) {
+    throw Error(`Cannot execute a failed plan.`, {
+      cause: plan.failure,
+    });
+  }
+
   switch (data.source.type) {
     case "substrate": {
       const { polkadotAccount } = validateSubstrateSend(data, signerInfo);
@@ -168,14 +164,17 @@ async function sendToken(
   }
 }
 
-export function useSendToken() {
+export function useSendToken(): [
+  (data: ValidationData) => Promise<SendValidationResult>,
+  (data: ValidationData, plan: SendValidationResult) => Promise<SendResult>,
+] {
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const plan = useCallback(
     async (data: ValidationData) => {
-      if (context === null) return;
+      if (context === null) throw Error("No context");
       return await planSend(context, data, {
         polkadotAccount: polkadotAccount ?? undefined,
         ethereumAccount: ethereumAccount ?? undefined,
@@ -186,7 +185,7 @@ export function useSendToken() {
   );
   const send = useCallback(
     async (data: ValidationData, plan: SendValidationResult) => {
-      if (context === null) return;
+      if (context === null) throw Error("No context");
       return await sendToken(context, data, plan, {
         polkadotAccount: polkadotAccount ?? undefined,
         ethereumAccount: ethereumAccount ?? undefined,

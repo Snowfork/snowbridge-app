@@ -137,3 +137,20 @@ export type SendValidationResult =
   | toEthereum.SendValidationResult;
 
 export type SendResult = toPolkadot.SendResult | toEthereum.SendResult;
+
+export enum TransferStepKind {
+  DepositWETH,
+  ApproveERC20,
+  SubstrateTransferFee,
+  SubstrateTransferED,
+}
+export interface TransferStep {
+  displayOrder: number;
+  kind: TransferStepKind;
+}
+
+export interface TransferPlanSteps {
+  steps: TransferStep[];
+  errors: (toEthereum.SendValidationError | toPolkadot.SendValidationError)[];
+  plan: SendValidationResult;
+}

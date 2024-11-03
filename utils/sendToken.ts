@@ -1,0 +1,79 @@
+import { toEthereum, toPolkadot } from "@snowbridge/api";
+import {
+  SendValidationResult,
+  TransferPlanSteps,
+  TransferStep,
+  TransferStepKind,
+  ValidationData,
+} from "./types";
+
+export function createStepsFromPlan(
+  data: ValidationData,
+  plan: SendValidationResult,
+): TransferPlanSteps {
+  const errors = [];
+  const steps: TransferStep[] = [];
+  switch (data.source.type) {
+    case "substrate": {
+      const p = plan as toEthereum.SendValidationResult;
+      for (const error of p.failure?.errors ?? []) {
+        if (error.code == toEthereum.SendValidationCode.InsufficientFee) {
+          steps.push({
+            kind: TransferStepKind.SubstrateTransferFee,
+            displayOrder: 10,
+          });
+        } else {
+          errors.push(error);
+        }
+      }
+      return {
+        steps,
+        errors,
+        plan,
+      };
+    }
+    case "ethereum": {
+      const p = plan as toPolkadot.SendValidationResult;
+      for (const error of p.failure?.errors ?? []) {
+        switch (error.code) {
+          case toPolkadot.SendValidationCode.BeneficiaryAccountMissing: {
+            steps.push({
+              kind: TransferStepKind.SubstrateTransferED,
+              displayOrder: 10,
+            });
+            break;
+          }
+          case toPolkadot.SendValidationCode.ERC20SpendNotApproved: {
+            steps.push({
+              kind: TransferStepKind.ApproveERC20,
+              displayOrder: 20,
+            });
+            break;
+          }
+          case toPolkadot.SendValidationCode.InsufficientToken: {
+            if (data.tokenMetadata.symbol.toLowerCase() === "weth") {
+              steps.push({
+                kind: TransferStepKind.DepositWETH,
+                displayOrder: 30,
+              });
+            } else {
+              errors.push(error);
+            }
+            break;
+          }
+          default:
+            errors.push(error);
+            break;
+        }
+      }
+      steps.sort((a, b) => a.displayOrder - b.displayOrder);
+      return {
+        steps,
+        errors,
+        plan,
+      };
+    }
+    default:
+      throw Error(`Invalid form state: cannot infer source type.`);
+  }
+}

@@ -11,11 +11,11 @@ import {
 } from "./ui/card";
 import { TransferFormData } from "@/utils/formSchema";
 import { track } from "@vercel/analytics";
-import { planSend } from "@/utils/onSubmit";
 import { errorMessage } from "@/utils/errorMessage";
-import { usePlanSendToken, useSendToken } from "@/hooks/usePlanSendToken";
-import { ValidationData } from "@/utils/types";
-import { toEthereum, toPolkadot } from "@snowbridge/api";
+import { useSendToken } from "@/hooks/useSendToken";
+import { TransferPlanSteps, ValidationData } from "@/utils/types";
+import { createStepsFromPlan } from "@/utils/sendToken";
+import { TransferSteps } from "./TransferSteps";
 
 export const Transfer: FC = () => {
   // const depositAndApproveWeth = useCallback(async () => {
@@ -147,12 +147,8 @@ export const Transfer: FC = () => {
 
   const requestId = useRef(0);
   const [formData, setFormData] = useState<TransferFormData>();
-  const [validationData, setValidationData] = useState<ValidationData | null>(
-    null,
-  );
-  const [plan, setPlanData] = useState<
-    toEthereum.SendValidationResult | toPolkadot.SendValidationResult | null
-  >(null);
+  const [validationData, setValidationData] = useState<ValidationData>();
+  const [plan, setPlanData] = useState<TransferPlanSteps>();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -162,36 +158,44 @@ export const Transfer: FC = () => {
     setSuccess(null);
     setError(null);
     setBusy(null);
-    setValidationData(null);
-    setPlanData(null);
+    setValidationData(undefined);
+    setPlanData(undefined);
     setFormData(undefined);
     requestId.current = requestId.current + 1;
   };
   const backToForm = (formData?: TransferFormData) => {
     setFormData(formData);
-    setValidationData(null);
+    setValidationData(undefined);
     setError(null);
     setBusy(null);
-    setPlanData(null);
+    setPlanData(undefined);
     setSuccess(null);
     requestId.current = requestId.current + 1;
   };
   const showError = (message: string, formData?: TransferFormData) => {
     setFormData(formData);
     setError(message);
-    setValidationData(null);
+    setValidationData(undefined);
     setBusy(null);
-    setPlanData(null);
+    setPlanData(undefined);
     setSuccess(null);
     requestId.current = requestId.current + 1;
   };
 
+  console.log(error, busy, plan, success, formData, validationData);
   let content;
   if (error !== null) {
-    content = <div onClick={() => backToForm(formData)}>{error}</div>;
+    content = (
+      <>
+        <div onClick={() => backToForm(formData)}>{error}</div>
+        <div hidden={!plan?.errors}>
+          {plan?.errors.map((x, key) => <div key={key}>{x.message}</div>)}
+        </div>
+      </>
+    );
   } else if (busy !== null) {
     content = <div onClick={() => backToForm(formData)}>{busy}</div>;
-  } else if (plan !== null && success !== null) {
+  } else if (plan && success !== null) {
     content = (
       <div>
         <div>Success</div>
@@ -200,19 +204,15 @@ export const Transfer: FC = () => {
         <div onClick={() => cancelForm()}>Make another Transfer</div>
       </div>
     );
-  } else if (plan !== null && success === null) {
+  } else if (plan && validationData && !success) {
     content = (
-      <div>
-        <div>Transfer Summary with fees and estimated delivery time</div>
-        <div>Step 1: Deposit</div>
-        <div>Step 2: Approve</div>
-        <div>Step 3: Existential Deposit</div>
-        <div onClick={() => setSuccess("")}>Step 4: Transfer</div>
-        <div onClick={() => backToForm(formData)}>Back</div>
-        <div onClick={() => cancelForm()}>Cancel</div>
-      </div>
+      <TransferSteps
+        plan={plan}
+        data={validationData}
+        onBack={() => backToForm(formData)}
+      />
     );
-  } else if (plan === null && success === null) {
+  } else if (!plan && !success) {
     content = (
       <TransferForm
         formData={validationData?.formData ?? formData}
@@ -221,11 +221,15 @@ export const Transfer: FC = () => {
           try {
             setValidationData(data);
             setFormData(data.formData);
-            setBusy("Busy planning token transfer...");
+            setBusy("Doing some preflight checks...");
             track("Validate Send", { ...data?.formData });
             const plan = await planSend(data);
             if (requestId.current != req) return;
-            setPlanData(plan ?? null);
+            const steps = createStepsFromPlan(data, plan);
+            setPlanData(steps);
+            if (steps.errors.length > 0) {
+              setError("Some preflight checks failed...");
+            }
             setBusy(null);
           } catch (err) {
             if (requestId.current != req) return;
