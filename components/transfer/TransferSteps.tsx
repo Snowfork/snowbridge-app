@@ -7,6 +7,7 @@ import {
 import { FC, MouseEventHandler, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { TransferSummary } from "./TransferSummary";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -123,17 +124,9 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   const nextStep = () => setCurrentStep(currentStep + 1);
   return (
     <div>
-      <div className="my-2">
-        <div>
-          Send {data.formData.amount} {data.tokenMetadata.symbol} from{" "}
-          {data.source.name} to {data.destination.name}.
-        </div>
-        <div>Source Account: {data.formData.sourceAccount}</div>
-        <div>Beneficiary: {data.formData.beneficiary}</div>
-        <div>Fees: 2 DOT</div>
-        <div>Estimated delivery: 3 hour 2 minutes</div>
-      </div>
-      <div className="flex flex-col my-2 mx-5 gap-1">
+      <TransferSummary data={data} />
+      <p className="text-l font-semibold my-4">Steps</p>
+      <div className="flex flex-col my-2 mx-5 gap-4">
         {plan.steps.map((step, i) => (
           <TransferStepView
             key={i}
@@ -144,7 +137,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
             nextStep={nextStep}
           />
         ))}
-        <div className="flex flex-col gap-2 justify-between">
+        <div className="flex flex-col gap-4 justify-between">
           <div
             className={
               currentStep !== plan.steps.length + 1 ? " text-zinc-400" : ""
@@ -169,9 +162,11 @@ export const TransferSteps: FC<TransferStepsProps> = ({
           </div>
         </div>
       </div>
-      <Button className="w-full" variant="destructive" onClick={onBack}>
-        Back
-      </Button>
+      <div className="flex flex-col items-center gap-4">
+        <Button variant="destructive" onClick={onBack}>
+          Back
+        </Button>
+      </div>
     </div>
   );
 };

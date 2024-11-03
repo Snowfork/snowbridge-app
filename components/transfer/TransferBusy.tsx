@@ -1,6 +1,7 @@
 import { FC } from "react";
 import { Button } from "../ui/button";
 import { LucideLoaderCircle } from "lucide-react";
+import Image from "next/image";
 
 interface TransferBusyProps {
   message?: string;
@@ -9,7 +10,13 @@ interface TransferBusyProps {
 export const TransferBusy: FC<TransferBusyProps> = ({ message, onBack }) => {
   return (
     <div className="flex flex-col items-center gap-4" onClick={onBack}>
-      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+      <Image
+        className="animate-bounce mb-2"
+        src="/icon.svg"
+        width={32}
+        height={32}
+        alt="Smiling bridge"
+      />
       <div>{message}</div>
       <Button variant="destructive" onClick={onBack}>
         Cancel
