@@ -8,6 +8,10 @@ import { FC, MouseEventHandler, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { TransferSummary } from "./TransferSummary";
+import { Label } from "../ui/label";
+import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
+import { LucideLoaderCircle } from "lucide-react";
+import { depositWeth } from "@snowbridge/api/dist/toPolkadot";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -25,32 +29,116 @@ interface StepData {
 }
 
 function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
+  const { approveSpend } = useERC20DepositAndApprove();
+  const [amount, setAmount] = useState(data.formData.amount);
+  const [busy, setBusy] = useState(false);
+  const [success, setSuccess] = useState<string>();
+  const [error, setError] = useState<string>();
   return (
     <div key={id} className="flex flex-col gap-2 justify-between">
       <div className={currentStep < id ? " text-zinc-400" : ""}>
         Step {id}: Approve Snowbridge spender.
       </div>
-      <div className={"flex gap-2" + (currentStep !== id ? " hidden" : "")}>
-        <Input className="w-1/4" type="string" value={data.formData.amount} />
-        <Button size="sm" onClick={nextStep}>
-          Approve
-        </Button>
+      <div
+        className={
+          "flex gap-2 place-items-center " +
+          (currentStep !== id ? " hidden" : "")
+        }
+      >
+        <Label>Amount</Label>
+        <Input
+          disabled={busy}
+          className="w-1/4"
+          type="number"
+          defaultValue={data.formData.amount}
+          onChange={(v) => setAmount(v.target.value)}
+        />
+        {busy ? (
+          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+        ) : (
+          <Button
+            size="sm"
+            onClick={async () => {
+              setBusy(true);
+              setError(undefined);
+              try {
+                const { receipt } = await approveSpend(data, amount);
+                setSuccess("Success: " + (receipt?.hash ?? ""));
+                nextStep();
+              } catch (error: any) {
+                console.error(error);
+                setError("Error submitting approval.");
+              }
+              setBusy(false);
+            }}
+          >
+            Approve
+          </Button>
+        )}
+      </div>
+      <div className="text-red-500" hidden={!error}>
+        {error}
+      </div>
+      <div className="text-green-500" hidden={!success}>
+        {success}
       </div>
     </div>
   );
 }
 
 function DepositWETHStep({ id, data, currentStep, nextStep }: StepData) {
+  const { depositWeth } = useERC20DepositAndApprove();
+  const [amount, setAmount] = useState(data.formData.amount);
+  const [busy, setBusy] = useState(false);
+  const [success, setSuccess] = useState<string>();
+  const [error, setError] = useState<string>();
   return (
     <div key={id} className="flex flex-col gap-2 justify-between">
       <div className={currentStep < id ? " text-zinc-400" : ""}>
         Step {id}: Wrap ETH to WETH.
       </div>
-      <div className={"flex gap-2" + (currentStep !== id ? " hidden" : "")}>
-        <Input className="w-1/4" type="string" value={data.formData.amount} />
-        <Button size="sm" onClick={nextStep}>
-          Deposit
-        </Button>
+      <div
+        className={
+          "flex gap-2 place-items-center " +
+          (currentStep !== id ? " hidden" : "")
+        }
+      >
+        <Label>Amount</Label>
+        <Input
+          disabled={busy}
+          className="w-1/4"
+          type="number"
+          defaultValue={data.formData.amount}
+          onChange={(v) => setAmount(v.target.value)}
+        />
+        {busy ? (
+          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+        ) : (
+          <Button
+            size="sm"
+            onClick={async () => {
+              setBusy(true);
+              setError(undefined);
+              try {
+                const { receipt } = await depositWeth(data, amount);
+                setSuccess("Success: " + (receipt?.hash ?? ""));
+                nextStep();
+              } catch (error: any) {
+                console.error(error);
+                setError("Error depositing WETH.");
+              }
+              setBusy(false);
+            }}
+          >
+            Approve
+          </Button>
+        )}
+      </div>
+      <div className="text-red-500" hidden={!error}>
+        {error}
+      </div>
+      <div className="text-green-500" hidden={!success}>
+        {success}
       </div>
     </div>
   );
@@ -68,8 +156,14 @@ function SubstrateTransferEDStep({
         Step {id}: Beneficiary account requires existential deposit on{" "}
         {data.destination.name}.
       </div>
-      <div className={"flex gap-2" + (currentStep !== id ? " hidden" : "")}>
-        <Input className="w-1/4" type="string" value="0.1" />
+      <div
+        className={
+          "flex gap-2 place-items-center" +
+          (currentStep !== id ? " hidden" : "")
+        }
+      >
+        <Label>Amount</Label>
+        <Input className="w-1/4" type="string" defaultValue="0.1" />
         <Button size="sm" onClick={nextStep}>
           Transfer
         </Button>
@@ -91,8 +185,14 @@ function SubstrateTransferFeeStep({
         Step {id}: {TransferStepKind[step.kind]} Beneficiary account requires
         existential deposit on {data.destination.name}.
       </div>
-      <div className={"flex gap-2" + (currentStep !== id ? " hidden" : "")}>
-        <Input className="w-1/4" type="string" value="0.1" />
+      <div
+        className={
+          "flex gap-2 place-items-center" +
+          (currentStep !== id ? " hidden" : "")
+        }
+      >
+        <Label>Amount</Label>
+        <Input className="w-1/4" type="string" defaultValue="0.1" />
         <Button size="sm" onClick={nextStep}>
           Transfer
         </Button>
