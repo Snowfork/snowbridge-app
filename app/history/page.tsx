@@ -54,43 +54,16 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import {
+  etherscanAddressLink,
+  etherscanERC20TokenLink,
+  etherscanTxHashLink,
+  subscanAccountLink,
+  subscanEventLink,
+  subscanExtrinsicLink,
+} from "@/lib/explorerLinks";
 
 const ITEMS_PER_PAGE = 5;
-const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
-  local_e2e: {
-    etherscan: "https://no-expolorers-for-local-e2e/",
-    subscan_ah: "https://no-expolorers-for-local-e2e/",
-    subscan_bh: "https://no-expolorers-for-local-e2e/",
-    polkadot_js_kilt: "https://no-expolorers-for-westend/",
-  },
-  rococo_sepolia: {
-    etherscan: "https://sepolia.etherscan.io/",
-    subscan_ah: "https://assethub-rococo.subscan.io/",
-    subscan_bh: "https://bridgehub-rococo.subscan.io/",
-    polkadot_js_kilt:
-      "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frilt.kilt.io/",
-  },
-  paseo_sepolia: {
-    etherscan: "https://sepolia.etherscan.io/",
-    subscan_ah: "https://assethub-paseo.subscan.io/",
-    subscan_bh: "https://bridgehub-paseo.subscan.io/",
-    polkadot_js_kilt:
-      "https://polkadot.js.org/apps/?rpc=wss://peregrine.kilt.io/parachain-public-ws/",
-  },
-  polkadot_mainnet: {
-    etherscan: "https://etherscan.io/",
-    subscan_ah: "https://assethub-polkadot.subscan.io/",
-    subscan_bh: "https://bridgehub-polkadot.subscan.io/",
-    subscan_kilt: "https://spiritnet.subscan.io/",
-  },
-  westend_sepolia: {
-    etherscan: "https://sepolia.etherscan.io/",
-    subscan_ah: "https://assethub-westend.subscan.io/",
-    subscan_bh: "https://bridgehub-westend.subscan.io/",
-    polkadot_js_kilt: "https://no-expolorers-for-westend/",
-  },
-};
-
 const isWalletTransaction = (
   polkadotAccounts: WalletAccount[] | null,
   ethereumAccounts: string[] | null,
@@ -141,36 +114,29 @@ const getDestinationTokenByAddress = (
   );
 };
 
-const etherscanEventLink = (baseUrl: string, txHash: string): string => {
-  const slash = baseUrl.endsWith("/") ? "" : "/";
-  return `${baseUrl}${slash}tx/${txHash}`;
-};
-
-const subscanEventLink = (baseUrl: string, eventIndex: string): string => {
-  const block = eventIndex.split("-")[0];
-  const slash = baseUrl.endsWith("/") ? "" : "/";
-  return `${baseUrl}${slash}block/${block}?event=${eventIndex}&tab=event`;
-};
-
 const getExplorerLinks = (
   env: environment.SnowbridgeEnvironment,
   transfer: Transfer,
   destination?: environment.TransferLocation,
 ) => {
-  const urls = EXPLORERS[env.name];
   const links: { text: string; url: string }[] = [];
   if (destination?.type == "ethereum") {
     const ethTransfer = transfer as history.ToEthereumTransferResult;
     links.push({
       text: "Submitted to Asset Hub",
-      url: `${urls["subscan_ah"]}extrinsic/${ethTransfer.submitted.extrinsic_index}`,
+      url: subscanExtrinsicLink(
+        env.name,
+        "ah",
+        ethTransfer.submitted.extrinsic_index,
+      ),
     });
 
     if (ethTransfer.bridgeHubXcmDelivered) {
       links.push({
         text: "Bridge Hub received XCM from Asset Hub",
         url: subscanEventLink(
-          urls["subscan_bh"],
+          env.name,
+          "bh",
           ethTransfer.bridgeHubXcmDelivered.event_index,
         ),
       });
@@ -179,7 +145,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message delivered to Snowbridge Message Queue",
         url: subscanEventLink(
-          urls["subscan_bh"],
+          env.name,
+          "bh",
           ethTransfer.bridgeHubChannelDelivered.event_index,
         ),
       });
@@ -188,7 +155,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message queued on Asset Hub Channel",
         url: subscanEventLink(
-          urls["subscan_bh"],
+          env.name,
+          "bh",
           ethTransfer.bridgeHubMessageQueued.event_index,
         ),
       });
@@ -197,7 +165,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message accepted by Asset Hub Channel",
         url: subscanEventLink(
-          urls["subscan_bh"],
+          env.name,
+          "bh",
           ethTransfer.bridgeHubMessageAccepted.event_index,
         ),
       });
@@ -205,8 +174,8 @@ const getExplorerLinks = (
     if (ethTransfer.ethereumBeefyIncluded) {
       links.push({
         text: "Message included by beefy client",
-        url: etherscanEventLink(
-          urls["etherscan"],
+        url: etherscanTxHashLink(
+          env.name,
           ethTransfer.ethereumBeefyIncluded.transactionHash,
         ),
       });
@@ -214,8 +183,8 @@ const getExplorerLinks = (
     if (ethTransfer.ethereumMessageDispatched) {
       links.push({
         text: "Message dispatched on Ethereum",
-        url: etherscanEventLink(
-          urls["etherscan"],
+        url: etherscanTxHashLink(
+          env.name,
           ethTransfer.ethereumMessageDispatched.transactionHash,
         ),
       });
@@ -225,17 +194,15 @@ const getExplorerLinks = (
     const dotTransfer = transfer as history.ToPolkadotTransferResult;
     links.push({
       text: "Submitted to Snowbridge Gateway",
-      url: etherscanEventLink(
-        urls["etherscan"],
-        dotTransfer.submitted.transactionHash,
-      ),
+      url: etherscanTxHashLink(env.name, dotTransfer.submitted.transactionHash),
     });
 
     if (dotTransfer.beaconClientIncluded) {
       links.push({
         text: "Included by light client on Bridge Hub",
         url: subscanEventLink(
-          urls["subscan_bh"],
+          env.name,
+          "bh",
           dotTransfer.beaconClientIncluded.event_index,
         ),
       });
@@ -244,7 +211,8 @@ const getExplorerLinks = (
       links.push({
         text: "Inbound message received on Asset Hub channel",
         url: subscanEventLink(
-          urls["subscan_bh"],
+          env.name,
+          "bh",
           dotTransfer.inboundMessageReceived.event_index,
         ),
       });
@@ -253,7 +221,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message dispatched on Asset Hub",
         url: subscanEventLink(
-          urls["subscan_ah"],
+          env.name,
+          "ah",
           dotTransfer.assetHubMessageProcessed.event_index,
         ),
       });
@@ -342,7 +311,6 @@ const transferDetail = (
   assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
 ): JSX.Element => {
   const destination = getEnvDetail(transfer, env);
-  const urls = EXPLORERS[env.name];
   const links: { text: string; url: string }[] = getExplorerLinks(
     env,
     transfer,
@@ -357,15 +325,25 @@ const transferDetail = (
   if (beneficiary.length === 66) {
     beneficiary = encodeAddress(beneficiary, ss58Format);
   }
-  const tokenUrl = `${urls["etherscan"]}token/${transfer.info.tokenAddress}`;
+  const tokenUrl = etherscanERC20TokenLink(
+    env.name,
+    transfer.info.tokenAddress,
+  );
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
   if (destination?.paraInfo) {
-    sourceAccountUrl = `${urls["etherscan"]}address/${transfer.info.sourceAddress}`;
-    beneficiaryAccountUrl = `${urls["subscan_ah"]}/account/${beneficiary}`;
+    sourceAccountUrl = etherscanAddressLink(
+      env.name,
+      transfer.info.sourceAddress,
+    );
+    beneficiaryAccountUrl = subscanAccountLink(env.name, "ah", beneficiary);
   } else {
-    sourceAccountUrl = `${urls["subscan_ah"]}/account/${transfer.info.sourceAddress}`;
-    beneficiaryAccountUrl = `${urls["etherscan"]}address/${beneficiary}`;
+    sourceAccountUrl = subscanAccountLink(
+      env.name,
+      "ah",
+      transfer.info.sourceAddress,
+    );
+    beneficiaryAccountUrl = etherscanAddressLink(env.name, beneficiary);
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
