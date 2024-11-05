@@ -15,7 +15,10 @@ interface TransferStepsProps {
   plan: TransferPlanSteps;
   data: ValidationData;
   onBack?: MouseEventHandler;
-  onRefreshTransfer?: (data: ValidationData) => Promise<unknown> | unknown;
+  onRefreshTransfer?: (
+    data: ValidationData,
+    refreshOnly?: boolean,
+  ) => Promise<unknown> | unknown;
 }
 
 interface StepData {
@@ -124,7 +127,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
         <Button
           variant="secondary"
           onClick={() => {
-            if (onRefreshTransfer) onRefreshTransfer(data);
+            if (onRefreshTransfer) onRefreshTransfer(data, true);
           }}
         >
           Refresh

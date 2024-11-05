@@ -47,7 +47,10 @@ export const TransferComponent: FC = () => {
     setSuccess(null);
     requestId.current = requestId.current + 1;
   };
-  const validateAndSubmit = async (data: ValidationData) => {
+  const validateAndSubmit = async (
+    data: ValidationData,
+    refreshOnly: boolean,
+  ) => {
     const req = requestId.current;
     try {
       setBusy("Doing some preflight checks...");
@@ -67,7 +70,7 @@ export const TransferComponent: FC = () => {
         setBusy(null);
         return;
       }
-      if (steps.steps.length > 0 || !plan.success) {
+      if (steps.steps.length > 0 || !plan.success || refreshOnly) {
         setBusy(null);
         return;
       }
@@ -122,14 +125,16 @@ export const TransferComponent: FC = () => {
         plan={plan}
         data={validationData}
         onBack={() => backToForm(formData)}
-        onRefreshTransfer={async () => await validateAndSubmit(validationData)}
+        onRefreshTransfer={async (_, refreshOnly) =>
+          await validateAndSubmit(validationData, refreshOnly ?? false)
+        }
       />
     );
   } else if (!plan && !success) {
     content = (
       <TransferForm
         formData={validationData?.formData ?? formData}
-        onValidated={async (data) => await validateAndSubmit(data)}
+        onValidated={async (data) => await validateAndSubmit(data, false)}
         onError={async (form, error) => showError(errorMessage(error), form)}
       />
     );

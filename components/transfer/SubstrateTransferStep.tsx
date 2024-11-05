@@ -145,9 +145,11 @@ export function SubstrateTransferStep({
             <Button
               size="sm"
               onClick={() => {
+                setError(undefined);
                 setBusy(true);
-                nextStep();
-                setSuccess({ text: "Success" });
+                //nextStep();
+                //setSuccess({ text: "Success" });
+                setError({ text: "Error" });
                 setBusy(false);
               }}
             >
