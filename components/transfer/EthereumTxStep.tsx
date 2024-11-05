@@ -69,7 +69,8 @@ export function EthereumTxStep({
       </div>
       <div
         className={
-          "flex flex-col gap-2" + (currentStep !== id ? " hidden" : "")
+          "flex gap-2 place-items-center" +
+          (currentStep !== id ? " hidden" : "")
         }
       >
         <Label className="w-1/5">Amount</Label>

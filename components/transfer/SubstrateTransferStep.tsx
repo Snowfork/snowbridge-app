@@ -24,6 +24,7 @@ interface TransferStepData {
   title: string;
   nextStep: () => Promise<unknown> | unknown;
   description?: string;
+  amount: string;
 }
 
 export function SubstrateTransferStep({
@@ -33,6 +34,7 @@ export function SubstrateTransferStep({
   nextStep,
   title,
   description,
+  amount,
 }: TransferStepData) {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -134,7 +136,7 @@ export function SubstrateTransferStep({
           <Input
             className="w-full"
             type="string"
-            defaultValue="0.1"
+            defaultValue={amount}
             disabled={busy}
           />
           {busy ? (
