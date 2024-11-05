@@ -5,7 +5,11 @@ import { AccountId32 } from "@polkadot/types/interfaces";
 import { Codec } from "@polkadot/types/types";
 import { TransferFormData } from "./formSchema";
 import { WalletAccount } from "@talismn/connect-wallets";
-import { BrowserProvider } from "ethers";
+import {
+  BrowserProvider,
+  ContractTransactionReceipt,
+  ContractTransactionResponse,
+} from "ethers";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
@@ -144,4 +148,9 @@ export interface TransferPlanSteps {
   steps: TransferStep[];
   errors: (toEthereum.SendValidationError | toPolkadot.SendValidationError)[];
   plan: SendValidationResult;
+}
+
+export interface ContractResponse {
+  response: ContractTransactionResponse;
+  receipt: ContractTransactionReceipt | null;
 }

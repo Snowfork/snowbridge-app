@@ -1,25 +1,21 @@
-import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import {
   TransferPlanSteps,
   TransferStep,
   TransferStepKind,
   ValidationData,
 } from "@/utils/types";
-import { LucideLoaderCircle } from "lucide-react";
 import { FC, MouseEventHandler, useState } from "react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+import { EthereumTxStep } from "./EthereumTxStep";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { TransferSummary } from "./TransferSummary";
-import { etherscanTxHashLink } from "@/lib/explorerLinks";
-import { getEnvironmentName } from "@/lib/snowbridge";
+import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
   data: ValidationData;
   onBack?: MouseEventHandler;
-  onCompleteTransfer?: (data: ValidationData) => Promise<unknown> | unknown;
+  onRefreshTransfer?: (data: ValidationData) => Promise<unknown> | unknown;
 }
 
 interface StepData {
@@ -30,158 +26,47 @@ interface StepData {
   nextStep: () => Promise<unknown> | unknown;
 }
 
-function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
-  const envName = getEnvironmentName();
-  const { approveSpend } = useERC20DepositAndApprove();
-  const [amount, setAmount] = useState(data.formData.amount);
-  const [busy, setBusy] = useState(false);
-  const [success, setSuccess] = useState<string>();
-  const [error, setError] = useState<string>();
-  return (
-    <div key={id} className="flex flex-col gap-2 justify-between">
-      <div className={currentStep < id ? " text-zinc-400" : ""}>
-        Step {id}: Approve Snowbridge spender.
-      </div>
-      <div
-        className={
-          "flex gap-2 place-items-center " +
-          (currentStep !== id ? " hidden" : "")
-        }
-      >
-        <Label>Amount</Label>
-        <Input
-          disabled={busy}
-          className="w-1/4"
-          type="number"
-          defaultValue={data.formData.amount}
-          onChange={(v) => setAmount(v.target.value)}
-        />
-        {busy ? (
-          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-        ) : (
-          <Button
-            size="sm"
-            onClick={async () => {
-              setBusy(true);
-              setError(undefined);
-              try {
-                const { receipt } = await approveSpend(data, amount);
-                const etherscanLink = etherscanTxHashLink(
-                  envName,
-                  receipt?.hash ?? "",
-                );
-                if (receipt?.status === 1) {
-                  setSuccess("Success: " + etherscanLink);
-                } else {
-                  setError("Error submitting approval: " + etherscanLink);
-                }
-                nextStep();
-              } catch (error: any) {
-                console.error(error);
-                setError("Error submitting approval.");
-              }
-              setBusy(false);
-            }}
-          >
-            Approve
-          </Button>
-        )}
-      </div>
-      <div className="text-red-500 text-sm" hidden={!error}>
-        {error}
-      </div>
-      <div className="text-green-500 text-sm" hidden={!success}>
-        {success}
-      </div>
-    </div>
-  );
-}
-
-function DepositWETHStep({ id, data, currentStep, nextStep }: StepData) {
-  const envName = getEnvironmentName();
-  const { depositWeth } = useERC20DepositAndApprove();
-  const [amount, setAmount] = useState(data.formData.amount);
-  const [busy, setBusy] = useState(false);
-  const [success, setSuccess] = useState<string>();
-  const [error, setError] = useState<string>();
-  return (
-    <div key={id} className="flex flex-col gap-2 justify-between">
-      <div className={currentStep < id ? " text-zinc-400" : ""}>
-        Step {id}: Wrap ETH to WETH.
-      </div>
-      <div
-        className={
-          "flex gap-2 place-items-center " +
-          (currentStep !== id ? " hidden" : "")
-        }
-      >
-        <Label>Amount</Label>
-        <Input
-          disabled={busy}
-          className="w-1/4"
-          type="number"
-          defaultValue={data.formData.amount}
-          onChange={(v) => setAmount(v.target.value)}
-        />
-        {busy ? (
-          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-        ) : (
-          <Button
-            size="sm"
-            onClick={async () => {
-              setBusy(true);
-              setError(undefined);
-              try {
-                const { receipt } = await depositWeth(data, amount);
-                const etherscanLink = etherscanTxHashLink(
-                  envName,
-                  receipt?.hash ?? "",
-                );
-                if (receipt?.status === 1) {
-                  setSuccess("Success: " + etherscanLink);
-                } else {
-                  setError("Error submitting approval: " + etherscanLink);
-                }
-                nextStep();
-              } catch (error: any) {
-                console.error(error);
-                setError("Error depositing WETH.");
-              }
-              setBusy(false);
-            }}
-          >
-            Approve
-          </Button>
-        )}
-      </div>
-      <div className="text-red-500 text-sm" hidden={!error}>
-        {error}
-      </div>
-      <div className="text-green-500 text-sm" hidden={!success}>
-        {success}
-      </div>
-    </div>
-  );
-}
-
 function TransferStepView(step: StepData) {
+  const { depositWeth, approveSpend } = useERC20DepositAndApprove();
   switch (step.step.kind) {
     case TransferStepKind.ApproveERC20:
-      return <ApproveERC20Step {...step} />;
+      return (
+        <EthereumTxStep
+          {...step}
+          title="Approve Snowbridge spender."
+          description="Snowbridge needs to be an approved spender to transfer ERC20 tokens. This step will approve the transfer amount."
+          action={approveSpend}
+          errorMessage="Error submitting approval."
+          submitButtonText="Approve"
+        />
+      );
     case TransferStepKind.DepositWETH:
-      return <DepositWETHStep {...step} />;
+      return (
+        <EthereumTxStep
+          {...step}
+          title="Wrap ETH to WETH."
+          description="ETH needs to be wrapped into WETH to be transfered with Snowbridge. This step will deposit ETH into WETH."
+          action={depositWeth}
+          errorMessage="Error depositing WETH."
+          submitButtonText="Deposit"
+        />
+      );
     case TransferStepKind.SubstrateTransferED:
       return (
         <SubstrateTransferStep
           {...step}
-          title={`Beneficiary account requires existential deposit on ${step.data.destination.name}.`}
+          title="Missing existential deposit on destination."
+          description={`Beneficiary account requires existential deposit on ${step.data.destination.name}. This step will transfer funds from the relaychain.`}
+          amount={"0.1"}
         />
       );
     case TransferStepKind.SubstrateTransferFee:
       return (
         <SubstrateTransferStep
           {...step}
-          title={`Source account requires a DOT fee on ${step.data.destination.name}.`}
+          title="Missing fee on source."
+          description={`Source account requires a DOT fee on ${step.data.destination.name}. This step will Transfer funds from the relaychain.`}
+          amount={"6.32"}
         />
       );
   }
@@ -191,7 +76,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   plan,
   data,
   onBack,
-  onCompleteTransfer,
+  onRefreshTransfer,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep(currentStep + 1);
@@ -220,14 +105,14 @@ export const TransferSteps: FC<TransferStepsProps> = ({
           </div>
           <div
             className={
-              "flex gap-2" +
+              "flex gap-4" +
               (currentStep !== plan.steps.length + 1 ? " hidden" : "")
             }
           >
             <Button
               size="sm"
               onClick={async () => {
-                if (onCompleteTransfer) await onCompleteTransfer(data);
+                if (onRefreshTransfer) await onRefreshTransfer(data);
               }}
             >
               Transfer

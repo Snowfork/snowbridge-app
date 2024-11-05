@@ -122,7 +122,7 @@ export const TransferComponent: FC = () => {
         plan={plan}
         data={validationData}
         onBack={() => backToForm(formData)}
-        onCompleteTransfer={async () => await validateAndSubmit(validationData)}
+        onRefreshTransfer={async () => await validateAndSubmit(validationData)}
       />
     );
   } else if (!plan && !success) {

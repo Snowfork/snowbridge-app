@@ -14,6 +14,7 @@ import {
 import { trimAccount } from "@/utils/formatting";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { LucideLoaderCircle } from "lucide-react";
 
 interface TransferStepData {
   id: number;
@@ -22,6 +23,7 @@ interface TransferStepData {
   currentStep: number;
   title: string;
   nextStep: () => Promise<unknown> | unknown;
+  description?: string;
 }
 
 export function SubstrateTransferStep({
@@ -30,6 +32,7 @@ export function SubstrateTransferStep({
   currentStep,
   nextStep,
   title,
+  description,
 }: TransferStepData) {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -44,10 +47,39 @@ export function SubstrateTransferStep({
   const beneficiary = polkadotAccounts?.find(
     (acc) => acc.address === data.formData.beneficiary,
   );
+  const [busy, setBusy] = useState(false);
+  interface Message {
+    text: string;
+    link?: string;
+  }
+  const [success, setSuccess] = useState<Message>();
+  const [error, setError] = useState<Message>();
   return (
-    <div key={id} className="flex flex-col gap-2 justify-between">
-      <div className={currentStep < id ? " text-zinc-400" : ""}>
-        Step {id}: {title}
+    <div key={id} className="flex flex-col gap-4 justify-between">
+      <div
+        className={
+          "flex justify-between " + (currentStep < id ? " text-zinc-400" : "")
+        }
+      >
+        <div>
+          Step {id}: {title}
+        </div>
+        <div className="text-sm" hidden={!success}>
+          <span className="text-green-500">{success?.text}</span>
+          {success?.link ? (
+            <a href={success?.link}> (view explorer)</a>
+          ) : (
+            <span />
+          )}
+        </div>
+      </div>
+      <div
+        className={
+          "hidden text-sm text-muted-foreground " +
+          (currentStep === id ? "md:flex" : "")
+        }
+      >
+        {description}
       </div>
       <div
         className={
@@ -55,12 +87,13 @@ export function SubstrateTransferStep({
         }
       >
         <div className="flex gap-2 place-items-center">
-          <Label>Source Account</Label>
+          <Label className="w-1/5">Source Account</Label>
           <Select
             onValueChange={(v) => {
               setAccount(v);
             }}
             value={account}
+            disabled={busy}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select an account" />
@@ -84,8 +117,8 @@ export function SubstrateTransferStep({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex gap-2 place-items-center">
-          <Label>Beneficiary</Label>
+        <div className="flex gap-4 place-items-center">
+          <Label className="w-1/5">Beneficiary</Label>
           <div className="text-gray-500 text-center">
             {beneficiary?.name}{" "}
             <pre className="inline md:hidden">
@@ -96,13 +129,34 @@ export function SubstrateTransferStep({
             </pre>
           </div>
         </div>
-        <div className="flex gap-2 place-items-center">
-          <Label>Amount</Label>
-          <Input className="w-1/4" type="string" defaultValue="0.1" />
-          <Button size="sm" onClick={nextStep}>
-            Transfer
-          </Button>
+        <div className="flex gap-4 place-items-center">
+          <Label className="w-1/5">Amount</Label>
+          <Input
+            className="w-full"
+            type="string"
+            defaultValue="0.1"
+            disabled={busy}
+          />
+          {busy ? (
+            <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => {
+                setBusy(true);
+                nextStep();
+                setSuccess({ text: "Success" });
+                setBusy(false);
+              }}
+            >
+              Transfer
+            </Button>
+          )}
         </div>
+      </div>
+      <div className="text-red-500 text-sm" hidden={!error}>
+        {error?.text}{" "}
+        {error?.link ? <a href={error?.link}> (view explorer)</a> : <span />}
       </div>
     </div>
   );

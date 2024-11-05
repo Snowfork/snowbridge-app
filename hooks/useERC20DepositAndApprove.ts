@@ -1,19 +1,11 @@
 import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { ValidationData } from "@/utils/types";
+import { ContractResponse, ValidationData } from "@/utils/types";
 import { toPolkadot } from "@snowbridge/api";
-import {
-  ContractTransactionReceipt,
-  ContractTransactionResponse,
-  parseUnits,
-} from "ethers";
+import { parseUnits } from "ethers";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
-interface ContractResponse {
-  response: ContractTransactionResponse;
-  receipt: ContractTransactionReceipt | null;
-}
 export function useERC20DepositAndApprove(): {
   approveSpend: (
     data: ValidationData,
@@ -54,7 +46,8 @@ export function useERC20DepositAndApprove(): {
       );
 
       console.log("approval response", response);
-      const receipt = await response.wait();
+      const FIVE_MINUTES = 60_000 * 5;
+      const receipt = await response.wait(1, FIVE_MINUTES);
       console.log("approval receipt", receipt);
       return { receipt, response };
     },
@@ -85,7 +78,8 @@ export function useERC20DepositAndApprove(): {
         parseUnits(amount, data.tokenMetadata.decimals),
       );
       console.log("deposit response", response);
-      const receipt = await response.wait();
+      const FIVE_MINUTES = 60_000 * 5;
+      const receipt = await response.wait(1, FIVE_MINUTES);
       console.log("deposit receipt", receipt);
       return { receipt, response };
     },
