@@ -56,10 +56,6 @@ export function useERC20DepositAndApprove(): {
       console.log("approval response", response);
       const receipt = await response.wait();
       console.log("approval receipt", receipt);
-      if (receipt?.status === 0) {
-        // check success
-        throw Error("Token spend approval failed.");
-      }
       return { receipt, response };
     },
     [context, ethereumAccount, ethereumProvider],
@@ -91,10 +87,6 @@ export function useERC20DepositAndApprove(): {
       console.log("deposit response", response);
       const receipt = await response.wait();
       console.log("deposit receipt", receipt);
-      if (receipt?.status === 0) {
-        // check success
-        throw Error("Token deposit failed.");
-      }
       return { receipt, response };
     },
     [context, ethereumAccount, ethereumProvider],

@@ -56,8 +56,6 @@ export const TransferComponent: FC = () => {
       setValidationData(data);
       setFormData(data.formData);
 
-      //return;
-
       const plan = await planSend(data);
       if (requestId.current != req) return;
 

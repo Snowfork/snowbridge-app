@@ -12,6 +12,8 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { TransferSummary } from "./TransferSummary";
+import { etherscanTxHashLink } from "@/lib/explorerLinks";
+import { getEnvironmentName } from "@/lib/snowbridge";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -29,6 +31,7 @@ interface StepData {
 }
 
 function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
+  const envName = getEnvironmentName();
   const { approveSpend } = useERC20DepositAndApprove();
   const [amount, setAmount] = useState(data.formData.amount);
   const [busy, setBusy] = useState(false);
@@ -63,7 +66,15 @@ function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
               setError(undefined);
               try {
                 const { receipt } = await approveSpend(data, amount);
-                setSuccess("Success: " + (receipt?.hash ?? ""));
+                const etherscanLink = etherscanTxHashLink(
+                  envName,
+                  receipt?.hash ?? "",
+                );
+                if (receipt?.status === 1) {
+                  setSuccess("Success: " + etherscanLink);
+                } else {
+                  setError("Error submitting approval: " + etherscanLink);
+                }
                 nextStep();
               } catch (error: any) {
                 console.error(error);
@@ -76,10 +87,10 @@ function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
           </Button>
         )}
       </div>
-      <div className="text-red-500" hidden={!error}>
+      <div className="text-red-500 text-sm" hidden={!error}>
         {error}
       </div>
-      <div className="text-green-500" hidden={!success}>
+      <div className="text-green-500 text-sm" hidden={!success}>
         {success}
       </div>
     </div>
@@ -87,6 +98,7 @@ function ApproveERC20Step({ id, data, currentStep, nextStep }: StepData) {
 }
 
 function DepositWETHStep({ id, data, currentStep, nextStep }: StepData) {
+  const envName = getEnvironmentName();
   const { depositWeth } = useERC20DepositAndApprove();
   const [amount, setAmount] = useState(data.formData.amount);
   const [busy, setBusy] = useState(false);
@@ -121,7 +133,15 @@ function DepositWETHStep({ id, data, currentStep, nextStep }: StepData) {
               setError(undefined);
               try {
                 const { receipt } = await depositWeth(data, amount);
-                setSuccess("Success: " + (receipt?.hash ?? ""));
+                const etherscanLink = etherscanTxHashLink(
+                  envName,
+                  receipt?.hash ?? "",
+                );
+                if (receipt?.status === 1) {
+                  setSuccess("Success: " + etherscanLink);
+                } else {
+                  setError("Error submitting approval: " + etherscanLink);
+                }
                 nextStep();
               } catch (error: any) {
                 console.error(error);
@@ -134,10 +154,10 @@ function DepositWETHStep({ id, data, currentStep, nextStep }: StepData) {
           </Button>
         )}
       </div>
-      <div className="text-red-500" hidden={!error}>
+      <div className="text-red-500 text-sm" hidden={!error}>
         {error}
       </div>
-      <div className="text-green-500" hidden={!success}>
+      <div className="text-green-500 text-sm" hidden={!success}>
         {success}
       </div>
     </div>
