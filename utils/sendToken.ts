@@ -17,7 +17,10 @@ export function createStepsFromPlan(
     case "substrate": {
       const p = plan as toEthereum.SendValidationResult;
       for (const error of p.failure?.errors ?? []) {
-        if (error.code == toEthereum.SendValidationCode.InsufficientFee) {
+        if (
+          error.code == toEthereum.SendValidationCode.InsufficientFee &&
+          data.source.id === "assethub"
+        ) {
           steps.push({
             kind: TransferStepKind.SubstrateTransferFee,
             displayOrder: 10,
@@ -37,10 +40,14 @@ export function createStepsFromPlan(
       for (const error of p.failure?.errors ?? []) {
         switch (error.code) {
           case toPolkadot.SendValidationCode.BeneficiaryAccountMissing: {
-            steps.push({
-              kind: TransferStepKind.SubstrateTransferED,
-              displayOrder: 11,
-            });
+            if (data.destination.id === "assethub") {
+              steps.push({
+                kind: TransferStepKind.SubstrateTransferED,
+                displayOrder: 11,
+              });
+            } else {
+              errors.push(error);
+            }
             break;
           }
           case toPolkadot.SendValidationCode.ERC20SpendNotApproved: {

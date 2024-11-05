@@ -1,17 +1,17 @@
+import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import {
   TransferPlanSteps,
   TransferStep,
   TransferStepKind,
   ValidationData,
 } from "@/utils/types";
+import { LucideLoaderCircle } from "lucide-react";
 import { FC, MouseEventHandler, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { TransferSummary } from "./TransferSummary";
 import { Label } from "../ui/label";
-import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
-import { LucideLoaderCircle } from "lucide-react";
-import { depositWeth } from "@snowbridge/api/dist/toPolkadot";
+import { SubstrateTransferStep } from "./SubstrateTransferStep";
+import { TransferSummary } from "./TransferSummary";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -144,73 +144,26 @@ function DepositWETHStep({ id, data, currentStep, nextStep }: StepData) {
   );
 }
 
-function SubstrateTransferEDStep({
-  id,
-  data,
-  currentStep,
-  nextStep,
-}: StepData) {
-  return (
-    <div key={id} className="flex flex-col gap-2 justify-between">
-      <div className={currentStep < id ? " text-zinc-400" : ""}>
-        Step {id}: Beneficiary account requires existential deposit on{" "}
-        {data.destination.name}.
-      </div>
-      <div
-        className={
-          "flex gap-2 place-items-center" +
-          (currentStep !== id ? " hidden" : "")
-        }
-      >
-        <Label>Amount</Label>
-        <Input className="w-1/4" type="string" defaultValue="0.1" />
-        <Button size="sm" onClick={nextStep}>
-          Transfer
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function SubstrateTransferFeeStep({
-  id,
-  step,
-  data,
-  currentStep,
-  nextStep,
-}: StepData) {
-  return (
-    <div key={id} className="flex flex-col gap-2 justify-between">
-      <div className={currentStep < id ? " text-zinc-400" : ""}>
-        Step {id}: {TransferStepKind[step.kind]} Beneficiary account requires
-        existential deposit on {data.destination.name}.
-      </div>
-      <div
-        className={
-          "flex gap-2 place-items-center" +
-          (currentStep !== id ? " hidden" : "")
-        }
-      >
-        <Label>Amount</Label>
-        <Input className="w-1/4" type="string" defaultValue="0.1" />
-        <Button size="sm" onClick={nextStep}>
-          Transfer
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function TransferStepView(data: StepData) {
-  switch (data.step.kind) {
+function TransferStepView(step: StepData) {
+  switch (step.step.kind) {
     case TransferStepKind.ApproveERC20:
-      return <ApproveERC20Step {...data} />;
+      return <ApproveERC20Step {...step} />;
     case TransferStepKind.DepositWETH:
-      return <DepositWETHStep {...data} />;
+      return <DepositWETHStep {...step} />;
     case TransferStepKind.SubstrateTransferED:
-      return <SubstrateTransferEDStep {...data} />;
+      return (
+        <SubstrateTransferStep
+          {...step}
+          title={`Beneficiary account requires existential deposit on ${step.data.destination.name}.`}
+        />
+      );
     case TransferStepKind.SubstrateTransferFee:
-      return <SubstrateTransferFeeStep {...data} />;
+      return (
+        <SubstrateTransferStep
+          {...step}
+          title={`Source account requires a DOT fee on ${step.data.destination.name}.`}
+        />
+      );
   }
 }
 
