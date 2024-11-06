@@ -9,7 +9,7 @@ interface TransferBusyProps {
 }
 export const TransferBusy: FC<TransferBusyProps> = ({ message, onBack }) => {
   return (
-    <div className="flex flex-col items-center gap-4" onClick={onBack}>
+    <div className="flex flex-col items-center gap-4">
       <Image
         className="animate-bounce mb-2"
         src="/icon.svg"

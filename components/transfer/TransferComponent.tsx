@@ -52,6 +52,7 @@ export const TransferComponent: FC = () => {
     refreshOnly: boolean,
   ) => {
     const req = requestId.current;
+    let error = "Some preflight checks failed...";
     try {
       setBusy("Doing some preflight checks...");
       track("Validate Send", { ...data?.formData });
@@ -66,7 +67,7 @@ export const TransferComponent: FC = () => {
       setPlanData(steps);
 
       if (steps.errors.length > 0) {
-        setError("Some preflight checks failed...");
+        setError(error);
         setBusy(null);
         return;
       }
@@ -75,6 +76,7 @@ export const TransferComponent: FC = () => {
         return;
       }
 
+      error = "Error submitting transfer.";
       setBusy("Submitting transfer...");
       track("Sending Token", { ...data?.formData });
 
@@ -92,7 +94,7 @@ export const TransferComponent: FC = () => {
         ...data?.formData,
         message,
       });
-      showError(errorMessage(error), data.formData);
+      showError(error, data.formData);
     }
   };
 
@@ -135,7 +137,9 @@ export const TransferComponent: FC = () => {
       <TransferForm
         formData={validationData?.formData ?? formData}
         onValidated={async (data) => await validateAndSubmit(data, false)}
-        onError={async (form, error) => showError(errorMessage(error), form)}
+        onError={async (form, error) =>
+          showError("Error validating transfer form.", form)
+        }
       />
     );
   }
