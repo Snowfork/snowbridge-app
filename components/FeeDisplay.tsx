@@ -4,15 +4,16 @@ import {
 } from "@/store/snowbridge";
 import { formatBalance } from "@/utils/formatting";
 import { Context, toEthereum, toPolkadot } from "@snowbridge/api";
-import { environment, assets } from "@snowbridge/api";
+import { environment } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 
 interface FeeDisplayProps {
   source: "substrate" | "ethereum";
   destination: environment.TransferLocation;
   token: string;
   displayDecimals: number;
+  className?: string;
 }
 
 export const FeeDisplay: FC<FeeDisplayProps> = ({
@@ -20,19 +21,24 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   destination,
   token,
   displayDecimals,
+  className,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
   const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
 
   const [feeDisplay, setFeeDisplay] = useState<string | null>("Fetching...");
+  const request = useRef(0);
 
   useEffect(() => {
     if (context === null) return;
+    request.current = request.current + 1;
+    const id = request.current;
     switch (source) {
       case "substrate": {
         toEthereum
           .getSendFee(context)
           .then((fee) => {
+            if (request.current !== id) return;
             setFeeDisplay(
               formatBalance({
                 number: fee,
@@ -44,6 +50,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
             );
           })
           .catch((err) => {
+            if (request.current !== id) return;
             console.error(err);
             setFeeDisplay(null);
           });
@@ -63,12 +70,14 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
             destination.paraInfo.destinationFeeDOT,
           )
           .then((fee) => {
+            if (request.current !== id) return;
             setFeeDisplay(
               formatBalance({ number: fee, decimals: 18, displayDecimals: 8 }) +
                 " ETH",
             );
           })
           .catch((err: unknown) => {
+            if (request.current !== id) return;
             console.error(err);
             setFeeDisplay(null);
           });
@@ -87,9 +96,5 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     assetHubNativeToken,
     displayDecimals,
   ]);
-  return (
-    <div className="text-sm text-right text-muted-foreground px-1">
-      Transfer Fee: {feeDisplay ?? "Error"}
-    </div>
-  );
+  return <div className={className}>{feeDisplay ?? "Error"}</div>;
 };

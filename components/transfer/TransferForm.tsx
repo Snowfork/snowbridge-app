@@ -432,12 +432,16 @@ export const TransferForm: FC<TransferFormProps> = ({
             />
           </div>
         </div>
-        <FeeDisplay
-          source={source.type}
-          destination={destination}
-          token={token}
-          displayDecimals={8}
-        />
+        <div className="text-sm text-right text-muted-foreground px-1">
+          Transfer Fee:{" "}
+          <FeeDisplay
+            className="inline"
+            source={source.type}
+            destination={destination}
+            token={token}
+            displayDecimals={8}
+          />
+        </div>
         <br />
         <Button
           disabled={tokenMetadata === null || validating}

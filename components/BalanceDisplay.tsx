@@ -1,11 +1,9 @@
-import { FC, useEffect, useState } from "react";
-import { assets, Context, environment } from "@snowbridge/api";
-import { WalletAccount } from "@talismn/connect-wallets";
+import { FC, useEffect, useRef, useState } from "react";
+import { assets, environment } from "@snowbridge/api";
 import { getTokenBalance } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
 import { useAtomValue } from "jotai";
 import {
-  assetErc20MetaDataAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
@@ -36,9 +34,12 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   );
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
+  const request = useRef(0);
 
   useEffect(() => {
     if (!sourceAccount || !context || !tokenMetadata) return;
+    request.current = request.current + 1;
+    const id = request.current;
     getTokenBalance({
       context,
       token,
@@ -47,6 +48,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
       sourceAccount,
     })
       .then((result) => {
+        if (request.current !== id) return;
         let allowance = "";
         if (result.gatewayAllowance !== undefined) {
           allowance = ` (Allowance: ${formatBalance({
@@ -62,6 +64,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         );
       })
       .catch((err) => {
+        if (request.current !== id) return;
         console.error(err);
         setBalanceDisplay(null);
       });

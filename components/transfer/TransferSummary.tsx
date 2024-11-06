@@ -1,12 +1,64 @@
 import { FC } from "react";
 import { ValidationData } from "@/utils/types";
 import { etherscanAddressLink, subscanAccountLink } from "@/lib/explorerLinks";
-import { getEnvironmentName } from "@/lib/snowbridge";
+import { BridgeStatus, getEnvironmentName } from "@/lib/snowbridge";
+import { FeeDisplay } from "../FeeDisplay";
+import { useBridgeStatus } from "@/hooks/useBridgeStatus";
+import { formatTime } from "@/utils/formatting";
 
 interface TransferSummaryProps {
   data: ValidationData;
 }
+function estimateDelivery(data: ValidationData, status: BridgeStatus | null) {
+  if (!status) return "Calculating...";
+  switch (data.source.type) {
+    case "ethereum": {
+      if ((status.statusInfo.toPolkadot as any).estimatedDeliveryTime) {
+        return formatTime(
+          (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
+        );
+      }
+      const MAX_BEACON_DELIVERY_TIME = 60 * 30;
+      let estimatedSeconds =
+        MAX_BEACON_DELIVERY_TIME - status.statusInfo.toPolkadot.latencySeconds;
+      console.log(
+        MAX_BEACON_DELIVERY_TIME,
+        status.statusInfo.toPolkadot.latencySeconds,
+        estimatedSeconds,
+      );
+      if (estimatedSeconds < 0) {
+        estimatedSeconds = MAX_BEACON_DELIVERY_TIME - estimatedSeconds;
+      }
+      return formatTime(estimatedSeconds);
+    }
+    case "substrate": {
+      if ((status.statusInfo.toEthereum as any).estimatedDeliveryTime) {
+        return formatTime(
+          (status.statusInfo.toEthereum as any).estimatedDeliveryTime,
+        );
+      }
+      const MAX_BEEFY_DELIVERY_TIME = 60 * 60 * 4.5;
+      let estimatedSeconds =
+        MAX_BEEFY_DELIVERY_TIME - status.statusInfo.toEthereum.latencySeconds;
+      if (estimatedSeconds < 0) {
+        estimatedSeconds = MAX_BEEFY_DELIVERY_TIME - estimatedSeconds;
+      }
+      return formatTime(estimatedSeconds);
+    }
+    default:
+      return "Could not estimate.";
+  }
+}
 export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
+  const {
+    data: status,
+    isLoading: isStatusLoading,
+    isValidating: isStatusValidating,
+    error: statusError,
+  } = useBridgeStatus();
+
+  const isRefreshing = isStatusLoading || isStatusValidating;
+
   const envName = getEnvironmentName();
   let sourceAccountLink: string;
   let beneficiaryLink: string;
@@ -28,9 +80,10 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
     );
     beneficiaryLink = etherscanAddressLink(envName, data.formData.beneficiary);
   }
+
   return (
     <div className="flex flex-col">
-      <p className="text-l my-4 font-semibold">
+      <p className="text-l my-2 font-semibold">
         Send {data.formData.amount} {data.tokenMetadata.symbol} from{" "}
         {data.source.name} to {data.destination.name}
       </p>
@@ -54,12 +107,31 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
           </span>
         </p>
         <p className="text-sm">
-          Fee: <span className="inline whitespace-pre font-mono">2 DOT</span>
+          Transfer Fee:{" "}
+          <FeeDisplay
+            className="inline whitespace-pre font-mono"
+            source={data.source.type}
+            destination={data.destination}
+            token={data.formData.token}
+            displayDecimals={8}
+          />
         </p>
         <p className="text-sm">
           Estimated Delivery:{" "}
           <span className="inline whitespace-pre font-mono">
-            3 hour 2 minutes
+            {isRefreshing
+              ? "Calculating..."
+              : statusError
+                ? "Could not estimate delivery"
+                : estimateDelivery(data, status)}
+          </span>
+          <span className="text-muted-foreground">
+            {" "}
+            (up to{" "}
+            {data.source.type === "ethereum"
+              ? "25 minutes"
+              : "4 hour 30 minutes"}
+            )
           </span>
         </p>
       </div>
