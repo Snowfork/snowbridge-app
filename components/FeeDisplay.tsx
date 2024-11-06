@@ -31,6 +31,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
 
   useEffect(() => {
     if (context === null) return;
+    setFeeDisplay("Fetching...");
     request.current = request.current + 1;
     const id = request.current;
     switch (source) {

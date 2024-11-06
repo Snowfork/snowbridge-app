@@ -4,6 +4,7 @@ import { getTokenBalance } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
 import { useAtomValue } from "jotai";
 import {
+  relayChainNativeAssetAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
@@ -38,6 +39,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
 
   useEffect(() => {
     if (!sourceAccount || !context || !tokenMetadata) return;
+    setBalanceDisplay("Fetching...");
     request.current = request.current + 1;
     const id = request.current;
     getTokenBalance({
@@ -56,8 +58,12 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
             decimals: Number(tokenMetadata.decimals),
           })} ${tokenMetadata.symbol})`;
         }
+        const nativeBalance = `${formatBalance({
+          number: result.nativeBalance,
+          decimals: result.nativeTokenDecimals,
+        })} ${result.nativeSymbol}`;
         setBalanceDisplay(
-          `${formatBalance({
+          `${nativeBalance} ; ${formatBalance({
             number: result.balance,
             decimals: Number(tokenMetadata.decimals),
           })} ${tokenMetadata.symbol} ${allowance}`,
@@ -76,7 +82,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         (sourceAccount !== null ? " visible" : " hidden")
       }
     >
-      Balance: {balanceDisplay ?? "Error"}
+      Balances: {balanceDisplay ?? "Error"}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
+import { getEnvironment } from "@/lib/snowbridge";
 
 interface TokenBalanceProps {
   context: Context;
@@ -22,6 +23,9 @@ export async function getTokenBalance({
 }: TokenBalanceProps): Promise<{
   balance: bigint;
   gatewayAllowance?: bigint;
+  nativeBalance: bigint;
+  nativeSymbol: string;
+  nativeTokenDecimals: number;
 }> {
   switch (source.type) {
     case "substrate": {
@@ -36,16 +40,38 @@ export async function getTokenBalance({
         ethereumChainId,
         token,
       );
-      const balance = await assets.palletAssetsBalance(
-        parachain,
-        location,
-        sourceAccount,
-        "foreignAssets",
+      const [balance, nativeBalanceCodec, properties] = await Promise.all([
+        assets.palletAssetsBalance(
+          parachain,
+          location,
+          sourceAccount,
+          "foreignAssets",
+        ),
+        parachain.query.system.account(sourceAccount),
+        assets.parachainNativeAsset(parachain),
+      ]);
+      const nativeBalance = BigInt(
+        (nativeBalanceCodec.toPrimitive() as any).data.free,
       );
-      return { balance: balance ?? 0n, gatewayAllowance: undefined };
+      return {
+        balance: balance ?? 0n,
+        gatewayAllowance: undefined,
+        nativeBalance,
+        nativeTokenDecimals: properties.tokenDecimal,
+        nativeSymbol: properties.tokenSymbol,
+      };
     }
     case "ethereum": {
-      return await assets.assetErc20Balance(context, token, sourceAccount);
+      const [erc20Asset, nativeBalance] = await Promise.all([
+        assets.assetErc20Balance(context, token, sourceAccount),
+        context.ethereum.api.getBalance(sourceAccount),
+      ]);
+      return {
+        ...erc20Asset,
+        nativeBalance,
+        nativeSymbol: "ETH",
+        nativeTokenDecimals: 18,
+      };
     }
     default:
       throw Error(`Unknown source type ${source.type}.`);

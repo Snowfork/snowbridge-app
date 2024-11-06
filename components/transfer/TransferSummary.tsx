@@ -18,16 +18,11 @@ function estimateDelivery(data: ValidationData, status: BridgeStatus | null) {
           (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
         );
       }
-      const MAX_BEACON_DELIVERY_TIME = 60 * 30;
+      const EPOCH_TIME = 6.4 * 60;
       let estimatedSeconds =
-        MAX_BEACON_DELIVERY_TIME - status.statusInfo.toPolkadot.latencySeconds;
-      console.log(
-        MAX_BEACON_DELIVERY_TIME,
-        status.statusInfo.toPolkadot.latencySeconds,
-        estimatedSeconds,
-      );
+        EPOCH_TIME * 5 - status.statusInfo.toPolkadot.latencySeconds;
       if (estimatedSeconds < 0) {
-        estimatedSeconds = MAX_BEACON_DELIVERY_TIME - estimatedSeconds;
+        estimatedSeconds = EPOCH_TIME * 3 - estimatedSeconds;
       }
       return formatTime(estimatedSeconds);
     }
