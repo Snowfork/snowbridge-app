@@ -1,4 +1,6 @@
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
+import { decodeAddress } from "@polkadot/util-crypto";
+import { u8aToHex } from "@polkadot/util";
 import { TransferStep, ValidationData } from "@/utils/types";
 import { useAtomValue } from "jotai";
 import { useState } from "react";
@@ -15,6 +17,12 @@ import { trimAccount } from "@/utils/formatting";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { LucideLoaderCircle } from "lucide-react";
+import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
+import { parseUnits } from "ethers";
+import { relayChainNativeAssetAtom } from "@/store/snowbridge";
+import { subscanExtrinsicLink } from "@/lib/explorerLinks";
+import { getEnv } from "@vercel/functions";
+import { getEnvironmentName } from "@/lib/snowbridge";
 
 interface TransferStepData {
   id: number;
@@ -24,7 +32,7 @@ interface TransferStepData {
   title: string;
   nextStep: () => Promise<unknown> | unknown;
   description?: string;
-  amount: string;
+  defaultAmount: string;
 }
 
 export function SubstrateTransferStep({
@@ -34,10 +42,16 @@ export function SubstrateTransferStep({
   nextStep,
   title,
   description,
-  amount,
+  defaultAmount,
 }: TransferStepData) {
+  const envName = getEnvironmentName();
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
+
+  const { transferAsset } = useSubstrateTransfer();
+
+  const [amount, setAmount] = useState(defaultAmount);
   const [account, setAccount] = useState(
     data.formData.beneficiary ??
       polkadotAccount?.address ??
@@ -69,7 +83,10 @@ export function SubstrateTransferStep({
         <div className="text-sm" hidden={!success}>
           <span className="text-green-500">{success?.text}</span>
           {success?.link ? (
-            <a href={success?.link}> (view explorer)</a>
+            <a href={success?.link} target="_blank" rel="noopener noreferrer">
+              {" "}
+              (view explorer)
+            </a>
           ) : (
             <span />
           )}
@@ -138,21 +155,84 @@ export function SubstrateTransferStep({
             type="string"
             defaultValue={amount}
             disabled={busy}
+            onChange={(v) => setAmount(v.target.value)}
           />
           {busy ? (
             <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
           ) : (
             <Button
               size="sm"
-              onClick={() => {
+              onClick={async () => {
+                if (!assetHubNativeToken) {
+                  setError({
+                    text: "Cannot determine Asset Hub native token.",
+                  });
+                  return;
+                }
+                if (!data.destination.paraInfo?.paraId) {
+                  setError({ text: "Destination is not a parachain." });
+                  return;
+                }
                 try {
                   setError(undefined);
                   setBusy(true);
+                  const result = await transferAsset(
+                    "relaychain",
+                    account,
+                    {
+                      parents: 0,
+                      interior: {
+                        X1: [
+                          {
+                            Parachain: data.destination.paraInfo.paraId,
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      parents: 0,
+                      interior: {
+                        X1: [
+                          {
+                            AccountId32: {
+                              id: u8aToHex(
+                                decodeAddress(data.formData.beneficiary),
+                              ),
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      parents: 0,
+                      interior: "Here",
+                    },
+                    parseUnits(amount, assetHubNativeToken.tokenDecimal),
+                  );
                   nextStep();
-                  setSuccess({ text: "Success" });
-                } catch (err) {
-                  setError({ text: "Error submitting transfer." });
                   setBusy(false);
+                  const link = subscanExtrinsicLink(
+                    envName,
+                    "relaychain",
+                    `${result.blockNumber}-${result.txIndex}`,
+                  );
+
+                  if (result.error) {
+                    console.log(
+                      result.error.toHuman(),
+                      result.error.toString(),
+                    );
+                    setError({ text: "Extrinsic failed.", link });
+                  } else {
+                    setSuccess({
+                      text: "Success",
+                      link,
+                    });
+                  }
+                } catch (err) {
+                  console.error(err);
+                  setBusy(false);
+                  setError({ text: "Error submitting transfer." });
                 }
               }}
             >
@@ -161,9 +241,16 @@ export function SubstrateTransferStep({
           )}
         </div>
       </div>
-      <div className="text-red-500 text-sm" hidden={!error}>
-        {error?.text}{" "}
-        {error?.link ? <a href={error?.link}> (view explorer)</a> : <span />}
+      <div className="text-sm" hidden={!error}>
+        <span className="text-red-500 ">{error?.text}</span>
+        {error?.link ? (
+          <a href={error?.link} target="_blank" rel="noopener noreferrer">
+            {" "}
+            (view explorer)
+          </a>
+        ) : (
+          <span />
+        )}
       </div>
     </div>
   );

@@ -11,13 +11,12 @@ On the `.env`-file, configure of your project by assigning the values that fit y
 **NEXT_PUBLIC_SNOWBRIDGE_ENV** accepts:
 
 - `local_e2e` for local environment.
-- `rococo_sepolia` for Rococo <=> Sepolia bridge.
 - `paseo_sepolia` for Paseo <=> Sepolia bridge.
 - `westend_sepolia` for Westend <=> Sepolia bridge.
 - `polkadot_mainnet` for Polkadot <=> Ethereum bridge.
 
 ```env
-NEXT_PUBLIC_SNOWBRIDGE_ENV=rococo_sepolia
+NEXT_PUBLIC_SNOWBRIDGE_ENV=paseo_sepolia
 ```
 
 If you are not using local chains, create an `.env.local` to set the required A.P.I. keys.

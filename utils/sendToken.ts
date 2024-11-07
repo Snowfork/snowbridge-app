@@ -13,6 +13,7 @@ export function createStepsFromPlan(
 ): TransferPlanSteps {
   const errors = [];
   const steps: TransferStep[] = [];
+
   switch (data.source.type) {
     case "substrate": {
       const p = plan as toEthereum.SendValidationResult;

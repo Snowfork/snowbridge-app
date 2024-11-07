@@ -60,7 +60,7 @@ function TransferStepView(step: StepData) {
           {...step}
           title={`Missing existential deposit on ${step.data.destination.name}.`}
           description={`Beneficiary account requires existential deposit on ${step.data.destination.name}. The existential deposit allows the account to remain open and hold assets. This step will transfer funds from the relaychain.`}
-          amount={"0.1"}
+          defaultAmount={"0.2"}
         />
       );
     case TransferStepKind.SubstrateTransferFee:
@@ -69,7 +69,7 @@ function TransferStepView(step: StepData) {
           {...step}
           title="Missing fee on source."
           description={`Source account requires a fee on ${step.data.destination.name}. This step will Transfer funds from the relaychain.`}
-          amount={"6.32"}
+          defaultAmount={"6.32"}
         />
       );
   }

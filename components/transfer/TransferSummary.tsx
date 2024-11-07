@@ -87,7 +87,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
           Source Account:{" "}
           <span
             onClick={() => window.open(sourceAccountLink)}
-            className="inline whitespace-pre font-mono underline cursor-pointer"
+            className="inline whitespace-pre font-mono hover:underline cursor-pointer"
           >
             {data.formData.sourceAccount}
           </span>
@@ -96,12 +96,12 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
           Beneficiary:{" "}
           <span
             onClick={() => window.open(beneficiaryLink)}
-            className="inline whitespace-pre font-mono underline cursor-pointer"
+            className="inline whitespace-pre font-mono hover:underline cursor-pointer"
           >
             {data.formData.beneficiary}
           </span>
         </p>
-        <p className="text-sm">
+        <div className="text-sm">
           Transfer Fee:{" "}
           <FeeDisplay
             className="inline whitespace-pre font-mono"
@@ -110,7 +110,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
             token={data.formData.token}
             displayDecimals={8}
           />
-        </p>
+        </div>
         <p className="text-sm">
           Estimated Delivery:{" "}
           <span className="inline whitespace-pre font-mono">
