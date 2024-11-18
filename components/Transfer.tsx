@@ -344,7 +344,6 @@ export const TransferForm: FC = () => {
         closeButton: true,
         id: "deposit_approval_result",
         description: "Token spend allowance approval was succesful.",
-        important: true,
       });
       updateBalance(
         context,
@@ -371,7 +370,6 @@ export const TransferForm: FC = () => {
         duration: 20000,
         id: "deposit_approval_result",
         description: message,
-        important: true,
       });
     } finally {
       setBusyMessage("");
@@ -410,7 +408,6 @@ export const TransferForm: FC = () => {
         closeButton: true,
         id: "approval_result",
         description: "Token spend allowance approval was succesful.",
-        important: true,
       });
       updateBalance(
         context,
@@ -437,7 +434,6 @@ export const TransferForm: FC = () => {
         duration: 20000,
         id: "approval_result",
         description: message,
-        important: true,
       });
     } finally {
       setBusyMessage("");

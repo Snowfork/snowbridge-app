@@ -307,7 +307,6 @@ export function onSubmit({
         duration: 60000,
         id: "transfer_success",
         description: "Token transfer was succesfully initiated.",
-        important: true,
         action: {
           label: "View",
           onClick: () => {
