@@ -322,7 +322,6 @@ export const SwitchComponent: FC = () => {
             duration: 60000,
             id: "transfer_success",
             description: "Token transfer was succesfully initiated.",
-            important: true,
             action: {
               label: "View",
               onClick: () =>
@@ -340,7 +339,6 @@ export const SwitchComponent: FC = () => {
             duration: 60000,
             id: "transfer_error",
             description: "Token transfer was unsuccesful.",
-            important: true,
             action: {
               label: "View",
               onClick: () =>
