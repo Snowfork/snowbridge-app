@@ -10,6 +10,12 @@ import { EthereumTxStep } from "./EthereumTxStep";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
+import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
+import { formatBalance } from "@/utils/formatting";
+import { format } from "path/win32";
+import { formatUnits } from "ethers";
+import { relayChainNativeAssetAtom } from "@/store/snowbridge";
+import { useAtomValue } from "jotai";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -27,6 +33,47 @@ interface StepData {
   data: ValidationData;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
+}
+
+function TransferFeeStep(step: StepData) {
+  const relaychain = useAtomValue(relayChainNativeAssetAtom);
+  const { data: feeInfo, error } = useBridgeFeeInfo(
+    step.data.source.type,
+    step.data.destination,
+    step.data.formData.token,
+  );
+  if (!feeInfo && error) {
+    return (
+      <div key={step.id} className="flex flex-col gap-4 justify-between">
+        Error fetching fee.
+      </div>
+    );
+  }
+  if (!feeInfo) {
+    return (
+      <div key={step.id} className="flex flex-col gap-4 justify-between">
+        Fetching fee...
+      </div>
+    );
+  }
+  if (feeInfo.symbol !== relaychain?.tokenSymbol) {
+    return (
+      <div key={step.id} className="flex flex-col gap-4 justify-between">
+        Expecting {relaychain?.tokenSymbol} as fee asset, found {feeInfo.symbol}
+        .
+      </div>
+    );
+  }
+
+  const fee = formatUnits(feeInfo?.fee, feeInfo?.decimals);
+  return (
+    <SubstrateTransferStep
+      {...step}
+      title="Missing fee on source."
+      description={`Source account requires a fee on ${step.data.destination.name}. This step will Transfer funds from the relaychain.`}
+      defaultAmount={fee}
+    />
+  );
 }
 
 function TransferStepView(step: StepData) {
@@ -64,14 +111,7 @@ function TransferStepView(step: StepData) {
         />
       );
     case TransferStepKind.SubstrateTransferFee:
-      return (
-        <SubstrateTransferStep
-          {...step}
-          title="Missing fee on source."
-          description={`Source account requires a fee on ${step.data.destination.name}. This step will Transfer funds from the relaychain.`}
-          defaultAmount={"6.32"}
-        />
-      );
+      return <TransferFeeStep {...step} />;
   }
 }
 
