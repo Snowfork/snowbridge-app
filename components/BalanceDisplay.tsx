@@ -1,15 +1,10 @@
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, useEffect } from "react";
 import { assets, environment } from "@snowbridge/api";
-import { getTokenBalance } from "@/utils/balances";
 import { formatBalance } from "@/utils/formatting";
 import { useAtomValue } from "jotai";
-import {
-  relayChainNativeAssetAtom,
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
 import { polkadotAccountAtom } from "@/store/polkadot";
 import { ethereumAccountAtom } from "@/store/ethereum";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 
 interface BalanceDisplayProps {
   source: environment.TransferLocation;
@@ -30,51 +25,59 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     source.type == "ethereum"
       ? (ethereumAccount ?? undefined)
       : polkadotAccount?.address;
-  const [balanceDisplay, setBalanceDisplay] = useState<string | null>(
-    "Fetching...",
-  );
-  const environment = useAtomValue(snowbridgeEnvironmentAtom);
-  const context = useAtomValue(snowbridgeContextAtom);
-  const request = useRef(0);
 
+  const { data: balanceInfo, error } = useTokenBalance(
+    sourceAccount,
+    source,
+    token,
+  );
   useEffect(() => {
-    if (!sourceAccount || !context || !tokenMetadata) return;
-    setBalanceDisplay("Fetching...");
-    request.current = request.current + 1;
-    const id = request.current;
-    getTokenBalance({
-      context,
-      token,
-      ethereumChainId: BigInt(environment.ethChainId),
-      source,
-      sourceAccount,
-    })
-      .then((result) => {
-        if (request.current !== id) return;
-        let allowance = "";
-        if (result.gatewayAllowance !== undefined) {
-          allowance = ` (Allowance: ${formatBalance({
-            number: result.gatewayAllowance ?? 0n,
-            decimals: Number(tokenMetadata.decimals),
-          })} ${tokenMetadata.symbol})`;
+    if (error) {
+      console.error(error);
+    }
+  }, [error]);
+  if (error && !balanceInfo) {
+    return (
+      <div
+        className={
+          "text-sm text-right text-muted-foreground px-1 " +
+          (sourceAccount !== null ? " visible" : " hidden")
         }
-        const nativeBalance = `${formatBalance({
-          number: result.nativeBalance,
-          decimals: result.nativeTokenDecimals,
-        })} ${result.nativeSymbol}`;
-        setBalanceDisplay(
-          `${nativeBalance} ; ${formatBalance({
-            number: result.balance,
-            decimals: Number(tokenMetadata.decimals),
-          })} ${tokenMetadata.symbol} ${allowance}`,
-        );
-      })
-      .catch((err) => {
-        if (request.current !== id) return;
-        console.error(err);
-        setBalanceDisplay(null);
-      });
-  }, [source, sourceAccount, token, context, environment, tokenMetadata]);
+      >
+        Balances: Error...
+      </div>
+    );
+  }
+  if (balanceInfo === undefined || tokenMetadata === null) {
+    return (
+      <div
+        className={
+          "text-sm text-right text-muted-foreground px-1 " +
+          (sourceAccount !== null ? " visible" : " hidden")
+        }
+      >
+        Balances: Fetching...
+      </div>
+    );
+  }
+
+  const allowance = balanceInfo.gatewayAllowance
+    ? ` (Allowance: ${formatBalance({
+        number: balanceInfo.gatewayAllowance ?? 0n,
+        decimals: Number(tokenMetadata.decimals),
+      })} ${tokenMetadata.symbol})`
+    : "";
+
+  const tokenBalance = `${formatBalance({
+    number: balanceInfo.balance,
+    decimals: Number(tokenMetadata.decimals),
+  })} ${tokenMetadata.symbol}`;
+
+  const nativeBalance = `${formatBalance({
+    number: balanceInfo.nativeBalance,
+    decimals: balanceInfo.nativeTokenDecimals,
+  })} ${balanceInfo.nativeSymbol}`;
+
   return (
     <div
       className={
@@ -82,7 +85,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         (sourceAccount !== null ? " visible" : " hidden")
       }
     >
-      Balances: {balanceDisplay ?? "Error"}
+      Balances: {nativeBalance} ; {tokenBalance} {allowance}
     </div>
   );
 };
