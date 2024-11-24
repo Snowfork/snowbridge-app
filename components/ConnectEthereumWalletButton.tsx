@@ -6,8 +6,24 @@ import { windowEthereumErrorAtom } from "@/store/ethereum";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { track } from "@vercel/analytics";
 import { getEnvironment } from "@/lib/snowbridge";
+import { cn } from "@/lib/utils";
 
-export function ConnectEthereumWalletButton() {
+interface ConnectEthereumWalletButtonProps {
+  className?: string;
+  variant?:
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link"
+    | null
+    | undefined;
+}
+export function ConnectEthereumWalletButton({
+  className,
+  variant,
+}: ConnectEthereumWalletButtonProps) {
   const { open } = useWeb3Modal();
   const env = getEnvironment();
 
@@ -21,7 +37,7 @@ export function ConnectEthereumWalletButton() {
     return (
       <>
         <Button
-          className="w-full"
+          className={cn("w-full", className)}
           type="button"
           variant="destructive"
           onClick={async (_) => {
@@ -40,7 +56,7 @@ export function ConnectEthereumWalletButton() {
       <Button
         className="w-full"
         type="button"
-        variant="link"
+        variant={variant ?? "link"}
         onClick={async (e) => {
           await open({ view: "Connect" });
         }}

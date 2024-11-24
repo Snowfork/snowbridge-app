@@ -6,7 +6,7 @@ import {
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
 import { AccountInfo, ValidationData } from "@/utils/types";
-import { environment } from "@snowbridge/api";
+import { assets, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useState } from "react";
@@ -40,6 +40,9 @@ import { validateOFAC } from "@/utils/validateOFAC";
 import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatBalance } from "@/utils/formatting";
+import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
+import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
+import { Pi } from "lucide-react";
 
 function getBeneficiaries(
   destination: environment.TransferLocation,
@@ -443,14 +446,70 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
         </div>
         <br />
-        <Button
-          disabled={tokenMetadata === null || validating}
-          className="w-full my-8"
-          type="submit"
-        >
-          {validating ? "Validating" : "Submit"}
-        </Button>
+        <SubmitButton
+          ethereumAccounts={ethereumAccounts}
+          polkadotAccounts={polkadotAccounts}
+          beneficiaries={beneficiaries}
+          destination={destination}
+          source={source}
+          tokenMetadata={tokenMetadata}
+          validating={validating}
+        />
       </form>
     </Form>
   );
 };
+
+interface SubmitButtonProps {
+  ethereumAccounts: string[] | null;
+  polkadotAccounts: WalletAccount[] | null;
+  destination: environment.TransferLocation;
+  source: environment.TransferLocation;
+  tokenMetadata: assets.ERC20Metadata | null;
+  validating: boolean;
+  beneficiaries: AccountInfo[] | null;
+}
+
+function SubmitButton({
+  ethereumAccounts,
+  polkadotAccounts,
+  destination,
+  source,
+  validating,
+  tokenMetadata,
+  beneficiaries,
+}: SubmitButtonProps) {
+  if (
+    (ethereumAccounts === null || ethereumAccounts.length === 0) &&
+    source.type === "ethereum"
+  ) {
+    return <ConnectEthereumWalletButton variant="destructive" />;
+  }
+  if (
+    (polkadotAccounts === null || polkadotAccounts.length === 0) &&
+    source.type === "substrate"
+  ) {
+    return <ConnectPolkadotWalletButton variant="destructive" />;
+  }
+  if (
+    (beneficiaries === null || beneficiaries.length === 0) &&
+    destination.type === "ethereum"
+  ) {
+    return <ConnectEthereumWalletButton variant="destructive" />;
+  }
+  if (
+    (beneficiaries === null || beneficiaries.length === 0) &&
+    destination.type === "substrate"
+  ) {
+    return <ConnectPolkadotWalletButton variant="destructive" />;
+  }
+  return (
+    <Button
+      disabled={tokenMetadata === null || validating}
+      className="w-full my-8"
+      type="submit"
+    >
+      {validating ? "Validating" : "Submit"}
+    </Button>
+  );
+}

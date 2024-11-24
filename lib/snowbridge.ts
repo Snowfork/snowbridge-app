@@ -18,7 +18,7 @@ import {
 import { AbstractProvider, AlchemyProvider } from "ethers";
 
 export const SKIP_LIGHT_CLIENT_UPDATES = true;
-export const HISTORY_IN_SECONDS = 60 * 60 * 24 * 7 * 2; // 2 Weeks
+export const HISTORY_IN_SECONDS = 60 * 60 * 24 * 7 * 1; // 1 Weeks
 export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
 export const ACCEPTABLE_BRIDGE_LATENCY = 28800; // 8 hours
 
