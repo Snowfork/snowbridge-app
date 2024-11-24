@@ -53,7 +53,7 @@ export function SubstrateTransferStep({
 
   const [amount, setAmount] = useState(defaultAmount);
   const [account, setAccount] = useState(
-    data.formData.beneficiary ??
+    data.formData.sourceAccount ??
       polkadotAccount?.address ??
       (polkadotAccounts !== null && polkadotAccounts.length > 1
         ? polkadotAccounts[0]
@@ -61,7 +61,7 @@ export function SubstrateTransferStep({
       )?.address,
   );
   const beneficiary = polkadotAccounts?.find(
-    (acc) => acc.address === data.formData.beneficiary,
+    (acc) => acc.address === data.formData.sourceAccount,
   );
   const [busy, setBusy] = useState(false);
   interface Message {

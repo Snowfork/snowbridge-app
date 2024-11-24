@@ -156,6 +156,7 @@ async function sendToken(
           cause: result.failure,
         });
       }
+
       return result;
     }
     default: {

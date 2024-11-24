@@ -41,7 +41,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
       <div
         className={
           "text-sm text-right text-muted-foreground px-1 " +
-          (sourceAccount !== null ? " visible" : " hidden")
+          (sourceAccount ? " visible" : " hidden")
         }
       >
         Balances: Error...
@@ -53,7 +53,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
       <div
         className={
           "text-sm text-right text-muted-foreground px-1 " +
-          (sourceAccount !== null ? " visible" : " hidden")
+          (sourceAccount ? " visible" : " hidden")
         }
       >
         Balances: Fetching...
@@ -82,7 +82,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     <div
       className={
         "text-sm text-right text-muted-foreground px-1 " +
-        (sourceAccount !== null ? " visible" : " hidden")
+        (sourceAccount ? " visible" : " hidden")
       }
     >
       Balances: {nativeBalance} ; {tokenBalance} {allowance}

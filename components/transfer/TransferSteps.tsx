@@ -11,8 +11,6 @@ import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
-import { formatBalance } from "@/utils/formatting";
-import { format } from "path/win32";
 import { formatUnits } from "ethers";
 import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
@@ -65,12 +63,12 @@ function TransferFeeStep(step: StepData) {
     );
   }
 
-  const fee = formatUnits(feeInfo?.fee, feeInfo?.decimals);
+  const fee = formatUnits(feeInfo.fee, feeInfo.decimals);
   return (
     <SubstrateTransferStep
       {...step}
-      title="Missing fee on source."
-      description={`Source account requires a fee on ${step.data.destination.name}. This step will Transfer funds from the relaychain.`}
+      title={`Missing fee on ${step.data.source.name}.`}
+      description={`Source account requires a fee on ${step.data.source.name}. This step will Transfer funds from the relaychain.`}
       defaultAmount={fee}
     />
   );

@@ -29,7 +29,7 @@ export const useAssetMetadata = () => {
     relayChainNativeAssetAtom,
   );
   const [erc20Metadata, setErc20Metadata] = useAtom(assetErc20MetadataAtom);
-  const swr = useSWR([env, "assetMetaData"], fetchAssetMetadata, {
+  const { data, error } = useSWR([env, "assetMetaData"], fetchAssetMetadata, {
     refreshInterval: REFRESH_INTERVAL,
     suspense: true,
     fallbackData: null,
@@ -39,10 +39,10 @@ export const useAssetMetadata = () => {
     errorRetryCount: 120, // Retry 120 times every minute (2 hours)
   });
   useEffect(() => {
-    if (swr.data !== null) {
-      setErc20Metadata(swr.data.erc20Metadata);
-      setRelayChainNativeAsset(swr.data.relaychainNativeAsset);
+    if (data !== null) {
+      setErc20Metadata(data.erc20Metadata);
+      setRelayChainNativeAsset(data.relaychainNativeAsset);
     }
-  }, [setErc20Metadata, setRelayChainNativeAsset, swr]);
-  return { relaychainNativeAsset, erc20Metadata, swr };
+  }, [setErc20Metadata, setRelayChainNativeAsset, data]);
+  return { relaychainNativeAsset, erc20Metadata, data, error };
 };
