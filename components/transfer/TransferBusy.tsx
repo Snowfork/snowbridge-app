@@ -31,7 +31,7 @@ export const TransferBusy: FC<TransferBusyProps> = ({
       />
       <div>{message}</div>
       <Button variant="destructive" onClick={onBack}>
-        Cancel
+        Cancel
       </Button>
     </div>
   );

@@ -11,7 +11,7 @@ import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
-import { formatUnits } from "ethers";
+import { formatUnits, parseUnits } from "ethers";
 import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import { RefreshButton } from "../RefreshButton";
@@ -64,7 +64,8 @@ function TransferFeeStep(step: StepData) {
     );
   }
 
-  const fee = formatUnits(feeInfo.fee, feeInfo.decimals);
+  const transferFee = parseUnits("0.2", feeInfo.decimals);
+  const fee = formatUnits(feeInfo.fee + transferFee, feeInfo.decimals);
   return (
     <SubstrateTransferStep
       {...step}
