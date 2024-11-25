@@ -479,29 +479,31 @@ function SubmitButton({
   tokenMetadata,
   beneficiaries,
 }: SubmitButtonProps) {
-  if (
-    (ethereumAccounts === null || ethereumAccounts.length === 0) &&
-    source.type === "ethereum"
-  ) {
-    return <ConnectEthereumWalletButton variant="destructive" />;
-  }
-  if (
-    (polkadotAccounts === null || polkadotAccounts.length === 0) &&
-    source.type === "substrate"
-  ) {
-    return <ConnectPolkadotWalletButton variant="destructive" />;
-  }
-  if (
-    (beneficiaries === null || beneficiaries.length === 0) &&
-    destination.type === "ethereum"
-  ) {
-    return <ConnectEthereumWalletButton variant="destructive" />;
-  }
-  if (
-    (beneficiaries === null || beneficiaries.length === 0) &&
-    destination.type === "substrate"
-  ) {
-    return <ConnectPolkadotWalletButton variant="destructive" />;
+  if (tokenMetadata !== null) {
+    if (
+      (ethereumAccounts === null || ethereumAccounts.length === 0) &&
+      source.type === "ethereum"
+    ) {
+      return <ConnectEthereumWalletButton variant="destructive" />;
+    }
+    if (
+      (polkadotAccounts === null || polkadotAccounts.length === 0) &&
+      source.type === "substrate"
+    ) {
+      return <ConnectPolkadotWalletButton variant="destructive" />;
+    }
+    if (
+      (beneficiaries === null || beneficiaries.length === 0) &&
+      destination.type === "ethereum"
+    ) {
+      return <ConnectEthereumWalletButton variant="destructive" />;
+    }
+    if (
+      (beneficiaries === null || beneficiaries.length === 0) &&
+      destination.type === "substrate"
+    ) {
+      return <ConnectPolkadotWalletButton variant="destructive" />;
+    }
   }
   return (
     <Button
