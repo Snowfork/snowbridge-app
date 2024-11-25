@@ -15,7 +15,7 @@ import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { useSearchParams, redirect } from "next/navigation";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -74,7 +74,7 @@ function TxCard(props: TxCardProps) {
   );
 }
 
-export default function TxComplete() {
+function TxCom() {
   const searchParams = useSearchParams();
   const transferEncoded = searchParams.get("transfer");
   if (!transferEncoded) {
@@ -88,11 +88,17 @@ export default function TxComplete() {
       decoded
     );
   }, [data, transferEncoded]);
-  console.log(transfer);
+
+  return <TxCard transfer={transfer} refresh={async () => await mutate()} />;
+}
+
+export default function TxComplete() {
   return (
     <MaintenanceBanner>
       <ContextComponent>
-        <TxCard transfer={transfer} refresh={async () => await mutate()} />
+        <Suspense fallback={<Loading />}>
+          <TxCom />
+        </Suspense>
       </ContextComponent>
     </MaintenanceBanner>
   );
