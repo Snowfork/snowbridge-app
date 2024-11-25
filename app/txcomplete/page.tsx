@@ -1,8 +1,8 @@
 "use client";
 
 import { ContextComponent } from "@/components/Context";
+import { TransferTitle } from "@/components/history/TransferTitle";
 import { MaintenanceBanner } from "@/components/MainenanceBanner";
-import { TransferSummary } from "@/components/transfer/TransferSummary";
 import {
   Card,
   CardContent,
@@ -10,9 +10,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LucideLoaderCircle } from "lucide-react";
+import { useTransferHistory } from "@/hooks/useTransferHistory";
+import { Transfer } from "@/store/transferHistory";
+import base64url from "base64url";
+import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { useSearchParams, redirect } from "next/navigation";
-import { Suspense } from "react";
+import { useMemo } from "react";
+import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { RefreshButton } from "@/components/RefreshButton";
 
 const Loading = () => {
   return (
@@ -24,23 +31,44 @@ const Loading = () => {
 };
 
 interface TxCardProps {
-  messageId: string;
+  transfer: Transfer;
+  refresh: () => unknown | Promise<unknown>;
 }
 function TxCard(props: TxCardProps) {
-  const { messageId } = props;
+  const { transfer, refresh } = props;
   return (
     <Card className="w-[360px] md:w-2/3">
       <CardHeader>
         <CardTitle>Transfer Status</CardTitle>
         <CardDescription className="hidden md:flex">
-          Status of transfer: {messageId}
+          <TransferTitle
+            transfer={transfer}
+            showBagde={false}
+            showWallet={false}
+          />
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* <TransferSummary data={undefined} /> */}
-        <div>Status: Pending</div>
-        <div>Estimated Delivery Time</div>
-        <div>Refresh</div>
+        <div className="flex flex-col gap-4">
+          <div>
+            Transfer Status: <TransferStatusBadge transfer={transfer} />
+          </div>
+          <div>
+            <Link className="underline" href={`/history#${transfer.id}`}>
+              See in History
+            </Link>
+          </div>
+          <div className="flex justify-evenly">
+            <RefreshButton onClick={refresh} />
+            <Button
+              onClick={() => {
+                window.location.pathname = "/";
+              }}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -48,16 +76,23 @@ function TxCard(props: TxCardProps) {
 
 export default function TxComplete() {
   const searchParams = useSearchParams();
-  const messageId = searchParams.get("messageId");
-  if (!messageId) {
+  const transferEncoded = searchParams.get("transfer");
+  if (!transferEncoded) {
     redirect("/");
   }
+  const { data, mutate } = useTransferHistory();
+  const transfer = useMemo(() => {
+    const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
+    return (
+      data?.find((x) => x.id.toLowerCase() === decoded.id.toLowerCase()) ??
+      decoded
+    );
+  }, [data, transferEncoded]);
+  console.log(transfer);
   return (
     <MaintenanceBanner>
       <ContextComponent>
-        <Suspense fallback={<Loading />}>
-          <TxCard messageId={messageId} />
-        </Suspense>
+        <TxCard transfer={transfer} refresh={async () => await mutate()} />
       </ContextComponent>
     </MaintenanceBanner>
   );

@@ -23,6 +23,7 @@ import { TransferError } from "./TransferError";
 import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { redirect } from "next/navigation";
+import base64url from "base64url";
 
 function sendResultToHistory(
   messageId: string,
@@ -114,6 +115,7 @@ function sendResultToHistory(
       throw Error(`Unknown type '${data.source.type}'`);
   }
 }
+
 export const TransferComponent: FC = () => {
   const requestId = useRef(0);
   const [formData, setFormData] = useState<TransferFormData>();
@@ -179,14 +181,22 @@ export const TransferComponent: FC = () => {
       if (requestId.current != req) return;
 
       setBusy(null);
-      const messageId = result.success?.messageId ?? "0x";
-      addPendingTransaction({
-        kind: "add",
-        transfer: sendResultToHistory(messageId, data, result),
-      });
-      refreshHistory();
-      track("Sending Complete", { ...data?.formData, messageId });
-      redirect(`/txcomplete?messageId=${messageId}`);
+      if (result.success) {
+        const messageId = result.success?.messageId ?? "0x";
+        const historyItem = sendResultToHistory(messageId, data, result);
+        addPendingTransaction({
+          kind: "add",
+          transfer: historyItem,
+        });
+        refreshHistory();
+        track("Sending Complete", { ...data.formData, messageId });
+        const transferData = base64url.encode(JSON.stringify(historyItem));
+        redirect(`/txcomplete?messageId=${messageId}&transfer=${transferData}`);
+      } else {
+        track("Sending Failed", { ...data.formData });
+        // TODO: make error link and console log underlying error
+        showError("Sending failed", data.formData);
+      }
     } catch (err) {
       if (requestId.current != req) return;
       console.error(err);

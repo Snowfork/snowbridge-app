@@ -14,6 +14,7 @@ import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits } from "ethers";
 import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
+import { RefreshButton } from "../RefreshButton";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -162,16 +163,13 @@ export const TransferSteps: FC<TransferStepsProps> = ({
         </div>
       </div>
       <div className="flex items-center gap-4 justify-evenly">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            if (onRefreshTransfer) onRefreshTransfer(data, true);
+        <RefreshButton
+          onClick={async () => {
+            if (onRefreshTransfer) await onRefreshTransfer(data, true);
           }}
-        >
-          Refresh
-        </Button>
+        />
         <Button variant="destructive" onClick={onBack}>
-          Back
+          Back
         </Button>
       </div>
     </div>

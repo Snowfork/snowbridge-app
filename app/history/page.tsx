@@ -62,6 +62,11 @@ import {
   subscanEventLink,
   subscanExtrinsicLink,
 } from "@/lib/explorerLinks";
+import {
+  formatTokenData,
+  getEnvDetail,
+  TransferTitle,
+} from "@/components/history/TransferTitle";
 
 const ITEMS_PER_PAGE = 5;
 const isWalletTransaction = (
@@ -82,36 +87,6 @@ const isWalletTransaction = (
       sourceAddress.trim().toLowerCase() == acc.trim().toLowerCase(),
   );
   return polkadotAccount !== undefined || ethereumAccount !== undefined;
-};
-
-const getEnvDetail = (
-  transfer: Transfer,
-  env: environment.SnowbridgeEnvironment,
-) => {
-  if (transfer.info.destinationParachain === undefined) {
-    return env.locations.find((loc) => loc.id === "ethereum");
-  }
-
-  let destination = env.locations.find(
-    (loc) => loc.paraInfo?.paraId === transfer.info.destinationParachain,
-  );
-
-  if (
-    destination === undefined &&
-    transfer.info.destinationParachain !== undefined
-  ) {
-    destination = env.locations.find((loc) => loc.id === "assethub");
-  }
-  return destination;
-};
-
-const getDestinationTokenByAddress = (
-  tokenAddress: string,
-  destination?: environment.TransferLocation,
-) => {
-  return (destination?.erc20tokensReceivable ?? []).find(
-    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
-  );
 };
 
 const getExplorerLinks = (
@@ -229,79 +204,6 @@ const getExplorerLinks = (
     }
   }
   return links;
-};
-
-const formatTokenData = (
-  transfer: Transfer,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
-  destination?: TransferLocation,
-  displayDecimals?: number,
-) => {
-  const tokenAddress = transfer.info.tokenAddress.toLowerCase();
-  let amount = transfer.info.amount;
-  let tokenConfig = getDestinationTokenByAddress(
-    transfer.info.tokenAddress,
-    destination,
-  );
-  let tokenName = tokenConfig?.id;
-  const metaData =
-    tokenAddress in assetErc20MetaData
-      ? assetErc20MetaData[tokenAddress]
-      : null;
-  if (metaData !== null) {
-    amount = formatBalance({
-      number: parseUnits(transfer.info.amount, 0),
-      decimals: Number(metaData.decimals),
-      displayDecimals: displayDecimals ?? Number(metaData.decimals),
-    });
-    tokenName = metaData.symbol;
-  }
-  return { tokenName, amount };
-};
-
-const transferTitle = (
-  transfer: Transfer,
-  env: environment.SnowbridgeEnvironment,
-  assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
-): JSX.Element => {
-  const destination = getEnvDetail(transfer, env);
-  const when = new Date(transfer.info.when);
-
-  const badgeStyle =
-    history.TransferStatus.Failed == transfer.status
-      ? " bg-destructive"
-      : history.TransferStatus.Pending == transfer.status
-        ? ""
-        : "bg-secondary";
-
-  const { tokenName, amount } = formatTokenData(
-    transfer,
-    assetErc20Metadata,
-    destination,
-  );
-
-  return (
-    <div className="grid grid-cols-8 justify-stretch w-full">
-      <Badge
-        variant="outline"
-        className={cn("px-4 mr-2 col-span-1 place-self-center", badgeStyle)}
-      >
-        {history.TransferStatus[transfer.status]}
-      </Badge>
-      <div className="flex px-4 mr-2 col-span-1 w-full place-content-center">
-        {transfer.isWalletTransaction ? <LucideWallet /> : <LucideGlobe />}
-      </div>
-      <p className="col-span-6 place-self-start text-left">
-        {amount +
-          " " +
-          (tokenName ?? "unknown") +
-          " to " +
-          (destination?.name ?? "unknown") +
-          " on " +
-          when.toLocaleString()}
-      </p>
-    </div>
-  );
 };
 
 const transferDetail = (
@@ -429,7 +331,6 @@ export default function History() {
   );
 
   const { relaychainNativeAsset, erc20Metadata } = useAssetMetadata();
-
   const {
     data: transfers,
     mutate,
@@ -509,6 +410,10 @@ export default function History() {
     for (let i = 0; i < allTransfers.length; i += ITEMS_PER_PAGE) {
       pages.push(allTransfers.slice(i, i + ITEMS_PER_PAGE));
     }
+    // if (allTransfers.length > 0)
+    //   console.log(
+    //     `messageId=${allTransfers[0].id}&transfer=${base64url.encode(JSON.stringify(allTransfers[0]))}`,
+    //   );
     return pages;
   }, [
     showGlobal,
@@ -613,7 +518,7 @@ export default function History() {
                 value={v.id?.toString() ?? i.toString()}
               >
                 <AccordionTrigger>
-                  {transferTitle(v, env, erc20Metadata)}
+                  <TransferTitle transfer={v} />
                 </AccordionTrigger>
                 <AccordionContent>
                   {transferDetail(
