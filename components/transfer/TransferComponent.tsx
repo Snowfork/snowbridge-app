@@ -22,7 +22,7 @@ import { TransferBusy } from "./TransferBusy";
 import { TransferError } from "./TransferError";
 import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import base64url from "base64url";
 
 function sendResultToHistory(
@@ -124,6 +124,7 @@ export const TransferComponent: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [planSend, sendToken] = useSendToken();
+  const router = useRouter();
 
   const { mutate: refreshHistory } = useTransferHistory();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
@@ -191,15 +192,15 @@ export const TransferComponent: FC = () => {
         refreshHistory();
         track("Sending Complete", { ...data.formData, messageId });
         const transferData = base64url.encode(JSON.stringify(historyItem));
-        redirect(`/txcomplete?messageId=${messageId}&transfer=${transferData}`);
+        router.push(`/txcomplete?transfer=${transferData}`);
       } else {
         track("Sending Failed", { ...data.formData });
         // TODO: make error link and console log underlying error
         showError("Sending failed", data.formData);
       }
     } catch (err) {
-      if (requestId.current != req) return;
       console.error(err);
+      if (requestId.current != req) return;
       const message = errorMessage(err);
       track("Plan Failed Exception", {
         ...data?.formData,

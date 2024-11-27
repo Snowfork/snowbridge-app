@@ -17,7 +17,7 @@ import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
-import { useSearchParams, redirect } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -104,18 +104,24 @@ function TxCard(props: TxCardProps) {
 
 function TxComponent() {
   const searchParams = useSearchParams();
-  const transferEncoded = searchParams.get("transfer");
-  if (!transferEncoded) {
-    redirect("/");
-  }
+  const router = useRouter();
   const { data, mutate } = useTransferHistory();
+
   const [transfer, inHistory] = useMemo(() => {
+    const transferEncoded = searchParams.get("transfer");
+    if (transferEncoded === null) return [null, false];
+
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
     const history = data?.find(
       (x) => x.id.toLowerCase() === decoded.id.toLowerCase(),
     );
     return [history ?? decoded, history !== undefined];
-  }, [data, transferEncoded]);
+  }, [data, searchParams]);
+
+  if (!transfer) {
+    router.push("/");
+    return <></>;
+  }
 
   return (
     <TxCard
