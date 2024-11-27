@@ -1,7 +1,10 @@
 "use client";
 
 import { ContextComponent } from "@/components/Context";
-import { TransferTitle } from "@/components/history/TransferTitle";
+import {
+  getEnvDetail,
+  TransferTitle,
+} from "@/components/history/TransferTitle";
 import { MaintenanceBanner } from "@/components/MainenanceBanner";
 import {
   Card,
@@ -20,6 +23,10 @@ import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { RefreshButton } from "@/components/RefreshButton";
+import { cn } from "@/lib/utils";
+import { history } from "@snowbridge/api";
+import { useAtomValue } from "jotai";
+import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 
 const Loading = () => {
   return (
@@ -33,9 +40,11 @@ const Loading = () => {
 interface TxCardProps {
   transfer: Transfer;
   refresh: () => unknown | Promise<unknown>;
+  inHistory: boolean;
 }
 function TxCard(props: TxCardProps) {
-  const { transfer, refresh } = props;
+  const { transfer, refresh, inHistory } = props;
+  const env = useAtomValue(snowbridgeEnvironmentAtom);
   return (
     <Card className="w-[360px] md:w-2/3">
       <CardHeader>
@@ -53,20 +62,39 @@ function TxCard(props: TxCardProps) {
           <div>
             Transfer Status: <TransferStatusBadge transfer={transfer} />
           </div>
+          <div
+            className={cn(
+              "text-muted-foreground text-sm",
+              transfer.status !== history.TransferStatus.Pending
+                ? "hidden"
+                : "",
+            )}
+          >
+            Transfer can take up to{" "}
+            {getEnvDetail(transfer, env)?.type !== "ethereum"
+              ? "25 minutes"
+              : "4 hour 30 minutes"}
+          </div>
           <div>
-            <Link className="underline" href={`/history#${transfer.id}`}>
+            <Link
+              className={cn("underline text-sm", !inHistory ? "hidden" : "")}
+              href={`/history#${transfer.id}`}
+            >
               See in History
             </Link>
           </div>
           <div className="flex justify-evenly">
-            <RefreshButton onClick={refresh} />
-            <Button
-              onClick={() => {
-                window.location.pathname = "/";
-              }}
-            >
-              Done
-            </Button>
+            <RefreshButton
+              onClick={refresh}
+              className={cn(
+                transfer.status !== history.TransferStatus.Pending
+                  ? "hidden"
+                  : "",
+              )}
+            />
+            <Link href="/">
+              <Button>Done</Button>
+            </Link>
           </div>
         </div>
       </CardContent>
@@ -74,22 +102,28 @@ function TxCard(props: TxCardProps) {
   );
 }
 
-function TxCom() {
+function TxComponent() {
   const searchParams = useSearchParams();
   const transferEncoded = searchParams.get("transfer");
   if (!transferEncoded) {
     redirect("/");
   }
   const { data, mutate } = useTransferHistory();
-  const transfer = useMemo(() => {
+  const [transfer, inHistory] = useMemo(() => {
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
-    return (
-      data?.find((x) => x.id.toLowerCase() === decoded.id.toLowerCase()) ??
-      decoded
+    const history = data?.find(
+      (x) => x.id.toLowerCase() === decoded.id.toLowerCase(),
     );
+    return [history ?? decoded, history !== undefined];
   }, [data, transferEncoded]);
 
-  return <TxCard transfer={transfer} refresh={async () => await mutate()} />;
+  return (
+    <TxCard
+      transfer={transfer}
+      inHistory={inHistory}
+      refresh={async () => await mutate()}
+    />
+  );
 }
 
 export default function TxComplete() {
@@ -97,7 +131,7 @@ export default function TxComplete() {
     <MaintenanceBanner>
       <ContextComponent>
         <Suspense fallback={<Loading />}>
-          <TxCom />
+          <TxComponent />
         </Suspense>
       </ContextComponent>
     </MaintenanceBanner>
