@@ -204,6 +204,7 @@ export type ContextOverrides = {
   assetHub?: string;
   relaychain?: string;
   parachains?: string[];
+  graphqlApiUrl?: string;
 };
 
 export async function createContext(
@@ -228,6 +229,7 @@ export async function createContext(
       gateway: config.GATEWAY_CONTRACT,
       beefy: config.BEEFY_CONTRACT,
     },
+    graphqlApiUrl: overrides?.graphqlApiUrl ?? config.GRAPHQL_API_URL,
   });
 }
 

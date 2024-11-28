@@ -44,7 +44,8 @@ export function formatTime(time: number): string {
   let fmt = "";
   if (hours > 0) fmt += `${hours}h `;
   if (minutes > 0) fmt += `${minutes}m `;
-  fmt += `${seconds}s`;
+  if (seconds > 0) fmt += `${seconds}s`;
+  if (fmt === "") return "0s";
   return fmt;
 }
 
