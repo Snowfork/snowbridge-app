@@ -2,6 +2,7 @@ import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   assetErc20MetaDataAtom,
+  snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
@@ -103,6 +104,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   formData,
 }) => {
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
+  const context = useAtomValue(snowbridgeContextAtom);
   const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
@@ -454,6 +456,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           source={source}
           tokenMetadata={tokenMetadata}
           validating={validating}
+          context={context}
         />
       </form>
     </Form>
@@ -468,6 +471,7 @@ interface SubmitButtonProps {
   tokenMetadata: assets.ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
+  context: Context | null;
 }
 
 function SubmitButton({
@@ -478,8 +482,9 @@ function SubmitButton({
   validating,
   tokenMetadata,
   beneficiaries,
+  context,
 }: SubmitButtonProps) {
-  if (tokenMetadata !== null) {
+  if (tokenMetadata !== null && context !== null) {
     if (
       (ethereumAccounts === null || ethereumAccounts.length === 0) &&
       source.type === "ethereum"
@@ -507,11 +512,15 @@ function SubmitButton({
   }
   return (
     <Button
-      disabled={tokenMetadata === null || validating}
+      disabled={context === null || tokenMetadata === null || validating}
       className="w-full my-8"
       type="submit"
     >
-      {validating ? "Validating" : "Submit"}
+      {context === null
+        ? "Connecting..."
+        : validating
+          ? "Validating"
+          : "Submit"}
     </Button>
   );
 }
