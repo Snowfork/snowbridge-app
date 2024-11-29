@@ -77,18 +77,20 @@ export const SelectAccount: FC<SelectAccountProps> = ({
             {accounts.map((account, i) =>
               account.type === "substrate" ? (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
-                  <div>{account.name}</div>
-                  <pre className="md:hidden inline">
-                    {trimAccount(account.key, 18)}
-                  </pre>
-                  <pre className="hidden md:inline">{account.key}</pre>
+                  <div>
+                    {account.name}{" "}
+                    <pre className="lg:hidden inline">
+                      ({trimAccount(account.key, 18)})
+                    </pre>
+                    <pre className="hidden lg:inline">({account.key})</pre>
+                  </div>
                 </SelectItem>
               ) : (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
-                  <pre className="md:hidden inline">
+                  <pre className="lg:hidden inline">
                     {trimAccount(account.name, 18)}
                   </pre>
-                  <pre className="hidden md:inline">{account.name}</pre>
+                  <pre className="hidden lg:inline">{account.name}</pre>
                 </SelectItem>
               ),
             )}
