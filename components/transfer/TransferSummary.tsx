@@ -1,58 +1,16 @@
 import { FC } from "react";
 import { ValidationData } from "@/utils/types";
 import { etherscanAddressLink, subscanAccountLink } from "@/lib/explorerLinks";
-import { BridgeStatus, getEnvironmentName } from "@/lib/snowbridge";
+import { getEnvironmentName } from "@/lib/snowbridge";
 import { FeeDisplay } from "../FeeDisplay";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { formatTime } from "@/utils/formatting";
+import { estimateDelivery } from "@/lib/bridgeStatus";
 
 interface TransferSummaryProps {
   data: ValidationData;
 }
-function estimateDelivery(data: ValidationData, status: BridgeStatus | null) {
-  if (!status) return "Calculating...";
-  switch (data.source.type) {
-    case "ethereum": {
-      console.log(status);
-      if ((status.statusInfo.toPolkadot as any).estimatedDeliveryTime) {
-        console.log(
-          "estimated",
-          (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
-        );
-        return formatTime(
-          (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
-        );
-      }
-      const EPOCH_TIME = 6.4 * 60;
-      let estimatedSeconds =
-        EPOCH_TIME * 5 - status.statusInfo.toPolkadot.latencySeconds;
-      if (estimatedSeconds < 0) {
-        estimatedSeconds = EPOCH_TIME * 3 - estimatedSeconds;
-      }
-      return formatTime(estimatedSeconds);
-    }
-    case "substrate": {
-      if ((status.statusInfo.toEthereum as any).estimatedDeliveryTime) {
-        console.log(
-          "estimated",
-          (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
-        );
-        return formatTime(
-          (status.statusInfo.toEthereum as any).estimatedDeliveryTime,
-        );
-      }
-      const MAX_BEEFY_DELIVERY_TIME = 60 * 60 * 4.5;
-      let estimatedSeconds =
-        MAX_BEEFY_DELIVERY_TIME - status.statusInfo.toEthereum.latencySeconds;
-      if (estimatedSeconds < 0) {
-        estimatedSeconds = MAX_BEEFY_DELIVERY_TIME - estimatedSeconds;
-      }
-      return formatTime(estimatedSeconds);
-    }
-    default:
-      return "Could not estimate.";
-  }
-}
+
 export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
   const {
     data: status,
@@ -127,7 +85,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
               ? "Calculating..."
               : statusError
                 ? "Could not estimate delivery"
-                : estimateDelivery(data, status)}
+                : estimateDelivery(data.source.type, status)}
           </span>
           <span className="text-muted-foreground">
             {" "}
