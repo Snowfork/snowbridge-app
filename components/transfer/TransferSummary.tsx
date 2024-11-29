@@ -13,7 +13,12 @@ function estimateDelivery(data: ValidationData, status: BridgeStatus | null) {
   if (!status) return "Calculating...";
   switch (data.source.type) {
     case "ethereum": {
+      console.log(status);
       if ((status.statusInfo.toPolkadot as any).estimatedDeliveryTime) {
+        console.log(
+          "estimated",
+          (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
+        );
         return formatTime(
           (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
         );
@@ -28,6 +33,10 @@ function estimateDelivery(data: ValidationData, status: BridgeStatus | null) {
     }
     case "substrate": {
       if ((status.statusInfo.toEthereum as any).estimatedDeliveryTime) {
+        console.log(
+          "estimated",
+          (status.statusInfo.toPolkadot as any).estimatedDeliveryTime,
+        );
         return formatTime(
           (status.statusInfo.toEthereum as any).estimatedDeliveryTime,
         );
@@ -87,7 +96,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
           Source Account:{" "}
           <span
             onClick={() => window.open(sourceAccountLink)}
-            className="inline whitespace-pre font-mono hover:underline cursor-pointer"
+            className="inline whitespace-pre font-mono hover:underline cursor-pointer pl-2"
           >
             {data.formData.sourceAccount}
           </span>
@@ -96,7 +105,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
           Beneficiary:{" "}
           <span
             onClick={() => window.open(beneficiaryLink)}
-            className="inline whitespace-pre font-mono hover:underline cursor-pointer"
+            className="inline whitespace-pre font-mono hover:underline cursor-pointer pl-2"
           >
             {data.formData.beneficiary}
           </span>
@@ -104,7 +113,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
         <div className="text-sm">
           Transfer Fee:{" "}
           <FeeDisplay
-            className="inline whitespace-pre font-mono"
+            className="inline whitespace-pre font-mono pl-2"
             source={data.source.type}
             destination={data.destination}
             token={data.formData.token}
@@ -113,7 +122,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
         </div>
         <p className="text-sm">
           Estimated Delivery:{" "}
-          <span className="inline whitespace-pre font-mono">
+          <span className="inline whitespace-pre font-mono pl-2">
             {isRefreshing
               ? "Calculating..."
               : statusError
