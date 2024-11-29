@@ -254,10 +254,7 @@ export const TransferComponent: FC = () => {
   return (
     <Card className="w-auto md:w-2/3">
       <CardHeader>
-        <CardTitle>Transfer</CardTitle>
-        <CardDescription className="hidden md:flex">
-          Transfer tokens between Ethereum and Polkadot parachains.
-        </CardDescription>
+        <CardTitle>Transfer Tokens</CardTitle>
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>

@@ -348,10 +348,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           name="sourceAccount"
           render={({ field }) => (
             <FormItem {...field}>
-              <FormLabel>Source Account</FormLabel>
-              <FormDescription className="hidden md:flex">
-                Account on the source.
-              </FormDescription>
+              <FormLabel>{source.name} Account</FormLabel>
               <FormControl>
                 <>
                   {source.type == "ethereum" ? (
@@ -376,10 +373,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           name="beneficiary"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Beneficiary</FormLabel>
-              <FormDescription className="hidden md:flex">
-                Receiver account on the destination.
-              </FormDescription>
+              <FormLabel>{destination.name} Beneficiary</FormLabel>
               <FormControl>
                 <SelectAccount
                   accounts={beneficiaries}
