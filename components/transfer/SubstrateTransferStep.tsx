@@ -107,43 +107,48 @@ export function SubstrateTransferStep({
       >
         <div className="flex gap-2 place-items-center">
           <Label className="w-1/5">Source Account</Label>
-          <Select
-            onValueChange={(v) => {
-              setAccount(v);
-            }}
-            value={account}
-            disabled={busy}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select an account" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {polkadotAccounts?.map((acc) => {
-                  return (
-                    <SelectItem key={acc.address} value={acc.address}>
-                      <div>
-                        {acc.name}{" "}
-                        <pre className="inline md:hidden">
-                          ({trimAccount(acc.address)})
-                        </pre>
-                        <pre className="hidden md:inline">({acc.address})</pre>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <div className="w-4/5">
+            <Select
+              onValueChange={(v) => {
+                setAccount(v);
+              }}
+              value={account}
+              disabled={busy}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an account" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {polkadotAccounts?.map((acc) => {
+                    return (
+                      <SelectItem key={acc.address} value={acc.address}>
+                        <div>
+                          {acc.name}{" "}
+                          <pre className="inline lg:hidden">
+                            ({trimAccount(acc.address)})
+                          </pre>
+                          <pre className="hidden lg:inline">
+                            ({acc.address})
+                          </pre>
+                        </div>
+                        c
+                      </SelectItem>
+                    );
+                  })}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex gap-4 place-items-center">
-          <Label className="w-1/5">Beneficiary</Label>
-          <div className="text-gray-500 text-center">
+          <Label className="flex w-1/5">Beneficiary</Label>
+          <div className="flex-col text-gray-500 text-center w-4/5">
             {beneficiary?.name}{" "}
-            <pre className="inline md:hidden">
+            <pre className="inline lg:hidden text-sm">
               ({trimAccount(beneficiary?.address ?? data.formData.beneficiary)})
             </pre>
-            <pre className="hidden md:inline">
+            <pre className="hidden lg:inline text-sm">
               ({beneficiary?.address ?? data.formData.beneficiary})
             </pre>
           </div>

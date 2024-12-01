@@ -410,10 +410,6 @@ export default function History() {
     for (let i = 0; i < allTransfers.length; i += ITEMS_PER_PAGE) {
       pages.push(allTransfers.slice(i, i + ITEMS_PER_PAGE));
     }
-    // if (allTransfers.length > 0)
-    //   console.log(
-    //     `messageId=${allTransfers[0].id}&transfer=${base64url.encode(JSON.stringify(allTransfers[0]))}`,
-    //   );
     return pages;
   }, [
     showGlobal,

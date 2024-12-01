@@ -186,10 +186,10 @@ export function estimateDelivery(
   if (!status) return "Calculating...";
   switch (source) {
     case "ethereum": {
-      console.log(status);
       if ((status.assetHubChannel.toPolkadot as any).estimatedDeliveryTime) {
         return formatTime(
           (status.assetHubChannel.toPolkadot as any).estimatedDeliveryTime,
+          false,
         );
       }
       const EPOCH_TIME = 6.4 * 60;
@@ -198,12 +198,13 @@ export function estimateDelivery(
       if (estimatedSeconds < 0) {
         estimatedSeconds = EPOCH_TIME * 3 - estimatedSeconds;
       }
-      return formatTime(estimatedSeconds);
+      return formatTime(estimatedSeconds, false);
     }
     case "substrate": {
       if ((status.statusInfo.toEthereum as any).estimatedDeliveryTime) {
         return formatTime(
           (status.statusInfo.toEthereum as any).estimatedDeliveryTime,
+          false,
         );
       }
       const MAX_BEEFY_DELIVERY_TIME = 60 * 60 * 4.5;
@@ -212,7 +213,7 @@ export function estimateDelivery(
       if (estimatedSeconds < 0) {
         estimatedSeconds = MAX_BEEFY_DELIVERY_TIME - estimatedSeconds;
       }
-      return formatTime(estimatedSeconds);
+      return formatTime(estimatedSeconds, false);
     }
     default:
       return "Could not estimate.";
