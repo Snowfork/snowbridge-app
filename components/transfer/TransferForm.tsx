@@ -164,9 +164,6 @@ export const TransferForm: FC<TransferFormProps> = ({
         .filter((s) => s !== undefined)
         .map((s) => s!);
       setDestinations(newDestinations);
-      form.resetField("beneficiary", {
-        defaultValue: formData?.beneficiary ?? "",
-      });
     }
     const newDestination =
       newDestinations.find((d) => d.id == watchDestination) ??
@@ -181,22 +178,26 @@ export const TransferForm: FC<TransferFormProps> = ({
       ) ?? newTokens[0];
     setToken(newToken.address);
     form.resetField("token", { defaultValue: newToken.address });
+    if (formData?.beneficiary) {
+      form.resetField("beneficiary", {
+        defaultValue: formData.beneficiary,
+      });
+      form.setValue("beneficiary", formData.beneficiary);
+    }
   }, [
-    form,
-    source,
+    destination.type,
     destinations,
-    watchSource,
-    environment,
-    watchDestination,
-    watchSourceAccount,
-    watchToken,
-    setSource,
-    setDestinations,
-    setDestination,
-    setToken,
+    environment.locations,
     ethereumAccount,
-    polkadotAccount?.address,
+    form,
     formData?.beneficiary,
+    polkadotAccount?.address,
+    source.id,
+    source.type,
+    watchDestination,
+    watchSource,
+    watchToken,
+    watchSourceAccount,
   ]);
 
   const tokenMetadata = assetErc20MetaData

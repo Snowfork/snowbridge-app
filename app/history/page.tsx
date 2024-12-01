@@ -28,8 +28,6 @@ import { Toggle } from "@/components/ui/toggle";
 import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
-import { cn } from "@/lib/utils";
-import { formatBalance } from "@/utils/formatting";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";

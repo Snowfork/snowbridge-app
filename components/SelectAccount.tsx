@@ -2,7 +2,7 @@
 import { trimAccount } from "@/utils/formatting";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { useAtomValue } from "jotai";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { Input } from "./ui/input";
 import {
   Select,
@@ -37,12 +37,17 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
 
+  const selectedAccount = useMemo(
+    () =>
+      accounts.find(
+        (account) =>
+          account.key.toLowerCase() === (field.value ?? "").toLowerCase(),
+      ),
+    [accounts, field.value],
+  );
   useEffect(() => {
     // unset account selection if selected account is no longer found in accounts
-    if (
-      !allowManualInput &&
-      !accounts.find((account) => account.key === field.value)
-    ) {
+    if (!allowManualInput && !selectedAccount) {
       field.onChange(undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
@@ -64,9 +69,10 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   if (!allowManualInput && accountFromWallet && accounts.length > 0) {
     input = (
       <Select
-        key="controlled"
+        key={(destination ?? "unk") + accounts.length}
         onValueChange={field.onChange}
-        defaultValue={field.value}
+        defaultValue={selectedAccount?.key}
+        value={selectedAccount?.key}
         disabled={disabled}
       >
         <SelectTrigger>
