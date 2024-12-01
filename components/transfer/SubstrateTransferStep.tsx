@@ -3,7 +3,7 @@ import { decodeAddress } from "@polkadot/util-crypto";
 import { u8aToHex } from "@polkadot/util";
 import { TransferStep, ValidationData } from "@/utils/types";
 import { useAtomValue } from "jotai";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -52,17 +52,6 @@ export function SubstrateTransferStep({
   const { transferAsset } = useSubstrateTransfer();
 
   const [amount, setAmount] = useState(defaultAmount);
-  const [account, setAccount] = useState(
-    data.formData.sourceAccount ??
-      polkadotAccount?.address ??
-      (polkadotAccounts !== null && polkadotAccounts.length > 1
-        ? polkadotAccounts[0]
-        : undefined
-      )?.address,
-  );
-  const beneficiary = polkadotAccounts?.find(
-    (acc) => acc.address === data.formData.sourceAccount,
-  );
   const [busy, setBusy] = useState(false);
   interface Message {
     text: string;
@@ -70,6 +59,46 @@ export function SubstrateTransferStep({
   }
   const [success, setSuccess] = useState<Message>();
   const [error, setError] = useState<Message>();
+
+  const targetInfo = useMemo(() => {
+    if (data.source.type === "ethereum" && data.destination.paraInfo) {
+      // Source is ethereum and destination is the parachain.
+      return {
+        paraId: data.destination.paraInfo.paraId,
+        account: data.formData.beneficiary,
+      };
+    } else if (data.destination.type === "ethereum" && data.source.paraInfo) {
+      // Destination is ethereum and source is the parachain.
+      return {
+        paraId: data.source.paraInfo.paraId,
+        account: data.formData.sourceAccount,
+      };
+    } else {
+      setError({
+        text: "Could not infer target parachain and beneficiary.",
+      });
+      return null;
+    }
+  }, [
+    data.destination.paraInfo,
+    data.destination.type,
+    data.formData.beneficiary,
+    data.formData.sourceAccount,
+    data.source.paraInfo,
+    data.source.type,
+  ]);
+  const [account, setAccount] = useState(
+    targetInfo?.account ??
+      polkadotAccount?.address ??
+      (polkadotAccounts !== null && polkadotAccounts.length > 1
+        ? polkadotAccounts[0]
+        : undefined
+      )?.address,
+  );
+  const beneficiary = polkadotAccounts?.find(
+    (acc) => acc.address === targetInfo?.account,
+  );
+
   return (
     <div key={id} className="flex flex-col gap-4 justify-between">
       <div
@@ -112,7 +141,7 @@ export function SubstrateTransferStep({
               onValueChange={(v) => {
                 setAccount(v);
               }}
-              value={account}
+              defaultValue={targetInfo?.account}
               disabled={busy}
             >
               <SelectTrigger>
@@ -132,7 +161,6 @@ export function SubstrateTransferStep({
                             ({acc.address})
                           </pre>
                         </div>
-                        c
                       </SelectItem>
                     );
                   })}
@@ -174,8 +202,16 @@ export function SubstrateTransferStep({
                   });
                   return;
                 }
-                if (!data.destination.paraInfo?.paraId) {
-                  setError({ text: "Destination is not a parachain." });
+                if (!targetInfo) {
+                  setError({
+                    text: "Could not infer target parachain and beneficiary.",
+                  });
+                  return;
+                }
+                if (!account) {
+                  setError({
+                    text: "Could not infer signing account.",
+                  });
                   return;
                 }
                 try {
@@ -189,7 +225,7 @@ export function SubstrateTransferStep({
                       interior: {
                         X1: [
                           {
-                            Parachain: data.destination.paraInfo.paraId,
+                            Parachain: targetInfo.paraId,
                           },
                         ],
                       },
@@ -200,9 +236,7 @@ export function SubstrateTransferStep({
                         X1: [
                           {
                             AccountId32: {
-                              id: u8aToHex(
-                                decodeAddress(data.formData.beneficiary),
-                              ),
+                              id: u8aToHex(decodeAddress(targetInfo.account)),
                             },
                           },
                         ],

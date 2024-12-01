@@ -66,7 +66,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
       <Select
         key="controlled"
         onValueChange={field.onChange}
-        value={field.value}
+        defaultValue={field.value}
         disabled={disabled}
       >
         <SelectTrigger>
