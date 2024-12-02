@@ -24,13 +24,13 @@ const createSnowbridgeContext = async (
       parachainEndpoints.add(endpoint);
     },
   );
-  const context = await createContext(ethereumProvider, env, {
+  return await createContext(ethereumProvider, env, {
     bridgeHub: process.env.NEXT_PUBLIC_BRIDGE_HUB_URL,
     assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL,
     relaychain: process.env.NEXT_PUBLIC_RELAY_CHAIN_URL,
     parachains: Array.from(parachainEndpoints),
+    graphqlApiUrl: process.env.NEXT_PUBLIC_GRAPHQL_API_URL,
   });
-  return context;
 };
 
 export const useSnowbridgeContext = (): [

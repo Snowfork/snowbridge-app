@@ -13,7 +13,7 @@ import { Button } from "./ui/button";
 
 import { BusyDialog } from "./BusyDialog";
 import { Input } from "./ui/input";
-import { ErrorInfo, FormDataSwitch, FormData } from "@/utils/types";
+import { ErrorInfo, FormDataSwitch } from "@/utils/types";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { ParaConfig } from "@/utils/parachainConfigs";
@@ -24,6 +24,7 @@ import { WalletAccount } from "@talismn/connect-wallets";
 import { formatBalance } from "@/utils/formatting";
 import { toast } from "sonner";
 import { SendErrorDialog } from "./SendErrorDialog";
+import { TransferFormData } from "@/utils/formSchema";
 
 interface Props {
   sourceAccount: string;
@@ -34,7 +35,7 @@ interface Props {
   polkadotAccounts: WalletAccount[];
   xcmBalance: bigint;
   xcmBalanceDestination: bigint;
-  formData: FormData | FormDataSwitch;
+  formData: TransferFormData | FormDataSwitch;
   destinationId: string;
 }
 

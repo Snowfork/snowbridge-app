@@ -37,14 +37,17 @@ export function formatBalance({
   return whole + "." + d;
 }
 
-export function formatTime(time: number): string {
+export function formatTime(time: number, showSeconds?: boolean): string {
   let hours = Math.floor(time / 3600);
   let minutes = Math.floor((time % 3600) / 60);
   let seconds = Math.floor(time % 60);
   let fmt = "";
   if (hours > 0) fmt += `${hours}h `;
   if (minutes > 0) fmt += `${minutes}m `;
-  fmt += `${seconds}s`;
+  if (showSeconds ?? false) {
+    if (seconds > 0) fmt += `${seconds}s`;
+  }
+  if (fmt === "") return "0s";
   return fmt;
 }
 

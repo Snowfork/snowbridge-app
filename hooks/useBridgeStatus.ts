@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { useAtomValue } from "jotai";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { BridgeStatus } from "@/lib/snowbridge";
+import { BridgeStatus } from "@/lib/bridgeStatus";
 
 export const REFRESH_INTERVAL: number = 5 * 60 * 1000; // 5 minutes
 export const ERROR_RETRY_INTERVAL: number = 1 * 60 * 1000; // 1 minute

@@ -36,6 +36,7 @@
     "@vercel/edge": "^1.1.2",
     "@vercel/functions": "^1.5.0",
     "@web3modal/ethers": "^5.1.11",
+    "base64url": "^3.0.1",
     "big.js": "^6.2.2",
     "bufferutil": "^4.0.8",
     "class-variance-authority": "^0.7.0",

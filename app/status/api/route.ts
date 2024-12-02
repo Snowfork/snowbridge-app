@@ -4,12 +4,9 @@ export const dynamic = "force-dynamic"; // Always run dynamically
 export const revalidate = 120; // Keep cache for 2 minutes
 export const maxDuration = 90; // Timout adter
 
+import { getBridgeStatus } from "@/lib/bridgeStatus";
 import { getServerContext } from "@/lib/server/context";
-import {
-  getBridgeStatus,
-  getEnvironment,
-  getErrorMessage,
-} from "@/lib/snowbridge";
+import { getEnvironment, getErrorMessage } from "@/lib/snowbridge";
 import { unstable_cache } from "next/cache";
 import { NextResponse } from "next/server";
 

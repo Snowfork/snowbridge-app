@@ -1,10 +1,13 @@
-import { TransferComponent } from "@/components/Transfer";
+import { TransferComponent } from "@/components/transfer/TransferComponent";
 import { ContextComponent } from "@/components/Context";
+import { MaintenanceBanner } from "@/components/MainenanceBanner";
 
 export default function Home() {
   return (
-    <ContextComponent>
-      <TransferComponent />
-    </ContextComponent>
+    <MaintenanceBanner>
+      <ContextComponent>
+        <TransferComponent />
+      </ContextComponent>
+    </MaintenanceBanner>
   );
 }

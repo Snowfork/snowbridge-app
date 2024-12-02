@@ -23,6 +23,7 @@ export async function getServerContext(): Promise<Context> {
     relaychain:
       process.env.NEXT_PUBLIC_RELAY_CHAIN_HTTP_URL ??
       process.env.NEXT_PUBLIC_RELAY_CHAIN_URL,
+    graphqlApiUrl: process.env.NEXT_PUBLIC_GRAPHQL_API_URL,
   });
   context = ctx;
   return ctx;

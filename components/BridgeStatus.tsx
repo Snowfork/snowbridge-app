@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { formatTime } from "@/utils/formatting";
 import { usePathname } from "next/navigation";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
+import { estimateDelivery } from "@/lib/bridgeStatus";
 
 const StatusCard = () => {
   const { data: bridgeStatus } = useBridgeStatus();
@@ -51,6 +52,10 @@ const StatusCard = () => {
         <div className="flex place-items-center space-x-4">
           <LucideBarChart />
           <div className="space-y-1">
+            <p className="text-lg">Delivery Time</p>
+            <p>To Polkadot: {estimateDelivery("ethereum", bridgeStatus)}</p>
+            <p>To Ethereum: {estimateDelivery("substrate", bridgeStatus)}</p>
+            <p className="text-lg">Latency</p>
             <p>
               To Polkadot:{" "}
               <span className={toPolkadotStyle}>

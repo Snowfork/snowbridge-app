@@ -1,10 +1,10 @@
 "use client";
 import { UseFormReturn } from "react-hook-form";
-import { FormData } from "./types";
+import { TransferFormData } from "./formSchema";
 
 export const validateOFAC = async (
-  data: FormData,
-  form: UseFormReturn<FormData>,
+  data: TransferFormData,
+  form: UseFormReturn<TransferFormData>,
 ): Promise<boolean> => {
   const response = await fetch("/blocked/api", {
     method: "POST",
@@ -15,7 +15,8 @@ export const validateOFAC = async (
   });
   if (!response.ok) {
     throw Error(
-      `Error verifying ofac status: ${response.status} - ${response.statusText}`,
+      `Error verifying OFAC status of source and beneficiary accounts.`,
+      { cause: { response } },
     );
   }
   const result = await response.json();

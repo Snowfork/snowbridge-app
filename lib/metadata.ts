@@ -8,9 +8,6 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV === "production") {
   let subdomain = "app";
   const name = getEnvironmentName();
   switch (name) {
-    case "rococo_sepolia":
-      subdomain = "rococo-app";
-      break;
     case "polkadot_mainnet":
       subdomain = "app";
       break;

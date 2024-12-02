@@ -14,7 +14,7 @@ import {
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-const CACHE_REVALIDATE_IN_SECONDS = 5 * 60; // 5 minutes
+const CACHE_REVALIDATE_IN_SECONDS = 10 * 60; // 10 minutes
 
 const getCachedTransferHistory = unstable_cache(
   () => {

@@ -28,7 +28,6 @@ export const SelectedPolkadotAccount: FC = () => {
   return (
     <Select
       onValueChange={(v) => {
-        console.log(v);
         setPolkadotAccount(v);
       }}
       value={(polkadotAccount ?? polkadotAccounts[0]).address}
@@ -43,10 +42,10 @@ export const SelectedPolkadotAccount: FC = () => {
               <SelectItem key={acc.address} value={acc.address}>
                 <div>
                   {acc.name}{" "}
-                  <pre className="inline md:hidden">
+                  <pre className="inline lg:hidden">
                     ({trimAccount(acc.address)})
                   </pre>
-                  <pre className="hidden md:inline">({acc.address})</pre>
+                  <pre className="hidden lg:inline">({acc.address})</pre>
                 </div>
               </SelectItem>
             );

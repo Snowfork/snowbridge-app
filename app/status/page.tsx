@@ -29,6 +29,7 @@ import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { FC, Suspense, useEffect, useState } from "react";
+import { estimateDelivery } from "@/lib/bridgeStatus";
 
 const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   let amount = "0";
@@ -133,13 +134,25 @@ const StatusCard = () => {
           <div className="grid grid-cols-2 justify-start pb-2">
             <h1 className="text-2xl font-semibold col-span-2 py-2">Summary</h1>
             <hr className="col-span-2 py-2" />
-            <p>Overall:</p>
+            <p>Overall Operating Condition:</p>
             <p>
               {" "}
               <span className={overallStyle}>
                 {status.summary.overallStatus}
               </span>
             </p>
+            <h1 className="text-lg font-semibold col-span-2 py-2">
+              Delivery Time
+            </h1>
+            <hr className="col-span-2 py-2" />
+            <p>To Polkadot:</p>
+            <p>{estimateDelivery("ethereum", status)}</p>
+            <p>To Ethereum:</p>
+            <p>{estimateDelivery("substrate", status)}</p>
+            <h1 className="text-lg font-semibold col-span-2 py-2">
+              Light Client Latency
+            </h1>
+            <hr className="col-span-2 py-2" />
             <p>To Polkadot:</p>
             <p>
               {" "}
@@ -147,7 +160,7 @@ const StatusCard = () => {
                 {status.summary.toPolkadotOperatingMode}{" "}
                 {formatTime(status.statusInfo.toPolkadot.latencySeconds)}
               </span>
-            </p>
+            </p>{" "}
             <p>To Ethereum:</p>
             <p>
               {" "}
