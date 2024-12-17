@@ -43,7 +43,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { formatBalance } from "@/utils/formatting";
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
-import { Pi } from "lucide-react";
+import { SelectItemWithIcon } from "../SelectItemWithIcon";
 
 function getBeneficiaries(
   destination: environment.TransferLocation,
@@ -294,7 +294,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             name="source"
             render={({ field }) => (
               <FormItem {...field}>
-                <FormLabel>Source</FormLabel>
+                <FormLabel>From</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
@@ -306,7 +306,10 @@ export const TransferForm: FC<TransferFormProps> = ({
                           .filter((s) => s.destinationIds.length > 0)
                           .map((s) => (
                             <SelectItem key={s.id} value={s.id}>
-                              {s.name}
+                              <SelectItemWithIcon
+                                label={s.name}
+                                link={`/images/${s.id}.png`}
+                              />
                             </SelectItem>
                           ))}
                       </SelectGroup>
@@ -322,7 +325,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             name="destination"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Destination</FormLabel>
+                <FormLabel>To</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
@@ -332,9 +335,12 @@ export const TransferForm: FC<TransferFormProps> = ({
                       <SelectGroup>
                         {destinations.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                            {s.name}
+                              <SelectItemWithIcon
+                                label={s.name}
+                                link={`/images/${s.id}.png`}
+                              />
                           </SelectItem>
-                        ))}
+                          ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -344,37 +350,43 @@ export const TransferForm: FC<TransferFormProps> = ({
             )}
           />
         </div>
-        <FormField
+        <div className="transfer-details">
+        {sourceAccount && (<FormField
           control={form.control}
           name="sourceAccount"
           render={({ field }) => (
             <FormItem {...field}>
-              <FormLabel>{source.name} Account</FormLabel>
-              <FormControl>
-                <>
-                  {source.type == "ethereum" ? (
-                    <SelectedEthereumWallet />
-                  ) : (
-                    <SelectedPolkadotAccount />
-                  )}
-                  <BalanceDisplay
-                    source={source}
-                    token={token}
-                    tokenMetadata={tokenMetadata}
-                    displayDecimals={8}
-                  />
-                </>
-              </FormControl>
-              <FormMessage />
+              <div className="grid grid-cols-2 space-x-2">
+                <FormLabel>From account
+                </FormLabel>
+                <BalanceDisplay
+                  source={source}
+                  token={token}
+                  tokenMetadata={tokenMetadata}
+                  displayDecimals={8}
+                />
+              </div>
+                <FormControl>
+                  <>
+                    {source.type == "ethereum" ? (
+                      <SelectedEthereumWallet />
+                    ) : (
+                      <SelectedPolkadotAccount
+                        source={source.id}
+                      />
+                    )}
+                  </>
+                </FormControl>
+                <FormMessage />
             </FormItem>
-          )}
-        />
+            )}
+          />)}
         <FormField
           control={form.control}
           name="beneficiary"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{destination.name} Beneficiary</FormLabel>
+              <FormLabel>To account</FormLabel>
               <FormControl>
                 <SelectAccount
                   accounts={beneficiaries}
@@ -396,7 +408,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input type="string" placeholder="0.0" {...field} />
+                    <Input className="text-right" type="string" placeholder="0.0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -419,7 +431,10 @@ export const TransferForm: FC<TransferFormProps> = ({
                         <SelectGroup>
                           {destination.erc20tokensReceivable.map((t) => (
                             <SelectItem key={t.address} value={t.address}>
-                              {t.id}
+                              <SelectItemWithIcon
+                                label={t.id}
+                                link={`/images/${t.id}.png`}
+                              />
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -432,7 +447,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             />
           </div>
         </div>
-        <div className="text-sm text-right text-muted-foreground px-1">
+        <div className="text-sm text-right text-muted-foreground px-1 transfer-fee">
           Transfer Fee:{" "}
           <FeeDisplay
             className="inline"
@@ -453,6 +468,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           validating={validating}
           context={context}
         />
+        </div>
       </form>
     </Form>
   );
@@ -484,31 +500,31 @@ function SubmitButton({
       (ethereumAccounts === null || ethereumAccounts.length === 0) &&
       source.type === "ethereum"
     ) {
-      return <ConnectEthereumWalletButton variant="destructive" />;
+      return <ConnectEthereumWalletButton variant="default" />;
     }
     if (
       (polkadotAccounts === null || polkadotAccounts.length === 0) &&
       source.type === "substrate"
     ) {
-      return <ConnectPolkadotWalletButton variant="destructive" />;
+      return <ConnectPolkadotWalletButton variant="default" />;
     }
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
       destination.type === "ethereum"
     ) {
-      return <ConnectEthereumWalletButton variant="destructive" />;
+      return <ConnectEthereumWalletButton variant="default" />;
     }
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
       destination.type === "substrate"
     ) {
-      return <ConnectPolkadotWalletButton variant="destructive" />;
+      return <ConnectPolkadotWalletButton variant="default" />;
     }
   }
   return (
     <Button
       disabled={context === null || tokenMetadata === null || validating}
-      className="w-full my-8"
+      className="w-full my-1"
       type="submit"
     >
       {context === null

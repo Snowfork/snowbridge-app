@@ -39,7 +39,7 @@ export function ConnectEthereumWalletButton({
         <Button
           className={cn("w-full", className)}
           type="button"
-          variant="destructive"
+          variant="default"
           onClick={async (_) => {
             await switchNetwork(env.ethChainId);
             track("Switch Network");

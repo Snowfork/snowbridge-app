@@ -17,6 +17,7 @@ import { AccountInfo } from "@/utils/types";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
+import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 
 type SelectAccountProps = {
   field: any;
@@ -34,8 +35,6 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   destination,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
-  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
 
   const selectedAccount = useMemo(
     () =>
@@ -53,25 +52,13 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
   }, [accounts, field.value, allowManualInput]);
 
-  if (!allowManualInput && accountFromWallet && accounts.length == 0) {
-    if (
-      (ethereumAccounts == null || ethereumAccounts.length == 0) &&
-      destination === "ethereum"
-    ) {
-      return <ConnectEthereumWalletButton />;
-    }
-    if (polkadotAccounts == null || polkadotAccounts.length == 0) {
-      return <ConnectPolkadotWalletButton />;
-    }
-  }
-
   let input: JSX.Element;
   if (!allowManualInput && accountFromWallet && accounts.length > 0) {
     input = (
       <Select
         key={(destination ?? "unk") + accounts.length}
         onValueChange={field.onChange}
-        defaultValue={selectedAccount?.key}
+        defaultValue={accounts.length > 0 ? accounts[0].key : undefined}
         value={selectedAccount?.key}
         disabled={disabled}
       >
@@ -83,20 +70,17 @@ export const SelectAccount: FC<SelectAccountProps> = ({
             {accounts.map((account, i) =>
               account.type === "substrate" ? (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
-                  <div>
-                    {account.name}{" "}
-                    <pre className="lg:hidden inline">
-                      ({trimAccount(account.key, 18)})
-                    </pre>
-                    <pre className="hidden lg:inline">({account.key})</pre>
-                  </div>
+                  <SelectItemWithIcon
+                    label={`${account.name} (${trimAccount(account.key)})`}
+                    link={`/images/${destination}.png`}
+                  />
                 </SelectItem>
               ) : (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
-                  <pre className="lg:hidden inline">
-                    {trimAccount(account.name, 18)}
-                  </pre>
-                  <pre className="hidden lg:inline">{account.name}</pre>
+                  <SelectItemWithIcon
+                    label={account.name}
+                    link={`/images/${destination}.png`}
+                  />
                 </SelectItem>
               ),
             )}

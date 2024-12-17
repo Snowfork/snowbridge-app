@@ -9,6 +9,9 @@ import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
 import { getEnvironment } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectIcon } from "@/components/SelectIcon";
+import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 
 export type SelectedEthereumWalletProps = {
   className?: string;
@@ -22,24 +25,27 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
   const { account, chainId } = useConnectEthereumWallet();
   const { open } = useWeb3Modal();
 
-  if (account === null || chainId === null || chainId !== env.ethChainId) {
-    return <ConnectEthereumWalletButton />;
+  if (account !== null && chainId !== null && chainId === env.ethChainId) {
+    return (
+      <Select value={account}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select an account" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {[account]?.map((acc) => {
+              return (
+                <SelectItem key={account} value={account}>
+                  <SelectItemWithIcon
+                    label={account}
+                    link={`/images/ethereum.png`}
+                  />
+                </SelectItem>
+              );
+            })}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    );
   }
-
-  return (
-    <>
-      <div
-        className={cn(
-          "hover:underline hover:cursor-pointer overflow-clip text-ellipsis",
-          className,
-        )}
-        onClick={async () => await open({ view: "Account" })}
-      >
-        <pre className="inline md:hidden">
-          {trimAccount(account, walletChars ?? 26)}
-        </pre>
-        <pre className="w-auto hidden md:inline">{account}</pre>
-      </div>
-    </>
-  );
 };

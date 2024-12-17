@@ -1,0 +1,81 @@
+div[role="menubar"] {
+    border: none;
+}
+
+div[role="menubar"] p {
+    padding-left: 3px;
+}
+
+.lucide {
+    color: #3e3e3e;
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.5;
+}
+
+body {
+    font-family: 'Funnel Display', sans-serif !important;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.font-semibold {
+    font-weight: 300;
+}
+
+.footer-item {
+    padding: 10px;
+}
+
+.transfer-details {
+    padding-top: 40px;
+}
+
+.selectIcon {
+    margin: 4px 10px 4px 4px;
+}
+
+.transfer-fee {
+    padding-top: 8px;
+}
+
+button[type="submit"] {
+    color: hsl(0deg 0% 100%);
+    background-color: hsl(217, 45%, 25%);
+    border-color: #e8f0ff;
+}
+
+button[type="submit"]:hover, button[type="submit"]:focus {
+    color: hsl(0deg 0% 100%);
+    background-color: hsl(217, 45%, 25%);
+}
+
+button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item {
+    border-color: #d6dcf1 !important;
+    background-color: #efedff !important;
+}
+
+body {
+    /*background-image: url("/images/snowpattern.jpg");*/
+    background-image: url("/images/snow2.png");
+   /* background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 1000px;*/
+    background-size:cover
+}
+
+.text-card-foreground {
+    background-color: #edf3fa;
+    border-color: #daeaf8 !important;
+    border-radius: 2em;
+    padding: 10px;
+}
+
+.shadow-sm {
+    box-shadow: 0 1px 1px rgba(179, 195, 203, 0.15),
+    0 2px 2px rgba(179, 195, 203, 0.15),
+    0 4px 4px rgba(179, 195, 203, 0.15),
+    0 8px 8px rgba(179, 195, 203, 0.15),
+    0 16px 16px rgba(179, 195, 203, 0.15);
+}
