@@ -83,7 +83,7 @@ function TxCard(props: TxCardProps) {
               See in History
             </Link>
           </div>
-          <div className="flex justify-evenly">
+          <div className="flex justify-end">
             <RefreshButton
               onClick={refresh}
               className={cn(
@@ -93,7 +93,7 @@ function TxCard(props: TxCardProps) {
               )}
             />
             <Link href="/">
-              <Button>Done</Button>
+              <Button variant="link">Done</Button>
             </Link>
           </div>
         </div>

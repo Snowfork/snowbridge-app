@@ -85,7 +85,7 @@ export function EthereumTxStep({
           <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
         ) : (
           <Button
-            className="w-1/5"
+            className="w-1/5 action-button"
             size="sm"
             onClick={async () => {
               setBusy(true);

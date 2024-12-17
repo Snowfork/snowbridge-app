@@ -524,7 +524,7 @@ function SubmitButton({
   return (
     <Button
       disabled={context === null || tokenMetadata === null || validating}
-      className="w-full my-1"
+      className="w-full my-1 action-button"
       type="submit"
     >
       {context === null

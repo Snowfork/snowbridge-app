@@ -53,13 +53,14 @@ body {
     padding-top: 8px;
 }
 
-button[type="submit"] {
+button.action-button {
     color: #1d2a3b;
     background: linear-gradient(to bottom, #bca4ec, #cfb9fa);
     box-shadow: #0a3563 0 2px 2px 0;
+    padding: 22px;
 }
 
-button[type="submit"]:hover, button[type="submit"]:focus {
+button.action-button:hover, button.action-button:focus {
     color: #1d2a3b;
     background: linear-gradient(to bottom, #bca4ec, #cfb9fa);
     box-shadow:
@@ -69,7 +70,7 @@ button[type="submit"]:hover, button[type="submit"]:focus {
     border-color: #e8f0ff;
 }
 
-button[type="submit"]:active {
+button.action-button:active {
     transform: translateY(1px);
 }
 
@@ -148,7 +149,7 @@ label {
     color: white;
 }
 
-button[type="submit"],
+button.action-button,
 button[role="combobox"],
 input,
 .data-radix-popper-content-wrapper button,
@@ -164,50 +165,11 @@ h3 {
     color: #ffffff;
 }
 
-
-
-
-
-
-
-.glassy-button {
-    /* Layout and size */
-    display: inline-block;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 12px; /* Rounded corners */
-    text-align: center;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-
-    /* Background: Frosted glass effect */
-    background: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
-    backdrop-filter: blur(10px); /* Glass effect */
-    -webkit-backdrop-filter: blur(10px);
-
-    /* Border */
-    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
-
-    /* Box shadow: White glow and blueish shadow */
-    box-shadow:
-            0 -4px 6px rgba(255, 255, 255, 0.5), /* Top white glow */
-            0 4px 12px rgba(0, 123, 255, 0.3); /* Bottom blueish shadow */
-
-    /* Text styling */
-    color: #ffffff; /* Bright white text */
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Subtle text shadow */
-    text-transform: uppercase;
-
-    /* Smooth transitions */
-    transition: all 0.3s ease-in-out;
+.text-zinc-400 {
+    --tw-text-opacity: 1;
+    color: rgb(161 161 170 / var(--tw-text-opacity, 1));
 }
 
-/* Hover effect */
-.glassy-button:hover {
-    background: rgba(255, 255, 255, 0.2); /* Slightly more opaque */
-    box-shadow:
-            0 -4px 8px rgba(255, 255, 255, 0.7), /* Stronger top glow */
-            0 6px 16px rgba(0, 123, 255, 0.5); /* Stronger bottom shadow */
-    transform: translateY(-2px); /* Slight lift */
+.badge {
+    background-color: #b2d0e8;
 }
