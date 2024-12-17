@@ -126,8 +126,8 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   return (
     <div>
       <TransferSummary data={data} />
-      <p className="text-l font-semibold my-4">Steps</p>
-      <div className="flex flex-col m-5 gap-4">
+      <h3 class="text-2xl font-semibold leading-none tracking-tight mt-7">Steps</h3>
+      <div className="flex flex-col gap-4 mt-5">
         {plan.steps.map((step, i) => (
           <TransferStepView
             key={i}

@@ -56,7 +56,6 @@ body {
 button[type="submit"] {
     color: #1d2a3b;
     background: linear-gradient(to bottom, #bca4ec, #cfb9fa);
-    border-color: #e8f0ff;
     box-shadow: #0a3563 0 2px 2px 0;
 }
 
@@ -67,11 +66,19 @@ button[type="submit"]:hover, button[type="submit"]:focus {
             0 -2px 4px rgb(225, 207, 255),
             0 2px 6px rgba(0, 123, 255, 0.2);
     border-width: 1px;
+    border-color: #e8f0ff;
 }
 
 button[type="submit"]:active {
     transform: translateY(1px);
+}
 
+.font-highlight {
+    padding: 10px 30px;
+    text-align: center;
+    background: linear-gradient(to bottom, #97b1d1, #bccbe5);
+    color: #1d2a3b;
+    box-shadow: #0a3563 0 2px 2px 0;
 }
 
 button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item {
@@ -148,7 +155,8 @@ input,
 .select-box[data-state="open"],
 .select-box[data-state="open"] .select-item,
 .text-card-foreground,
-div[role="menubar"] {
+div[role="menubar"],
+.font-highlight {
    border-radius: 30px !important;
 }
 

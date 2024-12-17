@@ -153,7 +153,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         ? (ethereumAccount ?? undefined)
         : polkadotAccount?.address;
     setSourceAccount(newSourceAccount);
-    form.resetField("sourceAccount", { defaultValue: newSourceAccount });
+    console.log(newSourceAccount);
 
     let newDestinations = destinations;
     if (source.id !== watchSource) {
@@ -369,7 +369,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormControl>
                   <>
                     {source.type == "ethereum" ? (
-                      <SelectedEthereumWallet />
+                      <SelectedEthereumWallet field={field} />
                     ) : (
                       <SelectedPolkadotAccount
                         source={source.id}
