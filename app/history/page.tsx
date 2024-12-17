@@ -7,7 +7,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -484,7 +483,7 @@ export default function History() {
               </div>
             </Button>
             <Toggle
-              className="flex gap-2"
+              className="flex gap-2 outline-button"
               defaultPressed={false}
               pressed={showGlobal}
               onPressedChange={(p) => setShowGlobal(p)}

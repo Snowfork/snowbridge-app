@@ -43,7 +43,11 @@ body {
 }
 
 .footer-item {
-    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.75);
+    border-radius: 30px;
+    padding: 5px 10px;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
 .transfer-details {
@@ -115,10 +119,6 @@ body {
     stroke-width: 1.5;
 }
 
-.text-card-foreground button .lucide {
-    color: #0e3359;
-}
-
 label:not(.text-muted-foreground) {
     color: #d0e2fc;
     text-transform: uppercase;
@@ -174,6 +174,13 @@ h3 {
 
 .badge {
     background-color: #b2d0e8;
+    border: none;
+}
+.badge.bg-destructive {
+    background-color: #f87e7e !important;
+}
+.badge.bg-secondary {
+    background-color-color: #a9f87e !important;
 }
 
 .text-green-700 {
@@ -182,4 +189,17 @@ h3 {
 
 .text-red-700 {
     color: #f87e7e !important;
+}
+
+.walletModal {
+    background: linear-gradient(to bottom, #0e3359, #2363a9);
+    color: #ffffff;
+}
+
+.outline-button, .outline-button .lucide {
+    color: #1d2a3b;
+}
+
+.link-button .lucide {
+    color: #d4d9e3;
 }

@@ -84,7 +84,7 @@ export const Menu: FC = () => {
             Wallet:{" "}
             <Button
               className="w-full"
-              variant="outline"
+              variant="link"
               onClick={() => setPolkadotWalletModalOpen(true)}
             >
               {wallet?.title}
@@ -92,7 +92,7 @@ export const Menu: FC = () => {
           </p>
           <p>Account:</p>
         </div>
-        <SelectedPolkadotAccount />
+        <SelectedPolkadotAccount source="polkadot"/>
       </>
     );
   };
@@ -109,7 +109,7 @@ export const Menu: FC = () => {
             Wallet:{" "}
             <Button
               className="w-full"
-              variant="outline"
+              variant="link"
               onClick={async () => await open({ view: "Connect" })}
             >
               {walletType ?? "Unknown"}
@@ -164,8 +164,8 @@ export const Menu: FC = () => {
             <LucideWallet />
             <p className="pl-2 hidden md:flex">Wallets</p>
           </MenubarTrigger>
-          <MenubarContent align="center">
-            <div className="w-60">
+          <MenubarContent align="center" className="walletModal shadow-sm p-5">
+            <div className="w-90">
               <EthereumWallet />
               <MenubarSeparator></MenubarSeparator>
               <PolkadotWallet />
