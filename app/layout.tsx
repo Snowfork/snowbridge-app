@@ -41,11 +41,11 @@ export default function RootLayout({
                 <Image
                   className="mb-2"
                   src="/icon.svg"
-                  width={25}
-                  height={25}
+                  width={27}
+                  height={27}
                   alt="Snowbridge"
                 />
-                <h1 className="text-xl lg:text-xl px-2">
+                <h1 className="text-2xl lg:text-2xl px-2 text-light">
                   Snowbridge
                 </h1>
               </div>

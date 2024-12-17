@@ -1,13 +1,26 @@
 div[role="menubar"] {
     border: none;
+    padding: 0.50rem;
+    background-color: rgba(205, 228, 255, 0.75);
 }
 
-div[role="menubar"] p {
-    padding-left: 3px;
+div[role="menubar"] button {
+    border-left: 1px solid #b5cbe4;
+    border-radius: 0;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+}
+
+div[role="menubar"] button p {
+    color: #1d2a3b;
+}
+
+div[role="menubar"] button:first-child {
+    border: none;
 }
 
 .lucide {
-    color: #3e3e3e;
+    color: #57677e;
     width: 20px;
     height: 20px;
     stroke-width: 1.5;
@@ -29,7 +42,7 @@ body {
 }
 
 .transfer-details {
-    padding-top: 40px;
+    padding-top: 30px;
 }
 
 .selectIcon {
@@ -41,35 +54,67 @@ body {
 }
 
 button[type="submit"] {
-    color: hsl(0deg 0% 100%);
-    background-color: hsl(217, 45%, 25%);
+    color: #1d2a3b;
+    background: linear-gradient(to bottom, #bca4ec, #cfb9fa);
     border-color: #e8f0ff;
+    box-shadow: #0a3563 0 2px 2px 0;
 }
 
 button[type="submit"]:hover, button[type="submit"]:focus {
-    color: hsl(0deg 0% 100%);
-    background-color: hsl(217, 45%, 25%);
+    color: #1d2a3b;
+    background: linear-gradient(to bottom, #bca4ec, #cfb9fa);
+    box-shadow:
+            0 -2px 4px rgb(225, 207, 255),
+            0 2px 6px rgba(0, 123, 255, 0.2);
+    border-width: 1px;
+}
+
+button[type="submit"]:active {
+    transform: translateY(1px);
+
 }
 
 button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item {
-    border-color: #d6dcf1 !important;
-    background-color: #efedff !important;
+    border-color: #ffffff !important;
+    background-color: #ebe4ff !important;
+    color: #1d2a3b;
+}
+
+button[role="combobox"], input  {
+    padding: 20px 10px !important;
+    border-width: 1px !important;
+    margin-top: 2px !important;
+    box-shadow: #0a3563 0 2px 2px 0;
 }
 
 body {
-    /*background-image: url("/images/snowpattern.jpg");*/
-    background-image: url("/images/snow2.png");
-   /* background-repeat: repeat-x;
-    background-position: bottom;
-    background-size: 1000px;*/
+    background-image: url("/images/snow.png");
     background-size:cover
 }
 
 .text-card-foreground {
-    background-color: #edf3fa;
-    border-color: #daeaf8 !important;
-    border-radius: 2em;
+    background: linear-gradient(to bottom, #0e3359, #2363a9);
+    border: none;
     padding: 10px;
+}
+
+label:not(.text-muted-foreground) {
+    color: #d0e2fc;
+    text-transform: uppercase;
+}
+
+label {
+    margin:0;
+    padding:0;
+}
+
+.text-muted-foreground {
+    color: #7390c4;
+}
+
+.focus\:ring-ring:focus {
+    --tw-ring-color: hsl(0deg 0% 100%);
+    border-radius: 1px;
 }
 
 .shadow-sm {
@@ -78,4 +123,71 @@ body {
     0 4px 4px rgba(179, 195, 203, 0.15),
     0 8px 8px rgba(179, 195, 203, 0.15),
     0 16px 16px rgba(179, 195, 203, 0.15);
+}
+
+.text-light {
+    color: white;
+}
+
+button[type="submit"],
+button[role="combobox"],
+input,
+.data-radix-popper-content-wrapper button,
+.select-box[data-state="open"],
+.select-box[data-state="open"] .select-item,
+.text-card-foreground,
+div[role="menubar"] {
+   border-radius: 30px !important;
+}
+
+h3 {
+    color: #ffffff;
+}
+
+
+
+
+
+
+
+.glassy-button {
+    /* Layout and size */
+    display: inline-block;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px; /* Rounded corners */
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+
+    /* Background: Frosted glass effect */
+    background: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
+    backdrop-filter: blur(10px); /* Glass effect */
+    -webkit-backdrop-filter: blur(10px);
+
+    /* Border */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+
+    /* Box shadow: White glow and blueish shadow */
+    box-shadow:
+            0 -4px 6px rgba(255, 255, 255, 0.5), /* Top white glow */
+            0 4px 12px rgba(0, 123, 255, 0.3); /* Bottom blueish shadow */
+
+    /* Text styling */
+    color: #ffffff; /* Bright white text */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Subtle text shadow */
+    text-transform: uppercase;
+
+    /* Smooth transitions */
+    transition: all 0.3s ease-in-out;
+}
+
+/* Hover effect */
+.glassy-button:hover {
+    background: rgba(255, 255, 255, 0.2); /* Slightly more opaque */
+    box-shadow:
+            0 -4px 8px rgba(255, 255, 255, 0.7), /* Stronger top glow */
+            0 6px 16px rgba(0, 123, 255, 0.5); /* Stronger bottom shadow */
+    transform: translateY(-2px); /* Slight lift */
 }
