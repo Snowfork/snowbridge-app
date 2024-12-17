@@ -19,6 +19,11 @@ div[role="menubar"] button:first-child {
     border: none;
 }
 
+div[role="menubar"] .data-\[state\=open\]\:bg-accent[data-state="open"] {
+    background: none;
+    font-weight: bold;
+}
+
 .lucide {
     color: #57677e;
     width: 20px;
@@ -47,10 +52,6 @@ body {
 
 .selectIcon {
     margin: 4px 10px 4px 4px;
-}
-
-.transfer-fee {
-    padding-top: 8px;
 }
 
 button.action-button {
@@ -82,13 +83,13 @@ button.action-button:active {
     box-shadow: #0a3563 0 2px 2px 0;
 }
 
-button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item {
+button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item, .fake-dropdown {
     border-color: #ffffff !important;
     background-color: #ebe4ff !important;
     color: #1d2a3b;
 }
 
-button[role="combobox"], input  {
+button[role="combobox"], input, .fake-dropdown  {
     padding: 20px 10px !important;
     border-width: 1px !important;
     margin-top: 2px !important;
@@ -157,6 +158,7 @@ input,
 .select-box[data-state="open"] .select-item,
 .text-card-foreground,
 div[role="menubar"],
+.fake-dropdown,
 .font-highlight {
    border-radius: 30px !important;
 }
@@ -172,4 +174,12 @@ h3 {
 
 .badge {
     background-color: #b2d0e8;
+}
+
+.text-green-700 {
+    color: #a9f87e !important;
+}
+
+.text-red-700 {
+    color: #f87e7e !important;
 }

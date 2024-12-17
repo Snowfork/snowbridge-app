@@ -117,7 +117,7 @@ export const Menu: FC = () => {
           </p>
           <p className="text-xs">Account:</p>
         </div>
-        <SelectedEthereumWallet className="text-sm" walletChars={24} />
+        <SelectedEthereumWallet />
       </>
     );
   };
