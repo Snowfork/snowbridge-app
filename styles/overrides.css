@@ -113,7 +113,7 @@ body {
 }
 
 .text-card-foreground .lucide {
-    color: #d0e2fc;
+    color: #1d2a3b;
     width: 20px;
     height: 20px;
     stroke-width: 1.5;
@@ -130,7 +130,7 @@ label {
 }
 
 .text-muted-foreground {
-    color: #7390c4;
+    color: #97b2e1;
 }
 
 .focus\:ring-ring:focus {
