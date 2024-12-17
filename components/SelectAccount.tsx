@@ -44,10 +44,15 @@ export const SelectAccount: FC<SelectAccountProps> = ({
       ),
     [accounts, field.value],
   );
+
   useEffect(() => {
     // unset account selection if selected account is no longer found in accounts
     if (!allowManualInput && !selectedAccount) {
       field.onChange(undefined);
+    }
+    // if the field is not set and there are accounts available, select the first account
+    if (!field.value && accounts.length > 0) {
+      field.onChange(accounts[0].key);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
   }, [accounts, field.value, allowManualInput]);
@@ -58,7 +63,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
       <Select
         key={(destination ?? "unk") + accounts.length}
         onValueChange={field.onChange}
-        defaultValue={accounts.length > 0 ? accounts[0].key : undefined}
+        defaultValue={selectedAccount?.key}
         value={selectedAccount?.key}
         disabled={disabled}
       >

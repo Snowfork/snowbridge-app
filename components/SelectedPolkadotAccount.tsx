@@ -25,7 +25,8 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
     if (!polkadotAccount && polkadotAccounts && polkadotAccounts.length > 0) {
       setPolkadotAccount(polkadotAccounts[0].address);
     }
-  }, [setPolkadotAccount, polkadotAccounts, polkadotAccount]);
+  }, [polkadotAccounts, polkadotAccount]);
+
   if (polkadotAccounts && polkadotAccounts.length > 0) {
     return (
       <Select

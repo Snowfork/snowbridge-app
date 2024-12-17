@@ -96,6 +96,18 @@ body {
     background: linear-gradient(to bottom, #0e3359, #2363a9);
     border: none;
     padding: 10px;
+    color: #d0e2fc !important;
+}
+
+.text-card-foreground .lucide {
+    color: #d0e2fc;
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.5;
+}
+
+.text-card-foreground button .lucide {
+    color: #0e3359;
 }
 
 label:not(.text-muted-foreground) {

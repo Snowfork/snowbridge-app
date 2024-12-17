@@ -14,7 +14,7 @@ export function SelectItemWithIcon({label, link
         src={link}
         width={20}
         height={20}
-      />
+       alt={label}/>
     {label}
     </div>
   );
