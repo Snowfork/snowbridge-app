@@ -539,7 +539,7 @@ export const SwitchComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <FormControl>
-                      <Input type="string" disabled={true} value={tokenSymbol} />
+                      <Input type="string" disabled={true} value={tokenSymbol || ''} />
                     </FormControl>
                   </FormItem>
                 </div>
