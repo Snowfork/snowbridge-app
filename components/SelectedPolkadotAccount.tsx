@@ -45,7 +45,7 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
                 <SelectItem key={acc.address} value={acc.address}>
                   <SelectItemWithIcon
                     label={`${acc.name} (${trimAccount(acc.address, 18)})`}
-                    link={`/images/${source}.png`}
+                    image={source}
                   />
                 </SelectItem>
               );

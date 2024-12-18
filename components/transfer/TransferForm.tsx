@@ -308,7 +308,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                             <SelectItem key={s.id} value={s.id}>
                               <SelectItemWithIcon
                                 label={s.name}
-                                link={`/images/${s.id}.png`}
+                                image={s.id}
                               />
                             </SelectItem>
                           ))}
@@ -337,7 +337,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           <SelectItem key={s.id} value={s.id}>
                               <SelectItemWithIcon
                                 label={s.name}
-                                link={`/images/${s.id}.png`}
+                                image={s.id}
                               />
                           </SelectItem>
                           ))}
@@ -433,7 +433,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                             <SelectItem key={t.address} value={t.address}>
                               <SelectItemWithIcon
                                 label={t.id}
-                                link={`/images/${t.id}.png`}
+                                image={t.id}
                               />
                             </SelectItem>
                           ))}

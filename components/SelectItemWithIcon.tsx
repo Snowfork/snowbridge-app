@@ -1,20 +1,19 @@
 import Image from "next/image";
-import { SelectIcon } from "@/components/SelectIcon";
 
 interface SelectItemWithIconProps {
   label: string;
-  link: string;
+  image: string | undefined;
 }
-export function SelectItemWithIcon({label, link
+export function SelectItemWithIcon({label, image
 }: SelectItemWithIconProps) {
   return (
     <div className="flex items-center">
-      <Image
+      {image && <Image
         className="selectIcon"
-        src={link}
+        src={`/images/${image}.png`}
         width={20}
         height={20}
-       alt={label}/>
+       alt={label}/>}
     {label}
     </div>
   );
