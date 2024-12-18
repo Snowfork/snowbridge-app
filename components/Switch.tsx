@@ -594,7 +594,7 @@ export const SwitchComponent: FC = () => {
               ) : (
                 <Button
                   disabled={!transaction}
-                  className="w-full my-8"
+                  className="w-full my-8 action-button"
                   type="submit"
                 >
                   Submit
