@@ -10,7 +10,7 @@ export function SelectItemWithIcon({label, image
     <div className="flex items-center">
       {image && <Image
         className="selectIcon"
-        src={`/images/${image}.png`}
+        src={`/images/${image.toLowerCase()}.png`}
         width={20}
         height={20}
        alt={label}/>}

@@ -54,7 +54,7 @@ export function ConnectEthereumWalletButton({
   return (
     <>
       <Button
-        className="w-full"
+        className="w-full action-button"
         type="button"
         variant={variant ?? "link"}
         onClick={async (e) => {
