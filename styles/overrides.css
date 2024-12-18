@@ -19,9 +19,18 @@ div[role="menubar"] button:first-child {
     border: none;
 }
 
-div[role="menubar"] .data-\[state\=open\]\:bg-accent[data-state="open"] {
-    background: none;
-    font-weight: bold;
+div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
+    background: none !important;
+    font-weight: 400;
+    color: #0d1826;
+}
+
+div[role="menubar"] button[data-state="open"] .lucide,
+div[role="menubar"] button[data-hightlighted] .lucide,
+div[role="menubar"] .focus\:bg-accent:focus .lucide
+{
+    color: #0d1826;
+    stroke-width: 2;
 }
 
 .lucide {
@@ -159,7 +168,9 @@ input,
 .text-card-foreground,
 div[role="menubar"],
 .fake-dropdown,
-.font-highlight {
+.font-highlight,
+.outline-button[data-state="off"],
+.outline-button[data-state="on"]{
    border-radius: 30px !important;
 }
 
@@ -202,4 +213,12 @@ h3 {
 
 .link-button .lucide {
     color: #d4d9e3;
+}
+
+.outline-button[data-state="off"], .outline-button[data-state="off"] .lucide {
+    color: #d4d9e3;
+}
+
+.outline-button[data-state="off"] {
+    border-color: #d4d9e3;
 }
