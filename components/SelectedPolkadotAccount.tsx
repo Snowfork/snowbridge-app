@@ -13,7 +13,7 @@ import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { trimAccount } from "@/utils/formatting";
 
 type SelectedPolkadotAccountProps = {
-  field
+  field?: any
   source?: string;
 };
 export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({

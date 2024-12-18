@@ -3,13 +3,11 @@
 import { FC, useEffect } from "react";
 import { getEnvironment } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
-import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
+import { useWeb3Modal } from "@web3modal/ethers/react";
 import Image from "next/image";
 
 export type SelectedEthereumWalletProps = {
-  field
+  field?: any
 };
 export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
                                                                           field
