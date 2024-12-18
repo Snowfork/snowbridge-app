@@ -498,7 +498,7 @@ export default function History() {
           <hr />
           <Accordion
             type="single"
-            className="w-full"
+            className="w-full accordian"
             value={selectedItem ?? undefined}
             onValueChange={(v) => {
               setSelectedItem(v);
