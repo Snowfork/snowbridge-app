@@ -368,9 +368,12 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormControl>
                   <>
                     {source.type == "ethereum" ? (
-                      <SelectedEthereumWallet />
+                      <SelectedEthereumWallet
+                        field={field}
+                      />
                     ) : (
                       <SelectedPolkadotAccount
+                        field={field}
                         source={source.id}
                       />
                     )}

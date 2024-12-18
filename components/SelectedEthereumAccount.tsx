@@ -9,12 +9,21 @@ import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
 import Image from "next/image";
 
 export type SelectedEthereumWalletProps = {
+  field
 };
 export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
+                                                                          field
 }) => {
   const env = getEnvironment();
   const { account, chainId } = useConnectEthereumWallet();
   const { open } = useWeb3Modal();
+
+  useEffect(() => {
+    // If field is set, set the field value to the selected address
+    if (field && account) {
+      field.onChange(account);
+    }
+  }, [account]);
 
   if (account !== null && chainId !== null && chainId === env.ethChainId) {
     return (
