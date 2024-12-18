@@ -445,7 +445,10 @@ export const SwitchComponent: FC = () => {
                             <SelectGroup>
                               {sourceId !== "assethub" ? (
                                 <SelectItem key={"assethub"} value={"assethub"}>
-                                  Asset Hub
+                                  <SelectItemWithIcon
+                                    label="Asset Hub"
+                                    image="assethub"
+                                  />
                                 </SelectItem>
                               ) : (
                                 parachainsInfo.map(({ id, name }) => (
