@@ -153,7 +153,6 @@ export const TransferForm: FC<TransferFormProps> = ({
         ? (ethereumAccount ?? undefined)
         : polkadotAccount?.address;
     setSourceAccount(newSourceAccount);
-    console.log(newSourceAccount);
 
     let newDestinations = destinations;
     if (source.id !== watchSource) {
@@ -381,7 +380,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             </FormItem>
             )}
           />)}
-        <FormField
+          {beneficiaries && beneficiaries.length > 0 && (<FormField
           control={form.control}
           name="beneficiary"
           render={({ field }) => (
@@ -398,7 +397,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               <FormMessage />
             </FormItem>
           )}
-        />
+        />)}
         <div className="flex space-x-2">
           <div className="w-2/3">
             <FormField

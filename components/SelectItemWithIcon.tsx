@@ -13,8 +13,8 @@ export function SelectItemWithIcon({label, image
         src={`/images/${image.toLowerCase()}.png`}
         width={20}
         height={20}
-       alt={label}/>}
-      {image}
+       alt={image}/>}
+      {label}
     </div>
   );
 }
