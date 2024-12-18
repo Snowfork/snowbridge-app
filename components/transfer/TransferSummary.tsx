@@ -4,8 +4,10 @@ import { etherscanAddressLink, subscanAccountLink } from "@/lib/explorerLinks";
 import { getEnvironmentName } from "@/lib/snowbridge";
 import { FeeDisplay } from "../FeeDisplay";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
-import { formatTime } from "@/utils/formatting";
 import { estimateDelivery } from "@/lib/bridgeStatus";
+import {
+  Table, TableBody, TableRow, TableCell
+} from "../ui/table";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -45,57 +47,56 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
 
   return (
     <div className="flex flex-col">
-      <p className="text-l my-2 font-semibold">
+      <p className="text-l my-2 font-semibold font-highlight">
         Send {data.formData.amount} {data.tokenMetadata.symbol} from{" "}
         {data.source.name} to {data.destination.name}
       </p>
-      <div className="flex flex-col m-5 gap-2">
-        <p className="text-sm hidden md:flex">
-          Source Account:{" "}
-          <span
-            onClick={() => window.open(sourceAccountLink)}
-            className="inline whitespace-pre font-mono hover:underline cursor-pointer pl-2"
-          >
-            {data.formData.sourceAccount}
-          </span>
-        </p>
-        <p className="text-sm hidden md:flex">
-          Beneficiary:{" "}
-          <span
-            onClick={() => window.open(beneficiaryLink)}
-            className="inline whitespace-pre font-mono hover:underline cursor-pointer pl-2"
-          >
+      <div className="flex flex-col">
+        <Table>
+          <TableBody>
+            <TableRow >
+              <TableCell className="font-bold">From</TableCell>
+              <TableCell>{data.formData.sourceAccount}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-bold">To</TableCell>
+              <TableCell><span
+                onClick={() => window.open(beneficiaryLink)}
+                className="hover:underline cursor-pointer"
+              >
             {data.formData.beneficiary}
-          </span>
-        </p>
-        <div className="text-sm">
-          Transfer Fee:{" "}
-          <FeeDisplay
-            className="inline whitespace-pre font-mono pl-2"
-            source={data.source.type}
-            destination={data.destination}
-            token={data.formData.token}
-            displayDecimals={8}
-          />
-        </div>
-        <p className="text-sm">
-          Estimated Delivery:{" "}
-          <span className="inline whitespace-pre font-mono pl-2">
+          </span></TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-bold">Transfer Fee</TableCell>
+              <TableCell> <FeeDisplay
+                className="inline"
+                source={data.source.type}
+                destination={data.destination}
+                token={data.formData.token}
+                displayDecimals={8}
+              /></TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-bold">Estimated Delivery</TableCell>
+              <TableCell> <span className="">
             {isRefreshing
               ? "Calculating..."
               : statusError
                 ? "Could not estimate delivery"
                 : estimateDelivery(data.source.type, status)}
           </span>
-          <span className="text-muted-foreground">
+                <span className="text-muted-foreground">
             {" "}
-            (up to{" "}
-            {data.source.type === "ethereum"
-              ? "25 minutes"
-              : "4 hour 30 minutes"}
-            )
-          </span>
-        </p>
+                  (up to{" "}
+                  {data.source.type === "ethereum"
+                    ? "25 minutes"
+                    : "4 hour 30 minutes"}
+                  )
+          </span></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

@@ -16,23 +16,25 @@ export const TransferBusy: FC<TransferBusyProps> = ({
   data,
 }) => {
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col">
       {data !== undefined ? (
         <TransferSummary data={data} />
       ) : (
         <div className="hidden" />
       )}
-      <Image
-        className="animate-bounce mb-2"
-        src="/icon.svg"
-        width={32}
-        height={32}
-        alt="Smiling bridge"
-      />
-      <div>{message}</div>
-      <Button variant="destructive" onClick={onBack}>
-        Cancel
-      </Button>
+      <div className="items-center flex flex-col mt-20">
+        <Image
+          className="animate-bounce mb-2"
+          src="/icon.svg"
+          width={32}
+          height={32}
+          alt="Smiling bridge"
+        />
+        <div>{message}</div>
+        <Button className="mt-5" variant="secondary" onClick={onBack}>
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 };

@@ -21,7 +21,6 @@ export function RefreshButton({
   return (
     <Button
       variant="link"
-      size="sm"
       disabled={isDisabled}
       className={className}
       onClick={async () => {
