@@ -25,6 +25,7 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
   useEffect(() => {
+    console.log(polkadotAccount);
     if (!polkadotAccount && polkadotAccounts && polkadotAccounts.length > 0) {
       setPolkadotAccount(polkadotAccounts[0].address);
     }
