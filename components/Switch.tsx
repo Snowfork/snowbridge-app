@@ -548,7 +548,7 @@ export const SwitchComponent: FC = () => {
                 </div>
               </div>
               <div className="text-sm text-right text-muted-foreground px-1">
-                Transfer Fee: {feeDisplay}
+                Fee: {feeDisplay}
                 <br />
                 {sourceId === "assethub" ? null : (
                   <>

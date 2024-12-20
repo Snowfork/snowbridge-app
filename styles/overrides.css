@@ -14,7 +14,7 @@ body {
 div[role="menubar"] {
     border: none;
     padding: 0.50rem;
-    background-color: #c5eafc9e;
+    background-color: #91c0e2;
 }
 
 div[role="menubar"] button {
@@ -211,6 +211,7 @@ div[role="menubar"],
 
 .main-heading{
     color: #051821;
+    padding: 10px;
 }
 
 .border-b, .w-full.accordian {

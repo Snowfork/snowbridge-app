@@ -43,11 +43,11 @@ export default function RootLayout({
               <div className="flex mb-4 lg:mb-0">
                 <Image
                   src="/images/logo-blue.png"
-                  width={60}
-                  height={60}
+                  width={58}
+                  height={58}
                   alt="Snowbridge"
                 />
-                <h1 className="text-3xl font-semibold lg:text-4xl px-2 main-heading mt-3 ml-2">
+                <h1 className="text-3xl font-semibold lg:text-4xl px-2 main-heading ml-2">
                   Snowbridge
                 </h1>
               </div>
