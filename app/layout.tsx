@@ -43,22 +43,22 @@ export default function RootLayout({
               <div className="flex mb-4 lg:mb-0">
                 <Image
                   className="mb-2"
-                  src="/icon.svg"
-                  width={27}
-                  height={27}
+                  src="/images/logo-mono.svg"
+                  width={35}
+                  height={35}
                   alt="Snowbridge"
                 />
-                <h1 className="text-2xl lg:text-2xl px-2 text-light">
+                <h1 className="text-3xl font-semibold lg:text-4xl px-2 text-light">
                   Snowbridge
                 </h1>
               </div>
               <Menu />
             </div>
           </div>
-          <div className="w-full max-w-5xl flex place-content-center">
+          <div className="w-full max-w-5xl flex place-content-center mt-6">
             {children}
           </div>
-          <div className="w-full max-w-5xl flex flex-col place-items-center text-sm">
+          <div className="w-full max-w-5xl flex flex-col place-items-center text-sm mt-6">
             <Footer />
           </div>
           <Toaster />

@@ -46,11 +46,6 @@ div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-h
     stroke-width: 1.5;
 }
 
-.text-card-foreground  .accordian .lucide {
-    color: #b5cbe4;
-    margin-top: 2px;
-}
-
 .text-card-foreground .lucide {
     color: #1d2a3b;
 }
@@ -72,29 +67,24 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide
     margin-right: 5px;
 }
 
-.transfer-details {
-    padding-top: 30px;
-}
-
 .selectIcon {
     margin: 4px 10px 4px 4px;
 }
 
 button.action-button {
-    color: #1d2a3b;
-    background: linear-gradient(to bottom, #bca4ec, #cfb9fa);
+    color: #ffffff;
+    background: linear-gradient(to bottom, #2c5f88, #538399);
     box-shadow: #0a3563 0 2px 2px 0;
     padding: 22px;
+    border: 1px solid transparent; /* Keep box shadow from making the form bigger */
 }
 
 button.action-button:hover, button.action-button:focus {
-    color: #1d2a3b;
-    background: linear-gradient(to bottom, #bca4ec, #cfb9fa);
-    box-shadow:
-            0 -2px 4px rgb(225, 207, 255),
-            0 2px 6px rgba(0, 123, 255, 0.2);
+    color: #ffffff;
+    background: linear-gradient(to bottom, #396f9f, #6496ad);
+    box-shadow: #0a3563 0 2px 2px 0;
     border-width: 1px;
-    border-color: #e8f0ff;
+    border-color: #71a5c2;
 }
 
 button.action-button:active {
@@ -111,7 +101,7 @@ button.action-button:active {
 
 button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item, .fake-dropdown {
     border-color: #ffffff !important;
-    background-color: #ebe4ff !important;
+    background-color: #dde6f5 !important;
     color: #1d2a3b;
 }
 
@@ -119,33 +109,33 @@ button[role="combobox"], input, .fake-dropdown  {
     padding: 20px 10px !important;
     border-width: 1px !important;
     margin-top: 2px !important;
-    box-shadow: #0a3563 0 2px 2px 0;
+    box-shadow: #86b1de 0 2px 2px 0;
 }
 
 body {
-    background-image: url("/images/snow.png");
+    background-image: url("/images/snow2.png");
     background-size:cover
 }
 
 .text-card-foreground {
-    background: linear-gradient(to bottom, #0e3359, #2363a9);
+    background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);
     border: none;
     padding: 10px;
-    color: #d0e2fc !important;
+    color: #0d2b48 !important;
 }
 
 label:not(.text-muted-foreground) {
-    color: #d0e2fc;
+    color: #071831;
     text-transform: uppercase;
+}
+
+.text-muted-foreground {
+    color: #2e4575;
 }
 
 label {
     margin:0;
     padding:0;
-}
-
-.text-muted-foreground {
-    color: #97b2e1;
 }
 
 .focus\:ring-ring:focus {
@@ -180,8 +170,8 @@ div[role="menubar"],
    border-radius: 30px !important;
 }
 
-h3 {
-    color: #ffffff;
+.text-card-foreground h3 {
+    color: #163653;
 }
 
 .text-zinc-400 {
@@ -201,30 +191,27 @@ h3 {
 }
 
 .text-green-700 {
-    color: #a9f87e !important;
+    color: #207d6f !important;
 }
 
 .text-red-700 {
-    color: #ff9a9a !important;
+    color: #88232f !important;
 }
 
 .walletModal {
-    background: linear-gradient(to bottom, #0e3359, #2363a9);
-    color: #ffffff;
+    background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);
+    color: #173651;
 }
 
 .outline-button, .outline-button .lucide {
     color: #1d2a3b;
 }
-
-.link-button .lucide {
-    color: #d4d9e3;
+.link-button .lucide, .link-button p, .outline-button[data-state="off"],
+.outline-button[data-state="off"], .outline-button[data-state="off"] .lucide,
+.text-card-foreground  .accordian .lucide{
+    color: #173651;
 }
 
-.outline-button[data-state="off"], .outline-button[data-state="off"] .lucide {
-    color: #d4d9e3;
-}
-
-.outline-button[data-state="off"] {
-    border-color: #d4d9e3;
+.border-b, .w-full.accordian {
+    border-color: #d6f2ff;
 }
