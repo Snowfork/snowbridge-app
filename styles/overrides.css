@@ -14,7 +14,7 @@ body {
 div[role="menubar"] {
     border: none;
     padding: 0.50rem;
-    background-color: rgba(205, 228, 255, 0.75);
+    background-color: #c5eafc9e;
 }
 
 div[role="menubar"] button {
@@ -94,8 +94,8 @@ button.action-button:active {
 .font-highlight {
     padding: 10px 30px;
     text-align: center;
-    background: linear-gradient(to bottom, #97b1d1, #bccbe5);
-    color: #1d2a3b;
+    background: linear-gradient(to bottom, #396f9f, #6496ad);
+    color: #ffffff;
     box-shadow: #0a3563 0 2px 2px 0;
 }
 
@@ -113,7 +113,7 @@ button[role="combobox"], input, .fake-dropdown  {
 }
 
 body {
-    background-image: url("/images/snow2.png");
+    background-image: url("/images/snow3.jpg");
     background-size:cover
 }
 
