@@ -524,16 +524,18 @@ function SubmitButton({
     }
   }
   return (
-    <Button
-      disabled={context === null || tokenMetadata === null || validating}
-      className="w-full my-1 action-button"
-      type="submit"
-    >
-      {context === null
-        ? "Connecting..."
-        : validating
-          ? "Validating"
-          : "Submit"}
-    </Button>
+    <div className="flex flex-col items-center">
+      <Button
+        disabled={context === null || tokenMetadata === null || validating}
+        className="w-1/3 action-button"
+        type="submit"
+      >
+        {context === null
+          ? "Connecting..."
+          : validating
+            ? "Validating"
+            : "Submit"}
+      </Button>
+    </div>
   );
 }

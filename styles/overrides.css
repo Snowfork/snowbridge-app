@@ -212,6 +212,10 @@ div[role="menubar"],
     color: #173651;
 }
 
+.main-heading{
+    color: #051821;
+}
+
 .border-b, .w-full.accordian {
     border-color: #d6f2ff;
 }

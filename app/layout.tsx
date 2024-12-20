@@ -42,13 +42,12 @@ export default function RootLayout({
             <div className="w-full place-items-center justify-between flex flex-col md:flex-row">
               <div className="flex mb-4 lg:mb-0">
                 <Image
-                  className="mb-2"
-                  src="/images/logo-mono.svg"
-                  width={35}
-                  height={35}
+                  src="/images/logo-blue.png"
+                  width={60}
+                  height={60}
                   alt="Snowbridge"
                 />
-                <h1 className="text-3xl font-semibold lg:text-4xl px-2 text-light">
+                <h1 className="text-3xl font-semibold lg:text-4xl px-2 main-heading mt-4 ml-2">
                   Snowbridge
                 </h1>
               </div>

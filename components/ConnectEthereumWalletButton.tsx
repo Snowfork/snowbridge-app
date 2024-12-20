@@ -52,9 +52,9 @@ export function ConnectEthereumWalletButton({
   }
 
   return (
-    <>
+    <div className="flex flex-col items-center">
       <Button
-        className="w-full action-button"
+        className="w-1/3 action-button"
         type="button"
         variant={variant ?? "link"}
         onClick={async (e) => {
@@ -72,6 +72,6 @@ export function ConnectEthereumWalletButton({
         title="Ethereum Wallet Error"
         description={(windowEthereumError ?? "Unknown Error").toString()}
       />
-    </>
+    </div>
   );
 }
