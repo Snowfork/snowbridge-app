@@ -18,7 +18,6 @@ div[role="menubar"] {
 }
 
 div[role="menubar"] button {
-    border-left: 1px solid #b5cbe4;
     border-radius: 0;
     padding-top: 0.2rem;
     padding-bottom: 0.2rem;
@@ -26,10 +25,7 @@ div[role="menubar"] button {
 
 div[role="menubar"] button p {
     color: #1d2a3b;
-}
-
-div[role="menubar"] button:first-child {
-    border: none;
+    font-size: 15px;
 }
 
 div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
@@ -108,8 +104,9 @@ button[role="combobox"], input, .data-radix-popper-content-wrapper button, .sele
 button[role="combobox"], input, .fake-dropdown  {
     padding: 20px 10px !important;
     border-width: 1px !important;
-    margin-top: 2px !important;
+    margin-top: 5px !important;
     box-shadow: #86b1de 0 2px 2px 0;
+    font-size: 15px !important;
 }
 
 body {
@@ -134,7 +131,7 @@ label:not(.text-muted-foreground) {
 }
 
 label {
-    margin:0;
+    margin: 0px;
     padding:0;
 }
 
@@ -144,11 +141,11 @@ label {
 }
 
 .shadow-sm {
-    box-shadow: 0 1px 1px rgba(179, 195, 203, 0.15),
-    0 2px 2px rgba(179, 195, 203, 0.15),
-    0 4px 4px rgba(179, 195, 203, 0.15),
-    0 8px 8px rgba(179, 195, 203, 0.15),
-    0 16px 16px rgba(179, 195, 203, 0.15);
+    box-shadow: 0 1px 1px rgb(28 59 75 / 15%),
+    0 2px 2px rgb(96 162 196 / 15%),
+    0 4px 4px rgb(59 108 132 / 15%),
+    0 8px 8px rgb(56 92 109 / 15%),
+    0 16px 16px rgb(56 110 136 / 15%);
 }
 
 .text-light {

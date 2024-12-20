@@ -47,7 +47,7 @@ export default function RootLayout({
                   height={60}
                   alt="Snowbridge"
                 />
-                <h1 className="text-3xl font-semibold lg:text-4xl px-2 main-heading mt-4 ml-2">
+                <h1 className="text-3xl font-semibold lg:text-4xl px-2 main-heading mt-3 ml-2">
                   Snowbridge
                 </h1>
               </div>
