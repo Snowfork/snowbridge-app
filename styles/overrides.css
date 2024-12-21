@@ -217,3 +217,7 @@ div[role="menubar"],
 .border-b, .w-full.accordian {
     border-color: #d6f2ff;
 }
+
+button.bg-primary:hover {
+    background-color: hsl(208, 56%, 20%, 0.9) !important;
+}

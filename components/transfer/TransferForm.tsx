@@ -449,7 +449,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             />
           </div>
         </div>
-        <div className="text-sm text-right text-muted-foreground px-1 mt-1">
+        <div className="text-sm text-center text-muted-foreground px-1 mt-1">
           Transfer Fee:{" "}
           <FeeDisplay
             className="inline"
