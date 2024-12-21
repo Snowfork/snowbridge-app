@@ -126,8 +126,8 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   return (
     <div>
       <TransferSummary data={data} />
-      <p className="text-l font-semibold my-4">Steps</p>
-      <div className="flex flex-col m-5 gap-4">
+      <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">Steps</h3>
+      <div className="flex flex-col gap-4 mt-5">
         {plan.steps.map((step, i) => (
           <TransferStepView
             key={i}
@@ -153,6 +153,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
             }
           >
             <Button
+              className="w-full my-1 action-button"
               size="sm"
               onClick={async () => {
                 if (onRefreshTransfer) await onRefreshTransfer(data);
@@ -163,13 +164,13 @@ export const TransferSteps: FC<TransferStepsProps> = ({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-4 justify-evenly">
+      <div className="flex items-center gap-4 justify-end">
         <RefreshButton
           onClick={async () => {
             if (onRefreshTransfer) await onRefreshTransfer(data, true);
           }}
         />
-        <Button variant="destructive" onClick={onBack}>
+        <Button variant="link" onClick={onBack}>
           Back
         </Button>
       </div>

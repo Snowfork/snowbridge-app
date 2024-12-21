@@ -107,7 +107,7 @@ export function TransferTitle({
   return (
     <div className="grid grid-cols-8 justify-stretch w-full">
       <TransferStatusBadge
-        className={!(showBagde ?? true) ? "hidden" : ""}
+        className={!(showBagde ?? true) ? "hidden" : "ml-8"}
         transfer={transfer}
       />
       <div

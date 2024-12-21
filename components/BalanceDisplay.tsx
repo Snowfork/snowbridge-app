@@ -5,6 +5,9 @@ import { useAtomValue } from "jotai";
 import { polkadotAccountAtom } from "@/store/polkadot";
 import { ethereumAccountAtom } from "@/store/ethereum";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
+import {
+  FormLabel,
+} from "./ui/form";
 
 interface BalanceDisplayProps {
   source: environment.TransferLocation;
@@ -38,26 +41,26 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   }, [error]);
   if (error && !balanceInfo) {
     return (
-      <div
+      <FormLabel
         className={
           "text-sm text-right text-muted-foreground px-1 " +
           (sourceAccount ? " visible" : " hidden")
         }
       >
         Balances: Error...
-      </div>
+      </FormLabel>
     );
   }
   if (balanceInfo === undefined || tokenMetadata === null) {
     return (
-      <div
+      <FormLabel
         className={
           "text-sm text-right text-muted-foreground px-1 " +
           (sourceAccount ? " visible" : " hidden")
         }
       >
         Balances: Fetching...
-      </div>
+      </FormLabel>
     );
   }
 
@@ -79,13 +82,13 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   })} ${balanceInfo.nativeSymbol}`;
 
   return (
-    <div
+    <FormLabel
       className={
         "text-sm text-right text-muted-foreground px-1 " +
         (sourceAccount ? " visible" : " hidden")
       }
     >
       Balances: {nativeBalance} ; {tokenBalance} {allowance}
-    </div>
+    </FormLabel>
   );
 };

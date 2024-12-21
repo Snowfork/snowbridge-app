@@ -58,6 +58,7 @@ import {
 import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
+import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -412,7 +413,10 @@ export const SwitchComponent: FC = () => {
                                 ...parachainsInfo,
                               ].map(({ id, name }) => (
                                 <SelectItem key={id} value={id}>
-                                  {name}
+                                  <SelectItemWithIcon
+                                    label={name}
+                                    image={id}
+                                  />
                                 </SelectItem>
                               ))}
                             </SelectGroup>
@@ -441,12 +445,18 @@ export const SwitchComponent: FC = () => {
                             <SelectGroup>
                               {sourceId !== "assethub" ? (
                                 <SelectItem key={"assethub"} value={"assethub"}>
-                                  Asset Hub
+                                  <SelectItemWithIcon
+                                    label="Asset Hub"
+                                    image="assethub"
+                                  />
                                 </SelectItem>
                               ) : (
                                 parachainsInfo.map(({ id, name }) => (
                                   <SelectItem key={id} value={id}>
-                                    {name}
+                                    <SelectItemWithIcon
+                                      label={name}
+                                      image={id}
+                                    />
                                   </SelectItem>
                                 ))
                               )}
@@ -471,7 +481,7 @@ export const SwitchComponent: FC = () => {
                     </FormDescription>
                     <FormControl>
                       <>
-                        <SelectedPolkadotAccount />
+                        <SelectedPolkadotAccount source={sourceId} />
                         <PolkadotBalance
                           sourceAccount={sourceAccount ?? ""}
                           sourceId={sourceId}
@@ -504,6 +514,7 @@ export const SwitchComponent: FC = () => {
                         field={field}
                         allowManualInput={false}
                         disabled={true}
+                        destination="kilt"
                       />
                     </FormControl>
                     <FormMessage />
@@ -520,7 +531,7 @@ export const SwitchComponent: FC = () => {
                       <FormItem>
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
-                          <Input type="string" placeholder="0.0" {...field} />
+                          <Input type="string" placeholder="0.0" className="text-right" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -530,14 +541,14 @@ export const SwitchComponent: FC = () => {
                 <div className="w-1/3">
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
-                    <div className="flex h-10 w-full rounded-md bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                      {tokenSymbol}
-                    </div>
+                    <FormControl>
+                      <Input type="string" disabled={true} value={tokenSymbol || ''} />
+                    </FormControl>
                   </FormItem>
                 </div>
               </div>
               <div className="text-sm text-right text-muted-foreground px-1">
-                Transfer Fee: {feeDisplay}
+                Fee: {feeDisplay}
                 <br />
                 {sourceId === "assethub" ? null : (
                   <>
@@ -583,7 +594,7 @@ export const SwitchComponent: FC = () => {
               ) : (
                 <Button
                   disabled={!transaction}
-                  className="w-full my-8"
+                  className="w-full my-8 action-button"
                   type="submit"
                 >
                   Submit

@@ -17,6 +17,7 @@ import { AccountInfo } from "@/utils/types";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
+import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 
 type SelectAccountProps = {
   field: any;
@@ -34,8 +35,6 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   destination,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
-  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
 
   const selectedAccount = useMemo(
     () =>
@@ -45,25 +44,18 @@ export const SelectAccount: FC<SelectAccountProps> = ({
       ),
     [accounts, field.value],
   );
+
   useEffect(() => {
     // unset account selection if selected account is no longer found in accounts
     if (!allowManualInput && !selectedAccount) {
       field.onChange(undefined);
     }
+    // if the field is not set and there are accounts available, select the first account
+    if (!field.value && accounts.length > 0) {
+      field.onChange(accounts[0].key);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
   }, [accounts, field.value, allowManualInput]);
-
-  if (!allowManualInput && accountFromWallet && accounts.length == 0) {
-    if (
-      (ethereumAccounts == null || ethereumAccounts.length == 0) &&
-      destination === "ethereum"
-    ) {
-      return <ConnectEthereumWalletButton />;
-    }
-    if (polkadotAccounts == null || polkadotAccounts.length == 0) {
-      return <ConnectPolkadotWalletButton />;
-    }
-  }
 
   let input: JSX.Element;
   if (!allowManualInput && accountFromWallet && accounts.length > 0) {
@@ -83,20 +75,17 @@ export const SelectAccount: FC<SelectAccountProps> = ({
             {accounts.map((account, i) =>
               account.type === "substrate" ? (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
-                  <div>
-                    {account.name}{" "}
-                    <pre className="lg:hidden inline">
-                      ({trimAccount(account.key, 18)})
-                    </pre>
-                    <pre className="hidden lg:inline">({account.key})</pre>
-                  </div>
+                  <SelectItemWithIcon
+                    label={`${account.name} (${trimAccount(account.key)})`}
+                    image={destination}
+                  />
                 </SelectItem>
               ) : (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
-                  <pre className="lg:hidden inline">
-                    {trimAccount(account.name, 18)}
-                  </pre>
-                  <pre className="hidden lg:inline">{account.name}</pre>
+                  <SelectItemWithIcon
+                    label={account.name}
+                    image={destination}
+                  />
                 </SelectItem>
               ),
             )}
