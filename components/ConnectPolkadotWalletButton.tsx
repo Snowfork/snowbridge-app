@@ -28,7 +28,7 @@ export function ConnectPolkadotWalletButton({
         setPolkadotWalletModalOpen(true);
       }}
     >
-      Connect Polkadot
+      Connect Wallet
     </Button>
   );
 }

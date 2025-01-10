@@ -61,7 +61,7 @@ export function ConnectEthereumWalletButton({
           await open({ view: "Connect" });
         }}
       >
-        Connect Ethereum
+        Connect Wallet
       </Button>
       <ErrorDialog
         open={windowEthereumError !== null}
