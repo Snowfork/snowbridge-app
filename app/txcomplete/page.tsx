@@ -92,9 +92,6 @@ function TxCard(props: TxCardProps) {
                   : "",
               )}
             />
-            <Link href="/">
-              <Button variant="link">Done</Button>
-            </Link>
             <Link href="/history">
               <Button variant="link">Transaction History</Button>
             </Link>
