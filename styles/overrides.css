@@ -88,11 +88,10 @@ button.action-button:active {
 }
 
 .font-highlight {
-    padding: 10px 30px;
+    padding: 5px;
     text-align: center;
     background: linear-gradient(to bottom, #396f9f, #6496ad);
     color: #ffffff;
-    box-shadow: #0a3563 0 2px 2px 0;
 }
 
 button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item, .fake-dropdown {
