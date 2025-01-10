@@ -112,7 +112,7 @@ export const Menu: FC = () => {
               variant="link"
               onClick={async () => await open({ view: "Connect" })}
             >
-              {walletType ?? "Select Ethereum"}
+              {walletType ?? "Connect Ethereum"}
             </Button>{" "}
           </p>
           <p className="text-xs">Account:</p>
