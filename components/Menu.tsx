@@ -103,7 +103,7 @@ export const Menu: FC = () => {
     const { open } = useWeb3Modal();
     return (
       <>
-        <div className={account === null ? "hidden" : ""}>
+        <div>
           <h1 className="font-semibold py-2">Ethereum</h1>
           <p className="text-xs">
             Wallet:{" "}
@@ -112,7 +112,7 @@ export const Menu: FC = () => {
               variant="link"
               onClick={async () => await open({ view: "Connect" })}
             >
-              {walletType ?? "Unknown"}
+              {walletType ?? "Select Ethereum"}
             </Button>{" "}
           </p>
           <p className="text-xs">Account:</p>
