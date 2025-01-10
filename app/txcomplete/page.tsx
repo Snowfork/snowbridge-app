@@ -113,7 +113,7 @@ function TxComponent() {
 
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
     const history = data?.find(
-      (x) => x.id.toLowerCase() === decoded.id.toLowerCase(),
+      (x) => x.id?.toLowerCase() === decoded.id.toLowerCase(),
     );
     return [history ?? decoded, history !== undefined];
   }, [data, searchParams]);
