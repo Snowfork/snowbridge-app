@@ -8,23 +8,30 @@ import {
   HISTORY_IN_SECONDS,
   SKIP_LIGHT_CLIENT_UPDATES,
   getEnvironment,
+  getEnvironmentName,
   getErrorMessage,
   getTransferHistory,
+  getTransferHistoryV2,
 } from "@/lib/snowbridge";
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-const CACHE_REVALIDATE_IN_SECONDS = 10 * 60; // 10 minutes
+const CACHE_REVALIDATE_IN_SECONDS = 1 * 60; // 1 minutes
 
 const getCachedTransferHistory = unstable_cache(
   () => {
-    const env = getEnvironment();
     try {
-      return getTransferHistory(
-        env,
-        SKIP_LIGHT_CLIENT_UPDATES,
-        HISTORY_IN_SECONDS,
-      );
+      const envName = getEnvironmentName();
+      const env = getEnvironment();
+      if (envName == "polkadot_mainnet") {
+        return getTransferHistoryV2(env);
+      } else {
+        return getTransferHistory(
+          env,
+          SKIP_LIGHT_CLIENT_UPDATES,
+          HISTORY_IN_SECONDS,
+        );
+      }
     } catch (err) {
       getErrorMessage(err);
       return Promise.resolve([]);
