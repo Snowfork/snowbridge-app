@@ -21,14 +21,14 @@ export function ConnectPolkadotWalletButton({
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
   return (
     <Button
-      className={cn("w-full", className)}
+      className={cn("w-full action-button", className)}
       variant={variant ?? "link"}
       onClick={(e) => {
         e.preventDefault();
         setPolkadotWalletModalOpen(true);
       }}
     >
-      Connect Polkadot
+      Connect Wallet
     </Button>
   );
 }

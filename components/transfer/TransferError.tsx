@@ -47,7 +47,7 @@ export const TransferError: FC<TransferErrorProps> = ({
         ))}
       </ol>
       <div className="flex flex-col items-center gap-4">
-        <Button variant="destructive" onClick={onBack}>
+        <Button variant="default" onClick={onBack}>
           Back
         </Button>
       </div>

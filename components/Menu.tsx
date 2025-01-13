@@ -84,7 +84,7 @@ export const Menu: FC = () => {
             Wallet:{" "}
             <Button
               className="w-full"
-              variant="outline"
+              variant="link"
               onClick={() => setPolkadotWalletModalOpen(true)}
             >
               {wallet?.title}
@@ -92,7 +92,7 @@ export const Menu: FC = () => {
           </p>
           <p>Account:</p>
         </div>
-        <SelectedPolkadotAccount />
+        <SelectedPolkadotAccount source="polkadot"/>
       </>
     );
   };
@@ -103,21 +103,21 @@ export const Menu: FC = () => {
     const { open } = useWeb3Modal();
     return (
       <>
-        <div className={account === null ? "hidden" : ""}>
+        <div>
           <h1 className="font-semibold py-2">Ethereum</h1>
           <p className="text-xs">
             Wallet:{" "}
             <Button
               className="w-full"
-              variant="outline"
+              variant="link"
               onClick={async () => await open({ view: "Connect" })}
             >
-              {walletType ?? "Unknown"}
+              {walletType ?? "Connect Ethereum"}
             </Button>{" "}
           </p>
           <p className="text-xs">Account:</p>
         </div>
-        <SelectedEthereumWallet className="text-sm" walletChars={24} />
+        <SelectedEthereumWallet />
       </>
     );
   };
@@ -164,69 +164,13 @@ export const Menu: FC = () => {
             <LucideWallet />
             <p className="pl-2 hidden md:flex">Wallets</p>
           </MenubarTrigger>
-          <MenubarContent align="center">
-            <div className="w-60">
+          <MenubarContent align="center" className="walletModal shadow-sm p-5">
+            <div className="w-90">
               <EthereumWallet />
               <MenubarSeparator></MenubarSeparator>
               <PolkadotWallet />
             </div>
           </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarContent align="center">
-            <Button
-              className="flex items-center justify-start w-auto h-auto gap-2"
-              variant="link"
-              onClick={() =>
-                window.open("https://github.com/Snowfork/snowbridge")
-              }
-            >
-              <Github className="w-[40px] h-[40px]" />
-              <p>GitHub</p>
-            </Button>
-            <Button
-              className="flex items-center justify-start w-auto h-auto gap-2"
-              variant="link"
-              onClick={() =>
-                window.open(
-                  "https://github.com/Snowfork/snowbridge-app/issues/new/choose",
-                )
-              }
-            >
-              <LucideBug className="w-[40px] h-[40px]" />
-              <p>Report an issue</p>
-            </Button>
-            <Button
-              className="flex items-center justify-start w-auto h-auto gap-2"
-              variant="link"
-              onClick={() => window.open("https://docs.snowbridge.network/")}
-            >
-              <LucideBookText className="w-[40px] h-[40px]" />
-              <p>Docs</p>
-            </Button>
-            <Button
-              className={cn(
-                "flex items-center justify-start w-auto h-auto gap-2",
-                envName === "polkadot_mainnet" ? "" : "hidden",
-              )}
-              variant="link"
-              onClick={() =>
-                window.open("https://dune.com/substrate/snowbridge")
-              }
-            >
-              <Image
-                src="https://dune.com/assets/DuneLogoCircle.svg"
-                width={40}
-                height={40}
-                alt="Dune Logo"
-              />
-              <p>Snowbridge Dune Dashboard</p>
-            </Button>
-          </MenubarContent>
-          <MenubarTrigger>
-            <LucideMenu />
-            <p className="pl-2 hidden md:flex">More</p>
-          </MenubarTrigger>
         </MenubarMenu>
       </Menubar>
       <PolkadotWalletDialog />
