@@ -8,7 +8,6 @@ import {
   HISTORY_IN_SECONDS,
   SKIP_LIGHT_CLIENT_UPDATES,
   getEnvironment,
-  getEnvironmentName,
   getErrorMessage,
   getTransferHistory,
   getTransferHistoryV2,
@@ -21,9 +20,9 @@ const CACHE_REVALIDATE_IN_SECONDS = 1 * 60; // 1 minutes
 const getCachedTransferHistory = unstable_cache(
   () => {
     try {
-      const envName = getEnvironmentName();
+      let graphqlApiEnabled = process.env['GRAPHQL_API_ENABLED'] == 'true'
       const env = getEnvironment();
-      if (envName == "polkadot_mainnet") {
+      if (graphqlApiEnabled) {
         return getTransferHistoryV2(env);
       } else {
         return getTransferHistory(
