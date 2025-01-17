@@ -39,7 +39,7 @@ export function ConnectEthereumWalletButton({
         <Button
           className={cn("w-full", className)}
           type="button"
-          variant="destructive"
+          variant="default"
           onClick={async (_) => {
             await switchNetwork(env.ethChainId);
             track("Switch Network");
@@ -52,16 +52,16 @@ export function ConnectEthereumWalletButton({
   }
 
   return (
-    <>
+    <div className="flex flex-col items-center">
       <Button
-        className="w-full"
+        className="w-1/3 action-button"
         type="button"
         variant={variant ?? "link"}
         onClick={async (e) => {
           await open({ view: "Connect" });
         }}
       >
-        Connect Ethereum
+        Connect Wallet
       </Button>
       <ErrorDialog
         open={windowEthereumError !== null}
@@ -72,6 +72,6 @@ export function ConnectEthereumWalletButton({
         title="Ethereum Wallet Error"
         description={(windowEthereumError ?? "Unknown Error").toString()}
       />
-    </>
+    </div>
   );
 }

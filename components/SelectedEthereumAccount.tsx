@@ -1,45 +1,39 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { trimAccount } from "@/utils/formatting";
-import { track } from "@vercel/analytics/react";
 import { FC, useEffect } from "react";
-import { Button } from "./ui/button";
-import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
 import { getEnvironment } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
+import { useWeb3Modal } from "@web3modal/ethers/react";
+import Image from "next/image";
 
 export type SelectedEthereumWalletProps = {
-  className?: string;
-  walletChars?: number;
+  field?: any
 };
 export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
-  className,
-  walletChars,
+                                                                          field
 }) => {
   const env = getEnvironment();
   const { account, chainId } = useConnectEthereumWallet();
   const { open } = useWeb3Modal();
 
-  if (account === null || chainId === null || chainId !== env.ethChainId) {
-    return <ConnectEthereumWalletButton />;
-  }
+  useEffect(() => {
+    // If field is set, set the field value to the selected address
+    if (field && account) {
+      field.onChange(account);
+    }
+  }, [account]);
 
-  return (
-    <>
-      <div
-        className={cn(
-          "hover:underline hover:cursor-pointer overflow-clip text-ellipsis",
-          className,
-        )}
-        onClick={async () => await open({ view: "Account" })}
-      >
-        <pre className="inline md:hidden">
-          {trimAccount(account, walletChars ?? 26)}
-        </pre>
-        <pre className="w-auto hidden md:inline">{account}</pre>
+  if (account !== null && chainId !== null && chainId === env.ethChainId) {
+    return (
+      <div onClick={async () => await open({ view: "Account" })} className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 fake-dropdown">
+        <Image
+          className="selectIcon"
+          src={`/images/ethereum.png`}
+          width={20}
+          height={20}
+          alt="ethereum"/>
+        {account}
       </div>
-    </>
-  );
+    );
+  }
 };

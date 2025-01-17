@@ -48,7 +48,7 @@ function TxCard(props: TxCardProps) {
   return (
     <Card className="w-[360px] md:w-2/3">
       <CardHeader>
-        <CardTitle>Transfer Status</CardTitle>
+        <CardTitle>Nice! You did it.</CardTitle>
         <CardDescription className="hidden md:flex">
           <TransferTitle
             transfer={transfer}
@@ -73,7 +73,7 @@ function TxCard(props: TxCardProps) {
             Transfer can take up to{" "}
             {getEnvDetail(transfer, env)?.type !== "ethereum"
               ? "25 minutes"
-              : "4 hour 30 minutes"}
+              : "35-60 minutes"}
           </div>
           <div>
             <Link
@@ -83,7 +83,7 @@ function TxCard(props: TxCardProps) {
               See in History
             </Link>
           </div>
-          <div className="flex justify-evenly">
+          <div className="flex justify-end">
             <RefreshButton
               onClick={refresh}
               className={cn(
@@ -92,8 +92,8 @@ function TxCard(props: TxCardProps) {
                   : "",
               )}
             />
-            <Link href="/">
-              <Button>Done</Button>
+            <Link href="/history">
+              <Button variant="link">Transaction History</Button>
             </Link>
           </div>
         </div>

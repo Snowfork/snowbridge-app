@@ -1,0 +1,222 @@
+/* Fonts */
+body {
+    font-family: 'Funnel Display', sans-serif !important;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.font-semibold {
+    font-weight: 300;
+}
+
+/* Menubar */
+div[role="menubar"] {
+    border: none;
+    padding: 0.50rem;
+    background-color: #91c0e2;
+}
+
+div[role="menubar"] button {
+    border-radius: 0;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+}
+
+div[role="menubar"] button p {
+    color: #1d2a3b;
+    font-size: 15px;
+}
+
+div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
+    background: none !important;
+    font-weight: 400;
+    color: #0d1826;
+}
+
+/* Icons */
+.lucide {
+    color: #57677e;
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.5;
+}
+
+.text-card-foreground .lucide {
+    color: #1d2a3b;
+}
+
+div[role="menubar"] button[data-state="open"] .lucide,
+div[role="menubar"] button[data-hightlighted] .lucide,
+div[role="menubar"] .focus\:bg-accent:focus .lucide
+{
+    color: #0d1826;
+    stroke-width: 2;
+}
+
+/* Footer */
+.footer-item {
+    background-color: rgba(255, 255, 255, 0.75);
+    border-radius: 30px;
+    padding: 5px 10px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.selectIcon {
+    margin: 4px 10px 4px 4px;
+}
+
+button.action-button {
+    color: #ffffff;
+    background: linear-gradient(to bottom, #2c5f88, #538399);
+    box-shadow: #0a3563 0 2px 2px 0;
+    padding: 22px;
+    border: 1px solid transparent; /* Keep box shadow from making the form bigger */
+}
+
+button.action-button:hover, button.action-button:focus {
+    color: #ffffff;
+    background: linear-gradient(to bottom, #396f9f, #6496ad);
+    box-shadow: #0a3563 0 2px 2px 0;
+    border-width: 1px;
+    border-color: #71a5c2;
+}
+
+button.action-button:active {
+    transform: translateY(1px);
+}
+
+.font-highlight {
+    padding: 5px;
+    text-align: center;
+    background: linear-gradient(to bottom, #396f9f, #6496ad);
+    color: #ffffff;
+}
+
+button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item, .fake-dropdown {
+    border-color: #ffffff !important;
+    background-color: #dde6f5 !important;
+    color: #1d2a3b;
+}
+
+button[role="combobox"], input, .fake-dropdown  {
+    padding: 20px 10px !important;
+    border-width: 1px !important;
+    margin-top: 5px !important;
+    box-shadow: #86b1de 0 2px 2px 0;
+    font-size: 15px !important;
+}
+
+body {
+    background-image: url("/images/snow5.jpg");
+    background-size:cover
+}
+
+.text-card-foreground {
+    background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);
+    border: none;
+    padding: 10px;
+    color: #0d2b48 !important;
+}
+
+label:not(.text-muted-foreground) {
+    color: #071831;
+    text-transform: uppercase;
+}
+
+.text-muted-foreground {
+    color: #2e4575;
+}
+
+label {
+    margin: 0px;
+    padding:0;
+}
+
+.focus\:ring-ring:focus {
+    --tw-ring-color: hsl(0deg 0% 100%);
+    border-radius: 1px;
+}
+
+.shadow-sm {
+    box-shadow: 0 1px 1px rgb(28 59 75 / 15%),
+    0 2px 2px rgb(96 162 196 / 15%),
+    0 4px 4px rgb(59 108 132 / 15%),
+    0 8px 8px rgb(56 92 109 / 15%),
+    0 16px 16px rgb(56 110 136 / 15%);
+}
+
+.text-light {
+    color: white;
+}
+
+button.action-button,
+button[role="combobox"],
+input,
+.data-radix-popper-content-wrapper button,
+.select-box[data-state="open"],
+.select-box[data-state="open"] .select-item,
+.text-card-foreground,
+div[role="menubar"],
+.fake-dropdown,
+.font-highlight,
+.outline-button[data-state="off"],
+.outline-button[data-state="on"]{
+   border-radius: 30px !important;
+}
+
+.text-card-foreground h3 {
+    color: #163653;
+}
+
+.text-zinc-400 {
+    --tw-text-opacity: 1;
+    color: rgb(161 161 170 / var(--tw-text-opacity, 1));
+}
+
+.badge {
+    background-color: #e4f1fb;
+    border: none;
+}
+.badge.bg-destructive {
+    background-color: #f87e7e !important;
+}
+.badge.bg-secondary {
+    background-color: #a9f87e !important;
+}
+
+.text-green-700 {
+    color: #207d6f !important;
+}
+
+.text-red-700 {
+    color: #88232f !important;
+}
+
+.walletModal {
+    background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);
+    color: #173651;
+}
+
+.outline-button, .outline-button .lucide {
+    color: #1d2a3b;
+}
+.link-button .lucide, .link-button p, .outline-button[data-state="off"],
+.outline-button[data-state="off"], .outline-button[data-state="off"] .lucide,
+.text-card-foreground  .accordian .lucide{
+    color: #173651;
+}
+
+.main-heading{
+    color: #051821;
+    padding: 10px;
+}
+
+.border-b, .w-full.accordian {
+    border-color: #d6f2ff;
+}
+
+button.bg-primary:hover {
+    background-color: hsl(208, 56%, 20%, 0.9) !important;
+}
