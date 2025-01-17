@@ -15,12 +15,12 @@ import {
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-const CACHE_REVALIDATE_IN_SECONDS = 1 * 60; // 1 minutes
+const CACHE_REVALIDATE_IN_SECONDS = 2 * 60; // 2 minutes
 
 const getCachedTransferHistory = unstable_cache(
   () => {
     try {
-      let graphqlApiEnabled = process.env['GRAPHQL_API_ENABLED'] == 'true'
+      let graphqlApiEnabled = process.env["GRAPHQL_API_ENABLED"] == "true";
       const env = getEnvironment();
       if (graphqlApiEnabled) {
         return getTransferHistoryV2(env);
