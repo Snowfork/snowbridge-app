@@ -82,7 +82,7 @@ importers:
         version: 1.5.0
       '@web3modal/ethers':
         specifier: ^5.1.11
-        version: 5.1.11(@types/react@18.3.12)(bufferutil@4.0.8)(ethers@6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)
+        version: 5.1.11(@types/react@18.3.12)(bufferutil@4.0.8)(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)
       base64url:
         specifier: ^3.0.1
         version: 3.0.1
@@ -99,8 +99,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       ethers:
-        specifier: ^6.13.4
-        version: 6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: ^6.13.5
+        version: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       jotai:
         specifier: ^2.10.2
         version: 2.10.2(@types/react@18.3.12)(react@18.3.1)
@@ -2588,8 +2588,8 @@ packages:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
 
-  ethers@6.13.4:
-    resolution: {integrity: sha512-21YtnZVg4/zKkCQPjrDj38B1r4nQvTZLopUGMLQ1ePU2zV/joCfDC3t3iKQjWRzjjjbzR+mdAIoikeBRNkdllA==}
+  ethers@6.13.5:
+    resolution: {integrity: sha512-+knKNieu5EKRThQJWwqaJ10a6HE9sSehGeqWN65//wE7j47ZpFhKAnHB/JJFibwwg61I/koxaPsXbXpD/skNOQ==}
     engines: {node: '>=14.0.0'}
 
   eventemitter3@5.0.1:
@@ -6204,8 +6204,8 @@ snapshots:
       '@polkadot/util': 13.2.3
       '@polkadot/util-crypto': 13.2.3(@polkadot/util@13.2.3)
       '@snowbridge/contract-types': 0.1.25(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      '@typechain/ethers-v6': 0.5.1(ethers@6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)
-      ethers: 6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@typechain/ethers-v6': 0.5.1(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)
+      ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       rxjs: 7.8.1
     transitivePeerDependencies:
       - bufferutil
@@ -6216,7 +6216,7 @@ snapshots:
 
   '@snowbridge/contract-types@0.1.25(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      ethers: 6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -6400,9 +6400,9 @@ snapshots:
 
   '@tsconfig/node16@1.0.4': {}
 
-  '@typechain/ethers-v6@0.5.1(ethers@6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)':
+  '@typechain/ethers-v6@0.5.1(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)':
     dependencies:
-      ethers: 6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       lodash: 4.17.21
       ts-essentials: 7.0.3(typescript@5.6.3)
       typechain: 8.3.2(typescript@5.6.3)
@@ -6903,7 +6903,7 @@ snapshots:
       - '@types/react'
       - react
 
-  '@web3modal/ethers@5.1.11(@types/react@18.3.12)(bufferutil@4.0.8)(ethers@6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)':
+  '@web3modal/ethers@5.1.11(@types/react@18.3.12)(bufferutil@4.0.8)(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(utf-8-validate@5.0.10)':
     dependencies:
       '@coinbase/wallet-sdk': 4.0.3
       '@walletconnect/ethereum-provider': 2.16.1(@types/react@18.3.12)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
@@ -6914,7 +6914,7 @@ snapshots:
       '@web3modal/scaffold-utils': 5.1.11(@types/react@18.3.12)(react@18.3.1)
       '@web3modal/siwe': 5.1.11(@types/react@18.3.12)(react@18.3.1)
       '@web3modal/wallet': 5.1.11
-      ethers: 6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       valtio: 1.11.2(@types/react@18.3.12)(react@18.3.1)
     optionalDependencies:
       react: 18.3.1
@@ -7779,7 +7779,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.2(eslint@8.57.1)
       eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.57.1)
@@ -7808,20 +7808,20 @@ snapshots:
       debug: 4.3.7
       enhanced-resolve: 5.17.1
       eslint: 8.57.1
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       fast-glob: 3.3.2
       get-tsconfig: 4.8.1
       is-bun-module: 1.2.1
       is-glob: 4.0.3
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - '@typescript-eslint/parser'
       - eslint-import-resolver-node
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -7832,7 +7832,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -7843,7 +7843,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
@@ -7985,7 +7985,7 @@ snapshots:
 
   esutils@2.0.3: {}
 
-  ethers@6.13.4(bufferutil@4.0.8)(utf-8-validate@5.0.10):
+  ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10):
     dependencies:
       '@adraffy/ens-normalize': 1.10.1
       '@noble/curves': 1.2.0
