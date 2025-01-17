@@ -10,21 +10,27 @@ import {
   getEnvironment,
   getErrorMessage,
   getTransferHistory,
+  getTransferHistoryV2,
 } from "@/lib/snowbridge";
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-const CACHE_REVALIDATE_IN_SECONDS = 10 * 60; // 10 minutes
+const CACHE_REVALIDATE_IN_SECONDS = 2 * 60; // 2 minutes
 
 const getCachedTransferHistory = unstable_cache(
   () => {
-    const env = getEnvironment();
     try {
-      return getTransferHistory(
-        env,
-        SKIP_LIGHT_CLIENT_UPDATES,
-        HISTORY_IN_SECONDS,
-      );
+      let graphqlApiEnabled = process.env["GRAPHQL_API_ENABLED"] == "true";
+      const env = getEnvironment();
+      if (graphqlApiEnabled) {
+        return getTransferHistoryV2(env);
+      } else {
+        return getTransferHistory(
+          env,
+          SKIP_LIGHT_CLIENT_UPDATES,
+          HISTORY_IN_SECONDS,
+        );
+      }
     } catch (err) {
       getErrorMessage(err);
       return Promise.resolve([]);

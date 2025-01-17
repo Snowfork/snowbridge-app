@@ -4,6 +4,7 @@ import {
   contextFactory,
   environment,
   history,
+  historyV2,
   subscan,
 } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
@@ -247,4 +248,20 @@ export async function assetMetadata(
     relaychainNativeAsset,
     erc20Metadata,
   };
+}
+
+export async function getTransferHistoryV2(
+  env: environment.SnowbridgeEnvironment,
+) {
+  console.log("Fetching transfer history.");
+
+  const toEthereum = await historyV2.toEthereumHistory();
+  console.log("To Ethereum transfers V2:", toEthereum.length);
+
+  const toPolkadot = await historyV2.toPolkadotHistory();
+  console.log("To Polkadot transfers V2:", toPolkadot.length);
+
+  const transfers = [...toEthereum, ...toPolkadot];
+  transfers.sort((a, b) => b.info.when.getTime() - a.info.when.getTime());
+  return transfers;
 }

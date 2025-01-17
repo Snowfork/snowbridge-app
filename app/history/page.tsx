@@ -99,7 +99,7 @@ const getExplorerLinks = (
       url: subscanExtrinsicLink(
         env.name,
         "ah",
-        ethTransfer.submitted.extrinsic_index,
+        ethTransfer.submitted.extrinsic_hash,
       ),
     });
 
