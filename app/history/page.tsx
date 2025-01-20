@@ -464,9 +464,7 @@ export default function History() {
         <CardHeader>
           <CardTitle>History</CardTitle>
           <CardDescription>
-            {showGlobal
-              ? "Global transfer history for the past two weeks."
-              : "My transfer history for the past two weeks."}
+            {showGlobal ? "Global transfer history." : "My transfer history."}
           </CardDescription>
         </CardHeader>
         <CardContent>
