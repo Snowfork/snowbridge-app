@@ -94,6 +94,74 @@ export const parachainConfigs: ParaConfigsForSnowEnv = {
         decimals: 15,
       },
     },
+    {
+      // Robonomics on Polkadot
+      id: "robonomics-polkadot",
+      name: "Robonomics",
+      endpoint: "wss://polkadot.rpc.robonomics.network/",
+      switchPair: [
+        {
+          id: "assetSwitchPool1",
+          tokenMetadata: {
+            symbol: "XRT",
+            decimals: 9,
+            minimumTransferAmount: "1000",
+          },
+          xcmFee: {
+            symbol: "DOT",
+            decimals: 10,
+            locationId: "assethub",
+            amount: "5000000000",
+            remoteXcmFee: {
+              V4: {
+                id: {
+                  parents: 1,
+                  interior: "Here",
+                },
+                fun: {
+                  Fungible: 5000000000,
+                },
+              },
+            },
+          },
+          remoteAssetId: {
+            parents: 2,
+            interior: {
+              X2: [
+                {
+                  GlobalConsensus: {
+                    Ethereum: {
+                      chainId: "1",
+                    },
+                  },
+                },
+                {
+                  AccountKey20: {
+                    network: null,
+                    key: "0x7de91b204c1c737bcee6f000aaa6569cf7061cb7",
+                  },
+                },
+              ],
+            },
+          },
+          remoteReserveLocation: {
+            parents: 1,
+            interior: {
+              X1: [
+                {
+                  Parachain: 1000,
+                },
+              ],
+            },
+          },
+        },
+      ],
+      parachainId: 3388,
+      nativeTokenMetadata: {
+        symbol: "XRT",
+        decimals: 9,
+      },
+    },
   ],
   rococo_sepolia: [
     {
