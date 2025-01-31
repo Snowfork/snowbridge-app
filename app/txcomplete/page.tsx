@@ -73,7 +73,7 @@ function TxCard(props: TxCardProps) {
             Transfer can take up to{" "}
             {getEnvDetail(transfer, env)?.type !== "ethereum"
               ? "25 minutes"
-              : "35-60 minutes"}
+              : "35-90 minutes"}
           </div>
           <div>
             <Link

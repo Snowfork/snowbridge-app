@@ -91,7 +91,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
                   (up to{" "}
                   {data.source.type === "ethereum"
                     ? "25 minutes"
-                    : "4 hour 30 minutes"}
+                    : "1 hour 30 minutes"}
                   )
           </span></TableCell>
             </TableRow>
