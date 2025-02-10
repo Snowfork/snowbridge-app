@@ -25,7 +25,7 @@ export function useEthereumProvider() {
   const error = getModalError();
 
   useEffect(() => {
-    if (walletProvider !== undefined && error === undefined) {
+    if (walletProvider !== undefined && error === "") {
       setEthersProvider(new BrowserProvider(walletProvider as Eip1193Provider));
       setEthereumProvider(walletProvider as Eip1193Provider);
       setEthereumProviderType(walletProviderType ?? null);
@@ -38,7 +38,7 @@ export function useEthereumProvider() {
     if (typeof error === "string" && error !== "") {
       setEthereumProviderError((error as string) ?? null);
     }
-    if (error !== undefined && error !== "string") {
+    if (error !== undefined && error !== "") {
       console.error(error);
     }
   }, [

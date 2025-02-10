@@ -13,19 +13,17 @@ import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { trimAccount } from "@/utils/formatting";
 
 type SelectedPolkadotAccountProps = {
-  field?: any
+  field?: any;
   source?: string;
 };
 export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
   field,
-  source
-
+  source,
 }) => {
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
   useEffect(() => {
-    console.log(polkadotAccount);
     if (!polkadotAccount && polkadotAccounts && polkadotAccounts.length > 0) {
       setPolkadotAccount(polkadotAccounts[0].address);
     }

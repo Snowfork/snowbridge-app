@@ -2,7 +2,7 @@
 
 import { getEnvironment } from "@/lib/snowbridge";
 import { metadata } from "@/lib/metadata";
-import { AppKit, createAppKit } from "@reown/appkit";
+import { AppKit, createAppKit } from "@reown/appkit/react";
 import { mainnet, sepolia } from "@reown/appkit/networks";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
 

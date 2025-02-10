@@ -21,7 +21,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
     if (field && account) {
       field.onChange(account);
     }
-  }, [account]);
+  }, [field, account]);
 
   if (account !== null && chainId !== null && chainId === env.ethChainId) {
     return (
