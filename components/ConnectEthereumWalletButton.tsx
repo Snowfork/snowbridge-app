@@ -1,4 +1,4 @@
-import { useSwitchNetwork, useWeb3Modal } from "@web3modal/ethers/react";
+import { useAppKit, useAppKitNetwork } from "@reown/appkit/react";
 import { Button } from "./ui/button";
 import { useAtom } from "jotai";
 import { ErrorDialog } from "./ErrorDialog";
@@ -7,6 +7,7 @@ import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { track } from "@vercel/analytics";
 import { getEnvironment } from "@/lib/snowbridge";
 import { cn } from "@/lib/utils";
+import { getEnvEthereumNetwork } from "@/lib/client/web3modal";
 
 interface ConnectEthereumWalletButtonProps {
   className?: string;
@@ -24,13 +25,13 @@ export function ConnectEthereumWalletButton({
   className,
   variant,
 }: ConnectEthereumWalletButtonProps) {
-  const { open } = useWeb3Modal();
+  const { open } = useAppKit();
   const env = getEnvironment();
 
   const [windowEthereumError, setWindowEthereumError] = useAtom(
     windowEthereumErrorAtom,
   );
-  const { switchNetwork } = useSwitchNetwork();
+  const { switchNetwork } = useAppKitNetwork();
 
   const { account, chainId } = useConnectEthereumWallet();
   if (account !== null && (chainId === null || chainId !== env.ethChainId)) {
@@ -41,7 +42,7 @@ export function ConnectEthereumWalletButton({
           type="button"
           variant="default"
           onClick={async (_) => {
-            await switchNetwork(env.ethChainId);
+            switchNetwork(getEnvEthereumNetwork());
             track("Switch Network");
           }}
         >

@@ -1,15 +1,12 @@
-import { initializeWeb3Modal } from "@/lib/client/web3modal";
+import { getModalError, initializeWeb3Modal } from "@/lib/client/web3modal";
 import {
   ethersProviderAtom,
   windowEthereumAtom,
   windowEthereumErrorAtom,
   windowEthereumTypeAtom,
 } from "@/store/ethereum";
-import {
-  useWeb3ModalError,
-  useWeb3ModalProvider,
-} from "@web3modal/ethers/react";
-import { BrowserProvider } from "ethers";
+import { useAppKitProvider } from "@reown/appkit/react";
+import { BrowserProvider, Eip1193Provider } from "ethers";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 
@@ -24,13 +21,13 @@ export function useEthereumProvider() {
     windowEthereumTypeAtom,
   );
   const [ethersProvider, setEthersProvider] = useAtom(ethersProviderAtom);
-  const { walletProvider, walletProviderType } = useWeb3ModalProvider();
-  const { error } = useWeb3ModalError();
+  const { walletProvider, walletProviderType } = useAppKitProvider("eip155");
+  const error = getModalError();
 
   useEffect(() => {
-    if (walletProvider !== undefined && error === undefined) {
-      setEthersProvider(new BrowserProvider(walletProvider));
-      setEthereumProvider(walletProvider);
+    if (walletProvider !== undefined && error === "") {
+      setEthersProvider(new BrowserProvider(walletProvider as Eip1193Provider));
+      setEthereumProvider(walletProvider as Eip1193Provider);
       setEthereumProviderType(walletProviderType ?? null);
     } else {
       setEthersProvider(null);
@@ -38,13 +35,10 @@ export function useEthereumProvider() {
       setEthereumProviderType(null);
     }
 
-    if (typeof error === "string" || error instanceof String) {
+    if (typeof error === "string" && error !== "") {
       setEthereumProviderError((error as string) ?? null);
     }
-    if (error !== undefined && "message" in (error as any)) {
-      setEthereumProviderError((error as any).message);
-    }
-    if (error !== undefined) {
+    if (error !== undefined && error !== "") {
       console.error(error);
     }
   }, [
