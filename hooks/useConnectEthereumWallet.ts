@@ -5,7 +5,7 @@ import {
   windowEthereumAtom,
   windowEthereumErrorAtom,
 } from "@/store/ethereum";
-import { useWeb3ModalAccount } from "@web3modal/ethers/react";
+import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useAtomValue, useAtom } from "jotai";
 import { useEffect } from "react";
 
@@ -16,7 +16,8 @@ export const useConnectEthereumWallet = () => {
   const [ethereumAccounts, setEthereumAccounts] = useAtom(ethereumAccountsAtom);
   const [ethereumChainId, setEthereumChainId] = useAtom(ethereumChainIdAtom);
 
-  const { address, isConnected, status, chainId } = useWeb3ModalAccount();
+  const { address, isConnected, status } = useAppKitAccount();
+  const { chainId } = useAppKitNetwork();
 
   useEffect(() => {
     if (
@@ -46,7 +47,7 @@ export const useConnectEthereumWallet = () => {
           setEthereumAccount(address);
         }
         if (chainId !== undefined) {
-          setEthereumChainId(chainId);
+          setEthereumChainId(Number(chainId));
         }
       });
   }, [

@@ -42,7 +42,7 @@ import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { windowEthereumTypeAtom } from "@/store/ethereum";
-import { useWeb3Modal } from "@web3modal/ethers/react";
+import { useAppKit } from "@reown/appkit/react";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 
 export const Menu: FC = () => {
@@ -92,7 +92,7 @@ export const Menu: FC = () => {
           </p>
           <p>Account:</p>
         </div>
-        <SelectedPolkadotAccount source="polkadot"/>
+        <SelectedPolkadotAccount source="polkadot" />
       </>
     );
   };
@@ -100,7 +100,7 @@ export const Menu: FC = () => {
   const EthereumWallet = () => {
     const { account } = useConnectEthereumWallet();
     const walletType = useAtomValue(windowEthereumTypeAtom);
-    const { open } = useWeb3Modal();
+    const { open } = useAppKit();
     return (
       <>
         <div>
