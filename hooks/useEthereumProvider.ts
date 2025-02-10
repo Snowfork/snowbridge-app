@@ -38,11 +38,7 @@ export function useEthereumProvider() {
     if (typeof error === "string" && error !== "") {
       setEthereumProviderError((error as string) ?? null);
     }
-    //TODO: remove branch
-    if (error !== undefined && "message" in (error as any)) {
-      setEthereumProviderError((error as any).message);
-    }
-    if (error !== undefined) {
+    if (error !== undefined && error !== "string") {
       console.error(error);
     }
   }, [

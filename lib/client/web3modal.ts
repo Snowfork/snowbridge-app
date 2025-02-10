@@ -5,7 +5,6 @@ import { metadata } from "@/lib/metadata";
 import { AppKit, createAppKit } from "@reown/appkit";
 import { mainnet, sepolia } from "@reown/appkit/networks";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
-import { useEffect } from "react";
 
 const walletConnectProjectId = () => {
   const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
@@ -43,7 +42,7 @@ export const initializeWeb3Modal = () => {
 
   const network = getEnvEthereumNetwork();
 
-  const modal = createAppKit({
+  modal = createAppKit({
     adapters: [new EthersAdapter()],
     networks: [network],
     themeMode: "light",
