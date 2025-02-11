@@ -78,13 +78,12 @@ const PolkadotBalance: FC<Props> = ({
       const parachain = parachainInfo.find((val) => val.id === parachainId);
 
       if (!parachain) return;
-      const api = context.polkadot.api.parachains[parachain.parachainId];
+      const api = await context.parachain(parachain.parachainId);
       const { xcmFee } = parachain.switchPair[0];
 
-      const assetHubBalanceDestination =
-        await context.polkadot.api.assetHub.query.system.account<AccountInfo>(
-          sourceAccount,
-        );
+      const assetHubBalanceDestination = await (
+        await context.assetHub()
+      ).query.system.account<AccountInfo>(sourceAccount);
 
       const fungibleBalance = await api.query.fungibles.account<
         Option<AssetBalance>
@@ -123,10 +122,10 @@ const PolkadotBalance: FC<Props> = ({
       const parachainId =
         destinationId === "assethub" ? sourceId : destinationId;
 
-      const assetHubApi = context.polkadot.api.assetHub;
+      const assetHubApi = await context.assetHub();
       const finder = parachainInfo.find((val) => val.id === parachainId);
       if (!finder) return;
-      const parachainApi = context.polkadot.api.parachains[finder.parachainId];
+      const parachainApi = await context.parachain(finder.parachainId);
 
       const checkAssetHubBalanceED =
         await assetHubApi.query.system.account<AccountInfo>(beneficiary);
@@ -177,13 +176,13 @@ const PolkadotBalance: FC<Props> = ({
       }
       const sourceApi =
         sourceId === "assethub"
-          ? context.polkadot.api.assetHub
-          : context.polkadot.api.parachains[parachain.parachainId!];
+          ? await context.assetHub()
+          : await context.parachain(parachain.parachainId!);
 
       const destinationApi =
         destinationId === "assethub"
-          ? context.polkadot.api.assetHub
-          : context.polkadot.api.parachains[parachain.parachainId!];
+          ? await context.assetHub()
+          : await context.parachain(parachain.parachainId!);
 
       if (sourceId === "assethub") {
         const sourceBalance = await fetchForeignAssetsBalances(

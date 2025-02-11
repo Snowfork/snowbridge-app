@@ -44,7 +44,7 @@ export function useSubstrateTransfer() {
         | undefined;
 
       if (sourceParachain === "relaychain") {
-        api = context.polkadot.api.relaychain;
+        api = await context.relaychain();
         if (!api) throw Error(`Cannot resolve parachain '${sourceParachain}'.`);
         transferAssets = api.tx.xcmPallet?.transferAssets;
         if (!transferAssets)
@@ -52,7 +52,7 @@ export function useSubstrateTransfer() {
             `Cannot resolve resolve transfer function 'polkadotXcm.transferAssets'.`,
           );
       } else {
-        api = context.polkadot.api.parachains[sourceParachain];
+        api = await context.parachain(sourceParachain);
         if (!api) throw Error(`Cannot resolve parachain '${sourceParachain}'.`);
         transferAssets = api.tx.polkadotXcm?.transferAssets;
         if (!transferAssets)

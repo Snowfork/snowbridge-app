@@ -33,8 +33,9 @@ export async function getTokenBalance({
         throw Error(`ParaId not configured for source ${source.name}.`);
       }
       const parachain =
-        context.polkadot.api.parachains[source.paraInfo?.paraId] ??
-        context.polkadot.api.assetHub;
+        source.paraInfo && context.hasParachain(source.paraInfo.paraId)
+          ? await context.parachain(source.paraInfo.paraId)
+          : await context.assetHub();
       const location = assets.erc20TokenToAssetLocation(
         parachain.registry,
         ethereumChainId,
@@ -64,7 +65,7 @@ export async function getTokenBalance({
     case "ethereum": {
       const [erc20Asset, nativeBalance] = await Promise.all([
         assets.assetErc20Balance(context, token, sourceAccount),
-        context.ethereum.api.getBalance(sourceAccount),
+        context.ethereum().getBalance(sourceAccount),
       ]);
       return {
         ...erc20Asset,

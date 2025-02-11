@@ -1,7 +1,6 @@
 import {
   assets,
   Context,
-  contextFactory,
   environment,
   history,
   historyV2,
@@ -185,18 +184,25 @@ export async function createContext(
   { config }: SnowbridgeEnvironment,
   overrides?: ContextOverrides,
 ) {
-  return contextFactory({
+  const parachains = {
+    ...config.PARACHAINS,
+  };
+  const assetHubParaKey = config.ASSET_HUB_PARAID.toString();
+  parachains[assetHubParaKey] =
+    overrides?.assetHub ?? config.PARACHAINS[assetHubParaKey];
+  const bridgeHubParaKey = config.BRIDGE_HUB_PARAID.toString();
+  parachains[bridgeHubParaKey] =
+    overrides?.bridgeHub ?? config.PARACHAINS[bridgeHubParaKey];
+  return new Context({
     ethereum: {
       execution_url: ethereumProvider,
       beacon_url: config.BEACON_HTTP_API,
     },
     polkadot: {
-      url: {
-        bridgeHub: overrides?.bridgeHub ?? config.BRIDGE_HUB_URL,
-        assetHub: overrides?.assetHub ?? config.ASSET_HUB_URL,
-        relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
-        parachains: overrides?.parachains ?? config.PARACHAINS,
-      },
+      relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
+      assetHubParaId: config.ASSET_HUB_PARAID,
+      bridgeHubParaId: config.BRIDGE_HUB_PARAID,
+      parachains,
     },
     appContracts: {
       gateway: config.GATEWAY_CONTRACT,
@@ -229,7 +235,7 @@ export async function assetMetadata(
 
   const erc20Metadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
   const [relaychainNativeAsset] = await Promise.all([
-    assets.parachainNativeAsset(context.polkadot.api.relaychain),
+    assets.parachainNativeAsset(await context.relaychain()),
     (async () => {
       for (const token of tokens) {
         try {
