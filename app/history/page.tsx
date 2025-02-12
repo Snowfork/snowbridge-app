@@ -24,7 +24,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
-import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { ethereumAccountsAtom } from "@/store/ethereum";
@@ -38,17 +37,10 @@ import {
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assets, environment, history } from "@snowbridge/api";
-import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
-import { parseUnits } from "ethers";
 import { useAtom, useAtomValue } from "jotai";
-import {
-  LucideGlobe,
-  LucideLoaderCircle,
-  LucideRefreshCw,
-  LucideWallet,
-} from "lucide-react";
+import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
@@ -64,6 +56,7 @@ import {
   getEnvDetail,
   TransferTitle,
 } from "@/components/history/TransferTitle";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 const ITEMS_PER_PAGE = 5;
 const isWalletTransaction = (
@@ -327,7 +320,7 @@ export default function History() {
     transfersPendingLocalAtom,
   );
 
-  const { relaychainNativeAsset, erc20Metadata } = useAssetMetadata();
+  const { data: assetRegistry } = useAssetRegistry();
   const {
     data: transfers,
     mutate,
@@ -442,10 +435,9 @@ export default function History() {
   }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (
-    (pages.length === 0 &&
-      isTransfersLoading &&
-      transferHistoryCache.length === 0) ||
-    erc20Metadata === null
+    pages.length === 0 &&
+    isTransfersLoading &&
+    transferHistoryCache.length === 0
   ) {
     return <Loading />;
   }
@@ -515,8 +507,9 @@ export default function History() {
                   {transferDetail(
                     v,
                     env,
-                    relaychainNativeAsset?.ss58Format ?? 42,
-                    erc20Metadata,
+                    assetRegistry.relaychain?.ss58Format ?? 42,
+                    assetRegistry.ethereumChains[assetRegistry.ethChainId]
+                      .assets,
                   )}
                 </AccordionContent>
               </AccordionItem>

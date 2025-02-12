@@ -7,24 +7,15 @@ import {
   MenubarTrigger,
   MenubarSeparator,
 } from "@/components/ui/menubar";
-import { cn } from "@/lib/utils";
-import {
-  relayChainNativeAssetAtom,
-  snowbridgeEnvNameAtom,
-} from "@/store/snowbridge";
+import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
 import {
-  Github,
   LucideArrowRightLeft,
   LucideBarChart,
-  LucideBookText,
-  LucideBug,
   LucideHistory,
-  LucideMenu,
   LucideSend,
   LucideWallet,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { FC } from "react";
 import { Button } from "./ui/button";
@@ -39,19 +30,18 @@ import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { trimAccount } from "@/utils/formatting";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
-import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { windowEthereumTypeAtom } from "@/store/ethereum";
 import { useAppKit } from "@reown/appkit/react";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
 
   useEthereumProvider();
-  useAssetMetadata();
-  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
-  useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
+  const { data: registry } = useAssetRegistry();
+  useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
