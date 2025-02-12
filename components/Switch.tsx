@@ -413,10 +413,7 @@ export const SwitchComponent: FC = () => {
                                 ...parachainsInfo,
                               ].map(({ id, name }) => (
                                 <SelectItem key={id} value={id}>
-                                  <SelectItemWithIcon
-                                    label={name}
-                                    image={id}
-                                  />
+                                  <SelectItemWithIcon label={name} image={id} />
                                 </SelectItem>
                               ))}
                             </SelectGroup>
@@ -531,7 +528,12 @@ export const SwitchComponent: FC = () => {
                       <FormItem>
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
-                          <Input type="string" placeholder="0.0" className="text-right" {...field} />
+                          <Input
+                            type="string"
+                            placeholder="0.0"
+                            className="text-right"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -542,7 +544,11 @@ export const SwitchComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <FormControl>
-                      <Input type="string" disabled={true} value={tokenSymbol || ''} />
+                      <Input
+                        type="string"
+                        disabled={true}
+                        value={tokenSymbol || ""}
+                      />
                     </FormControl>
                   </FormItem>
                 </div>
