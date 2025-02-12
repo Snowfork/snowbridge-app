@@ -1,7 +1,6 @@
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  assetErc20MetaDataAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
@@ -44,6 +43,7 @@ import { formatBalance } from "@/utils/formatting";
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 function getBeneficiaries(
   destination: environment.TransferLocation,
@@ -105,11 +105,11 @@ export const TransferForm: FC<TransferFormProps> = ({
 }) => {
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
-  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
+  const { data: assetRegistry } = useAssetRegistry();
 
   const [source, setSource] = useState(environment.locations[0]);
   const [sourceAccount, setSourceAccount] = useState<string>();
@@ -199,9 +199,10 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchSourceAccount,
   ]);
 
-  const tokenMetadata = assetErc20MetaData
-    ? assetErc20MetaData[token.toLowerCase()]
-    : null;
+  const tokenMetadata =
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+      token.toLowerCase()
+    ];
 
   const submit = useCallback(
     async (formData: TransferFormData) => {
@@ -305,10 +306,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           .filter((s) => s.destinationIds.length > 0)
                           .map((s) => (
                             <SelectItem key={s.id} value={s.id}>
-                              <SelectItemWithIcon
-                                label={s.name}
-                                image={s.id}
-                              />
+                              <SelectItemWithIcon label={s.name} image={s.id} />
                             </SelectItem>
                           ))}
                       </SelectGroup>
@@ -334,12 +332,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                       <SelectGroup>
                         {destinations.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                              <SelectItemWithIcon
-                                label={s.name}
-                                image={s.id}
-                              />
+                            <SelectItemWithIcon label={s.name} image={s.id} />
                           </SelectItem>
-                          ))}
+                        ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -350,126 +345,132 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
         </div>
         <div className="transfer-details">
-        {sourceAccount && (<FormField
-          control={form.control}
-          name="sourceAccount"
-          render={({ field }) => (
-            <FormItem {...field}>
-              <div className="grid grid-cols-2 space-x-2">
-                <FormLabel>From account
-                </FormLabel>
-                <BalanceDisplay
-                  source={source}
-                  token={token}
-                  tokenMetadata={tokenMetadata}
-                  displayDecimals={8}
-                />
-              </div>
-                <FormControl>
-                  <>
-                    {source.type == "ethereum" ? (
-                      <SelectedEthereumWallet
-                        field={field}
-                      />
-                    ) : (
-                      <SelectedPolkadotAccount
-                        field={field}
-                        source={source.id}
-                      />
-                    )}
-                  </>
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-            )}
-          />)}
-          {beneficiaries && beneficiaries.length > 0 && (<FormField
-          control={form.control}
-          name="beneficiary"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>To account</FormLabel>
-              <FormControl>
-                <SelectAccount
-                  accounts={beneficiaries}
-                  field={field}
-                  allowManualInput={false}
-                  destination={destination.id}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />)}
-        <div className="flex space-x-2">
-          <div className="w-2/3">
+          {sourceAccount && (
             <FormField
               control={form.control}
-              name="amount"
+              name="sourceAccount"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                <FormItem {...field}>
+                  <div className="grid grid-cols-2 space-x-2">
+                    <FormLabel>From account</FormLabel>
+                    <BalanceDisplay
+                      source={source}
+                      token={token}
+                      tokenMetadata={tokenMetadata}
+                      displayDecimals={8}
+                    />
+                  </div>
                   <FormControl>
-                    <Input className="text-right" type="string" placeholder="0.0" {...field} />
+                    <>
+                      {source.type == "ethereum" ? (
+                        <SelectedEthereumWallet field={field} />
+                      ) : (
+                        <SelectedPolkadotAccount
+                          field={field}
+                          source={source.id}
+                        />
+                      )}
+                    </>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
-          <div className="w-1/3">
+          )}
+          {beneficiaries && beneficiaries.length > 0 && (
             <FormField
               control={form.control}
-              name="token"
+              name="beneficiary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="invisible">Token</FormLabel>
+                  <FormLabel>To account</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a token" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {destination.erc20tokensReceivable.map((t) => (
-                            <SelectItem key={t.address} value={t.address}>
-                              <SelectItemWithIcon
-                                label={t.id}
-                                image={t.id}
-                              />
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                      <FormMessage />
-                    </Select>
+                    <SelectAccount
+                      accounts={beneficiaries}
+                      field={field}
+                      allowManualInput={false}
+                      destination={destination.id}
+                    />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
+          )}
+          <div className="flex space-x-2">
+            <div className="w-2/3">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="text-right"
+                        type="string"
+                        placeholder="0.0"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="w-1/3">
+              <FormField
+                control={form.control}
+                name="token"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="invisible">Token</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a token" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {destination.erc20tokensReceivable.map((t) => (
+                              <SelectItem key={t.address} value={t.address}>
+                                <SelectItemWithIcon label={t.id} image={t.id} />
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                        <FormMessage />
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
-        </div>
-        <div className="text-sm text-center text-muted-foreground px-1 mt-1">
-          Fee:{" "}
-          <FeeDisplay
-            className="inline"
-            source={source.type}
+          <div className="text-sm text-center text-muted-foreground px-1 mt-1">
+            Fee:{" "}
+            <FeeDisplay
+              className="inline"
+              source={source.type}
+              destination={destination}
+              token={token}
+              displayDecimals={8}
+            />
+          </div>
+          <br />
+          <SubmitButton
+            ethereumAccounts={ethereumAccounts}
+            polkadotAccounts={polkadotAccounts}
+            beneficiaries={beneficiaries}
             destination={destination}
-            token={token}
-            displayDecimals={8}
+            source={source}
+            tokenMetadata={tokenMetadata}
+            validating={validating}
+            context={context}
           />
-        </div>
-        <br />
-        <SubmitButton
-          ethereumAccounts={ethereumAccounts}
-          polkadotAccounts={polkadotAccounts}
-          beneficiaries={beneficiaries}
-          destination={destination}
-          source={source}
-          tokenMetadata={tokenMetadata}
-          validating={validating}
-          context={context}
-        />
         </div>
       </form>
     </Form>

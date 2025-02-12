@@ -69,26 +69,34 @@ async function buildAssetRegistry(context: Context, env: string) {
   return assetRegistry;
 }
 
-export async function assetRegistry() {
+export async function assetRegistryAsString() {
+  const env = getEnvironmentName();
   const cache = unstable_cache(
     async () => {
-      const env = getEnvironmentName();
       try {
         const context = await getServerContext();
         const registry = await buildAssetRegistry(context, env);
         return stringify(registry);
       } catch (err) {
-        reportError(err);
+        console.error(err);
         return Promise.resolve(null);
       }
     },
-    ["asset-registry"],
+    [env, "asset-registry"],
     {
       tags: ["assets"],
       revalidate: CACHE_REVALIDATE_IN_SECONDS,
     },
   );
   const result = await cache();
+  if (result === null) {
+    return null;
+  }
+  return result;
+}
+
+export async function assetRegistry() {
+  const result = await assetRegistryAsString();
   if (result === null) {
     return null;
   }

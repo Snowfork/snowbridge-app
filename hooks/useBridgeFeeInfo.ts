@@ -1,7 +1,4 @@
-import {
-  relayChainNativeAssetAtom,
-  snowbridgeContextAtom,
-} from "@/store/snowbridge";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   assets,
   Context,
@@ -11,6 +8,7 @@ import {
 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
+import { useAssetRegistry } from "./useAssetRegistry";
 
 export interface FeeInfo {
   fee: bigint;
@@ -71,9 +69,16 @@ export function useBridgeFeeInfo(
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
-  const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
+  const { data: registry } = useAssetRegistry();
   return useSWR(
-    [context, source, destination, assetHubNativeToken, token, "feeInfo"],
+    [
+      context,
+      source,
+      destination,
+      registry.relaychain.tokenSymbols,
+      token,
+      "feeInfo",
+    ],
     fetchBridgeFeeInfo,
     {
       errorRetryCount: 10,
