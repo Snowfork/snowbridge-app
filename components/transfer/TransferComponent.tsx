@@ -18,7 +18,6 @@ import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 function sendResultToHistory(
   messageId: string,
@@ -112,8 +111,6 @@ function sendResultToHistory(
 }
 
 export const TransferComponent: FC = () => {
-  //const registry = useAssetRegistry();
-  //useEffect(() => console.warn("xxxxx", registry), [registry]);
   const requestId = useRef(0);
   const [formData, setFormData] = useState<TransferFormData>();
   const [validationData, setValidationData] = useState<ValidationData>();
