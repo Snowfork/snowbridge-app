@@ -12,9 +12,9 @@ import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
-import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import { RefreshButton } from "../RefreshButton";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -35,7 +35,7 @@ interface StepData {
 }
 
 function TransferFeeStep(step: StepData) {
-  const relaychain = useAtomValue(relayChainNativeAssetAtom);
+  const { data: assetRegistry } = useAssetRegistry();
   const { data: feeInfo, error } = useBridgeFeeInfo(
     step.data.source.type,
     step.data.destination,
@@ -55,11 +55,11 @@ function TransferFeeStep(step: StepData) {
       </div>
     );
   }
-  if (feeInfo.symbol !== relaychain?.tokenSymbol) {
+  if (feeInfo.symbol !== assetRegistry.relaychain.tokenSymbols) {
     return (
       <div key={step.id} className="flex flex-col gap-4 justify-between">
-        Expecting {relaychain?.tokenSymbol} as fee asset, found {feeInfo.symbol}
-        .
+        Expecting {assetRegistry.relaychain.tokenSymbols} as fee asset, found{" "}
+        {feeInfo.symbol}.
       </div>
     );
   }
@@ -126,7 +126,9 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   return (
     <div>
       <TransferSummary data={data} />
-      <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">Steps</h3>
+      <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">
+        Steps
+      </h3>
       <div className="flex flex-col gap-4 mt-5">
         {plan.steps.map((step, i) => (
           <TransferStepView

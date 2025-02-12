@@ -19,10 +19,10 @@ import { Button } from "../ui/button";
 import { LucideLoaderCircle } from "lucide-react";
 import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
 import { parseUnits } from "ethers";
-import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { getEnv } from "@vercel/functions";
 import { getEnvironmentName } from "@/lib/snowbridge";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 interface TransferStepData {
   id: number;
@@ -47,7 +47,7 @@ export function SubstrateTransferStep({
   const envName = getEnvironmentName();
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
+  const { data: assetRegistry } = useAssetRegistry();
 
   const { transferAsset } = useSubstrateTransfer();
 
@@ -196,12 +196,6 @@ export function SubstrateTransferStep({
             <Button
               size="sm"
               onClick={async () => {
-                if (!assetHubNativeToken) {
-                  setError({
-                    text: "Cannot determine Asset Hub native token.",
-                  });
-                  return;
-                }
                 if (!targetInfo) {
                   setError({
                     text: "Could not infer target parachain and beneficiary.",
@@ -246,7 +240,7 @@ export function SubstrateTransferStep({
                       parents: 0,
                       interior: "Here",
                     },
-                    parseUnits(amount, assetHubNativeToken.tokenDecimal),
+                    parseUnits(amount, assetRegistry.relaychain.tokenDecimals),
                   );
                   nextStep();
                   setBusy(false);
