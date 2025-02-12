@@ -21,10 +21,10 @@ const getCachedAssetMetadata = unstable_cache(
       return Promise.resolve(null);
     }
   },
-  ["bridge-status"],
+  ["asset-metadata"],
   {
-    tags: ["status"],
-    revalidate: 1,
+    tags: ["assets"],
+    revalidate: CACHE_REVALIDATE_IN_SECONDS,
   },
 );
 

@@ -10,7 +10,7 @@ import { SendResult, TransferPlanSteps, ValidationData } from "@/utils/types";
 import { history, toEthereum, toPolkadot } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
-import { FC, useRef, useState } from "react";
+import { FC, useContext, useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -24,6 +24,8 @@ import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
+import { RegistryContext } from "@/app/providers";
+import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
 
 function sendResultToHistory(
   messageId: string,
@@ -117,6 +119,7 @@ function sendResultToHistory(
 }
 
 export const TransferComponent: FC = () => {
+  const registry = useContext(RegistryContext);
   const requestId = useRef(0);
   const [formData, setFormData] = useState<TransferFormData>();
   const [validationData, setValidationData] = useState<ValidationData>();
