@@ -11,7 +11,6 @@ import { Metadata } from "next";
 
 import { metadata as meta } from "@/lib/metadata";
 import { assetRegistry } from "@/lib/server/assets";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   ...meta,
@@ -37,7 +36,7 @@ export default async function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" />
-        <Link
+        <link
           href="https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap"
           rel="stylesheet"
         />
