@@ -77,14 +77,14 @@ export const SelectAccount: FC<SelectAccountProps> = ({
                 <SelectItem key={account.key + "-" + i} value={account.key}>
                   <SelectItemWithIcon
                     label={`${account.name} (${trimAccount(account.key)})`}
-                    image={destination}
+                    image={destination ?? ""}
                   />
                 </SelectItem>
               ) : (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
                   <SelectItemWithIcon
                     label={account.name}
-                    image={destination}
+                    image={destination ?? ""}
                   />
                 </SelectItem>
               ),

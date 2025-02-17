@@ -1,7 +1,6 @@
 import {
   assets,
   Context,
-  contextFactory,
   environment,
   history,
   historyV2,
@@ -176,27 +175,44 @@ export type ContextOverrides = {
   bridgeHub?: string;
   assetHub?: string;
   relaychain?: string;
-  parachains?: string[];
+  parachains?: { [paraId: string]: string };
   graphqlApiUrl?: string;
 };
 
 export async function createContext(
   ethereumProvider: AbstractProvider,
-  { config }: SnowbridgeEnvironment,
+  { config, ethChainId }: SnowbridgeEnvironment,
   overrides?: ContextOverrides,
 ) {
-  return contextFactory({
+  const parachains = {
+    ...config.PARACHAINS,
+    ...overrides?.parachains,
+  };
+  const assetHubParaKey = config.ASSET_HUB_PARAID.toString();
+  parachains[assetHubParaKey] =
+    overrides?.assetHub ?? config.PARACHAINS[assetHubParaKey];
+  const bridgeHubParaKey = config.BRIDGE_HUB_PARAID.toString();
+  parachains[bridgeHubParaKey] =
+    overrides?.bridgeHub ?? config.PARACHAINS[bridgeHubParaKey];
+
+  const ethChains: { [ethChainId: string]: string | AbstractProvider } = {};
+  Object.keys(config.ETHEREUM_CHAINS).forEach(
+    (ethChainId) =>
+      (ethChains[ethChainId.toString()] =
+        config.ETHEREUM_CHAINS[ethChainId]("")),
+  );
+  ethChains[ethChainId.toString()] = ethereumProvider;
+  return new Context({
     ethereum: {
-      execution_url: ethereumProvider,
+      ethChainId,
+      ethChains,
       beacon_url: config.BEACON_HTTP_API,
     },
     polkadot: {
-      url: {
-        bridgeHub: overrides?.bridgeHub ?? config.BRIDGE_HUB_URL,
-        assetHub: overrides?.assetHub ?? config.ASSET_HUB_URL,
-        relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
-        parachains: overrides?.parachains ?? config.PARACHAINS,
-      },
+      relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
+      assetHubParaId: config.ASSET_HUB_PARAID,
+      bridgeHubParaId: config.BRIDGE_HUB_PARAID,
+      parachains,
     },
     appContracts: {
       gateway: config.GATEWAY_CONTRACT,
@@ -213,41 +229,6 @@ export function getErrorMessage(err: any) {
   }
   console.error(message, err);
   return message;
-}
-
-export async function assetMetadata(
-  context: Context,
-  env: SnowbridgeEnvironment,
-): Promise<BridgedAssetsMetadata> {
-  const tokens = [
-    ...new Set(
-      env.locations
-        .flatMap((l) => l.erc20tokensReceivable)
-        .map((l) => l.address.toLowerCase()),
-    ),
-  ];
-
-  const erc20Metadata: { [tokenAddress: string]: assets.ERC20Metadata } = {};
-  const [relaychainNativeAsset] = await Promise.all([
-    assets.parachainNativeAsset(context.polkadot.api.relaychain),
-    (async () => {
-      for (const token of tokens) {
-        try {
-          erc20Metadata[token.toLowerCase()] = await assets.assetErc20Metadata(
-            context,
-            token,
-          );
-        } catch (error) {
-          getErrorMessage(error);
-        }
-      }
-    })(),
-  ]);
-
-  return {
-    relaychainNativeAsset,
-    erc20Metadata,
-  };
 }
 
 export async function getTransferHistoryV2(

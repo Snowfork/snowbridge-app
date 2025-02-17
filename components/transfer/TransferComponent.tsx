@@ -11,13 +11,7 @@ import { history, toEthereum, toPolkadot } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
 import { FC, useRef, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { TransferBusy } from "./TransferBusy";
 import { TransferError } from "./TransferError";
 import { TransferForm } from "./TransferForm";

@@ -23,7 +23,7 @@ export async function parachainToAssetHubTransfer({
     throw Error("Invalid context: please update context");
   }
 
-  const parachainApi = context.polkadot.api.parachains[parachainId];
+  const parachainApi = await context.parachain(parachainId);
 
   const pathToBeneficiary = {
     V3: {
@@ -58,8 +58,8 @@ export async function assetHubToParachainTransfer({
     throw Error("Invalid context: please update context");
   }
 
-  const assetHubApi = context.polkadot.api.assetHub;
-  const parachainApi = context.polkadot.api.parachains[paraId];
+  const assetHubApi = await context.assetHub();
+  const parachainApi = await context.parachain(paraId);
 
   const switchPair =
     await parachainApi.query[palletName].switchPair<

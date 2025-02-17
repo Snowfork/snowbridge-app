@@ -1,11 +1,12 @@
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatBalance } from "@/utils/formatting";
+import { Destination } from "@/utils/types";
 import { environment } from "@snowbridge/api";
 import { FC, useEffect } from "react";
 
 interface FeeDisplayProps {
   source: "substrate" | "ethereum";
-  destination: environment.TransferLocation;
+  destination: Destination;
   token: string;
   displayDecimals: number;
   className?: string;

@@ -1,16 +1,14 @@
 import { FC, useEffect } from "react";
-import { assets, environment } from "@snowbridge/api";
+import { assets, assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { useAtomValue } from "jotai";
 import { polkadotAccountAtom } from "@/store/polkadot";
 import { ethereumAccountAtom } from "@/store/ethereum";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
-import {
-  FormLabel,
-} from "./ui/form";
+import { FormLabel } from "./ui/form";
 
 interface BalanceDisplayProps {
-  source: environment.TransferLocation;
+  source: assetsV2.Source;
   token: string;
   displayDecimals: number;
   tokenMetadata: assets.ERC20Metadata | null;

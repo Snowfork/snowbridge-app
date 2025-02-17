@@ -1,14 +1,13 @@
 import { Transfer } from "@/store/transferHistory";
-import { assets, environment, history } from "@snowbridge/api";
-import { Badge } from "../ui/badge";
+import { assets, environment } from "@snowbridge/api";
 import { LucideGlobe, LucideWallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBalance } from "@/utils/formatting";
 import { parseUnits } from "ethers";
 import { useAtomValue } from "jotai";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { TransferStatusBadge } from "./TransferStatusBadge";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 function getDestinationTokenByAddress(
   tokenAddress: string,
@@ -80,14 +79,14 @@ export function TransferTitle({
   showBagde,
 }: TransferTitleProps) {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  const { erc20Metadata } = useAssetMetadata();
+  const { data: assetRegistry } = useAssetRegistry();
 
   const destination = getEnvDetail(transfer, env);
   const when = new Date(transfer.info.when);
 
   const { tokenName, amount } = formatTokenData(
     transfer,
-    erc20Metadata,
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
     destination,
   );
 
