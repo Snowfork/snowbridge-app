@@ -503,7 +503,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             />
           )}
           <div className="flex space-x-2">
-            <div className="w-2/3">
+            <div className="w-3/5">
               <FormField
                 control={form.control}
                 name="amount"
@@ -523,7 +523,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                 )}
               />
             </div>
-            <div className="w-1/3">
+            <div className="w-2/5">
               <FormField
                 control={form.control}
                 name="token"
@@ -566,7 +566,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             </div>
           </div>
           <div className="text-sm text-center text-muted-foreground px-1 mt-1">
-            Fee:{" "}
+            Delivery Fee:{" "}
             <FeeDisplay
               className="inline"
               source={source.type}

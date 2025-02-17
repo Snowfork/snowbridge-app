@@ -62,12 +62,13 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     );
   }
 
-  const allowance = balanceInfo.gatewayAllowance
-    ? ` (Allowance: ${formatBalance({
-        number: balanceInfo.gatewayAllowance ?? 0n,
-        decimals: Number(tokenMetadata.decimals),
-      })} ${tokenMetadata.symbol})`
-    : "";
+  const allowance =
+    balanceInfo.gatewayAllowance !== undefined
+      ? ` (Allowance: ${formatBalance({
+          number: balanceInfo.gatewayAllowance ?? 0n,
+          decimals: Number(tokenMetadata.decimals),
+        })} ${tokenMetadata.symbol})`
+      : "";
 
   const tokenBalance = `${formatBalance({
     number: balanceInfo.balance,

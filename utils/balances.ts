@@ -1,16 +1,14 @@
 "use client";
-import { Context, assets, assetsV2, environment } from "@snowbridge/api";
+import { Context, assets, assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
-import { getEnvironment } from "@/lib/snowbridge";
 
 interface TokenBalanceProps {
   context: Context;
   token: string;
-  ethereumChainId: bigint;
   source: assetsV2.Source;
   registry: assetsV2.AssetRegistry;
   sourceAccount: string;
@@ -18,7 +16,6 @@ interface TokenBalanceProps {
 export async function getTokenBalance({
   context,
   token,
-  ethereumChainId,
   source,
   registry,
   sourceAccount,
@@ -31,35 +28,27 @@ export async function getTokenBalance({
 }> {
   switch (source.type) {
     case "substrate": {
-      const para = registry.parachains[source.id];
+      const para = registry.parachains[source.source];
       const parachain =
         para && context.hasParachain(para.parachainId)
           ? await context.parachain(para.parachainId)
           : await context.assetHub();
-      const location = assets.erc20TokenToAssetLocation(
-        parachain.registry,
-        ethereumChainId,
-        token,
-      );
-      const [balance, nativeBalanceCodec, properties] = await Promise.all([
-        assets.palletAssetsBalance(
+      const [balance, nativeBalance] = await Promise.all([
+        assetsV2.getTokenBalance(
           parachain,
-          location,
+          para.info.specName,
           sourceAccount,
-          "foreignAssets",
+          registry.ethChainId,
+          token,
         ),
-        parachain.query.system.account(sourceAccount),
-        assets.parachainNativeAsset(parachain),
+        assetsV2.getNativeBalance(parachain, sourceAccount),
       ]);
-      const nativeBalance = BigInt(
-        (nativeBalanceCodec.toPrimitive() as any).data.free,
-      );
       return {
         balance: balance ?? 0n,
         gatewayAllowance: undefined,
         nativeBalance,
-        nativeTokenDecimals: properties.tokenDecimal,
-        nativeSymbol: properties.tokenSymbol,
+        nativeTokenDecimals: para.info.tokenDecimals,
+        nativeSymbol: para.info.tokenSymbols,
       };
     }
     case "ethereum": {
