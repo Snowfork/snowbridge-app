@@ -9,6 +9,7 @@ import { FormLabel } from "./ui/form";
 
 interface BalanceDisplayProps {
   source: assetsV2.Source;
+  registry: assetsV2.AssetRegistry;
   token: string;
   displayDecimals: number;
   tokenMetadata: assets.ERC20Metadata | null;
@@ -16,6 +17,7 @@ interface BalanceDisplayProps {
 
 export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   source,
+  registry,
   token,
   tokenMetadata,
 }) => {
@@ -62,6 +64,14 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     );
   }
 
+  const dotBalance =
+    source.type === "substrate" && source.source !== registry.assetHubParaId
+      ? ` ;  ${formatBalance({
+          number: balanceInfo.dotBalance ?? 0n,
+          decimals: Number(balanceInfo.dotTokenDecimals),
+        })} ${balanceInfo.dotTokenSymbol}`
+      : "";
+
   const allowance =
     balanceInfo.gatewayAllowance !== undefined
       ? ` (Allowance: ${formatBalance({
@@ -87,7 +97,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         (sourceAccount ? " visible" : " hidden")
       }
     >
-      Balances: {nativeBalance} ; {tokenBalance} {allowance}
+      Balances: {nativeBalance} {dotBalance} ; {tokenBalance} {allowance}
     </FormLabel>
   );
 };

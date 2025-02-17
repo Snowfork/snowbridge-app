@@ -5,6 +5,7 @@ import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
+import { assetRegistry } from "@/lib/server/assets";
 
 interface TokenBalanceProps {
   context: Context;
@@ -25,6 +26,9 @@ export async function getTokenBalance({
   nativeBalance: bigint;
   nativeSymbol: string;
   nativeTokenDecimals: number;
+  dotBalance: bigint;
+  dotTokenSymbol: string;
+  dotTokenDecimals: number;
 }> {
   switch (source.type) {
     case "substrate": {
@@ -33,7 +37,7 @@ export async function getTokenBalance({
         para && context.hasParachain(para.parachainId)
           ? await context.parachain(para.parachainId)
           : await context.assetHub();
-      const [balance, nativeBalance] = await Promise.all([
+      const [balance, dotBalance, nativeBalance] = await Promise.all([
         assetsV2.getTokenBalance(
           parachain,
           para.info.specName,
@@ -41,6 +45,7 @@ export async function getTokenBalance({
           registry.ethChainId,
           token,
         ),
+        assetsV2.getDotBalance(parachain, para.info.specName, sourceAccount),
         assetsV2.getNativeBalance(parachain, sourceAccount),
       ]);
       return {
@@ -49,6 +54,9 @@ export async function getTokenBalance({
         nativeBalance,
         nativeTokenDecimals: para.info.tokenDecimals,
         nativeSymbol: para.info.tokenSymbols,
+        dotBalance: dotBalance,
+        dotTokenDecimals: registry.relaychain.tokenDecimals,
+        dotTokenSymbol: registry.relaychain.tokenSymbols,
       };
     }
     case "ethereum": {
@@ -61,6 +69,9 @@ export async function getTokenBalance({
         nativeBalance,
         nativeSymbol: "ETH",
         nativeTokenDecimals: 18,
+        dotBalance: 0n,
+        dotTokenDecimals: registry.relaychain.tokenDecimals,
+        dotTokenSymbol: registry.relaychain.tokenSymbols,
       };
     }
     default:

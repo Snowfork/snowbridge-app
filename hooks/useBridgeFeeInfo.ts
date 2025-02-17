@@ -4,6 +4,7 @@ import {
   assetsV2,
   Context,
   toEthereum,
+  toEthereumV2,
   toPolkadot,
 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
@@ -25,7 +26,7 @@ async function fetchBridgeFeeInfo([
   token,
 ]: [
   Context | null,
-  "substrate" | "ethereum",
+  assetsV2.Source,
   Destination,
   assetsV2.AssetRegistry,
   string,
@@ -34,11 +35,15 @@ async function fetchBridgeFeeInfo([
   if (context === null) {
     return;
   }
-  switch (source) {
+  switch (source.type) {
     case "substrate": {
-      const fee = await toEthereum.getSendFee(context);
+      const fee = await toEthereumV2.getDeliveryFee(
+        await context.assetHub(),
+        source.source,
+        registry,
+      );
       return {
-        fee,
+        fee: fee.totalFeeInDot,
         decimals: registry.relaychain.tokenDecimals ?? 0,
         symbol: registry.relaychain.tokenSymbols ?? "",
       };
@@ -63,7 +68,7 @@ async function fetchBridgeFeeInfo([
 }
 
 export function useBridgeFeeInfo(
-  source: "substrate" | "ethereum",
+  source: assetsV2.Source,
   destination: Destination,
   token: string,
 ) {

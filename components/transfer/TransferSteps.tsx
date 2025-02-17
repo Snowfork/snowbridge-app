@@ -12,7 +12,6 @@ import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
-import { useAtomValue } from "jotai";
 import { RefreshButton } from "../RefreshButton";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
@@ -37,7 +36,7 @@ interface StepData {
 function TransferFeeStep(step: StepData) {
   const { data: assetRegistry } = useAssetRegistry();
   const { data: feeInfo, error } = useBridgeFeeInfo(
-    step.data.source.type,
+    step.data.source,
     step.data.destination,
     step.data.formData.token,
   );
@@ -66,11 +65,12 @@ function TransferFeeStep(step: StepData) {
 
   const transferFee = parseUnits("0.2", feeInfo.decimals);
   const fee = formatUnits(feeInfo.fee + transferFee, feeInfo.decimals);
+  const name = assetRegistry.parachains[step.data.source.source].info.name;
   return (
     <SubstrateTransferStep
       {...step}
-      title={`Missing fee on ${step.data.source.name}.`}
-      description={`Source account requires a fee on ${step.data.source.name}. This step will Transfer funds from the relaychain.`}
+      title={`Missing fee on ${name}.`}
+      description={`Source account requires a fee on ${name}. This step will Transfer funds from the relaychain.`}
       defaultAmount={fee}
     />
   );

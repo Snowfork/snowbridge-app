@@ -458,15 +458,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormItem {...field}>
                   <div className="grid grid-cols-2 space-x-2">
                     <FormLabel>From account</FormLabel>
-                    <BalanceDisplay
-                      source={source}
-                      token={token}
-                      tokenMetadata={tokenMetadata}
-                      displayDecimals={8}
-                    />
                   </div>
                   <FormControl>
-                    <>
+                    <div>
                       {source.type == "ethereum" ? (
                         <SelectedEthereumWallet field={field} />
                       ) : (
@@ -475,7 +469,16 @@ export const TransferForm: FC<TransferFormProps> = ({
                           source={source.id}
                         />
                       )}
-                    </>
+                      <div className="flex flex-row-reverse pt-1">
+                        <BalanceDisplay
+                          source={source}
+                          registry={assetRegistry}
+                          token={token}
+                          tokenMetadata={tokenMetadata}
+                          displayDecimals={8}
+                        />
+                      </div>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -569,7 +572,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             Delivery Fee:{" "}
             <FeeDisplay
               className="inline"
-              source={source.type}
+              source={source}
               destination={destination}
               token={token}
               displayDecimals={8}
