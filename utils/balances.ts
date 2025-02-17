@@ -1,5 +1,5 @@
 "use client";
-import { Context, assets, environment } from "@snowbridge/api";
+import { Context, assets, assetsV2, environment } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
@@ -11,7 +11,8 @@ interface TokenBalanceProps {
   context: Context;
   token: string;
   ethereumChainId: bigint;
-  source: environment.TransferLocation;
+  source: assetsV2.Source;
+  registry: assetsV2.AssetRegistry;
   sourceAccount: string;
 }
 export async function getTokenBalance({
@@ -19,6 +20,7 @@ export async function getTokenBalance({
   token,
   ethereumChainId,
   source,
+  registry,
   sourceAccount,
 }: TokenBalanceProps): Promise<{
   balance: bigint;
@@ -29,12 +31,10 @@ export async function getTokenBalance({
 }> {
   switch (source.type) {
     case "substrate": {
-      if (source.paraInfo?.paraId === undefined) {
-        throw Error(`ParaId not configured for source ${source.name}.`);
-      }
+      const para = registry.parachains[source.id];
       const parachain =
-        source.paraInfo && context.hasParachain(source.paraInfo.paraId)
-          ? await context.parachain(source.paraInfo.paraId)
+        para && context.hasParachain(para.parachainId)
+          ? await context.parachain(para.parachainId)
           : await context.assetHub();
       const location = assets.erc20TokenToAssetLocation(
         parachain.registry,

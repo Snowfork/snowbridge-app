@@ -5,11 +5,11 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
-import { AccountInfo, ValidationData } from "@/utils/types";
-import { assets, Context, environment } from "@snowbridge/api";
+import { AccountInfo, Destination, ValidationData } from "@/utils/types";
+import { assets, assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
@@ -46,27 +46,27 @@ import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 function getBeneficiaries(
-  destination: environment.TransferLocation,
+  destination: Destination,
   polkadotAccounts: WalletAccount[],
   ethereumAccounts: string[],
 ) {
   const beneficiaries: AccountInfo[] = [];
-  if (
-    destination.type === "substrate" &&
-    (destination.paraInfo?.addressType === "32byte" ||
-      destination.paraInfo?.addressType === "both")
-  ) {
+  if (destination.type === "substrate") {
+    // TODO: SS58 conversion
     polkadotAccounts
+      .filter(
+        (x: any) =>
+          (x.type === "ethereum" &&
+            destination.parachain?.info.accountType === "AccountId20") ||
+          (x.type !== "ethereum" &&
+            destination.parachain?.info.accountType === "AccountId32"),
+      )
       .map((x) => {
         return { key: x.address, name: x.name || "", type: destination.type };
       })
       .forEach((x) => beneficiaries.push(x));
   }
-  if (
-    destination.type === "ethereum" ||
-    destination.paraInfo?.addressType === "20byte" ||
-    destination.paraInfo?.addressType === "both"
-  ) {
+  if (destination.type === "ethereum") {
     ethereumAccounts
       ?.map((x) => {
         return {
@@ -98,6 +98,44 @@ interface TransferFormProps {
   formData?: TransferFormData;
 }
 
+function getDestination(
+  source: assetsV2.Source,
+  destination: string,
+  registry: assetsV2.AssetRegistry,
+): Destination {
+  if (source.type === "ethereum") {
+    const parachain = registry.parachains[destination];
+    return {
+      id: parachain.info.specName,
+      name: parachain.info.name,
+      key: destination,
+      type: "substrate",
+      parachain,
+    };
+  } else {
+    const ethChain = registry.ethereumChains[destination];
+    if (!ethChain.evmParachainId) {
+      return {
+        id: "ethereum",
+        name: "Ethereum",
+        type: "ethereum",
+        key: destination,
+        ethChain,
+      };
+    } else {
+      const evmChain = registry.parachains[ethChain.evmParachainId];
+      return {
+        id: registry.ethereumChains[destination].id,
+        name: `${evmChain.info.name} (EVM)`,
+        key: destination,
+        type: "ethereum",
+        ethChain,
+        parachain: evmChain,
+      };
+    }
+  }
+}
+
 export const TransferForm: FC<TransferFormProps> = ({
   onValidated,
   onError,
@@ -111,17 +149,48 @@ export const TransferForm: FC<TransferFormProps> = ({
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const { data: assetRegistry } = useAssetRegistry();
 
-  const [source, setSource] = useState(environment.locations[0]);
+  const locations = useMemo(
+    () =>
+      assetsV2.getTransferLocations(assetRegistry, (path) => {
+        // Disallow MYTH to any location but 3369
+        if (
+          path.asset === "0xba41ddf06b7ffd89d1267b5a93bfef2424eb2003" &&
+          path.destination !== 3369
+        ) {
+          return false;
+        }
+        // Disallow MUSE to any location but 3369
+        if (
+          path.asset === "0xb34a6924a02100ba6ef12af1c798285e8f7a16ee" &&
+          path.destination !== 3369
+        ) {
+          return false;
+        }
+        return true;
+      }),
+    [assetRegistry],
+  );
+
+  const firstSource = locations[0];
+  const firstDestinations = Object.keys(firstSource.destinations).map(
+    (destination) => getDestination(firstSource, destination, assetRegistry),
+  );
+  const firstDestination = firstDestinations[0];
+  const ethAsset = Object.keys(
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
+  ).find((asset) =>
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+      asset
+    ].name.match(/Ether/),
+  );
+  const firstToken =
+    ethAsset ?? firstSource.destinations[firstDestination.key][0];
+
+  const [source, setSource] = useState(firstSource);
   const [sourceAccount, setSourceAccount] = useState<string>();
-  const [destinations, setDestinations] = useState(
-    source.destinationIds.map(
-      (d) => environment.locations.find((s) => d === s.id)!,
-    ),
-  );
-  const [destination, setDestination] = useState(destinations[0]);
-  const [token, setToken] = useState(
-    destination.erc20tokensReceivable[0].address,
-  );
+  const [destinations, setDestinations] = useState(firstDestinations);
+  const [destination, setDestination] = useState(firstDestination);
+  const [token, setToken] = useState(firstToken);
   const [validating, setValidating] = useState(false);
 
   const beneficiaries = getBeneficiaries(
@@ -155,13 +224,15 @@ export const TransferForm: FC<TransferFormProps> = ({
     setSourceAccount(newSourceAccount);
 
     let newDestinations = destinations;
+    let newSource = source;
     if (source.id !== watchSource) {
-      const newSource = environment.locations.find((s) => s.id == watchSource)!;
+      newSource = locations.find((s) => s.id == watchSource)!;
       setSource(newSource);
-      newDestinations = newSource.destinationIds
-        .map((d) => environment.locations.find((s) => d === s.id))
-        .filter((s) => s !== undefined)
-        .map((s) => s!);
+      newDestinations = Object.keys(newSource.destinations).map(
+        (destination) => {
+          return getDestination(newSource, destination, assetRegistry);
+        },
+      );
       setDestinations(newDestinations);
     }
     const newDestination =
@@ -170,13 +241,12 @@ export const TransferForm: FC<TransferFormProps> = ({
     setDestination(newDestination);
     form.resetField("destination", { defaultValue: newDestination.id });
 
-    const newTokens = newDestination.erc20tokensReceivable;
+    const newTokens = newSource.destinations[newDestination.key];
     const newToken =
-      newTokens.find(
-        (x) => x.address.toLowerCase() == watchToken.toLowerCase(),
-      ) ?? newTokens[0];
-    setToken(newToken.address);
-    form.resetField("token", { defaultValue: newToken.address });
+      newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
+      newTokens[0];
+    setToken(newToken);
+    form.resetField("token", { defaultValue: newToken });
     if (formData?.beneficiary) {
       form.resetField("beneficiary", {
         defaultValue: formData.beneficiary,
@@ -197,6 +267,9 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchSource,
     watchToken,
     watchSourceAccount,
+    source,
+    locations,
+    assetRegistry,
   ]);
 
   const tokenMetadata =
@@ -209,8 +282,6 @@ export const TransferForm: FC<TransferFormProps> = ({
       setValidating(true);
       track("Validate Send", formData);
       try {
-        if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
-
         const amountInSmallestUnit = parseUnits(
           formData.amount,
           tokenMetadata.decimals,
@@ -222,10 +293,18 @@ export const TransferForm: FC<TransferFormProps> = ({
           return;
         }
 
-        const minimumTransferAmount =
-          destination.erc20tokensReceivable.find(
-            (t) => t.address.toLowerCase() === formData.token.toLowerCase(),
-          )?.minimumTransferAmount ?? 1n;
+        let minimumTransferAmount = 1n;
+        if (destination.type === "substrate") {
+          const ahMin =
+            destination.parachain?.assets[formData.token.toLowerCase()]
+              .minimumBalance ?? minimumTransferAmount;
+          const dhMin =
+            assetRegistry.parachains[assetRegistry.assetHubParaId].assets[
+              formData.token.toLowerCase()
+            ].minimumBalance;
+          if (ahMin > minimumTransferAmount) minimumTransferAmount = ahMin;
+          if (dhMin > minimumTransferAmount) minimumTransferAmount = dhMin;
+        }
         if (amountInSmallestUnit < minimumTransferAmount) {
           const errorMessage = `Cannot send less than minimum value of ${formatBalance(
             {
@@ -264,6 +343,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         await onValidated({
           source,
           destination,
+          assetRegistry,
           formData,
           tokenMetadata,
           amountInSmallestUnit,
@@ -280,6 +360,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       form,
       onValidated,
       setValidating,
+      assetRegistry,
       onError,
       source,
       tokenMetadata,
@@ -302,13 +383,30 @@ export const TransferForm: FC<TransferFormProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {environment.locations
-                          .filter((s) => s.destinationIds.length > 0)
-                          .map((s) => (
+                        {locations.map((s) => {
+                          let name: string;
+                          if (s.type === "ethereum") {
+                            const eth = assetRegistry.ethereumChains[s.source];
+                            if (!eth.evmParachainId) {
+                              name = "Ethereum";
+                            } else {
+                              const evmChain =
+                                assetRegistry.parachains[eth.evmParachainId];
+                              name = `${evmChain.info.name} (EVM)`;
+                            }
+                          } else {
+                            name = assetRegistry.parachains[s.source].info.name;
+                          }
+                          return (
                             <SelectItem key={s.id} value={s.id}>
-                              <SelectItemWithIcon label={s.name} image={s.id} />
+                              <SelectItemWithIcon
+                                label={name}
+                                image={s.id}
+                                altImage="parachain_generic"
+                              />
                             </SelectItem>
-                          ))}
+                          );
+                        })}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -332,7 +430,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                       <SelectGroup>
                         {destinations.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                            <SelectItemWithIcon label={s.name} image={s.id} />
+                            <SelectItemWithIcon
+                              label={s.name}
+                              image={s.id}
+                              altImage="parachain_generic"
+                            />
                           </SelectItem>
                         ))}
                       </SelectGroup>
@@ -435,11 +537,21 @@ export const TransferForm: FC<TransferFormProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {destination.erc20tokensReceivable.map((t) => (
-                              <SelectItem key={t.address} value={t.address}>
-                                <SelectItemWithIcon label={t.id} image={t.id} />
-                              </SelectItem>
-                            ))}
+                            {source.destinations[destination.key].map((t) => {
+                              const asset =
+                                assetRegistry.ethereumChains[
+                                  assetRegistry.ethChainId
+                                ].assets[t.toLowerCase()];
+                              return (
+                                <SelectItem key={t} value={t}>
+                                  <SelectItemWithIcon
+                                    label={asset.name}
+                                    image={asset.symbol}
+                                    altImage="token_generic"
+                                  />
+                                </SelectItem>
+                              );
+                            })}
                           </SelectGroup>
                         </SelectContent>
                         <FormMessage />
@@ -480,8 +592,8 @@ export const TransferForm: FC<TransferFormProps> = ({
 interface SubmitButtonProps {
   ethereumAccounts: string[] | null;
   polkadotAccounts: WalletAccount[] | null;
-  destination: environment.TransferLocation;
-  source: environment.TransferLocation;
+  destination: Destination;
+  source: assetsV2.Source;
   tokenMetadata: assets.ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;

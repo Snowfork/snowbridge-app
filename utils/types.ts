@@ -1,5 +1,11 @@
 import { type useRouter } from "next/navigation";
-import { toPolkadot, toEthereum, environment, assets } from "@snowbridge/api";
+import {
+  toPolkadot,
+  toEthereum,
+  environment,
+  assets,
+  assetsV2,
+} from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
 import { Codec } from "@polkadot/types/types";
@@ -119,10 +125,20 @@ export interface SignerInfo {
   ethereumProvider?: BrowserProvider;
 }
 
+export type Destination = {
+  id: string;
+  name: string;
+  key: string;
+  type: assetsV2.SourceType;
+  parachain?: assetsV2.Parachain;
+  ethChain?: assetsV2.EthereumChain;
+};
+
 export interface ValidationData {
   formData: TransferFormData;
-  source: environment.TransferLocation;
-  destination: environment.TransferLocation;
+  assetRegistry: assetsV2.AssetRegistry;
+  source: assetsV2.Source;
+  destination: Destination;
   tokenMetadata: assets.ERC20Metadata;
   amountInSmallestUnit: bigint;
 }

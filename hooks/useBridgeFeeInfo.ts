@@ -1,14 +1,15 @@
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   assets,
+  assetsV2,
   Context,
-  environment,
   toEthereum,
   toPolkadot,
 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import { useAssetRegistry } from "./useAssetRegistry";
+import { Destination } from "@/utils/types";
 
 export interface FeeInfo {
   fee: bigint;
@@ -20,13 +21,13 @@ async function fetchBridgeFeeInfo([
   context,
   source,
   destination,
-  assetHubNativeToken,
+  registry,
   token,
 ]: [
   Context | null,
   "substrate" | "ethereum",
-  environment.TransferLocation,
-  assets.NativeAsset | null,
+  Destination,
+  assetsV2.AssetRegistry,
   string,
   string,
 ]): Promise<FeeInfo | undefined> {
@@ -38,19 +39,17 @@ async function fetchBridgeFeeInfo([
       const fee = await toEthereum.getSendFee(context);
       return {
         fee,
-        decimals: assetHubNativeToken?.tokenDecimal ?? 0,
-        symbol: assetHubNativeToken?.tokenSymbol ?? "",
+        decimals: registry.relaychain.tokenDecimals ?? 0,
+        symbol: registry.relaychain.tokenSymbols ?? "",
       };
     }
     case "ethereum": {
-      if (destination.paraInfo === undefined) {
-        throw Error("No paraInfo set for parachain.");
-      }
+      const para = registry.parachains[destination.key];
       const fee = await toPolkadot.getSendFee(
         context,
         token,
-        destination.paraInfo.paraId,
-        destination.paraInfo.destinationFeeDOT,
+        para.parachainId,
+        para.destinationFeeInDOT,
       );
       return {
         fee,
@@ -65,20 +64,13 @@ async function fetchBridgeFeeInfo([
 
 export function useBridgeFeeInfo(
   source: "substrate" | "ethereum",
-  destination: environment.TransferLocation,
+  destination: Destination,
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
   const { data: registry } = useAssetRegistry();
   return useSWR(
-    [
-      context,
-      source,
-      destination,
-      registry.relaychain.tokenSymbols,
-      token,
-      "feeInfo",
-    ],
+    [context, source, destination, registry, token, "feeInfo"],
     fetchBridgeFeeInfo,
     {
       errorRetryCount: 10,
