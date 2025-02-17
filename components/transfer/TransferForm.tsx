@@ -66,7 +66,10 @@ function getBeneficiaries(
       })
       .forEach((x) => beneficiaries.push(x));
   }
-  if (destination.type === "ethereum") {
+  if (
+    destination.type === "ethereum" ||
+    destination.parachain?.info.accountType === "AccountId20"
+  ) {
     ethereumAccounts
       ?.map((x) => {
         return {
