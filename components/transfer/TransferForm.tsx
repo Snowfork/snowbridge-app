@@ -153,24 +153,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const { data: assetRegistry } = useAssetRegistry();
 
   const locations = useMemo(
-    () =>
-      assetsV2.getTransferLocations(assetRegistry, (path) => {
-        // Disallow MYTH to any location but 3369
-        if (
-          path.asset === "0xba41ddf06b7ffd89d1267b5a93bfef2424eb2003" &&
-          path.destination !== 3369
-        ) {
-          return false;
-        }
-        // Disallow MUSE to any location but 3369
-        if (
-          path.asset === "0xb34a6924a02100ba6ef12af1c798285e8f7a16ee" &&
-          path.destination !== 3369
-        ) {
-          return false;
-        }
-        return true;
-      }),
+    () => assetsV2.getTransferLocations(assetRegistry),
     [assetRegistry],
   );
 

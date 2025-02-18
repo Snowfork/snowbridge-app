@@ -181,7 +181,7 @@ export type ContextOverrides = {
 
 export async function createContext(
   ethereumProvider: AbstractProvider,
-  { config, ethChainId }: SnowbridgeEnvironment,
+  { config, ethChainId, name }: SnowbridgeEnvironment,
   overrides?: ContextOverrides,
 ) {
   const parachains = {
@@ -203,6 +203,7 @@ export async function createContext(
   );
   ethChains[ethChainId.toString()] = ethereumProvider;
   return new Context({
+    environment: name,
     ethereum: {
       ethChainId,
       ethChains,

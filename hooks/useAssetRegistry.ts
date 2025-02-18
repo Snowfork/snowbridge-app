@@ -28,7 +28,10 @@ export const useAssetRegistry = () => {
     suspense: true,
     fallbackData: registry,
     revalidateOnFocus: false,
-    revalidateOnMount: true,
+    revalidateOnMount: false,
+    revalidateOnReconnect: false,
+    refreshWhenOffline: false,
+    refreshWhenHidden: false,
     errorRetryInterval: ERROR_RETRY_INTERVAL,
     errorRetryCount: 12, // Retry 120 times every minute (2 hours)
   });
