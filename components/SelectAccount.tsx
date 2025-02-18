@@ -1,7 +1,5 @@
 "use client";
 import { trimAccount } from "@/utils/formatting";
-import { polkadotAccountsAtom } from "@/store/polkadot";
-import { useAtomValue } from "jotai";
 import { FC, useEffect, useMemo, useState } from "react";
 import { Input } from "./ui/input";
 import {
@@ -14,9 +12,6 @@ import {
 } from "./ui/select";
 import { Toggle } from "./ui/toggle";
 import { AccountInfo } from "@/utils/types";
-import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
-import { ethereumAccountsAtom } from "@/store/ethereum";
-import { ConnectEthereumWalletButton } from "./ConnectEthereumWalletButton";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 
 type SelectAccountProps = {
@@ -76,7 +71,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
               account.type === "substrate" ? (
                 <SelectItem key={account.key + "-" + i} value={account.key}>
                   <SelectItemWithIcon
-                    label={`${account.name} (${trimAccount(account.key)})`}
+                    label={`${account.name} (${trimAccount(account.key, 20)})`}
                     image={destination ?? ""}
                   />
                 </SelectItem>

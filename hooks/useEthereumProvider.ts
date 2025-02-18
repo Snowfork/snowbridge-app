@@ -28,6 +28,7 @@ export function useEthereumProvider() {
     if (walletProvider !== undefined && error === "") {
       setEthersProvider(new BrowserProvider(walletProvider as Eip1193Provider));
       setEthereumProvider(walletProvider as Eip1193Provider);
+      console.dir(walletProvider);
       setEthereumProviderType(walletProviderType ?? null);
     } else {
       setEthersProvider(null);
