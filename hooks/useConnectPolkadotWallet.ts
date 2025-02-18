@@ -10,6 +10,7 @@ import { useAtom, useSetAtom } from "jotai";
 import { useEffect } from "react";
 import { metadata } from "@/lib/metadata";
 import { getWalletBySource } from "@talismn/connect-wallets";
+import { isHex } from "@polkadot/util";
 
 export const useConnectPolkadotWallet = (ss58Format?: number): void => {
   const setAccounts = useSetAtom(polkadotAccountsAtom);
@@ -51,7 +52,9 @@ export const useConnectPolkadotWallet = (ss58Format?: number): void => {
           accounts.map((a) => {
             return {
               ...a,
-              address: transformSs58Format(a.address, ss58Format),
+              address: !isHex(a.address)
+                ? transformSs58Format(a.address, ss58Format)
+                : a.address,
             };
           }),
         );

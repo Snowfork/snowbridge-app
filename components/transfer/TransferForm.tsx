@@ -20,7 +20,6 @@ import { Button } from "../ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -39,7 +38,11 @@ import { track } from "@vercel/analytics";
 import { validateOFAC } from "@/utils/validateOFAC";
 import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { formatBalance } from "@/utils/formatting";
+import {
+  formatBalance,
+  transformSs58Format,
+  trimAccount,
+} from "@/utils/formatting";
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
@@ -49,10 +52,10 @@ function getBeneficiaries(
   destination: Destination,
   polkadotAccounts: WalletAccount[],
   ethereumAccounts: string[],
+  ss58Format: number,
 ) {
   const beneficiaries: AccountInfo[] = [];
   if (destination.type === "substrate") {
-    // TODO: SS58 conversion
     polkadotAccounts
       .filter(
         (x: any) =>
@@ -61,8 +64,20 @@ function getBeneficiaries(
           (x.type !== "ethereum" &&
             destination.parachain?.info.accountType === "AccountId32"),
       )
-      .map((x) => {
-        return { key: x.address, name: x.name || "", type: destination.type };
+      .map((x: any) => {
+        if (x.type === "ethereum") {
+          return {
+            key: x.address,
+            name: `${x.name} (${trimAccount(x.address, 20)})`,
+            type: "ethereum" as environment.SourceType,
+          };
+        } else {
+          return {
+            key: transformSs58Format(x.address, ss58Format),
+            name: x.name,
+            type: destination.type,
+          };
+        }
       })
       .forEach((x) => beneficiaries.push(x));
   }
@@ -70,26 +85,15 @@ function getBeneficiaries(
     destination.type === "ethereum" ||
     destination.parachain?.info.accountType === "AccountId20"
   ) {
-    ethereumAccounts
-      ?.map((x) => {
-        return {
+    ethereumAccounts?.forEach((x) => {
+      if (!beneficiaries.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
+        beneficiaries.push({
           key: x,
           name: x,
           type: "ethereum" as environment.SourceType,
-        };
-      })
-      .forEach((x) => beneficiaries.push(x));
-
-    polkadotAccounts
-      .filter((x: any) => x.type === "ethereum")
-      .map((x) => {
-        return {
-          key: x.address,
-          name: `${x.name} (${x.source})` || "",
-          type: destination.type,
-        };
-      })
-      .forEach((x) => beneficiaries.push(x));
+        });
+      }
+    });
   }
 
   return beneficiaries;
@@ -183,6 +187,8 @@ export const TransferForm: FC<TransferFormProps> = ({
     destination,
     polkadotAccounts ?? [],
     ethereumAccounts,
+    destination.parachain?.info.ss58Format ??
+      assetRegistry.relaychain.ss58Format,
   );
 
   const form = useForm<TransferFormData>({

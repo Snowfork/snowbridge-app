@@ -20,14 +20,12 @@ import Link from "next/link";
 import { FC } from "react";
 import { Button } from "./ui/button";
 import {
-  polkadotAccountAtom,
   polkadotAccountsAtom,
   polkadotWalletModalOpenAtom,
   walletAtom,
 } from "@/store/polkadot";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
-import { trimAccount } from "@/utils/formatting";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
@@ -42,7 +40,6 @@ export const Menu: FC = () => {
   const { data: registry } = useAssetRegistry();
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
 
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
