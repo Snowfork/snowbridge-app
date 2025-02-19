@@ -95,6 +95,22 @@ function getBeneficiaries(
         });
       }
     });
+
+    polkadotAccounts
+      .filter((x: any) => x.type === "ethereum")
+      .forEach((x) => {
+        if (
+          !beneficiaries.find(
+            (b) => b.key.toLowerCase() === x.address.toLowerCase(),
+          )
+        ) {
+          beneficiaries.push({
+            key: x.address,
+            name: `${x.name} (${trimAccount(x.address, 20)})`,
+            type: "ethereum" as environment.SourceType,
+          });
+        }
+      });
   }
 
   return beneficiaries;
@@ -274,6 +290,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     source,
     locations,
     assetRegistry,
+    polkadotAccounts,
   ]);
 
   const tokenMetadata =

@@ -31,7 +31,7 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
   return (
     <Select
       onValueChange={onValueChange}
-      value={polkadotAccount ?? polkadotAccounts[0].address}
+      value={polkadotAccount ?? polkadotAccounts[0]?.address}
     >
       <SelectTrigger>
         <SelectValue placeholder="Select an account" />
