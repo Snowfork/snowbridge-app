@@ -59,12 +59,14 @@ import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
+  const { data: assetRegistry } = useAssetRegistry();
 
   const [feeDisplay, setFeeDisplay] = useState("");
   const [balanceCheck, setBalanceCheck] = useState("");
@@ -478,7 +480,13 @@ export const SwitchComponent: FC = () => {
                     </FormDescription>
                     <FormControl>
                       <>
-                        <SelectedPolkadotAccount source={sourceId} />
+                        <SelectedPolkadotAccount
+                          source={sourceId}
+                          ss58Format={assetRegistry.relaychain.ss58Format}
+                          polkadotAccounts={polkadotAccounts ?? []}
+                          polkadotAccount={polkadotAccount?.address}
+                          onValueChange={setPolkadotAccount}
+                        />
                         <PolkadotBalance
                           sourceAccount={sourceAccount ?? ""}
                           sourceId={sourceId}
