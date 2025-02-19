@@ -13,6 +13,7 @@ interface BalanceDisplayProps {
   token: string;
   displayDecimals: number;
   tokenMetadata: assets.ERC20Metadata | null;
+  sourceAccount: string;
 }
 
 export const BalanceDisplay: FC<BalanceDisplayProps> = ({
@@ -20,15 +21,8 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   registry,
   token,
   tokenMetadata,
+  sourceAccount,
 }) => {
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
-  const ethereumAccount = useAtomValue(ethereumAccountAtom);
-
-  const sourceAccount =
-    source.type == "ethereum"
-      ? (ethereumAccount ?? undefined)
-      : polkadotAccount?.address;
-
   const { data: balanceInfo, error } = useTokenBalance(
     sourceAccount,
     source,

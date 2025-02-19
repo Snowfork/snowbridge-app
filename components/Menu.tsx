@@ -20,6 +20,7 @@ import Link from "next/link";
 import { FC } from "react";
 import { Button } from "./ui/button";
 import {
+  polkadotAccountAtom,
   polkadotAccountsAtom,
   polkadotWalletModalOpenAtom,
   walletAtom,
@@ -43,6 +44,7 @@ export const Menu: FC = () => {
   const wallet = useAtomValue(walletAtom);
 
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const PolkadotWallet = () => {
@@ -73,7 +75,13 @@ export const Menu: FC = () => {
           </div>
           <p>Account:</p>
         </div>
-        <SelectedPolkadotAccount source="polkadot" />
+        <SelectedPolkadotAccount
+          source="polkadot"
+          ss58Format={registry.relaychain.ss58Format}
+          polkadotAccount={polkadotAccount?.address}
+          polkadotAccounts={polkadotAccounts}
+          onValueChange={setPolkadotAccount}
+        />
       </>
     );
   };

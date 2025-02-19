@@ -47,6 +47,7 @@ import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { isHex } from "@polkadot/util";
 
 function getBeneficiaries(
   destination: Destination,
@@ -220,6 +221,17 @@ export const TransferForm: FC<TransferFormProps> = ({
     if (source.id !== watchSource) {
       newSource = locations.find((s) => s.id == watchSource)!;
       setSource(newSource);
+      if (newSource.type === "substrate") {
+        const accountType =
+          assetRegistry.parachains[newSource.source].info.accountType;
+        const accounts = polkadotAccounts?.filter(
+          filterByAccountType(accountType),
+        );
+        form.resetField("sourceAccount", {
+          defaultValue:
+            accounts && accounts.length > 0 ? accounts[0].address : undefined,
+        });
+      }
       newDestinations = Object.keys(newSource.destinations).map(
         (destination) => {
           return getDestination(newSource, destination, assetRegistry);
@@ -439,41 +451,48 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
         </div>
         <div className="transfer-details">
-          {sourceAccount && (
-            <FormField
-              control={form.control}
-              name="sourceAccount"
-              render={({ field }) => (
-                <FormItem {...field}>
-                  <div className="grid grid-cols-2 space-x-2">
-                    <FormLabel>From account</FormLabel>
-                  </div>
-                  <FormControl>
-                    <div>
-                      {source.type == "ethereum" ? (
-                        <SelectedEthereumWallet field={field} />
-                      ) : (
-                        <SelectedPolkadotAccount
-                          field={field}
-                          source={source.id}
-                        />
-                      )}
-                      <div className="flex flex-row-reverse pt-1">
-                        <BalanceDisplay
-                          source={source}
-                          registry={assetRegistry}
-                          token={token}
-                          tokenMetadata={tokenMetadata}
-                          displayDecimals={8}
-                        />
-                      </div>
+          <FormField
+            control={form.control}
+            name="sourceAccount"
+            render={({ field }) => (
+              <FormItem {...field}>
+                <div className="grid grid-cols-2 space-x-2">
+                  <FormLabel>From account</FormLabel>
+                </div>
+                <FormControl>
+                  <div>
+                    {source.type == "ethereum" ? (
+                      <SelectedEthereumWallet field={field} />
+                    ) : (
+                      <SelectedPolkadotAccount
+                        source={source.id}
+                        polkadotAccounts={polkadotAccounts ?? []}
+                        polkadotAccount={watchSourceAccount}
+                        onValueChange={field.onChange}
+                        ss58Format={
+                          assetRegistry.parachains[source.source]?.info
+                            .ss58Format ??
+                          assetRegistry.relaychain.ss58Format ??
+                          0
+                        }
+                      />
+                    )}
+                    <div className="flex flex-row-reverse pt-1">
+                      <BalanceDisplay
+                        source={source}
+                        sourceAccount={watchSourceAccount}
+                        registry={assetRegistry}
+                        token={token}
+                        tokenMetadata={tokenMetadata}
+                        displayDecimals={8}
+                      />
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {beneficiaries && beneficiaries.length > 0 && (
             <FormField
               control={form.control}
@@ -646,4 +665,17 @@ function SubmitButton({
       </Button>
     </div>
   );
+}
+
+function filterByAccountType(
+  accountType: assetsV2.AccountType | "both",
+): (_: WalletAccount) => boolean {
+  return function (acc: WalletAccount) {
+    const is20byte = isHex(acc.address) && acc.address.trim().length === 42;
+    return (
+      (accountType === "AccountId20" && is20byte) ||
+      (accountType === "AccountId32" && !is20byte) ||
+      accountType === "both"
+    );
+  };
 }
