@@ -115,7 +115,7 @@ async function planSend(
       const plan = await toPolkadotV2.validateTransfer(
         {
           assetHub: await context.assetHub(),
-          bridgeHub: await context.assetHub(),
+          bridgeHub: await context.bridgeHub(),
           ethereum: context.ethereum(),
           gateway: context.gateway(),
           destParachain: await context.parachain(paraInfo.parachainId),
