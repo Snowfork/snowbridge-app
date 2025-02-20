@@ -48,6 +48,7 @@ import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { isHex } from "@polkadot/util";
+import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 
 function getBeneficiaries(
   destination: TransferLocation,
@@ -261,6 +262,11 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
+  const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
+    getSource(source, assetRegistry),
+    destination,
+    token,
+  );
 
   useEffect(() => {
     const newSourceAccount =
@@ -387,6 +393,9 @@ export const TransferForm: FC<TransferFormProps> = ({
           setValidating(false);
           return;
         }
+        if (!feeInfo) {
+          throw Error(`No delivery fee set. ${feeError}`);
+        }
 
         if (source.id !== formData.source) {
           throw Error(
@@ -405,6 +414,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           formData,
           tokenMetadata,
           amountInSmallestUnit,
+          fee: feeInfo,
         });
         setValidating(false);
       } catch (err: unknown) {
@@ -422,6 +432,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       onError,
       source,
       tokenMetadata,
+      feeInfo,
     ],
   );
   return (

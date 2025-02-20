@@ -3,15 +3,7 @@ import { assetsV2, Context, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import { useAssetRegistry } from "./useAssetRegistry";
-import { TransferLocation } from "@/utils/types";
-
-export interface FeeInfo {
-  fee: bigint;
-  decimals: number;
-  symbol: string;
-  delivery: toEthereumV2.DeliveryFee | toPolkadotV2.DeliveryFee;
-  type: assetsV2.SourceType;
-}
+import { FeeInfo, TransferLocation } from "@/utils/types";
 
 async function fetchBridgeFeeInfo([
   context,

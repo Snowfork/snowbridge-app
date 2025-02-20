@@ -1,15 +1,15 @@
 import { toEthereum, toPolkadot } from "@snowbridge/api";
 import {
-  SendValidationResult,
   TransferPlanSteps,
   TransferStep,
   TransferStepKind,
   ValidationData,
+  ValidationResult,
 } from "./types";
 
 export function createStepsFromPlan(
   data: ValidationData,
-  plan: SendValidationResult,
+  plan: ValidationResult,
 ): TransferPlanSteps {
   const errors = [];
   const steps: TransferStep[] = [];
