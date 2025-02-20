@@ -125,7 +125,7 @@ export interface SignerInfo {
   ethereumProvider?: BrowserProvider;
 }
 
-export type Destination = {
+export type TransferLocation = {
   id: string;
   name: string;
   key: string;
@@ -137,8 +137,8 @@ export type Destination = {
 export interface ValidationData {
   formData: TransferFormData;
   assetRegistry: assetsV2.AssetRegistry;
-  source: assetsV2.Source;
-  destination: Destination;
+  source: TransferLocation;
+  destination: TransferLocation;
   tokenMetadata: assets.ERC20Metadata;
   amountInSmallestUnit: bigint;
 }

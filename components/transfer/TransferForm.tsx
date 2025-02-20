@@ -5,7 +5,7 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
-import { AccountInfo, Destination, ValidationData } from "@/utils/types";
+import { AccountInfo, TransferLocation, ValidationData } from "@/utils/types";
 import { assets, assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
@@ -50,7 +50,7 @@ import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { isHex } from "@polkadot/util";
 
 function getBeneficiaries(
-  destination: Destination,
+  destination: TransferLocation,
   polkadotAccounts: WalletAccount[],
   ethereumAccounts: string[],
   ss58Format: number,
@@ -122,11 +122,48 @@ interface TransferFormProps {
   formData?: TransferFormData;
 }
 
+function getSource(
+  source: assetsV2.Source,
+  registry: assetsV2.AssetRegistry,
+): TransferLocation {
+  if (source.type === "ethereum") {
+    const ethChain = registry.ethereumChains[source.source];
+    if (!ethChain.evmParachainId) {
+      return {
+        id: "ethereum",
+        name: "Ethereum",
+        type: "ethereum",
+        key: source.source.toString(),
+        ethChain,
+      };
+    } else {
+      const evmChain = registry.parachains[ethChain.evmParachainId];
+      return {
+        id: ethChain.id,
+        name: `${evmChain.info.name} (EVM)`,
+        key: source.source.toString(),
+        type: "ethereum",
+        ethChain,
+        parachain: evmChain,
+      };
+    }
+  } else {
+    const parachain = registry.parachains[source.source];
+    return {
+      id: parachain.info.specName,
+      name: parachain.info.name,
+      key: source.source.toString(),
+      type: "substrate",
+      parachain,
+    };
+  }
+}
+
 function getDestination(
   source: assetsV2.Source,
   destination: string,
   registry: assetsV2.AssetRegistry,
-): Destination {
+): TransferLocation {
   if (source.type === "ethereum") {
     const parachain = registry.parachains[destination];
     return {
@@ -362,7 +399,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           );
         }
         await onValidated({
-          source,
+          source: getSource(source, assetRegistry),
           destination,
           assetRegistry,
           formData,
@@ -597,7 +634,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             Delivery Fee:{" "}
             <FeeDisplay
               className="inline"
-              source={source}
+              source={getSource(source, assetRegistry)}
               destination={destination}
               token={token}
               displayDecimals={8}
@@ -623,7 +660,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 interface SubmitButtonProps {
   ethereumAccounts: string[] | null;
   polkadotAccounts: WalletAccount[] | null;
-  destination: Destination;
+  destination: TransferLocation;
   source: assetsV2.Source;
   tokenMetadata: assets.ERC20Metadata | null;
   validating: boolean;

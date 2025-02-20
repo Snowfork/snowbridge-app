@@ -36,9 +36,9 @@ function sendResultToHistory(
           beneficiaryAddress: data.formData.beneficiary,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.paraInfo?.paraId,
+          destinationParachain: data.destination.parachain?.parachainId,
           destinationFee:
-            data.destination.paraInfo?.destinationFeeDOT.toString(),
+            data.destination.parachain?.destinationFeeInDOT.toString(),
         },
         submitted: {
           blockHash: sendResult.success?.ethereum.blockHash ?? "",

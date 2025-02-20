@@ -65,7 +65,7 @@ function TransferFeeStep(step: StepData) {
 
   const transferFee = parseUnits("0.2", feeInfo.decimals);
   const fee = formatUnits(feeInfo.fee + transferFee, feeInfo.decimals);
-  const name = assetRegistry.parachains[step.data.source.source].info.name;
+  const name = step.data.source.name;
   return (
     <SubstrateTransferStep
       {...step}

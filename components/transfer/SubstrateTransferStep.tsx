@@ -61,16 +61,16 @@ export function SubstrateTransferStep({
   const [error, setError] = useState<Message>();
 
   const targetInfo = useMemo(() => {
-    if (data.source.type === "ethereum" && data.destination.paraInfo) {
+    if (data.source.type === "ethereum" && data.destination.parachain) {
       // Source is ethereum and destination is the parachain.
       return {
-        paraId: data.destination.paraInfo.paraId,
+        paraId: data.destination.parachain.parachainId,
         account: data.formData.beneficiary,
       };
-    } else if (data.destination.type === "ethereum" && data.source.paraInfo) {
+    } else if (data.destination.type === "ethereum" && data.source.parachain) {
       // Destination is ethereum and source is the parachain.
       return {
-        paraId: data.source.paraInfo.paraId,
+        paraId: data.source.parachain.parachainId,
         account: data.formData.sourceAccount,
       };
     } else {
@@ -80,11 +80,11 @@ export function SubstrateTransferStep({
       return null;
     }
   }, [
-    data.destination.paraInfo,
+    data.destination.parachain,
     data.destination.type,
     data.formData.beneficiary,
     data.formData.sourceAccount,
-    data.source.paraInfo,
+    data.source.parachain,
     data.source.type,
   ]);
   const [account, setAccount] = useState(
