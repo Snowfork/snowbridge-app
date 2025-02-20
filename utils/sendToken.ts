@@ -1,4 +1,4 @@
-import { toEthereum, toPolkadot } from "@snowbridge/api";
+import { toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import {
   TransferPlanSteps,
   TransferStep,
@@ -16,10 +16,15 @@ export function createStepsFromPlan(
 
   switch (data.source.type) {
     case "substrate": {
-      const p = plan as toEthereum.SendValidationResult;
-      for (const error of p.failure?.errors ?? []) {
+      const p = plan as toEthereumV2.ValidationResult;
+      for (const log of p.logs) {
+        if (log.kind === toEthereumV2.ValidationKind.Warning) {
+          console.warn("Plan validation warning: ", log.message);
+          continue;
+        }
         if (
-          error.code == toEthereum.SendValidationCode.InsufficientFee &&
+          log.reason === toEthereumV2.ValidationReason.InsufficientDotFee &&
+          //TODO: check statemint
           data.source.id === "assethub"
         ) {
           steps.push({
@@ -27,7 +32,7 @@ export function createStepsFromPlan(
             displayOrder: 10,
           });
         } else {
-          errors.push(error);
+          errors.push(log);
         }
       }
       return {
@@ -37,40 +42,44 @@ export function createStepsFromPlan(
       };
     }
     case "ethereum": {
-      const p = plan as toPolkadot.SendValidationResult;
-      for (const error of p.failure?.errors ?? []) {
-        switch (error.code) {
-          case toPolkadot.SendValidationCode.BeneficiaryAccountMissing: {
+      const p = plan as toPolkadotV2.ValidationResult;
+      for (const log of p.logs) {
+        if (log.kind === toPolkadotV2.ValidationKind.Warning) {
+          console.warn("Plan validation warning: ", log.message);
+          continue;
+        }
+        switch (log.reason) {
+          case toPolkadotV2.ValidationReason.AccountDoesNotExist: {
             if (data.destination.id === "assethub") {
               steps.push({
                 kind: TransferStepKind.SubstrateTransferED,
                 displayOrder: 11,
               });
             } else {
-              errors.push(error);
+              errors.push(log);
             }
             break;
           }
-          case toPolkadot.SendValidationCode.ERC20SpendNotApproved: {
+          case toPolkadotV2.ValidationReason.GatewaySpenderLimitReached: {
             steps.push({
               kind: TransferStepKind.ApproveERC20,
               displayOrder: 30,
             });
             break;
           }
-          case toPolkadot.SendValidationCode.InsufficientToken: {
+          case toPolkadotV2.ValidationReason.InsufficientTokenBalance: {
             if (data.tokenMetadata.symbol.toLowerCase() === "weth") {
               steps.push({
                 kind: TransferStepKind.DepositWETH,
                 displayOrder: 20,
               });
             } else {
-              errors.push(error);
+              errors.push(log);
             }
             break;
           }
           default:
-            errors.push(error);
+            errors.push(log);
             break;
         }
       }

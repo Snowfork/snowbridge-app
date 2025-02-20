@@ -424,15 +424,15 @@ export const TransferForm: FC<TransferFormProps> = ({
       }
     },
     [
+      tokenMetadata,
       destination,
       form,
-      onValidated,
-      setValidating,
-      assetRegistry,
-      onError,
-      source,
-      tokenMetadata,
       feeInfo,
+      source,
+      onValidated,
+      assetRegistry,
+      feeError,
+      onError,
     ],
   );
   return (

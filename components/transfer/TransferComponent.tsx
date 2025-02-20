@@ -6,8 +6,19 @@ import { Transfer, transfersPendingLocalAtom } from "@/store/transferHistory";
 import { errorMessage } from "@/utils/errorMessage";
 import { TransferFormData } from "@/utils/formSchema";
 import { createStepsFromPlan } from "@/utils/sendToken";
-import { SendResult, TransferPlanSteps, ValidationData } from "@/utils/types";
-import { history, toEthereum, toPolkadot } from "@snowbridge/api";
+import {
+  MessageReciept,
+  ValidationResult,
+  TransferPlanSteps,
+  ValidationData,
+} from "@/utils/types";
+import {
+  history,
+  toEthereum,
+  toEthereumV2,
+  toPolkadot,
+  toPolkadotV2,
+} from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
 import { FC, useRef, useState } from "react";
@@ -22,7 +33,7 @@ import base64url from "base64url";
 function sendResultToHistory(
   messageId: string,
   data: ValidationData,
-  result: SendResult,
+  result: MessageReciept,
 ): Transfer {
   switch (data.source.type) {
     case "ethereum": {
@@ -163,7 +174,17 @@ export const TransferComponent: FC = () => {
         setBusy(null);
         return;
       }
-      if (steps.steps.length > 0 || !plan.success || refreshOnly) {
+      if (
+        steps.steps.length > 0 ||
+        !plan.logs.find(
+          (l) =>
+            (l.kind as toPolkadotV2.ValidationKind) ===
+              toPolkadotV2.ValidationKind.Error ||
+            (l.kind as toEthereumV2.ValidationKind) ===
+              toEthereumV2.ValidationKind.Error,
+        ) ||
+        refreshOnly
+      ) {
         setBusy(null);
         return;
       }
@@ -176,22 +197,16 @@ export const TransferComponent: FC = () => {
       if (requestId.current != req) return;
 
       setBusy(null);
-      if (result.success) {
-        const messageId = result.success?.messageId ?? "0x";
-        const historyItem = sendResultToHistory(messageId, data, result);
-        addPendingTransaction({
-          kind: "add",
-          transfer: historyItem,
-        });
-        refreshHistory();
-        track("Sending Complete", { ...data.formData, messageId });
-        const transferData = base64url.encode(JSON.stringify(historyItem));
-        router.push(`/txcomplete?transfer=${transferData}`);
-      } else {
-        track("Sending Failed", { ...data.formData });
-        // TODO: make error link and console log underlying error
-        showError("Sending failed", data.formData);
-      }
+      const messageId = result.messageId ?? "0x";
+      const historyItem = sendResultToHistory(messageId, data, result);
+      addPendingTransaction({
+        kind: "add",
+        transfer: historyItem,
+      });
+      refreshHistory();
+      track("Sending Complete", { ...data.formData, messageId });
+      const transferData = base64url.encode(JSON.stringify(historyItem));
+      router.push(`/txcomplete?transfer=${transferData}`);
     } catch (err) {
       console.error(err);
       if (requestId.current != req) return;
