@@ -8,7 +8,6 @@ import { TransferFormData } from "@/utils/formSchema";
 import { createStepsFromPlan } from "@/utils/sendToken";
 import {
   MessageReciept,
-  ValidationResult,
   TransferPlanSteps,
   ValidationData,
 } from "@/utils/types";

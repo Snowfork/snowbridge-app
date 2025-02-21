@@ -5,7 +5,12 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
-import { AccountInfo, TransferLocation, ValidationData } from "@/utils/types";
+import {
+  AccountInfo,
+  FeeInfo,
+  TransferLocation,
+  ValidationData,
+} from "@/utils/types";
 import { assets, assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
@@ -658,6 +663,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             beneficiaries={beneficiaries}
             destination={destination}
             source={source}
+            feeInfo={feeInfo}
             tokenMetadata={tokenMetadata}
             validating={validating}
             context={context}
@@ -673,6 +679,7 @@ interface SubmitButtonProps {
   polkadotAccounts: WalletAccount[] | null;
   destination: TransferLocation;
   source: assetsV2.Source;
+  feeInfo?: FeeInfo;
   tokenMetadata: assets.ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
@@ -684,6 +691,7 @@ function SubmitButton({
   polkadotAccounts,
   destination,
   source,
+  feeInfo,
   validating,
   tokenMetadata,
   beneficiaries,
@@ -718,15 +726,19 @@ function SubmitButton({
   return (
     <div className="flex flex-col items-center">
       <Button
-        disabled={context === null || tokenMetadata === null || validating}
+        disabled={
+          context === null || tokenMetadata === null || validating || !feeInfo
+        }
         className="w-1/3 action-button"
         type="submit"
       >
         {context === null
           ? "Connecting..."
           : validating
-            ? "Validating"
-            : "Submit"}
+            ? "Validating..."
+            : !feeInfo
+              ? "Fetching Fees..."
+              : "Submit"}
       </Button>
     </div>
   );
