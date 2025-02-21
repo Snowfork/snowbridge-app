@@ -24,8 +24,11 @@ async function fetchBridgeFeeInfo([
   }
   if (source.type === "substrate" && source.parachain) {
     const fee = await toEthereumV2.getDeliveryFee(
-      await context.assetHub(),
-      source.parachain?.parachainId,
+      {
+        assetHub: await context.assetHub(),
+        destination: await context.parachain(source.parachain.parachainId),
+      },
+      source.parachain.parachainId,
       registry,
     );
     return {
@@ -38,13 +41,17 @@ async function fetchBridgeFeeInfo([
   } else if (source.type === "ethereum") {
     const para = registry.parachains[destination.key];
     const fee = await toPolkadotV2.getDeliveryFee(
-      context.gateway(),
+      {
+        gateway: context.gateway(),
+        assetHub: await context.assetHub(),
+        destination: await context.parachain(para.parachainId),
+      },
       registry,
       token,
       para.parachainId,
     );
     return {
-      fee: fee.deliveryFeeInWei,
+      fee: fee.totalFeeInWei,
       decimals: 18,
       symbol: "ETH",
       delivery: fee,

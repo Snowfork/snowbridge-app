@@ -50,6 +50,7 @@ export function createStepsFromPlan(
         }
         switch (log.reason) {
           case toPolkadotV2.ValidationReason.AccountDoesNotExist: {
+            //TODO: check statemint
             if (data.destination.id === "assethub") {
               steps.push({
                 kind: TransferStepKind.SubstrateTransferED,

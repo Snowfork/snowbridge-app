@@ -38,6 +38,7 @@ function sendResultToHistory(
   switch (data.source.type) {
     case "ethereum": {
       const sendResult = result as toPolkadot.SendResult;
+      const fee = data.fee.delivery as toPolkadotV2.DeliveryFee;
       const transfer: history.ToPolkadotTransferResult = {
         id: messageId,
         status: history.TransferStatus.Pending,
@@ -48,8 +49,9 @@ function sendResultToHistory(
           tokenAddress: data.formData.token,
           when: new Date(),
           destinationParachain: data.destination.parachain?.parachainId,
-          destinationFee:
-            data.destination.parachain?.destinationFeeInDOT.toString(),
+          destinationFee: (
+            fee.destinationExecutionFeeDOT + fee.destinationExecutionFeeDOT
+          ).toString(),
         },
         submitted: {
           blockHash: sendResult.success?.ethereum.blockHash ?? "",

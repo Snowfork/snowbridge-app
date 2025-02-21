@@ -34,6 +34,7 @@ export function getEnvDetail(
     destination === undefined &&
     transfer.info.destinationParachain !== undefined
   ) {
+    //TODO: check statemint
     destination = env.locations.find((loc) => loc.id === "assethub");
   }
   return destination;
