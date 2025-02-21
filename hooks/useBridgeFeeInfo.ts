@@ -26,7 +26,7 @@ async function fetchBridgeFeeInfo([
     const fee = await toEthereumV2.getDeliveryFee(
       {
         assetHub: await context.assetHub(),
-        destination: await context.parachain(source.parachain.parachainId),
+        source: await context.parachain(source.parachain.parachainId),
       },
       source.parachain.parachainId,
       registry,
