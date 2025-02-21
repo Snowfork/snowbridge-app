@@ -7,6 +7,10 @@ import {
   ValidationResult,
 } from "./types";
 
+function isAssetHubLike(id: string) {
+  return id === "asset-hub-paseo" || id === "statemint" || id === "westmint";
+}
+
 export function createStepsFromPlan(
   data: ValidationData,
   plan: ValidationResult,
@@ -24,8 +28,7 @@ export function createStepsFromPlan(
         }
         if (
           log.reason === toEthereumV2.ValidationReason.InsufficientDotFee &&
-          //TODO: check statemint
-          data.source.id === "assethub"
+          isAssetHubLike(data.source.id)
         ) {
           steps.push({
             kind: TransferStepKind.SubstrateTransferFee,
@@ -50,8 +53,7 @@ export function createStepsFromPlan(
         }
         switch (log.reason) {
           case toPolkadotV2.ValidationReason.AccountDoesNotExist: {
-            //TODO: check statemint
-            if (data.destination.id === "assethub") {
+            if (isAssetHubLike(data.destination.id)) {
               steps.push({
                 kind: TransferStepKind.SubstrateTransferED,
                 displayOrder: 11,
