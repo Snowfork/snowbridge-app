@@ -5,12 +5,7 @@ import {
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
-import {
-  AccountInfo,
-  FeeInfo,
-  TransferLocation,
-  ValidationData,
-} from "@/utils/types";
+import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assets, assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
@@ -56,7 +51,7 @@ import { isHex } from "@polkadot/util";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 
 function getBeneficiaries(
-  destination: TransferLocation,
+  destination: assetsV2.TransferLocation,
   polkadotAccounts: WalletAccount[],
   ethereumAccounts: string[],
   ss58Format: number,
@@ -128,81 +123,6 @@ interface TransferFormProps {
   formData?: TransferFormData;
 }
 
-function getSource(
-  source: assetsV2.Source,
-  registry: assetsV2.AssetRegistry,
-): TransferLocation {
-  if (source.type === "ethereum") {
-    const ethChain = registry.ethereumChains[source.source];
-    if (!ethChain.evmParachainId) {
-      return {
-        id: "ethereum",
-        name: "Ethereum",
-        type: "ethereum",
-        key: source.source.toString(),
-        ethChain,
-      };
-    } else {
-      const evmChain = registry.parachains[ethChain.evmParachainId];
-      return {
-        id: ethChain.id,
-        name: `${evmChain.info.name} (EVM)`,
-        key: source.source.toString(),
-        type: "ethereum",
-        ethChain,
-        parachain: evmChain,
-      };
-    }
-  } else {
-    const parachain = registry.parachains[source.source];
-    return {
-      id: parachain.info.specName,
-      name: parachain.info.name,
-      key: source.source.toString(),
-      type: "substrate",
-      parachain,
-    };
-  }
-}
-
-function getDestination(
-  source: assetsV2.Source,
-  destination: string,
-  registry: assetsV2.AssetRegistry,
-): TransferLocation {
-  if (source.type === "ethereum") {
-    const parachain = registry.parachains[destination];
-    return {
-      id: parachain.info.specName,
-      name: parachain.info.name,
-      key: destination,
-      type: "substrate",
-      parachain,
-    };
-  } else {
-    const ethChain = registry.ethereumChains[destination];
-    if (!ethChain.evmParachainId) {
-      return {
-        id: "ethereum",
-        name: "Ethereum",
-        type: "ethereum",
-        key: destination,
-        ethChain,
-      };
-    } else {
-      const evmChain = registry.parachains[ethChain.evmParachainId];
-      return {
-        id: registry.ethereumChains[destination].id,
-        name: `${evmChain.info.name} (EVM)`,
-        key: destination,
-        type: "ethereum",
-        ethChain,
-        parachain: evmChain,
-      };
-    }
-  }
-}
-
 export const TransferForm: FC<TransferFormProps> = ({
   onValidated,
   onError,
@@ -223,7 +143,12 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   const firstSource = locations[0];
   const firstDestinations = Object.keys(firstSource.destinations).map(
-    (destination) => getDestination(firstSource, destination, assetRegistry),
+    (destination) =>
+      assetsV2.getTransferLocation(
+        assetRegistry,
+        firstSource.type === "ethereum" ? "substrate" : "ethereum",
+        destination,
+      ),
   );
   const firstDestination = firstDestinations[0];
   const ethAsset = Object.keys(
@@ -268,7 +193,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
-    getSource(source, assetRegistry),
+    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
   );
@@ -287,7 +212,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       setSource(newSource);
       if (newSource.type === "substrate") {
         const accountType =
-          assetRegistry.parachains[newSource.source].info.accountType;
+          assetRegistry.parachains[newSource.key].info.accountType;
         const accounts = polkadotAccounts?.filter(
           filterByAccountType(accountType),
         );
@@ -296,10 +221,12 @@ export const TransferForm: FC<TransferFormProps> = ({
             accounts && accounts.length > 0 ? accounts[0].address : undefined,
         });
       }
-      newDestinations = Object.keys(newSource.destinations).map(
-        (destination) => {
-          return getDestination(newSource, destination, assetRegistry);
-        },
+      newDestinations = Object.keys(newSource.destinations).map((destination) =>
+        assetsV2.getTransferLocation(
+          assetRegistry,
+          newSource.type === "ethereum" ? "substrate" : "ethereum",
+          destination,
+        ),
       );
       setDestinations(newDestinations);
     }
@@ -339,6 +266,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     locations,
     assetRegistry,
     polkadotAccounts,
+    firstSource.type,
   ]);
 
   const tokenMetadata =
@@ -413,7 +341,11 @@ export const TransferForm: FC<TransferFormProps> = ({
           );
         }
         await onValidated({
-          source: getSource(source, assetRegistry),
+          source: assetsV2.getTransferLocation(
+            assetRegistry,
+            source.id,
+            source.key,
+          ),
           destination,
           assetRegistry,
           formData,
@@ -460,7 +392,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                         {locations.map((s) => {
                           let name: string;
                           if (s.type === "ethereum") {
-                            const eth = assetRegistry.ethereumChains[s.source];
+                            const eth = assetRegistry.ethereumChains[s.key];
                             if (!eth.evmParachainId) {
                               name = "Ethereum";
                             } else {
@@ -469,7 +401,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                               name = `${evmChain.info.name} (EVM)`;
                             }
                           } else {
-                            name = assetRegistry.parachains[s.source].info.name;
+                            name = assetRegistry.parachains[s.key].info.name;
                           }
                           return (
                             <SelectItem key={s.id} value={s.id}>
@@ -536,11 +468,18 @@ export const TransferForm: FC<TransferFormProps> = ({
                     ) : (
                       <SelectedPolkadotAccount
                         source={source.id}
-                        polkadotAccounts={polkadotAccounts ?? []}
+                        polkadotAccounts={
+                          polkadotAccounts?.filter(
+                            filterByAccountType(
+                              assetRegistry.parachains[source.key].info
+                                .accountType,
+                            ),
+                          ) ?? []
+                        }
                         polkadotAccount={watchSourceAccount}
                         onValueChange={field.onChange}
                         ss58Format={
-                          assetRegistry.parachains[source.source]?.info
+                          assetRegistry.parachains[source.key]?.info
                             .ss58Format ??
                           assetRegistry.relaychain.ss58Format ??
                           0
@@ -549,7 +488,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                     )}
                     <div className="flex flex-row-reverse pt-1">
                       <BalanceDisplay
-                        source={source}
+                        source={assetsV2.getTransferLocation(
+                          assetRegistry,
+                          source.type,
+                          source.key,
+                        )}
                         sourceAccount={watchSourceAccount}
                         registry={assetRegistry}
                         token={token}
@@ -650,7 +593,11 @@ export const TransferForm: FC<TransferFormProps> = ({
             Delivery Fee:{" "}
             <FeeDisplay
               className="inline"
-              source={getSource(source, assetRegistry)}
+              source={assetsV2.getTransferLocation(
+                assetRegistry,
+                source.type,
+                source.key,
+              )}
               destination={destination}
               token={token}
               displayDecimals={8}
@@ -677,7 +624,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 interface SubmitButtonProps {
   ethereumAccounts: string[] | null;
   polkadotAccounts: WalletAccount[] | null;
-  destination: TransferLocation;
+  destination: assetsV2.TransferLocation;
   source: assetsV2.Source;
   feeInfo?: FeeInfo;
   tokenMetadata: assets.ERC20Metadata | null;

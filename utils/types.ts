@@ -127,15 +127,6 @@ export interface SignerInfo {
   ethereumProvider?: BrowserProvider;
 }
 
-export type TransferLocation = {
-  id: string;
-  name: string;
-  key: string;
-  type: assetsV2.SourceType;
-  parachain?: assetsV2.Parachain;
-  ethChain?: assetsV2.EthereumChain;
-};
-
 export type FeeInfo = {
   fee: bigint;
   decimals: number;
@@ -147,8 +138,8 @@ export type FeeInfo = {
 export interface ValidationData {
   formData: TransferFormData;
   assetRegistry: assetsV2.AssetRegistry;
-  source: TransferLocation;
-  destination: TransferLocation;
+  source: assetsV2.TransferLocation;
+  destination: assetsV2.TransferLocation;
   tokenMetadata: assets.ERC20Metadata;
   amountInSmallestUnit: bigint;
   fee: FeeInfo;

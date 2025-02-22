@@ -9,7 +9,6 @@ import {
 import { FC } from "react";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { transformSs58Format, trimAccount } from "@/utils/formatting";
-import { assetsV2 } from "@snowbridge/api";
 import { isHex } from "@polkadot/util";
 import { WalletAccount } from "@talismn/connect-wallets";
 

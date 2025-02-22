@@ -5,12 +5,11 @@ import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
-import { assetRegistry } from "@/lib/server/assets";
 
 interface TokenBalanceProps {
   context: Context;
   token: string;
-  source: assetsV2.Source;
+  source: assetsV2.TransferLocation;
   registry: assetsV2.AssetRegistry;
   sourceAccount: string;
 }
@@ -32,7 +31,7 @@ export async function getTokenBalance({
 }> {
   switch (source.type) {
     case "substrate": {
-      const para = registry.parachains[source.source];
+      const para = source.parachain!;
       const parachain =
         para && context.hasParachain(para.parachainId)
           ? await context.parachain(para.parachainId)

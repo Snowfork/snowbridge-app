@@ -36,7 +36,7 @@ import {
   transfersPendingLocalAtom,
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
-import { assets, environment, history } from "@snowbridge/api";
+import { assets, assetsV2, environment, history } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
@@ -82,7 +82,7 @@ const isWalletTransaction = (
 const getExplorerLinks = (
   env: environment.SnowbridgeEnvironment,
   transfer: Transfer,
-  destination?: environment.TransferLocation,
+  destination: assetsV2.TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
   if (destination?.type == "ethereum") {
@@ -198,11 +198,10 @@ const getExplorerLinks = (
 
 const transferDetail = (
   transfer: Transfer,
+  registry: assetsV2.AssetRegistry,
   env: environment.SnowbridgeEnvironment,
-  ss58Format: number,
-  assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
 ): JSX.Element => {
-  const destination = getEnvDetail(transfer, env);
+  const destination = getEnvDetail(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
     env,
     transfer,
@@ -215,7 +214,10 @@ const transferDetail = (
   }
   let beneficiary = transfer.info.beneficiaryAddress;
   if (beneficiary.length === 66) {
-    beneficiary = encodeAddress(beneficiary, ss58Format);
+    beneficiary = encodeAddress(
+      beneficiary,
+      destination.parachain?.info.ss58Format,
+    );
   }
   const tokenUrl = etherscanERC20TokenLink(
     env.name,
@@ -223,7 +225,7 @@ const transferDetail = (
   );
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
-  if (destination?.paraInfo) {
+  if (destination.parachain) {
     sourceAccountUrl = etherscanAddressLink(
       env.name,
       transfer.info.sourceAddress,
@@ -239,8 +241,7 @@ const transferDetail = (
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
-    assetErc20Metadata,
-    destination,
+    registry.ethereumChains[registry.ethChainId].assets,
   );
   return (
     <div className="flex-col">
@@ -504,13 +505,7 @@ export default function History() {
                   <TransferTitle transfer={v} />
                 </AccordionTrigger>
                 <AccordionContent>
-                  {transferDetail(
-                    v,
-                    env,
-                    assetRegistry.relaychain?.ss58Format ?? 42,
-                    assetRegistry.ethereumChains[assetRegistry.ethChainId]
-                      .assets,
-                  )}
+                  {transferDetail(v, assetRegistry, env)}
                 </AccordionContent>
               </AccordionItem>
             ))}

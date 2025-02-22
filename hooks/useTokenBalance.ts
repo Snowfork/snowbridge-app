@@ -1,7 +1,4 @@
-import {
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { getTokenBalance } from "@/utils/balances";
 import { assetsV2, Context } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
@@ -17,7 +14,7 @@ async function fetchTokenBalance([
 ]: [
   Context | null,
   string,
-  assetsV2.Source,
+  assetsV2.TransferLocation,
   assetsV2.AssetRegistry,
   string | undefined,
   string,
@@ -37,7 +34,7 @@ async function fetchTokenBalance([
 
 export function useTokenBalance(
   sourceAccount: string | undefined,
-  source: assetsV2.Source,
+  source: assetsV2.TransferLocation,
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);

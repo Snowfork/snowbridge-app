@@ -13,7 +13,6 @@ export function userFriendlyErrorMessage({
   if (error.kind === "toPolkadot") {
     if (
       error.code == toPolkadot.SendValidationCode.BeneficiaryAccountMissing &&
-      //TODO: check statemint
       formData.destination === "assethub"
     ) {
       return "Beneficiary does not hold existential deposit on destination. Already have DOT on Polkadot? Teleport DOT to the beneficiary address on Asset Hub using your wallet.";

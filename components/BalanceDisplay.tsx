@@ -1,14 +1,11 @@
 import { FC, useEffect } from "react";
 import { assets, assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
-import { useAtomValue } from "jotai";
-import { polkadotAccountAtom } from "@/store/polkadot";
-import { ethereumAccountAtom } from "@/store/ethereum";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { FormLabel } from "./ui/form";
 
 interface BalanceDisplayProps {
-  source: assetsV2.Source;
+  source: assetsV2.TransferLocation;
   registry: assetsV2.AssetRegistry;
   token: string;
   displayDecimals: number;
@@ -59,7 +56,9 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   }
 
   const dotBalance =
-    source.type === "substrate" && source.source !== registry.assetHubParaId
+    source.type === "substrate" &&
+    source.parachain &&
+    source.parachain?.parachainId !== registry.assetHubParaId
       ? ` ;  ${formatBalance({
           number: balanceInfo.dotBalance ?? 0n,
           decimals: Number(balanceInfo.dotTokenDecimals),
