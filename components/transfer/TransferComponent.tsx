@@ -11,13 +11,7 @@ import {
   TransferPlanSteps,
   ValidationData,
 } from "@/utils/types";
-import {
-  history,
-  toEthereum,
-  toEthereumV2,
-  toPolkadot,
-  toPolkadotV2,
-} from "@snowbridge/api";
+import { historyV2, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
 import { FC, useRef, useState } from "react";
@@ -36,11 +30,11 @@ function sendResultToHistory(
 ): Transfer {
   switch (data.source.type) {
     case "ethereum": {
-      const sendResult = result as toPolkadot.SendResult;
-      const fee = data.fee.delivery as toPolkadotV2.DeliveryFee;
-      const transfer: history.ToPolkadotTransferResult = {
-        id: messageId,
-        status: history.TransferStatus.Pending,
+      const sendResult = result as toPolkadotV2.MessageReceipt;
+      const transfer: historyV2.ToPolkadotTransferResult = {
+        sourceType: data.source.type,
+        id: messageId ?? sendResult.messageId,
+        status: historyV2.TransferStatus.Pending,
         info: {
           amount: data.amountInSmallestUnit.toString(),
           sourceAddress: data.formData.sourceAccount,
@@ -48,30 +42,24 @@ function sendResultToHistory(
           tokenAddress: data.formData.token,
           when: new Date(),
           destinationParachain: data.destination.parachain?.parachainId,
-          destinationFee: (
-            fee.destinationExecutionFeeDOT + fee.destinationExecutionFeeDOT
-          ).toString(),
         },
         submitted: {
-          blockHash: sendResult.success?.ethereum.blockHash ?? "",
-          blockNumber: sendResult.success?.ethereum.blockNumber ?? 0,
-          channelId: "",
-          messageId: messageId,
-          logIndex: 0,
-          transactionIndex: 0,
-          transactionHash: sendResult.success?.ethereum.transactionHash ?? "",
-          nonce: 0,
-          parentBeaconSlot: 0,
+          blockNumber: sendResult.blockNumber ?? 0,
+          channelId: sendResult.channelId,
+          messageId: messageId ?? sendResult.messageId,
+          transactionHash: sendResult.txHash ?? "",
+          nonce: Number(sendResult.nonce.toString()),
         },
       };
 
       return { ...transfer, isWalletTransaction: true };
     }
     case "substrate": {
-      const sendResult = result as toEthereum.SendResult;
-      const transfer: history.ToEthereumTransferResult = {
-        id: messageId,
-        status: history.TransferStatus.Pending,
+      const sendResult = result as toEthereumV2.MessageReceipt;
+      const transfer: historyV2.ToEthereumTransferResult = {
+        sourceType: data.source.type,
+        id: messageId ?? sendResult.messageId,
+        status: historyV2.TransferStatus.Pending,
         info: {
           amount: data.amountInSmallestUnit.toString(),
           sourceAddress: data.formData.sourceAccount,
@@ -80,38 +68,14 @@ function sendResultToHistory(
           when: new Date(),
         },
         submitted: {
-          block_hash:
-            sendResult.success?.sourceParachain?.blockHash ??
-            sendResult.success?.assetHub.blockHash ??
-            "",
-          block_num:
-            sendResult.success?.sourceParachain?.blockNumber ??
-            sendResult.success?.assetHub.blockNumber ??
-            0,
+          block_num: sendResult.blockNumber,
           block_timestamp: 0,
-          messageId: messageId,
+          messageId: messageId ?? sendResult.messageId,
           account_id: data.formData.sourceAccount,
+          extrinsic_hash: sendResult.txHash,
+          success: sendResult.success,
           bridgeHubMessageId: "",
-          extrinsic_hash:
-            sendResult.success?.sourceParachain?.txHash ??
-            sendResult.success?.assetHub.txHash ??
-            "",
-          extrinsic_index:
-            sendResult.success?.sourceParachain !== undefined
-              ? sendResult.success.sourceParachain.blockNumber.toString() +
-                "-" +
-                sendResult.success.sourceParachain.txIndex.toString()
-              : sendResult.success?.assetHub !== undefined
-                ? sendResult.success?.assetHub?.blockNumber.toString() +
-                  "-" +
-                  sendResult.success?.assetHub.txIndex.toString()
-                : "unknown",
-
-          relayChain: {
-            block_hash: sendResult.success?.relayChain.submittedAtHash ?? "",
-            block_num: 0,
-          },
-          success: true,
+          sourceParachainId: data.source.parachain!.parachainId,
         },
       };
 

@@ -16,7 +16,7 @@ import {
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
-import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
+import { LucideLoaderCircle } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
@@ -24,9 +24,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { RefreshButton } from "@/components/RefreshButton";
 import { cn } from "@/lib/utils";
-import { history } from "@snowbridge/api";
-import { useAtomValue } from "jotai";
-import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
+import { assetsV2, historyV2 } from "@snowbridge/api";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 const Loading = () => {
   return (
@@ -41,10 +40,11 @@ interface TxCardProps {
   transfer: Transfer;
   refresh: () => unknown | Promise<unknown>;
   inHistory: boolean;
+  registry: assetsV2.AssetRegistry;
 }
 function TxCard(props: TxCardProps) {
-  const { transfer, refresh, inHistory } = props;
-  const env = useAtomValue(snowbridgeEnvironmentAtom);
+  const { transfer, refresh, inHistory, registry } = props;
+  const { destination } = getEnvDetail(transfer, registry);
   return (
     <Card className="w-[360px] md:w-2/3">
       <CardHeader>
@@ -65,15 +65,13 @@ function TxCard(props: TxCardProps) {
           <div
             className={cn(
               "text-muted-foreground text-sm",
-              transfer.status !== history.TransferStatus.Pending
+              transfer.status !== historyV2.TransferStatus.Pending
                 ? "hidden"
                 : "",
             )}
           >
             Transfer can take up to{" "}
-            {getEnvDetail(transfer, env)?.type !== "ethereum"
-              ? "25 minutes"
-              : "35-90 minutes"}
+            {destination.type !== "ethereum" ? "25 minutes" : "35-90 minutes"}
           </div>
           <div>
             <Link
@@ -87,7 +85,7 @@ function TxCard(props: TxCardProps) {
             <RefreshButton
               onClick={refresh}
               className={cn(
-                transfer.status !== history.TransferStatus.Pending
+                transfer.status !== historyV2.TransferStatus.Pending
                   ? "hidden"
                   : "",
               )}
@@ -106,6 +104,7 @@ function TxComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data, mutate } = useTransferHistory();
+  const { data: registry } = useAssetRegistry();
 
   const [transfer, inHistory] = useMemo(() => {
     const transferEncoded = searchParams.get("transfer");
@@ -127,6 +126,7 @@ function TxComponent() {
     <TxCard
       transfer={transfer}
       inHistory={inHistory}
+      registry={registry}
       refresh={async () => await mutate()}
     />
   );

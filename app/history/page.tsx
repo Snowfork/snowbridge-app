@@ -36,11 +36,16 @@ import {
   transfersPendingLocalAtom,
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
-import { assets, assetsV2, environment, history } from "@snowbridge/api";
+import { assetsV2, environment, historyV2 } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
+import {
+  LucideGlobe,
+  LucideLoaderCircle,
+  LucideRefreshCw,
+  Regex,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
@@ -86,7 +91,7 @@ const getExplorerLinks = (
 ) => {
   const links: { text: string; url: string }[] = [];
   if (destination?.type == "ethereum") {
-    const ethTransfer = transfer as history.ToEthereumTransferResult;
+    const ethTransfer = transfer as historyV2.ToEthereumTransferResult;
     links.push({
       text: "Submitted to Asset Hub",
       url: subscanExtrinsicLink(
@@ -156,7 +161,7 @@ const getExplorerLinks = (
     }
   }
   if (destination?.type == "substrate") {
-    const dotTransfer = transfer as history.ToPolkadotTransferResult;
+    const dotTransfer = transfer as historyV2.ToPolkadotTransferResult;
     links.push({
       text: "Submitted to Snowbridge Gateway",
       url: etherscanTxHashLink(env.name, dotTransfer.submitted.transactionHash),
@@ -201,22 +206,25 @@ const transferDetail = (
   registry: assetsV2.AssetRegistry,
   env: environment.SnowbridgeEnvironment,
 ): JSX.Element => {
-  const destination = getEnvDetail(transfer, registry);
+  const { source, destination } = getEnvDetail(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
     env,
     transfer,
     destination,
   );
 
-  let source = transfer.info.sourceAddress;
-  if (source.length === 66) {
-    source = encodeAddress(source, ss58Format);
+  let sourceAddress = transfer.info.sourceAddress;
+  if (sourceAddress.length === 66) {
+    sourceAddress = encodeAddress(
+      sourceAddress,
+      source.parachain?.info.ss58Format ?? registry.relaychain.ss58Format,
+    );
   }
   let beneficiary = transfer.info.beneficiaryAddress;
   if (beneficiary.length === 66) {
     beneficiary = encodeAddress(
       beneficiary,
-      destination.parachain?.info.ss58Format,
+      destination.parachain?.info.ss58Format ?? registry.relaychain.ss58Format,
     );
   }
   const tokenUrl = etherscanERC20TokenLink(

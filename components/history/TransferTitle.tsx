@@ -1,5 +1,5 @@
 import { Transfer } from "@/store/transferHistory";
-import { assets, assetsV2, environment } from "@snowbridge/api";
+import { assets, assetsV2, historyV2 } from "@snowbridge/api";
 import { LucideGlobe, LucideWallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBalance } from "@/utils/formatting";
@@ -13,19 +13,37 @@ export function getEnvDetail(
   transfer: Transfer,
   registry: assetsV2.AssetRegistry,
 ) {
-  if (transfer.info.destinationParachain === undefined) {
-    return assetsV2.getEthereumTransferLocation(
-      registry,
-      registry.ethereumChains[registry.ethChainId],
-    );
+  switch (transfer.sourceType) {
+    case "ethereum": {
+      const tx = transfer as historyV2.ToPolkadotTransferResult;
+      const source = assetsV2.getTransferLocation(
+        registry,
+        transfer.sourceType,
+        registry.ethChainId.toString(),
+      );
+      const destination = assetsV2.getTransferLocation(
+        registry,
+        "substrate",
+        tx.info.destinationParachain?.toString() ??
+          registry.assetHubParaId.toString(),
+      );
+      return { source, destination };
+    }
+    case "substrate": {
+      const tx = transfer as historyV2.ToEthereumTransferResult;
+      const source = assetsV2.getTransferLocation(
+        registry,
+        transfer.sourceType,
+        tx.submitted.sourceParachainId.toString(),
+      );
+      const destination = assetsV2.getTransferLocation(
+        registry,
+        "ethereum",
+        registry.ethChainId.toString(),
+      );
+      return { source, destination };
+    }
   }
-
-  let destination = registry.parachains[transfer.info.destinationParachain];
-
-  if (destination === undefined) {
-    destination = registry.parachains[registry.assetHubParaId];
-  }
-  return assetsV2.getSubstrateTransferLocation(destination);
 }
 
 export function formatTokenData(
@@ -67,7 +85,7 @@ export function TransferTitle({
   const env = useAtomValue(snowbridgeEnvironmentAtom);
   const { data: assetRegistry } = useAssetRegistry();
 
-  const destination = getEnvDetail(transfer, assetRegistry);
+  const { source, destination } = getEnvDetail(transfer, assetRegistry);
   const when = new Date(transfer.info.when);
 
   const { tokenName, amount } = formatTokenData(
