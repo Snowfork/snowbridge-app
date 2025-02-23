@@ -62,6 +62,7 @@ import {
   TransferTitle,
 } from "@/components/history/TransferTitle";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
 
 const ITEMS_PER_PAGE = 5;
 const isWalletTransaction = (
@@ -85,8 +86,8 @@ const isWalletTransaction = (
 };
 
 const getExplorerLinks = (
-  env: environment.SnowbridgeEnvironment,
   transfer: Transfer,
+  registry: AssetRegistry,
   destination: assetsV2.TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
@@ -95,8 +96,8 @@ const getExplorerLinks = (
     links.push({
       text: "Submitted to Asset Hub",
       url: subscanExtrinsicLink(
-        env.name,
-        "ah",
+        registry.environment,
+        registry.assetHubParaId,
         ethTransfer.submitted.extrinsic_hash,
       ),
     });
@@ -105,8 +106,8 @@ const getExplorerLinks = (
       links.push({
         text: "Bridge Hub received XCM from Asset Hub",
         url: subscanEventLink(
-          env.name,
-          "bh",
+          registry.environment,
+          registry.bridgeHubParaId,
           ethTransfer.bridgeHubXcmDelivered.event_index,
         ),
       });
@@ -115,8 +116,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message delivered to Snowbridge Message Queue",
         url: subscanEventLink(
-          env.name,
-          "bh",
+          registry.environment,
+          registry.bridgeHubParaId,
           ethTransfer.bridgeHubChannelDelivered.event_index,
         ),
       });
@@ -125,8 +126,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message queued on Asset Hub Channel",
         url: subscanEventLink(
-          env.name,
-          "bh",
+          registry.environment,
+          registry.bridgeHubParaId,
           ethTransfer.bridgeHubMessageQueued.event_index,
         ),
       });
@@ -135,8 +136,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message accepted by Asset Hub Channel",
         url: subscanEventLink(
-          env.name,
-          "bh",
+          registry.environment,
+          registry.bridgeHubParaId,
           ethTransfer.bridgeHubMessageAccepted.event_index,
         ),
       });
@@ -145,7 +146,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message included by beefy client",
         url: etherscanTxHashLink(
-          env.name,
+          registry.environment,
+          registry.ethChainId,
           ethTransfer.ethereumBeefyIncluded.transactionHash,
         ),
       });
@@ -154,7 +156,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message dispatched on Ethereum",
         url: etherscanTxHashLink(
-          env.name,
+          registry.environment,
+          registry.ethChainId,
           ethTransfer.ethereumMessageDispatched.transactionHash,
         ),
       });
@@ -164,15 +167,19 @@ const getExplorerLinks = (
     const dotTransfer = transfer as historyV2.ToPolkadotTransferResult;
     links.push({
       text: "Submitted to Snowbridge Gateway",
-      url: etherscanTxHashLink(env.name, dotTransfer.submitted.transactionHash),
+      url: etherscanTxHashLink(
+        registry.environment,
+        registry.ethChainId,
+        dotTransfer.submitted.transactionHash,
+      ),
     });
 
     if (dotTransfer.beaconClientIncluded) {
       links.push({
         text: "Included by light client on Bridge Hub",
         url: subscanEventLink(
-          env.name,
-          "bh",
+          registry.environment,
+          registry.bridgeHubParaId,
           dotTransfer.beaconClientIncluded.event_index,
         ),
       });
@@ -181,8 +188,8 @@ const getExplorerLinks = (
       links.push({
         text: "Inbound message received on Asset Hub channel",
         url: subscanEventLink(
-          env.name,
-          "bh",
+          registry.environment,
+          registry.bridgeHubParaId,
           dotTransfer.inboundMessageReceived.event_index,
         ),
       });
@@ -191,8 +198,8 @@ const getExplorerLinks = (
       links.push({
         text: "Message dispatched on Asset Hub",
         url: subscanEventLink(
-          env.name,
-          "ah",
+          registry.environment,
+          registry.assetHubParaId,
           dotTransfer.assetHubMessageProcessed.event_index,
         ),
       });
@@ -204,48 +211,75 @@ const getExplorerLinks = (
 const transferDetail = (
   transfer: Transfer,
   registry: assetsV2.AssetRegistry,
-  env: environment.SnowbridgeEnvironment,
 ): JSX.Element => {
   const { source, destination } = getEnvDetail(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
-    env,
     transfer,
+    registry,
     destination,
   );
 
   let sourceAddress = transfer.info.sourceAddress;
-  if (sourceAddress.length === 66) {
-    sourceAddress = encodeAddress(
-      sourceAddress,
-      source.parachain?.info.ss58Format ?? registry.relaychain.ss58Format,
-    );
+  if (
+    transfer.sourceType === "substrate" &&
+    destination.ethChain &&
+    source.parachain
+  ) {
+    if (source.parachain.info.accountType === "AccountId32") {
+      sourceAddress = encodeAddress(
+        sourceAddress,
+        source.parachain.info.ss58Format,
+      );
+    } else {
+      sourceAddress = sourceAddress.substring(0, 42);
+    }
   }
   let beneficiary = transfer.info.beneficiaryAddress;
-  if (beneficiary.length === 66) {
-    beneficiary = encodeAddress(
-      beneficiary,
-      destination.parachain?.info.ss58Format ?? registry.relaychain.ss58Format,
-    );
+  if (
+    transfer.sourceType === "ethereum" &&
+    source.ethChain &&
+    destination.parachain
+  ) {
+    if (destination.parachain.info.accountType === "AccountId32") {
+      beneficiary = encodeAddress(
+        beneficiary,
+        destination.parachain?.info.ss58Format ??
+          registry.relaychain.ss58Format,
+      );
+    } else {
+      // 20 byte address
+      beneficiary = beneficiary.substring(0, 42);
+    }
   }
   const tokenUrl = etherscanERC20TokenLink(
-    env.name,
+    registry.environment,
+    source.ethChain!.chainId,
     transfer.info.tokenAddress,
   );
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
-  if (destination.parachain) {
+  if (transfer.sourceType === "ethereum") {
     sourceAccountUrl = etherscanAddressLink(
-      env.name,
+      registry.environment,
+      source.ethChain!.chainId,
       transfer.info.sourceAddress,
     );
-    beneficiaryAccountUrl = subscanAccountLink(env.name, "ah", beneficiary);
+    beneficiaryAccountUrl = subscanAccountLink(
+      registry.environment,
+      destination.parachain!.parachainId,
+      beneficiary,
+    );
   } else {
     sourceAccountUrl = subscanAccountLink(
-      env.name,
-      "ah",
+      registry.environment,
+      source.parachain!.parachainId,
       transfer.info.sourceAddress,
     );
-    beneficiaryAccountUrl = etherscanAddressLink(env.name, beneficiary);
+    beneficiaryAccountUrl = etherscanAddressLink(
+      registry.environment,
+      destination.ethChain!.chainId,
+      beneficiary,
+    );
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
@@ -254,6 +288,10 @@ const transferDetail = (
   return (
     <div className="flex-col">
       <div className="p-2">
+        <p>
+          Source{" "}
+          <span className="inline whitespace-pre font-mono">{source.name}</span>{" "}
+        </p>
         <p>
           Value{" "}
           <span className="inline whitespace-pre font-mono">
@@ -276,7 +314,7 @@ const transferDetail = (
         <p>
           From Account{" "}
           <span className="inline whitespace-pre font-mono">
-            {transfer.info.sourceAddress}
+            {sourceAddress}
           </span>{" "}
           <span
             className="text-sm underline cursor-pointer"
@@ -513,7 +551,7 @@ export default function History() {
                   <TransferTitle transfer={v} />
                 </AccordionTrigger>
                 <AccordionContent>
-                  {transferDetail(v, assetRegistry, env)}
+                  {transferDetail(v, assetRegistry)}
                 </AccordionContent>
               </AccordionItem>
             ))}

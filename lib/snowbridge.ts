@@ -6,15 +6,7 @@ import {
   subscan,
 } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
-import {
-  BeefyClient__factory,
-  IGateway__factory,
-} from "@snowbridge/contract-types";
-import { AbstractProvider, AlchemyProvider } from "ethers";
-
-export const SKIP_LIGHT_CLIENT_UPDATES = true;
-export const HISTORY_IN_SECONDS = 60 * 60 * 24 * 7 * 1; // 1 Weeks
-export const ETHEREUM_BLOCK_TIME_SECONDS = 12;
+import { AbstractProvider } from "ethers";
 
 export function getEnvironmentName() {
   const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
@@ -109,9 +101,7 @@ export function getErrorMessage(err: any) {
   return message;
 }
 
-export async function getTransferHistoryV2(
-  env: environment.SnowbridgeEnvironment,
-) {
+export async function getTransferHistoryV2() {
   console.log("Fetching transfer history.");
 
   const toEthereum = await historyV2.toEthereumHistory();
