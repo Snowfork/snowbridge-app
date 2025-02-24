@@ -121,12 +121,14 @@ interface TransferFormProps {
   onValidated: (data: ValidationData) => Promise<unknown> | unknown;
   onError: (form: TransferFormData, error: Error) => Promise<unknown> | unknown;
   formData?: TransferFormData;
+  assetRegistry: assetsV2.AssetRegistry;
 }
 
 export const TransferForm: FC<TransferFormProps> = ({
   onValidated,
   onError,
   formData,
+  assetRegistry,
 }) => {
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
@@ -134,7 +136,6 @@ export const TransferForm: FC<TransferFormProps> = ({
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
-  const { data: assetRegistry } = useAssetRegistry();
 
   const locations = useMemo(
     () => assetsV2.getTransferLocations(assetRegistry),

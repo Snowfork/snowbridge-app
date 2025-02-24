@@ -14,10 +14,12 @@ import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { assetsV2 } from "@snowbridge/api";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
   data: ValidationData;
+  registry: assetsV2.AssetRegistry;
   onBack?: MouseEventHandler;
   onRefreshTransfer?: (
     data: ValidationData,
@@ -28,6 +30,7 @@ interface TransferStepsProps {
 interface StepData {
   id: number;
   step: TransferStep;
+  registry: assetsV2.AssetRegistry;
   data: ValidationData;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
@@ -76,7 +79,7 @@ function TransferFeeStep(step: StepData) {
   );
 }
 
-function TransferStepView(step: StepData) {
+function TransferStepView(step: StepData, registry: assetsV2.AssetRegistry) {
   const { depositWeth, approveSpend } = useERC20DepositAndApprove();
   switch (step.step.kind) {
     case TransferStepKind.ApproveERC20:
@@ -84,6 +87,7 @@ function TransferStepView(step: StepData) {
         <EthereumTxStep
           {...step}
           title="Approve Snowbridge spender."
+          registry={registry}
           description="Snowbridge needs to be an approved spender to transfer ERC20 tokens. This step will approve the transfer amount."
           action={approveSpend}
           errorMessage="Error submitting approval."
@@ -95,6 +99,7 @@ function TransferStepView(step: StepData) {
         <EthereumTxStep
           {...step}
           title="Wrap ETH to WETH."
+          registry={registry}
           description="ETH needs to be wrapped into WETH to be transfered with Snowbridge. This step will deposit ETH into WETH."
           action={depositWeth}
           errorMessage="Error depositing WETH."
@@ -120,6 +125,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   data,
   onBack,
   onRefreshTransfer,
+  registry,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep(currentStep + 1);
@@ -136,6 +142,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
             id={i + 1}
             step={step}
             data={data}
+            registry={registry}
             currentStep={currentStep}
             nextStep={nextStep}
           />

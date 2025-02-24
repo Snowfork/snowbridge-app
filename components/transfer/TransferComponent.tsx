@@ -22,6 +22,7 @@ import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 function sendResultToHistory(
   messageId: string,
@@ -95,6 +96,7 @@ export const TransferComponent: FC = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
+  const { data: registry } = useAssetRegistry();
 
   const { mutate: refreshHistory } = useTransferHistory();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
@@ -207,6 +209,7 @@ export const TransferComponent: FC = () => {
       <TransferSteps
         plan={plan}
         data={validationData}
+        registry={registry}
         onBack={() => backToForm(formData)}
         onRefreshTransfer={async (_, refreshOnly) =>
           await validateAndSubmit(validationData, refreshOnly ?? false)
@@ -216,6 +219,7 @@ export const TransferComponent: FC = () => {
   } else if (!plan) {
     content = (
       <TransferForm
+        assetRegistry={registry}
         formData={validationData?.formData ?? formData}
         onValidated={async (data) => await validateAndSubmit(data, false)}
         onError={async (form, error) =>

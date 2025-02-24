@@ -6,6 +6,7 @@ import { Input } from "../ui/input";
 import { LucideLoaderCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { etherscanTxHashLink } from "@/lib/explorerLinks";
+import { assetsV2 } from "@snowbridge/api";
 
 interface EthereumTxStep {
   title: string;
@@ -13,6 +14,7 @@ interface EthereumTxStep {
   step: TransferStep;
   data: ValidationData;
   currentStep: number;
+  registry: assetsV2.AssetRegistry;
   nextStep: () => Promise<unknown> | unknown;
   action: (data: ValidationData, amount: string) => Promise<ContractResponse>;
   errorMessage?: string;
@@ -26,6 +28,7 @@ export function EthereumTxStep({
   data,
   currentStep,
   nextStep,
+  registry,
   action,
   errorMessage,
   submitButtonText,
@@ -94,6 +97,7 @@ export function EthereumTxStep({
                 const { receipt } = await action(data, amount);
                 const etherscanLink = etherscanTxHashLink(
                   envName,
+                  registry.ethChainId,
                   receipt?.hash ?? "",
                 );
                 if (receipt?.status === 1) {
