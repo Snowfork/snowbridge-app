@@ -10,6 +10,11 @@ export const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
   },
   polkadot_mainnet: {
     etherscan_1: "https://etherscan.io/",
+    uniswap_1: "https://app.uniswap.org/",
+    stellaswap_2004: "https://app.stellaswap.com/exchange/swap",
+    dapp_2034: "https://app.hydration.net/",
+    dapp_2004: "https://apps.moonbeam.network/moonbeam",
+    dapp_2030: "https://app.bifrost.io/",
     subscan_1000: "https://assethub-polkadot.subscan.io/",
     subscan_1002: "https://bridgehub-polkadot.subscan.io/",
     subscan_2034: "https://hydration.subscan.io/",
@@ -34,7 +39,7 @@ export const etherscanTxHashLink = (
 ): string => {
   const baseUrl = EXPLORERS[envName][`etherscan_${chainId}`];
   if (!baseUrl) {
-    return `#no-url-explorer-url-for-token-${chainId}"`;
+    return `#no-explorer-url-for-token-${chainId}`;
   }
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}tx/${txHash}`;
@@ -47,7 +52,7 @@ export const etherscanAddressLink = (
 ): string => {
   const baseUrl = EXPLORERS[envName][`etherscan_${chainId}`];
   if (!baseUrl) {
-    return `#no-url-explorer-url-for-token-${chainId}"`;
+    return `#no-explorer-url-for-token-${chainId}`;
   }
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}address/${address}`;
@@ -60,7 +65,7 @@ export const etherscanERC20TokenLink = (
 ): string => {
   const baseUrl = EXPLORERS[envName][`etherscan_${chainId}`];
   if (!baseUrl) {
-    return `#no-url-explorer-url-for-token-${tokenAddress}"`;
+    return `#no-explorer-url-for-token-${tokenAddress}`;
   }
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}token/${tokenAddress}`;
@@ -73,7 +78,7 @@ export const subscanExtrinsicLink = (
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
   if (!baseUrl) {
-    return `#no-url-explorer-url-for-extrinsic-${para}"`;
+    return `#no-explorer-url-for-extrinsic-${para}`;
   }
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}extrinsic/${extrinsicIndex}`;
@@ -86,7 +91,7 @@ export const subscanEventLink = (
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
   if (!baseUrl) {
-    return `#no-url-explorer-url-for-event-${para}"`;
+    return `#no-explorer-url-for-event-${para}`;
   }
   const block = eventIndex.split("-")[0];
   const slash = baseUrl.endsWith("/") ? "" : "/";
@@ -100,8 +105,43 @@ export const subscanAccountLink = (
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
   if (!baseUrl) {
-    return `#no-url-explorer-url-for-account-${para}"`;
+    return `#no-explorer-url-for-account-${para}`;
   }
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}account/${address}`;
+};
+
+export const uniswapTokenLink = (
+  envName: string,
+  chainId: number,
+  token: string,
+) => {
+  const baseUrl = EXPLORERS[envName][`uniswap_${chainId}`];
+  if (!baseUrl) {
+    return `#no-uniswap-url-for-token-${token}`;
+  }
+  const slash = baseUrl.endsWith("/") ? "" : "/";
+  return `${baseUrl}${slash}explore/tokens/ethereum/${token}`;
+};
+
+export const stellasSwapTokenLink = (
+  envName: string,
+  chainId: number,
+  token: string,
+) => {
+  const baseUrl = EXPLORERS[envName][`uniswap_${chainId}`];
+  if (!baseUrl) {
+    return `#no-stellaswap-url-for-token-${chainId}`;
+  }
+  const slash = baseUrl.endsWith("/") ? "" : "/";
+  return `${baseUrl}${slash}`;
+};
+
+export const getDappLink = (envName: string, paraId: number) => {
+  const baseUrl = EXPLORERS[envName][`dapp_${paraId}`];
+  if (!baseUrl) {
+    return `#no-dapp-url-for-para-${paraId}`;
+  }
+  const slash = baseUrl.endsWith("/") ? "" : "/";
+  return `${baseUrl}${slash}`;
 };

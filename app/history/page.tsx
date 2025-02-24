@@ -28,7 +28,6 @@ import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
-import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import {
   Transfer,
   transferHistoryCacheAtom,
@@ -87,21 +86,21 @@ const isWalletTransaction = (
 
 const getExplorerLinks = (
   transfer: Transfer,
+  source: assetsV2.TransferLocation,
   registry: AssetRegistry,
   destination: assetsV2.TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
-  if (destination?.type == "ethereum") {
+  if (transfer.sourceType == "substrate") {
     const ethTransfer = transfer as historyV2.ToEthereumTransferResult;
     links.push({
-      text: "Submitted to Asset Hub",
+      text: `Submitted to ${source.name}`,
       url: subscanExtrinsicLink(
         registry.environment,
-        registry.assetHubParaId,
+        source.parachain!.parachainId,
         ethTransfer.submitted.extrinsic_hash,
       ),
     });
-
     if (ethTransfer.bridgeHubXcmDelivered) {
       links.push({
         text: "Bridge Hub received XCM from Asset Hub",
@@ -215,6 +214,7 @@ const transferDetail = (
   const { source, destination } = getEnvDetail(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
     transfer,
+    source,
     registry,
     destination,
   );
@@ -253,7 +253,7 @@ const transferDetail = (
   }
   const tokenUrl = etherscanERC20TokenLink(
     registry.environment,
-    source.ethChain!.chainId,
+    registry.ethChainId,
     transfer.info.tokenAddress,
   );
   let sourceAccountUrl;
@@ -356,7 +356,6 @@ const transferDetail = (
 };
 
 export default function History() {
-  const env = useAtomValue(snowbridgeEnvironmentAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 

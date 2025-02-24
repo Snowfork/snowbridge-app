@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { LucideLoaderCircle } from "lucide-react";
@@ -26,6 +25,12 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { cn } from "@/lib/utils";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import useSWR from "swr";
+import {
+  EXPLORERS,
+  stellasSwapTokenLink,
+  uniswapTokenLink,
+} from "@/lib/explorerLinks";
 
 const Loading = () => {
   return (
@@ -45,6 +50,73 @@ interface TxCardProps {
 function TxCard(props: TxCardProps) {
   const { transfer, refresh, inHistory, registry } = props;
   const { destination } = getEnvDetail(transfer, registry);
+  const links: { name: string; link: string }[] = [];
+
+  switch (transfer.sourceType) {
+    // Uniswap
+    case "substrate": {
+      const uniswap = {
+        name: "Uniswap",
+        link: uniswapTokenLink(
+          registry.environment,
+          registry.ethChainId,
+          transfer.info.tokenAddress,
+        ),
+      };
+      if (!uniswap.link.startsWith("#")) {
+        links.push(uniswap);
+      }
+      break;
+    }
+    case "ethereum": {
+      const stellasSwap = {
+        name: "Stella Swap",
+        link: stellasSwapTokenLink(
+          registry.environment,
+          destination.parachain!.parachainId,
+          transfer.info.tokenAddress,
+        ),
+      };
+      if (!stellasSwap.link.startsWith("#")) {
+        links.push(stellasSwap);
+      }
+      const bifrost = {
+        name: "Bifrost",
+        link: uniswapTokenLink(
+          registry.environment,
+          destination.parachain!.parachainId,
+          transfer.info.tokenAddress,
+        ),
+      };
+      if (!bifrost.link.startsWith("#")) {
+        links.push(bifrost);
+      }
+      const hydration = {
+        name: "Hydration",
+        link: uniswapTokenLink(
+          registry.environment,
+          destination.parachain!.parachainId,
+          transfer.info.tokenAddress,
+        ),
+      };
+      if (!hydration.link.startsWith("#")) {
+        links.push(hydration);
+      }
+      const moonbeam = {
+        name: "Moonbeam",
+        link: uniswapTokenLink(
+          registry.environment,
+          destination.parachain!.parachainId,
+          transfer.info.tokenAddress,
+        ),
+      };
+      if (!moonbeam.link.startsWith("#")) {
+        links.push(moonbeam);
+      }
+      break;
+    }
+  }
+
   return (
     <Card className="w-[360px] md:w-2/3">
       <CardHeader>
@@ -72,6 +144,30 @@ function TxCard(props: TxCardProps) {
           >
             Transfer can take up to{" "}
             {destination.type !== "ethereum" ? "25 minutes" : "35-90 minutes"}
+          </div>
+          <div
+            className={
+              transfer.status !== historyV2.TransferStatus.Complete ||
+              links.length == 0
+                ? "hidden"
+                : ""
+            }
+          >
+            App Links
+            <ul className="p-2 list-inside list-disc">
+              {links.map(({ name, link }) => {
+                return (
+                  <li key={name}>
+                    <Link
+                      className={cn("underline", !inHistory ? "hidden" : "")}
+                      href={link}
+                    >
+                      {name}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
           <div>
             <Link
@@ -103,28 +199,73 @@ function TxCard(props: TxCardProps) {
 function TxComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data, mutate } = useTransferHistory();
   const { data: registry } = useAssetRegistry();
 
-  const [transfer, inHistory] = useMemo(() => {
+  const [messageId, sourceType, transfer] = useMemo(() => {
+    const messageId = searchParams.get("messageId");
+    const sourceType = searchParams.get("sourceType");
     const transferEncoded = searchParams.get("transfer");
-    if (transferEncoded === null) return [null, false];
+    if (transferEncoded === null) return [messageId, sourceType];
 
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
-    const history = data?.find(
-      (x) => x.id?.toLowerCase() === decoded.id.toLowerCase(),
-    );
-    return [history ?? decoded, history !== undefined];
-  }, [data, searchParams]);
+    return [
+      decoded?.id ?? messageId,
+      decoded.sourceType ?? sourceType,
+      decoded,
+    ];
+  }, [searchParams]);
 
-  if (!transfer) {
-    router.push("/");
-    return <></>;
+  const {
+    data: { txData, inHistory },
+    error,
+    mutate,
+    isLoading,
+    isValidating,
+  } = useSWR(
+    [registry.environment, "completedtx", sourceType, messageId],
+    async ([, , sourceType, messageId]) => {
+      if (messageId !== null) {
+        if (sourceType === null) {
+          const [toP, toE] = await Promise.all([
+            historyV2.toPolkadotTransferById(messageId),
+            historyV2.toEthereumTransferById(messageId),
+          ]);
+          console.log(toP ?? toE);
+          return { txData: toP ?? toE, inHistory: true };
+        } else {
+          switch (sourceType) {
+            case "ethereum": {
+              const txData = await historyV2.toPolkadotTransferById(messageId);
+              return { txData, inHistory: true };
+            }
+            case "substrate": {
+              const txData = await historyV2.toEthereumTransferById(messageId);
+              return { txData, inHistory: true };
+            }
+          }
+        }
+      }
+      return { txData: transfer, inHistory: false };
+    },
+    {
+      refreshInterval: 60 * 1000, // 1 minute
+      suspense: true,
+      fallbackData: { txData: transfer, inHistory: false },
+    },
+  );
+
+  if (error !== undefined) {
+    console.error(error);
+    return <div>{error}</div>;
+  }
+
+  if (txData === undefined || isLoading || isValidating) {
+    return <Loading />;
   }
 
   return (
     <TxCard
-      transfer={transfer}
+      transfer={txData}
       inHistory={inHistory}
       registry={registry}
       refresh={async () => await mutate()}
