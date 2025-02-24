@@ -131,7 +131,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   const nextStep = () => setCurrentStep(currentStep + 1);
   return (
     <div>
-      <TransferSummary data={data} />
+      <TransferSummary data={data} registry={registry} />
       <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">
         Steps
       </h3>

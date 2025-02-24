@@ -200,6 +200,7 @@ export const TransferComponent: FC = () => {
     content = (
       <TransferBusy
         data={validationData}
+        registry={registry}
         message={busy}
         onBack={() => backToForm(formData)}
       />

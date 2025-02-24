@@ -6,12 +6,18 @@ import { FeeDisplay } from "../FeeDisplay";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { estimateDelivery } from "@/lib/bridgeStatus";
 import { Table, TableBody, TableRow, TableCell } from "../ui/table";
+import { assetsV2 } from "@snowbridge/api";
+import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 
 interface TransferSummaryProps {
   data: ValidationData;
+  registry: assetsV2.AssetRegistry;
 }
 
-export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
+export const TransferSummary: FC<TransferSummaryProps> = ({
+  data,
+  registry,
+}) => {
   const {
     data: status,
     isLoading: isStatusLoading,
@@ -21,26 +27,46 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
 
   const isRefreshing = isStatusLoading || isStatusValidating;
 
-  const envName = getEnvironmentName();
+  let sourceAccountDisplay = data.formData.sourceAccount;
+  let beneficiaryDisplay = data.formData.beneficiary;
   let sourceAccountLink: string;
   let beneficiaryLink: string;
   if (data.source.id === "ethereum") {
+    if (data.destination.parachain?.info.accountType === "AccountId32") {
+      beneficiaryDisplay = encodeAddress(
+        decodeAddress(beneficiaryDisplay),
+        data.destination.parachain?.info.ss58Format ??
+          registry.relaychain.ss58Format,
+      );
+    }
     sourceAccountLink = etherscanAddressLink(
-      envName,
-      data.formData.sourceAccount,
+      registry.environment,
+      registry.ethChainId,
+      sourceAccountDisplay,
     );
     beneficiaryLink = subscanAccountLink(
-      envName,
-      "ah",
-      data.formData.beneficiary,
+      registry.environment,
+      data.destination.parachain!.parachainId,
+      beneficiaryDisplay,
     );
   } else {
+    if (data.source.parachain?.info.accountType === "AccountId32") {
+      sourceAccountDisplay = encodeAddress(
+        decodeAddress(sourceAccountDisplay),
+        data.source.parachain?.info.ss58Format ??
+          registry.relaychain.ss58Format,
+      );
+    }
     sourceAccountLink = subscanAccountLink(
-      envName,
-      "ah",
-      data.formData.sourceAccount,
+      registry.environment,
+      data.source.parachain!.parachainId,
+      sourceAccountDisplay,
     );
-    beneficiaryLink = etherscanAddressLink(envName, data.formData.beneficiary);
+    beneficiaryLink = etherscanAddressLink(
+      registry.environment,
+      registry.ethChainId,
+      data.formData.beneficiary,
+    );
   }
 
   return (
@@ -54,7 +80,14 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
           <TableBody>
             <TableRow>
               <TableCell className="font-bold">From</TableCell>
-              <TableCell>{data.formData.sourceAccount}</TableCell>
+              <TableCell>
+                <span
+                  onClick={() => window.open(sourceAccountLink)}
+                  className="hover:underline cursor-pointer"
+                >
+                  {data.formData.sourceAccount}
+                </span>
+              </TableCell>
             </TableRow>
             <TableRow>
               <TableCell className="font-bold">To</TableCell>

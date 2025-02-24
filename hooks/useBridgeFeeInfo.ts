@@ -3,7 +3,7 @@ import { assetsV2, Context, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import { useAssetRegistry } from "./useAssetRegistry";
-import { FeeInfo, TransferLocation } from "@/utils/types";
+import { FeeInfo } from "@/utils/types";
 
 async function fetchBridgeFeeInfo([
   context,
@@ -13,8 +13,8 @@ async function fetchBridgeFeeInfo([
   token,
 ]: [
   Context | null,
-  TransferLocation,
-  TransferLocation,
+  assetsV2.TransferLocation,
+  assetsV2.TransferLocation,
   assetsV2.AssetRegistry,
   string,
   string,
@@ -64,8 +64,8 @@ async function fetchBridgeFeeInfo([
 }
 
 export function useBridgeFeeInfo(
-  source: TransferLocation,
-  destination: TransferLocation,
+  source: assetsV2.TransferLocation,
+  destination: assetsV2.TransferLocation,
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
