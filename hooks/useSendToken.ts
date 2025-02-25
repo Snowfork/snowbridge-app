@@ -1,5 +1,5 @@
 import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
-import { polkadotAccountAtom } from "@/store/polkadot";
+import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   MessageReciept,
@@ -195,19 +195,21 @@ export function useSendToken(): [
     [context],
   );
 
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const send = useCallback(
     async (data: ValidationData, plan: ValidationResult) => {
       if (context === null) throw Error("No context");
       return await sendToken(context, data, plan, {
-        polkadotAccount: polkadotAccount ?? undefined,
+        polkadotAccount: (polkadotAccounts ?? []).find(
+          (pa) => pa.address === data.formData.sourceAccount,
+        ),
         ethereumAccount: ethereumAccount ?? undefined,
         ethereumProvider: ethereumProvider ?? undefined,
       });
     },
-    [context, polkadotAccount, ethereumAccount, ethereumProvider],
+    [context, polkadotAccounts, ethereumAccount, ethereumProvider],
   );
   return [plan, send];
 }

@@ -46,7 +46,6 @@ import {
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { isHex } from "@polkadot/util";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 
@@ -281,7 +280,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       track("Validate Send", formData);
       try {
         const amountInSmallestUnit = parseUnits(
-          formData.amount,
+          formData.amount.trim(),
           tokenMetadata.decimals,
         );
         if (amountInSmallestUnit === 0n) {

@@ -203,16 +203,6 @@ const getExplorerLinks = (
         ),
       });
     }
-    if (tx.assetHubMessageProcessed) {
-      links.push({
-        text: "Message dispatched on Asset Hub",
-        url: subscanEventLink(
-          registry.environment,
-          registry.assetHubParaId,
-          tx.assetHubMessageProcessed.event_index,
-        ),
-      });
-    }
     if (tx.destinationReceived) {
       links.push({
         text: `Message received on ${destination.name}`,
