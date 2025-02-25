@@ -1,4 +1,3 @@
-import { stringify } from "@/lib/json";
 import { assetRegistryAsString } from "@/lib/server/assets";
 import { getErrorMessage } from "@/lib/snowbridge";
 import { NextResponse } from "next/server";

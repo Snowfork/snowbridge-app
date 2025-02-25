@@ -3,7 +3,6 @@ import { Button } from "../ui/button";
 import Image from "next/image";
 import { TransferSummary } from "./TransferSummary";
 import { ValidationData } from "@/utils/types";
-import { assetsV2 } from "@snowbridge/api";
 
 interface TransferBusyProps {
   message?: string;

@@ -20,9 +20,7 @@ import { LucideLoaderCircle } from "lucide-react";
 import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
 import { parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { getEnvironmentName } from "@/lib/snowbridge";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
-import { assetsV2 } from "@snowbridge/api";
 
 interface TransferStepData {
   id: number;

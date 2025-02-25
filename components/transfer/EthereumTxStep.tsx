@@ -5,7 +5,6 @@ import { Input } from "../ui/input";
 import { LucideLoaderCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { etherscanTxHashLink } from "@/lib/explorerLinks";
-import { assetsV2 } from "@snowbridge/api";
 
 interface EthereumTxStep {
   title: string;

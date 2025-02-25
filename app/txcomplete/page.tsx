@@ -27,7 +27,6 @@ import { assetsV2, historyV2 } from "@snowbridge/api";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import useSWR from "swr";
 import {
-  EXPLORERS,
   getDappLink,
   stellasSwapTokenLink,
   uniswapTokenLink,

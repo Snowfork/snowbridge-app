@@ -2,6 +2,11 @@
 
 import { ErrorDialog } from "@/components/ErrorDialog";
 import {
+  formatTokenData,
+  getEnvDetail,
+  TransferTitle,
+} from "@/components/history/TransferTitle";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -24,8 +29,17 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
+import {
+  etherscanAddressLink,
+  etherscanERC20TokenLink,
+  etherscanTxHashLink,
+  subscanAccountLink,
+  subscanEventLink,
+  subscanExtrinsicLink,
+} from "@/lib/explorerLinks";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
@@ -35,33 +49,14 @@ import {
   transfersPendingLocalAtom,
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
-import { assetsV2, environment, historyV2 } from "@snowbridge/api";
+import { assetsV2, historyV2 } from "@snowbridge/api";
+import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
-import {
-  LucideGlobe,
-  LucideLoaderCircle,
-  LucideRefreshCw,
-  Regex,
-} from "lucide-react";
+import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import {
-  etherscanAddressLink,
-  etherscanERC20TokenLink,
-  etherscanTxHashLink,
-  subscanAccountLink,
-  subscanEventLink,
-  subscanExtrinsicLink,
-} from "@/lib/explorerLinks";
-import {
-  formatTokenData,
-  getEnvDetail,
-  TransferTitle,
-} from "@/components/history/TransferTitle";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
-import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
 
 const ITEMS_PER_PAGE = 5;
 const isWalletTransaction = (

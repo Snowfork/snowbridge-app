@@ -1,6 +1,6 @@
 import { Transfer } from "@/store/transferHistory";
 import { Badge } from "../ui/badge";
-import { assets, environment, historyV2 } from "@snowbridge/api";
+import { historyV2 } from "@snowbridge/api";
 import { cn } from "@/lib/utils";
 
 interface TransferStatusBadgeProps {

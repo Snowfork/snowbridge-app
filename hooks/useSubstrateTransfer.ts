@@ -125,7 +125,7 @@ export function useSubstrateTransfer() {
       });
 
       result.unsub();
-      const header = await api.rpc.chain.getHeader(result.data.blockHash);
+      const header: any = await api.rpc.chain.getHeader(result.data.blockHash);
       return { ...result.data, blockNumber: header.number };
     },
     [context, polkadotAccount, polkadotAccounts],
