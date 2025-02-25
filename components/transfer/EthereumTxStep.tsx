@@ -1,4 +1,3 @@
-import { getEnvironmentName } from "@/lib/snowbridge";
 import { ContractResponse, TransferStep, ValidationData } from "@/utils/types";
 import { useState } from "react";
 import { Label } from "../ui/label";
@@ -14,7 +13,6 @@ interface EthereumTxStep {
   step: TransferStep;
   data: ValidationData;
   currentStep: number;
-  registry: assetsV2.AssetRegistry;
   nextStep: () => Promise<unknown> | unknown;
   action: (data: ValidationData, amount: string) => Promise<ContractResponse>;
   errorMessage?: string;
@@ -28,13 +26,11 @@ export function EthereumTxStep({
   data,
   currentStep,
   nextStep,
-  registry,
   action,
   errorMessage,
   submitButtonText,
   description,
 }: EthereumTxStep) {
-  const envName = getEnvironmentName();
   const [amount, setAmount] = useState(data.formData.amount);
   const [busy, setBusy] = useState(false);
   interface Message {
@@ -96,8 +92,8 @@ export function EthereumTxStep({
               try {
                 const { receipt } = await action(data, amount);
                 const etherscanLink = etherscanTxHashLink(
-                  envName,
-                  registry.ethChainId,
+                  data.assetRegistry.environment,
+                  data.assetRegistry.ethChainId,
                   receipt?.hash ?? "",
                 );
                 if (receipt?.status === 1) {

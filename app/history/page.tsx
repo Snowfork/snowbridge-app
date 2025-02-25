@@ -92,114 +92,134 @@ const getExplorerLinks = (
 ) => {
   const links: { text: string; url: string }[] = [];
   if (transfer.sourceType == "substrate") {
-    const ethTransfer = transfer as historyV2.ToEthereumTransferResult;
+    const tx = transfer as historyV2.ToEthereumTransferResult;
     links.push({
       text: `Submitted to ${source.name}`,
       url: subscanExtrinsicLink(
         registry.environment,
         source.parachain!.parachainId,
-        ethTransfer.submitted.extrinsic_hash,
+        tx.submitted.extrinsic_hash,
       ),
     });
-    if (ethTransfer.bridgeHubXcmDelivered) {
+    if (tx.bridgeHubXcmDelivered) {
       links.push({
         text: "Bridge Hub received XCM from Asset Hub",
         url: subscanEventLink(
           registry.environment,
           registry.bridgeHubParaId,
-          ethTransfer.bridgeHubXcmDelivered.event_index,
+          tx.bridgeHubXcmDelivered.event_index,
         ),
       });
     }
-    if (ethTransfer.bridgeHubChannelDelivered) {
+    if (tx.bridgeHubChannelDelivered) {
       links.push({
         text: "Message delivered to Snowbridge Message Queue",
         url: subscanEventLink(
           registry.environment,
           registry.bridgeHubParaId,
-          ethTransfer.bridgeHubChannelDelivered.event_index,
+          tx.bridgeHubChannelDelivered.event_index,
         ),
       });
     }
-    if (ethTransfer.bridgeHubMessageQueued) {
+    if (tx.bridgeHubMessageQueued) {
       links.push({
         text: "Message queued on Asset Hub Channel",
         url: subscanEventLink(
           registry.environment,
           registry.bridgeHubParaId,
-          ethTransfer.bridgeHubMessageQueued.event_index,
+          tx.bridgeHubMessageQueued.event_index,
         ),
       });
     }
-    if (ethTransfer.bridgeHubMessageAccepted) {
+    if (tx.bridgeHubMessageAccepted) {
       links.push({
         text: "Message accepted by Asset Hub Channel",
         url: subscanEventLink(
           registry.environment,
           registry.bridgeHubParaId,
-          ethTransfer.bridgeHubMessageAccepted.event_index,
+          tx.bridgeHubMessageAccepted.event_index,
         ),
       });
     }
-    if (ethTransfer.ethereumBeefyIncluded) {
+    if (tx.ethereumBeefyIncluded) {
       links.push({
         text: "Message included by beefy client",
         url: etherscanTxHashLink(
           registry.environment,
           registry.ethChainId,
-          ethTransfer.ethereumBeefyIncluded.transactionHash,
+          tx.ethereumBeefyIncluded.transactionHash,
         ),
       });
     }
-    if (ethTransfer.ethereumMessageDispatched) {
+    if (tx.ethereumMessageDispatched) {
       links.push({
         text: "Message dispatched on Ethereum",
         url: etherscanTxHashLink(
           registry.environment,
           registry.ethChainId,
-          ethTransfer.ethereumMessageDispatched.transactionHash,
+          tx.ethereumMessageDispatched.transactionHash,
         ),
       });
     }
   }
   if (destination?.type == "substrate") {
-    const dotTransfer = transfer as historyV2.ToPolkadotTransferResult;
+    const tx = transfer as historyV2.ToPolkadotTransferResult;
     links.push({
       text: "Submitted to Snowbridge Gateway",
       url: etherscanTxHashLink(
         registry.environment,
         registry.ethChainId,
-        dotTransfer.submitted.transactionHash,
+        tx.submitted.transactionHash,
       ),
     });
 
-    if (dotTransfer.beaconClientIncluded) {
+    if (tx.beaconClientIncluded) {
       links.push({
         text: "Included by light client on Bridge Hub",
         url: subscanEventLink(
           registry.environment,
           registry.bridgeHubParaId,
-          dotTransfer.beaconClientIncluded.event_index,
+          tx.beaconClientIncluded.event_index,
         ),
       });
     }
-    if (dotTransfer.inboundMessageReceived) {
+    if (tx.inboundMessageReceived) {
       links.push({
         text: "Inbound message received on Asset Hub channel",
         url: subscanEventLink(
           registry.environment,
           registry.bridgeHubParaId,
-          dotTransfer.inboundMessageReceived.event_index,
+          tx.inboundMessageReceived.event_index,
         ),
       });
     }
-    if (dotTransfer.assetHubMessageProcessed) {
+    if (tx.assetHubMessageProcessed) {
       links.push({
         text: "Message dispatched on Asset Hub",
         url: subscanEventLink(
           registry.environment,
           registry.assetHubParaId,
-          dotTransfer.assetHubMessageProcessed.event_index,
+          tx.assetHubMessageProcessed.event_index,
+        ),
+      });
+    }
+    if (tx.assetHubMessageProcessed) {
+      links.push({
+        text: "Message dispatched on Asset Hub",
+        url: subscanEventLink(
+          registry.environment,
+          registry.assetHubParaId,
+          tx.assetHubMessageProcessed.event_index,
+        ),
+      });
+    }
+    if (tx.destinationReceived) {
+      links.push({
+        text: `Message received on ${destination.name}`,
+        url: subscanEventLink(
+          registry.environment,
+          tx.destinationReceived.paraId,
+          tx.destinationReceived.event_index,
         ),
       });
     }

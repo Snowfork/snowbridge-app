@@ -30,7 +30,6 @@ interface TransferStepsProps {
 interface StepData {
   id: number;
   step: TransferStep;
-  registry: assetsV2.AssetRegistry;
   data: ValidationData;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
@@ -87,7 +86,6 @@ function TransferStepView(step: StepData, registry: assetsV2.AssetRegistry) {
         <EthereumTxStep
           {...step}
           title="Approve Snowbridge spender."
-          registry={registry}
           description="Snowbridge needs to be an approved spender to transfer ERC20 tokens. This step will approve the transfer amount."
           action={approveSpend}
           errorMessage="Error submitting approval."
@@ -99,7 +97,6 @@ function TransferStepView(step: StepData, registry: assetsV2.AssetRegistry) {
         <EthereumTxStep
           {...step}
           title="Wrap ETH to WETH."
-          registry={registry}
           description="ETH needs to be wrapped into WETH to be transfered with Snowbridge. This step will deposit ETH into WETH."
           action={depositWeth}
           errorMessage="Error depositing WETH."
@@ -131,7 +128,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   const nextStep = () => setCurrentStep(currentStep + 1);
   return (
     <div>
-      <TransferSummary data={data} registry={registry} />
+      <TransferSummary data={data} />
       <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">
         Steps
       </h3>
@@ -142,7 +139,6 @@ export const TransferSteps: FC<TransferStepsProps> = ({
             id={i + 1}
             step={step}
             data={data}
-            registry={registry}
             currentStep={currentStep}
             nextStep={nextStep}
           />

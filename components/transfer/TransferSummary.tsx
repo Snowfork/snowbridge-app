@@ -1,23 +1,17 @@
 import { FC } from "react";
 import { ValidationData } from "@/utils/types";
 import { etherscanAddressLink, subscanAccountLink } from "@/lib/explorerLinks";
-import { getEnvironmentName } from "@/lib/snowbridge";
 import { FeeDisplay } from "../FeeDisplay";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { estimateDelivery } from "@/lib/bridgeStatus";
 import { Table, TableBody, TableRow, TableCell } from "../ui/table";
-import { assetsV2 } from "@snowbridge/api";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 
 interface TransferSummaryProps {
   data: ValidationData;
-  registry: assetsV2.AssetRegistry;
 }
 
-export const TransferSummary: FC<TransferSummaryProps> = ({
-  data,
-  registry,
-}) => {
+export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
   const {
     data: status,
     isLoading: isStatusLoading,
@@ -36,16 +30,16 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       beneficiaryDisplay = encodeAddress(
         decodeAddress(beneficiaryDisplay),
         data.destination.parachain?.info.ss58Format ??
-          registry.relaychain.ss58Format,
+          data.assetRegistry.relaychain.ss58Format,
       );
     }
     sourceAccountLink = etherscanAddressLink(
-      registry.environment,
-      registry.ethChainId,
+      data.assetRegistry.environment,
+      data.assetRegistry.ethChainId,
       sourceAccountDisplay,
     );
     beneficiaryLink = subscanAccountLink(
-      registry.environment,
+      data.assetRegistry.environment,
       data.destination.parachain!.parachainId,
       beneficiaryDisplay,
     );
@@ -54,17 +48,17 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       sourceAccountDisplay = encodeAddress(
         decodeAddress(sourceAccountDisplay),
         data.source.parachain?.info.ss58Format ??
-          registry.relaychain.ss58Format,
+          data.assetRegistry.relaychain.ss58Format,
       );
     }
     sourceAccountLink = subscanAccountLink(
-      registry.environment,
+      data.assetRegistry.environment,
       data.source.parachain!.parachainId,
       sourceAccountDisplay,
     );
     beneficiaryLink = etherscanAddressLink(
-      registry.environment,
-      registry.ethChainId,
+      data.assetRegistry.environment,
+      data.assetRegistry.ethChainId,
       data.formData.beneficiary,
     );
   }

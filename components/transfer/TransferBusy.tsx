@@ -6,7 +6,6 @@ import { ValidationData } from "@/utils/types";
 import { assetsV2 } from "@snowbridge/api";
 
 interface TransferBusyProps {
-  registry: assetsV2.AssetRegistry;
   message?: string;
   data?: ValidationData;
   onBack?: () => Promise<unknown> | unknown;
@@ -15,12 +14,11 @@ export const TransferBusy: FC<TransferBusyProps> = ({
   message,
   onBack,
   data,
-  registry,
 }) => {
   return (
     <div className="flex flex-col">
       {data !== undefined ? (
-        <TransferSummary data={data} registry={registry} />
+        <TransferSummary data={data} />
       ) : (
         <div className="hidden" />
       )}

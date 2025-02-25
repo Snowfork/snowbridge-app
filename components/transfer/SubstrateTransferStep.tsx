@@ -20,9 +20,9 @@ import { LucideLoaderCircle } from "lucide-react";
 import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
 import { parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { getEnv } from "@vercel/functions";
 import { getEnvironmentName } from "@/lib/snowbridge";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { assetsV2 } from "@snowbridge/api";
 
 interface TransferStepData {
   id: number;
@@ -44,7 +44,6 @@ export function SubstrateTransferStep({
   description,
   defaultAmount,
 }: TransferStepData) {
-  const envName = getEnvironmentName();
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const { data: assetRegistry } = useAssetRegistry();
@@ -245,7 +244,7 @@ export function SubstrateTransferStep({
                   nextStep();
                   setBusy(false);
                   const link = subscanExtrinsicLink(
-                    envName,
+                    assetRegistry.environment,
                     "relaychain",
                     `${result.blockNumber}-${result.txIndex}`,
                   );

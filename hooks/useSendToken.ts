@@ -136,15 +136,7 @@ async function sendToken(
   plan: ValidationResult,
   signerInfo: SignerInfo,
 ): Promise<MessageReciept> {
-  if (
-    plan.logs.find(
-      (l) =>
-        (l.kind as toEthereumV2.ValidationKind) ===
-          toEthereumV2.ValidationKind.Error ||
-        (l.kind as toPolkadotV2.ValidationKind) ===
-          toPolkadotV2.ValidationKind.Error,
-    )
-  ) {
+  if (!plan.success) {
     throw Error(`Cannot execute a failed plan.`, {
       cause: plan,
     });

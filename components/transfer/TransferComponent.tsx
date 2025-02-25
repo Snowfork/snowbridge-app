@@ -141,17 +141,7 @@ export const TransferComponent: FC = () => {
         setBusy(null);
         return;
       }
-      if (
-        steps.steps.length > 0 ||
-        !plan.logs.find(
-          (l) =>
-            (l.kind as toPolkadotV2.ValidationKind) ===
-              toPolkadotV2.ValidationKind.Error ||
-            (l.kind as toEthereumV2.ValidationKind) ===
-              toEthereumV2.ValidationKind.Error,
-        ) ||
-        refreshOnly
-      ) {
+      if (steps.steps.length > 0 || !plan.success || refreshOnly) {
         setBusy(null);
         return;
       }
@@ -200,7 +190,6 @@ export const TransferComponent: FC = () => {
     content = (
       <TransferBusy
         data={validationData}
-        registry={registry}
         message={busy}
         onBack={() => backToForm(formData)}
       />
