@@ -28,6 +28,7 @@ import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import useSWR from "swr";
 import {
   EXPLORERS,
+  getDappLink,
   stellasSwapTokenLink,
   uniswapTokenLink,
 } from "@/lib/explorerLinks";
@@ -80,38 +81,15 @@ function TxCard(props: TxCardProps) {
       if (!stellasSwap.link.startsWith("#")) {
         links.push(stellasSwap);
       }
-      const bifrost = {
-        name: "Bifrost",
-        link: uniswapTokenLink(
+      const dapp = {
+        name: `${destination.name} Dapp`,
+        link: getDappLink(
           registry.environment,
           destination.parachain!.parachainId,
-          transfer.info.tokenAddress,
         ),
       };
-      if (!bifrost.link.startsWith("#")) {
-        links.push(bifrost);
-      }
-      const hydration = {
-        name: "Hydration",
-        link: uniswapTokenLink(
-          registry.environment,
-          destination.parachain!.parachainId,
-          transfer.info.tokenAddress,
-        ),
-      };
-      if (!hydration.link.startsWith("#")) {
-        links.push(hydration);
-      }
-      const moonbeam = {
-        name: "Moonbeam",
-        link: uniswapTokenLink(
-          registry.environment,
-          destination.parachain!.parachainId,
-          transfer.info.tokenAddress,
-        ),
-      };
-      if (!moonbeam.link.startsWith("#")) {
-        links.push(moonbeam);
+      if (!dapp.link.startsWith("#")) {
+        links.push(dapp);
       }
       break;
     }
@@ -230,7 +208,6 @@ function TxComponent() {
             historyV2.toPolkadotTransferById(messageId),
             historyV2.toEthereumTransferById(messageId),
           ]);
-          console.log(toP ?? toE);
           return { txData: toP ?? toE, inHistory: true };
         } else {
           switch (sourceType) {

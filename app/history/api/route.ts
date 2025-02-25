@@ -8,7 +8,7 @@ import { getErrorMessage, getTransferHistoryV2 } from "@/lib/snowbridge";
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-const CACHE_REVALIDATE_IN_SECONDS = 1 * 60; // 2 minutes
+const CACHE_REVALIDATE_IN_SECONDS = 30 * 1000; // 30 seconds
 
 const getCachedTransferHistory = unstable_cache(
   () => {
