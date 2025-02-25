@@ -2,7 +2,7 @@ import { FC } from "react";
 import { Button } from "../ui/button";
 import { TransferPlanSteps, ValidationData } from "@/utils/types";
 import { LucideAlertCircle } from "lucide-react";
-import { toEthereum, toPolkadot } from "@snowbridge/api";
+import { toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 
 interface TransferErrorProps {
   message?: string;
@@ -12,16 +12,19 @@ interface TransferErrorProps {
 }
 
 export function overrideMessage(
-  error: toEthereum.SendValidationError | toPolkadot.SendValidationError,
+  error: toEthereumV2.ValidationLog | toPolkadotV2.ValidationLog,
   data?: ValidationData,
 ) {
-  if (
-    data?.source.id === "ethereum" &&
-    error.code === toPolkadot.SendValidationCode.InsufficientFee
-  ) {
-    return "Insufficient ETH balance to pay transfer fees.";
+  switch (data?.source.id) {
+    case "ethereum": {
+      const e = error as toPolkadotV2.ValidationLog;
+      if (e.reason == toPolkadotV2.ValidationReason.InsufficientEther) {
+        return "Insufficient ETH balance to pay transfer fees.";
+      }
+      break;
+    }
   }
-  return (error as any).message ?? "";
+  return error.message;
 }
 
 export const TransferError: FC<TransferErrorProps> = ({

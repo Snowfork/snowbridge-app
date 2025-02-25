@@ -1,6 +1,5 @@
 import { FC } from "react";
 import { Button } from "../ui/button";
-import { LucideLoaderCircle } from "lucide-react";
 import Image from "next/image";
 import { TransferSummary } from "./TransferSummary";
 import { ValidationData } from "@/utils/types";

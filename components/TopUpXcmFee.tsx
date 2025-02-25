@@ -117,7 +117,7 @@ export const TopUpXcmFee: FC<Props> = ({
       }
 
       setBusyMessage("Transaction being created.");
-      const api = context.polkadot.api.assetHub;
+      const api = await context.assetHub();
 
       const tx = api.tx.polkadotXcm.limitedReserveTransferAssets(
         {

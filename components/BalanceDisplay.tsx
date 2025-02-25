@@ -1,34 +1,25 @@
 import { FC, useEffect } from "react";
-import { assets, environment } from "@snowbridge/api";
+import { assets, assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
-import { useAtomValue } from "jotai";
-import { polkadotAccountAtom } from "@/store/polkadot";
-import { ethereumAccountAtom } from "@/store/ethereum";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
-import {
-  FormLabel,
-} from "./ui/form";
+import { FormLabel } from "./ui/form";
 
 interface BalanceDisplayProps {
-  source: environment.TransferLocation;
+  source: assetsV2.TransferLocation;
+  registry: assetsV2.AssetRegistry;
   token: string;
   displayDecimals: number;
   tokenMetadata: assets.ERC20Metadata | null;
+  sourceAccount: string;
 }
 
 export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   source,
+  registry,
   token,
   tokenMetadata,
+  sourceAccount,
 }) => {
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
-  const ethereumAccount = useAtomValue(ethereumAccountAtom);
-
-  const sourceAccount =
-    source.type == "ethereum"
-      ? (ethereumAccount ?? undefined)
-      : polkadotAccount?.address;
-
   const { data: balanceInfo, error } = useTokenBalance(
     sourceAccount,
     source,
@@ -64,12 +55,23 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     );
   }
 
-  const allowance = balanceInfo.gatewayAllowance
-    ? ` (Allowance: ${formatBalance({
-        number: balanceInfo.gatewayAllowance ?? 0n,
-        decimals: Number(tokenMetadata.decimals),
-      })} ${tokenMetadata.symbol})`
-    : "";
+  const dotBalance =
+    source.type === "substrate" &&
+    source.parachain &&
+    source.parachain?.parachainId !== registry.assetHubParaId
+      ? ` ;  ${formatBalance({
+          number: balanceInfo.dotBalance ?? 0n,
+          decimals: Number(balanceInfo.dotTokenDecimals),
+        })} ${balanceInfo.dotTokenSymbol}`
+      : "";
+
+  const allowance =
+    balanceInfo.gatewayAllowance !== undefined
+      ? ` (Allowance: ${formatBalance({
+          number: balanceInfo.gatewayAllowance ?? 0n,
+          decimals: Number(tokenMetadata.decimals),
+        })} ${tokenMetadata.symbol})`
+      : "";
 
   const tokenBalance = `${formatBalance({
     number: balanceInfo.balance,
@@ -88,7 +90,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         (sourceAccount ? " visible" : " hidden")
       }
     >
-      Balances: {nativeBalance} ; {tokenBalance} {allowance}
+      Balances: {nativeBalance} {dotBalance} ; {tokenBalance} {allowance}
     </FormLabel>
   );
 };

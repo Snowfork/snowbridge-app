@@ -1,16 +1,15 @@
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  assetErc20MetaDataAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
 import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
-import { AccountInfo, ValidationData } from "@/utils/types";
-import { assets, Context, environment } from "@snowbridge/api";
+import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
+import { assets, assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
@@ -21,7 +20,6 @@ import { Button } from "../ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,53 +38,79 @@ import { track } from "@vercel/analytics";
 import { validateOFAC } from "@/utils/validateOFAC";
 import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { formatBalance } from "@/utils/formatting";
+import {
+  formatBalance,
+  transformSs58Format,
+  trimAccount,
+} from "@/utils/formatting";
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
+import { isHex } from "@polkadot/util";
+import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 
 function getBeneficiaries(
-  destination: environment.TransferLocation,
+  destination: assetsV2.TransferLocation,
   polkadotAccounts: WalletAccount[],
   ethereumAccounts: string[],
+  ss58Format: number,
 ) {
   const beneficiaries: AccountInfo[] = [];
-  if (
-    destination.type === "substrate" &&
-    (destination.paraInfo?.addressType === "32byte" ||
-      destination.paraInfo?.addressType === "both")
-  ) {
+  if (destination.type === "substrate") {
     polkadotAccounts
-      .map((x) => {
-        return { key: x.address, name: x.name || "", type: destination.type };
+      .filter(
+        (x: any) =>
+          (x.type === "ethereum" &&
+            destination.parachain?.info.accountType === "AccountId20") ||
+          (x.type !== "ethereum" &&
+            destination.parachain?.info.accountType === "AccountId32"),
+      )
+      .map((x: any) => {
+        if (x.type === "ethereum") {
+          return {
+            key: x.address,
+            name: `${x.name} (${trimAccount(x.address, 20)})`,
+            type: "ethereum" as environment.SourceType,
+          };
+        } else {
+          return {
+            key: transformSs58Format(x.address, ss58Format),
+            name: x.name,
+            type: destination.type,
+          };
+        }
       })
       .forEach((x) => beneficiaries.push(x));
   }
   if (
     destination.type === "ethereum" ||
-    destination.paraInfo?.addressType === "20byte" ||
-    destination.paraInfo?.addressType === "both"
+    destination.parachain?.info.accountType === "AccountId20"
   ) {
-    ethereumAccounts
-      ?.map((x) => {
-        return {
+    ethereumAccounts?.forEach((x) => {
+      if (!beneficiaries.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
+        beneficiaries.push({
           key: x,
           name: x,
           type: "ethereum" as environment.SourceType,
-        };
-      })
-      .forEach((x) => beneficiaries.push(x));
+        });
+      }
+    });
 
     polkadotAccounts
       .filter((x: any) => x.type === "ethereum")
-      .map((x) => {
-        return {
-          key: x.address,
-          name: `${x.name} (${x.source})` || "",
-          type: destination.type,
-        };
-      })
-      .forEach((x) => beneficiaries.push(x));
+      .forEach((x) => {
+        if (
+          !beneficiaries.find(
+            (b) => b.key.toLowerCase() === x.address.toLowerCase(),
+          )
+        ) {
+          beneficiaries.push({
+            key: x.address,
+            name: `${x.name} (${trimAccount(x.address, 20)})`,
+            type: "ethereum" as environment.SourceType,
+          });
+        }
+      });
   }
 
   return beneficiaries;
@@ -96,38 +120,60 @@ interface TransferFormProps {
   onValidated: (data: ValidationData) => Promise<unknown> | unknown;
   onError: (form: TransferFormData, error: Error) => Promise<unknown> | unknown;
   formData?: TransferFormData;
+  assetRegistry: assetsV2.AssetRegistry;
 }
 
 export const TransferForm: FC<TransferFormProps> = ({
   onValidated,
   onError,
   formData,
+  assetRegistry,
 }) => {
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
-  const assetErc20MetaData = useAtomValue(assetErc20MetaDataAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
 
-  const [source, setSource] = useState(environment.locations[0]);
+  const locations = useMemo(
+    () => assetsV2.getTransferLocations(assetRegistry),
+    [assetRegistry],
+  );
+
+  const firstSource = locations[0];
+  const firstDestinations = Object.keys(firstSource.destinations).map(
+    (destination) =>
+      assetsV2.getTransferLocation(
+        assetRegistry,
+        firstSource.type === "ethereum" ? "substrate" : "ethereum",
+        destination,
+      ),
+  );
+  const firstDestination = firstDestinations[0];
+  const ethAsset = Object.keys(
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
+  ).find((asset) =>
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+      asset
+    ].name.match(/Ether/),
+  );
+  const firstToken =
+    ethAsset ?? firstSource.destinations[firstDestination.key][0];
+
+  const [source, setSource] = useState(firstSource);
   const [sourceAccount, setSourceAccount] = useState<string>();
-  const [destinations, setDestinations] = useState(
-    source.destinationIds.map(
-      (d) => environment.locations.find((s) => d === s.id)!,
-    ),
-  );
-  const [destination, setDestination] = useState(destinations[0]);
-  const [token, setToken] = useState(
-    destination.erc20tokensReceivable[0].address,
-  );
+  const [destinations, setDestinations] = useState(firstDestinations);
+  const [destination, setDestination] = useState(firstDestination);
+  const [token, setToken] = useState(firstToken);
   const [validating, setValidating] = useState(false);
 
   const beneficiaries = getBeneficiaries(
     destination,
     polkadotAccounts ?? [],
     ethereumAccounts,
+    destination.parachain?.info.ss58Format ??
+      assetRegistry.relaychain.ss58Format,
   );
 
   const form = useForm<TransferFormData>({
@@ -146,6 +192,11 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
+  const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
+    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    destination,
+    token,
+  );
 
   useEffect(() => {
     const newSourceAccount =
@@ -155,13 +206,28 @@ export const TransferForm: FC<TransferFormProps> = ({
     setSourceAccount(newSourceAccount);
 
     let newDestinations = destinations;
+    let newSource = source;
     if (source.id !== watchSource) {
-      const newSource = environment.locations.find((s) => s.id == watchSource)!;
+      newSource = locations.find((s) => s.id == watchSource)!;
       setSource(newSource);
-      newDestinations = newSource.destinationIds
-        .map((d) => environment.locations.find((s) => d === s.id))
-        .filter((s) => s !== undefined)
-        .map((s) => s!);
+      if (newSource.type === "substrate") {
+        const accountType =
+          assetRegistry.parachains[newSource.key].info.accountType;
+        const accounts = polkadotAccounts?.filter(
+          filterByAccountType(accountType),
+        );
+        form.resetField("sourceAccount", {
+          defaultValue:
+            accounts && accounts.length > 0 ? accounts[0].address : undefined,
+        });
+      }
+      newDestinations = Object.keys(newSource.destinations).map((destination) =>
+        assetsV2.getTransferLocation(
+          assetRegistry,
+          newSource.type === "ethereum" ? "substrate" : "ethereum",
+          destination,
+        ),
+      );
       setDestinations(newDestinations);
     }
     const newDestination =
@@ -170,13 +236,12 @@ export const TransferForm: FC<TransferFormProps> = ({
     setDestination(newDestination);
     form.resetField("destination", { defaultValue: newDestination.id });
 
-    const newTokens = newDestination.erc20tokensReceivable;
+    const newTokens = newSource.destinations[newDestination.key];
     const newToken =
-      newTokens.find(
-        (x) => x.address.toLowerCase() == watchToken.toLowerCase(),
-      ) ?? newTokens[0];
-    setToken(newToken.address);
-    form.resetField("token", { defaultValue: newToken.address });
+      newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
+      newTokens[0];
+    setToken(newToken);
+    form.resetField("token", { defaultValue: newToken });
     if (formData?.beneficiary) {
       form.resetField("beneficiary", {
         defaultValue: formData.beneficiary,
@@ -197,21 +262,25 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchSource,
     watchToken,
     watchSourceAccount,
+    source,
+    locations,
+    assetRegistry,
+    polkadotAccounts,
+    firstSource.type,
   ]);
 
-  const tokenMetadata = assetErc20MetaData
-    ? assetErc20MetaData[token.toLowerCase()]
-    : null;
+  const tokenMetadata =
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+      token.toLowerCase()
+    ];
 
   const submit = useCallback(
     async (formData: TransferFormData) => {
       setValidating(true);
       track("Validate Send", formData);
       try {
-        if (tokenMetadata == null) throw Error(`No erc20 token metadata.`);
-
         const amountInSmallestUnit = parseUnits(
-          formData.amount,
+          formData.amount.trim(),
           tokenMetadata.decimals,
         );
         if (amountInSmallestUnit === 0n) {
@@ -221,10 +290,18 @@ export const TransferForm: FC<TransferFormProps> = ({
           return;
         }
 
-        const minimumTransferAmount =
-          destination.erc20tokensReceivable.find(
-            (t) => t.address.toLowerCase() === formData.token.toLowerCase(),
-          )?.minimumTransferAmount ?? 1n;
+        let minimumTransferAmount = 1n;
+        if (destination.type === "substrate") {
+          const ahMin =
+            destination.parachain?.assets[formData.token.toLowerCase()]
+              .minimumBalance ?? minimumTransferAmount;
+          const dhMin =
+            assetRegistry.parachains[assetRegistry.assetHubParaId].assets[
+              formData.token.toLowerCase()
+            ].minimumBalance;
+          if (ahMin > minimumTransferAmount) minimumTransferAmount = ahMin;
+          if (dhMin > minimumTransferAmount) minimumTransferAmount = dhMin;
+        }
         if (amountInSmallestUnit < minimumTransferAmount) {
           const errorMessage = `Cannot send less than minimum value of ${formatBalance(
             {
@@ -249,6 +326,9 @@ export const TransferForm: FC<TransferFormProps> = ({
           setValidating(false);
           return;
         }
+        if (!feeInfo) {
+          throw Error(`No delivery fee set. ${feeError}`);
+        }
 
         if (source.id !== formData.source) {
           throw Error(
@@ -261,11 +341,17 @@ export const TransferForm: FC<TransferFormProps> = ({
           );
         }
         await onValidated({
-          source,
+          source: assetsV2.getTransferLocation(
+            assetRegistry,
+            source.id,
+            source.key,
+          ),
           destination,
+          assetRegistry,
           formData,
           tokenMetadata,
           amountInSmallestUnit,
+          fee: feeInfo,
         });
         setValidating(false);
       } catch (err: unknown) {
@@ -275,13 +361,15 @@ export const TransferForm: FC<TransferFormProps> = ({
       }
     },
     [
+      tokenMetadata,
       destination,
       form,
-      onValidated,
-      setValidating,
-      onError,
+      feeInfo,
       source,
-      tokenMetadata,
+      onValidated,
+      assetRegistry,
+      feeError,
+      onError,
     ],
   );
   return (
@@ -301,16 +389,30 @@ export const TransferForm: FC<TransferFormProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {environment.locations
-                          .filter((s) => s.destinationIds.length > 0)
-                          .map((s) => (
+                        {locations.map((s) => {
+                          let name: string;
+                          if (s.type === "ethereum") {
+                            const eth = assetRegistry.ethereumChains[s.key];
+                            if (!eth.evmParachainId) {
+                              name = "Ethereum";
+                            } else {
+                              const evmChain =
+                                assetRegistry.parachains[eth.evmParachainId];
+                              name = `${evmChain.info.name} (EVM)`;
+                            }
+                          } else {
+                            name = assetRegistry.parachains[s.key].info.name;
+                          }
+                          return (
                             <SelectItem key={s.id} value={s.id}>
                               <SelectItemWithIcon
-                                label={s.name}
+                                label={name}
                                 image={s.id}
+                                altImage="parachain_generic"
                               />
                             </SelectItem>
-                          ))}
+                          );
+                        })}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -334,12 +436,13 @@ export const TransferForm: FC<TransferFormProps> = ({
                       <SelectGroup>
                         {destinations.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
-                              <SelectItemWithIcon
-                                label={s.name}
-                                image={s.id}
-                              />
+                            <SelectItemWithIcon
+                              label={s.name}
+                              image={s.id}
+                              altImage="parachain_generic"
+                            />
                           </SelectItem>
-                          ))}
+                        ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -350,126 +453,168 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
         </div>
         <div className="transfer-details">
-        {sourceAccount && (<FormField
-          control={form.control}
-          name="sourceAccount"
-          render={({ field }) => (
-            <FormItem {...field}>
-              <div className="grid grid-cols-2 space-x-2">
-                <FormLabel>From account
-                </FormLabel>
-                <BalanceDisplay
-                  source={source}
-                  token={token}
-                  tokenMetadata={tokenMetadata}
-                  displayDecimals={8}
-                />
-              </div>
+          <FormField
+            control={form.control}
+            name="sourceAccount"
+            render={({ field }) => (
+              <FormItem {...field}>
+                <div className="grid grid-cols-2 space-x-2">
+                  <FormLabel>From account</FormLabel>
+                </div>
                 <FormControl>
-                  <>
+                  <div>
                     {source.type == "ethereum" ? (
-                      <SelectedEthereumWallet
-                        field={field}
-                      />
+                      <SelectedEthereumWallet field={field} />
                     ) : (
                       <SelectedPolkadotAccount
-                        field={field}
                         source={source.id}
+                        polkadotAccounts={
+                          polkadotAccounts?.filter(
+                            filterByAccountType(
+                              assetRegistry.parachains[source.key].info
+                                .accountType,
+                            ),
+                          ) ?? []
+                        }
+                        polkadotAccount={watchSourceAccount}
+                        onValueChange={field.onChange}
+                        ss58Format={
+                          assetRegistry.parachains[source.key]?.info
+                            .ss58Format ??
+                          assetRegistry.relaychain.ss58Format ??
+                          0
+                        }
                       />
                     )}
-                  </>
+                    <div className="flex flex-row-reverse pt-1">
+                      <BalanceDisplay
+                        source={assetsV2.getTransferLocation(
+                          assetRegistry,
+                          source.type,
+                          source.key,
+                        )}
+                        sourceAccount={watchSourceAccount}
+                        registry={assetRegistry}
+                        token={token}
+                        tokenMetadata={tokenMetadata}
+                        displayDecimals={8}
+                      />
+                    </div>
+                  </div>
                 </FormControl>
                 <FormMessage />
-            </FormItem>
+              </FormItem>
             )}
-          />)}
-          {beneficiaries && beneficiaries.length > 0 && (<FormField
-          control={form.control}
-          name="beneficiary"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>To account</FormLabel>
-              <FormControl>
-                <SelectAccount
-                  accounts={beneficiaries}
-                  field={field}
-                  allowManualInput={false}
-                  destination={destination.id}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />)}
-        <div className="flex space-x-2">
-          <div className="w-2/3">
+          />
+          {beneficiaries && beneficiaries.length > 0 && (
             <FormField
               control={form.control}
-              name="amount"
+              name="beneficiary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>To account</FormLabel>
                   <FormControl>
-                    <Input className="text-right" type="string" placeholder="0.0" {...field} />
+                    <SelectAccount
+                      accounts={beneficiaries}
+                      field={field}
+                      allowManualInput={false}
+                      destination={destination.id}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          )}
+          <div className="flex space-x-2">
+            <div className="w-3/5">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="text-right"
+                        type="string"
+                        placeholder="0.0"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="w-2/5">
+              <FormField
+                control={form.control}
+                name="token"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="invisible">Token</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a token" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {source.destinations[destination.key].map((t) => {
+                              const asset =
+                                assetRegistry.ethereumChains[
+                                  assetRegistry.ethChainId
+                                ].assets[t.toLowerCase()];
+                              return (
+                                <SelectItem key={t} value={t}>
+                                  <SelectItemWithIcon
+                                    label={asset.name}
+                                    image={asset.symbol}
+                                    altImage="token_generic"
+                                  />
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectGroup>
+                        </SelectContent>
+                        <FormMessage />
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
-          <div className="w-1/3">
-            <FormField
-              control={form.control}
-              name="token"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="invisible">Token</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a token" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {destination.erc20tokensReceivable.map((t) => (
-                            <SelectItem key={t.address} value={t.address}>
-                              <SelectItemWithIcon
-                                label={t.id}
-                                image={t.id}
-                              />
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                      <FormMessage />
-                    </Select>
-                  </FormControl>
-                </FormItem>
+          <div className="text-sm text-center text-muted-foreground px-1 mt-1">
+            Delivery Fee:{" "}
+            <FeeDisplay
+              className="inline"
+              source={assetsV2.getTransferLocation(
+                assetRegistry,
+                source.type,
+                source.key,
               )}
+              destination={destination}
+              token={token}
+              displayDecimals={8}
             />
           </div>
-        </div>
-        <div className="text-sm text-center text-muted-foreground px-1 mt-1">
-          Fee:{" "}
-          <FeeDisplay
-            className="inline"
-            source={source.type}
+          <br />
+          <SubmitButton
+            ethereumAccounts={ethereumAccounts}
+            polkadotAccounts={polkadotAccounts}
+            beneficiaries={beneficiaries}
             destination={destination}
-            token={token}
-            displayDecimals={8}
+            source={source}
+            feeInfo={feeInfo}
+            tokenMetadata={tokenMetadata}
+            validating={validating}
+            context={context}
           />
-        </div>
-        <br />
-        <SubmitButton
-          ethereumAccounts={ethereumAccounts}
-          polkadotAccounts={polkadotAccounts}
-          beneficiaries={beneficiaries}
-          destination={destination}
-          source={source}
-          tokenMetadata={tokenMetadata}
-          validating={validating}
-          context={context}
-        />
         </div>
       </form>
     </Form>
@@ -479,8 +624,9 @@ export const TransferForm: FC<TransferFormProps> = ({
 interface SubmitButtonProps {
   ethereumAccounts: string[] | null;
   polkadotAccounts: WalletAccount[] | null;
-  destination: environment.TransferLocation;
-  source: environment.TransferLocation;
+  destination: assetsV2.TransferLocation;
+  source: assetsV2.Source;
+  feeInfo?: FeeInfo;
   tokenMetadata: assets.ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
@@ -492,6 +638,7 @@ function SubmitButton({
   polkadotAccounts,
   destination,
   source,
+  feeInfo,
   validating,
   tokenMetadata,
   beneficiaries,
@@ -526,16 +673,33 @@ function SubmitButton({
   return (
     <div className="flex flex-col items-center">
       <Button
-        disabled={context === null || tokenMetadata === null || validating}
+        disabled={
+          context === null || tokenMetadata === null || validating || !feeInfo
+        }
         className="w-1/3 action-button"
         type="submit"
       >
         {context === null
           ? "Connecting..."
           : validating
-            ? "Validating"
-            : "Submit"}
+            ? "Validating..."
+            : !feeInfo
+              ? "Fetching Fees..."
+              : "Submit"}
       </Button>
     </div>
   );
+}
+
+function filterByAccountType(
+  accountType: assetsV2.AccountType | "both",
+): (_: WalletAccount) => boolean {
+  return function (acc: WalletAccount) {
+    const is20byte = isHex(acc.address) && acc.address.trim().length === 42;
+    return (
+      (accountType === "AccountId20" && is20byte) ||
+      (accountType === "AccountId32" && !is20byte) ||
+      accountType === "both"
+    );
+  };
 }

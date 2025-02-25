@@ -39,7 +39,7 @@ export async function getBridgeStatus(
     config.ASSET_HUB_PARAID,
   );
   const bridgeHubAgentId = u8aToHex(blake2AsU8a("0x00", 256));
-
+  const bridgeHub = await context.bridgeHub();
   const [
     bridgeStatusInfo,
     assethub,
@@ -56,16 +56,13 @@ export async function getBridgeStatus(
     ),
     status.channelStatusInfo(context, config.PRIMARY_GOVERNANCE_CHANNEL_ID),
     status.channelStatusInfo(context, config.SECONDARY_GOVERNANCE_CHANNEL_ID),
-    context.polkadot.api.bridgeHub.query.system.account(
-      assetHubSovereignAddress,
-    ),
-    context.ethereum.contracts.gateway.agentOf(
-      utils.paraIdToAgentId(
-        context.polkadot.api.bridgeHub.registry,
-        config.ASSET_HUB_PARAID,
+    bridgeHub.query.system.account(assetHubSovereignAddress),
+    context
+      .gateway()
+      .agentOf(
+        utils.paraIdToAgentId(bridgeHub.registry, config.ASSET_HUB_PARAID),
       ),
-    ),
-    context.ethereum.contracts.gateway.agentOf(bridgeHubAgentId),
+    context.gateway().agentOf(bridgeHubAgentId),
   ]);
 
   const accounts: AccountInfo[] = [];
@@ -81,24 +78,22 @@ export async function getBridgeStatus(
 
   const [assetHubAgentBalance, bridgeHubAgentBalance, relayers] =
     await Promise.all([
-      context.ethereum.api.getBalance(assetHubAgentAddress),
-      context.ethereum.api.getBalance(bridgeHubAgentAddress),
+      context.ethereum().getBalance(assetHubAgentAddress),
+      context.ethereum().getBalance(bridgeHubAgentAddress),
       Promise.all(
         config.RELAYERS.map(async (r) => {
           let balance = "0";
           switch (r.type) {
             case "ethereum":
               balance = (
-                await context.ethereum.api.getBalance(r.account)
+                await context.ethereum().getBalance(r.account)
               ).toString();
               break;
             case "substrate":
               balance = BigInt(
                 (
                   (
-                    await context.polkadot.api.bridgeHub.query.system.account(
-                      r.account,
-                    )
+                    await bridgeHub.query.system.account(r.account)
                   ).toPrimitive() as any
                 ).data.free,
               ).toString();

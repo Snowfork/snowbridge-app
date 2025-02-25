@@ -25,29 +25,28 @@ import {
   transformSs58Format,
   formatBalance,
 } from "@/utils/formatting";
-import { relayChainNativeAssetAtom } from "@/store/snowbridge";
-import { useAtomValue } from "jotai";
 import { LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { FC, Suspense, useEffect, useState } from "react";
 import { estimateDelivery } from "@/lib/bridgeStatus";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 const AccountRow: FC<{ account: AccountInfo }> = ({ account }) => {
   let amount = "0";
   let symbol = "ETH";
   let accountDisplay = account.account;
-  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
+  const { data: assetRegistry } = useAssetRegistry();
   switch (account.type) {
     case "ethereum":
       symbol = "ETH";
       amount = formatBalance({ number: BigInt(account.balance), decimals: 18 });
       break;
     case "substrate":
-      symbol = relayChainNativeAsset?.tokenSymbol ?? "DOT";
+      symbol = assetRegistry.relaychain.tokenSymbols ?? "DOT";
       amount = formatBalance({
         number: BigInt(account.balance),
-        decimals: relayChainNativeAsset?.tokenDecimal ?? 10,
+        decimals: assetRegistry.relaychain.tokenDecimals ?? 10,
       });
-      const ss58format = relayChainNativeAsset?.ss58Format ?? 42;
+      const ss58format = assetRegistry.relaychain.ss58Format ?? 42;
       accountDisplay = transformSs58Format(accountDisplay, ss58format);
       break;
   }

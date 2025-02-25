@@ -1,5 +1,13 @@
 import { type useRouter } from "next/navigation";
-import { toPolkadot, toEthereum, environment, assets } from "@snowbridge/api";
+import {
+  toPolkadot,
+  toEthereum,
+  environment,
+  assets,
+  assetsV2,
+  toEthereumV2,
+  toPolkadotV2,
+} from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
 import { Codec } from "@polkadot/types/types";
@@ -119,19 +127,31 @@ export interface SignerInfo {
   ethereumProvider?: BrowserProvider;
 }
 
+export type FeeInfo = {
+  fee: bigint;
+  decimals: number;
+  symbol: string;
+  delivery: toEthereumV2.DeliveryFee | toPolkadotV2.DeliveryFee;
+  type: assetsV2.SourceType;
+};
+
 export interface ValidationData {
   formData: TransferFormData;
-  source: environment.TransferLocation;
-  destination: environment.TransferLocation;
+  assetRegistry: assetsV2.AssetRegistry;
+  source: assetsV2.TransferLocation;
+  destination: assetsV2.TransferLocation;
   tokenMetadata: assets.ERC20Metadata;
   amountInSmallestUnit: bigint;
+  fee: FeeInfo;
 }
 
-export type SendValidationResult =
-  | toPolkadot.SendValidationResult
-  | toEthereum.SendValidationResult;
+export type ValidationResult =
+  | toEthereumV2.ValidationResult
+  | toPolkadotV2.ValidationResult;
 
-export type SendResult = toPolkadot.SendResult | toEthereum.SendResult;
+export type MessageReciept =
+  | toEthereumV2.MessageReceipt
+  | toPolkadotV2.MessageReceipt;
 
 export enum TransferStepKind {
   DepositWETH,
@@ -146,8 +166,8 @@ export interface TransferStep {
 
 export interface TransferPlanSteps {
   steps: TransferStep[];
-  errors: (toEthereum.SendValidationError | toPolkadot.SendValidationError)[];
-  plan: SendValidationResult;
+  errors: (toEthereumV2.ValidationLog | toPolkadotV2.ValidationLog)[];
+  plan: ValidationResult;
 }
 
 export interface ContractResponse {

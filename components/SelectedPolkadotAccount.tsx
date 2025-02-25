@@ -1,4 +1,3 @@
-import { useAtom, useAtomValue } from "jotai";
 import {
   Select,
   SelectContent,
@@ -7,58 +6,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
-import { FC, useEffect } from "react";
+import { FC } from "react";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
-import { trimAccount } from "@/utils/formatting";
+import { transformSs58Format, trimAccount } from "@/utils/formatting";
+import { isHex } from "@polkadot/util";
+import { WalletAccount } from "@talismn/connect-wallets";
 
 type SelectedPolkadotAccountProps = {
-  field?: any;
   source?: string;
+  ss58Format: number;
+  polkadotAccounts: WalletAccount[];
+  polkadotAccount?: string;
+  onValueChange?: (address: string) => void;
 };
+
 export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
-  field,
+  onValueChange,
   source,
+  ss58Format,
+  polkadotAccounts,
+  polkadotAccount,
 }) => {
-  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
-  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-
-  useEffect(() => {
-    if (!polkadotAccount && polkadotAccounts && polkadotAccounts.length > 0) {
-      setPolkadotAccount(polkadotAccounts[0].address);
-    }
-    // If field is set, set the field value to the selected address
-    if (field && polkadotAccount) {
-      field.onChange(polkadotAccount.address);
-    }
-  }, [polkadotAccount, polkadotAccounts, polkadotAccount]);
-
-  if (polkadotAccounts && polkadotAccounts.length > 0) {
-    return (
-      <Select
-        onValueChange={(v) => {
-          setPolkadotAccount(v);
-        }}
-        value={(polkadotAccount ?? polkadotAccounts[0]).address}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select an account" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {polkadotAccounts?.map((acc) => {
-              return (
-                <SelectItem key={acc.address} value={acc.address}>
-                  <SelectItemWithIcon
-                    label={`${acc.name} (${trimAccount(acc.address, 18)})`}
-                    image={source}
-                  />
-                </SelectItem>
-              );
-            })}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-    );
-  }
+  return (
+    <Select
+      onValueChange={onValueChange}
+      value={polkadotAccount ?? polkadotAccounts[0]?.address}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder="Select an account" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {polkadotAccounts.map((acc) => {
+            let address = acc.address;
+            if (!isHex(address)) {
+              address = transformSs58Format(address, ss58Format);
+            }
+            return (
+              <SelectItem key={acc.address} value={acc.address}>
+                <SelectItemWithIcon
+                  label={`${acc.name} (${trimAccount(address, 22)})`}
+                  image={source ?? ""}
+                />
+              </SelectItem>
+            );
+          })}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
 };

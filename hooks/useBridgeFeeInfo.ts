@@ -1,79 +1,77 @@
-import {
-  relayChainNativeAssetAtom,
-  snowbridgeContextAtom,
-} from "@/store/snowbridge";
-import {
-  assets,
-  Context,
-  environment,
-  toEthereum,
-  toPolkadot,
-} from "@snowbridge/api";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
+import { assetsV2, Context, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
-
-export interface FeeInfo {
-  fee: bigint;
-  decimals: number;
-  symbol: string;
-}
+import { useAssetRegistry } from "./useAssetRegistry";
+import { FeeInfo } from "@/utils/types";
 
 async function fetchBridgeFeeInfo([
   context,
   source,
   destination,
-  assetHubNativeToken,
+  registry,
   token,
 ]: [
   Context | null,
-  "substrate" | "ethereum",
-  environment.TransferLocation,
-  assets.NativeAsset | null,
+  assetsV2.TransferLocation,
+  assetsV2.TransferLocation,
+  assetsV2.AssetRegistry,
   string,
   string,
 ]): Promise<FeeInfo | undefined> {
   if (context === null) {
     return;
   }
-  switch (source) {
-    case "substrate": {
-      const fee = await toEthereum.getSendFee(context);
-      return {
-        fee,
-        decimals: assetHubNativeToken?.tokenDecimal ?? 0,
-        symbol: assetHubNativeToken?.tokenSymbol ?? "",
-      };
-    }
-    case "ethereum": {
-      if (destination.paraInfo === undefined) {
-        throw Error("No paraInfo set for parachain.");
-      }
-      const fee = await toPolkadot.getSendFee(
-        context,
-        token,
-        destination.paraInfo.paraId,
-        destination.paraInfo.destinationFeeDOT,
-      );
-      return {
-        fee,
-        decimals: 18,
-        symbol: "ETH",
-      };
-    }
-    default:
-      throw Error("Unknown source");
+  if (source.type === "substrate" && source.parachain) {
+    const fee = await toEthereumV2.getDeliveryFee(
+      {
+        assetHub: await context.assetHub(),
+        source: await context.parachain(source.parachain.parachainId),
+      },
+      source.parachain.parachainId,
+      registry,
+    );
+    return {
+      fee: fee.totalFeeInDot,
+      decimals: registry.relaychain.tokenDecimals ?? 0,
+      symbol: registry.relaychain.tokenSymbols ?? "",
+      delivery: fee,
+      type: source.type,
+    };
+  } else if (source.type === "ethereum") {
+    const para = registry.parachains[destination.key];
+    const fee = await toPolkadotV2.getDeliveryFee(
+      {
+        gateway: context.gateway(),
+        assetHub: await context.assetHub(),
+        destination: await context.parachain(para.parachainId),
+      },
+      registry,
+      token,
+      para.parachainId,
+    );
+    return {
+      fee: fee.totalFeeInWei,
+      decimals: 18,
+      symbol: "ETH",
+      delivery: fee,
+      type: source.type,
+    };
+  } else {
+    console.warn("Could not fetch fee for source:", source);
+    return undefined;
   }
 }
 
 export function useBridgeFeeInfo(
-  source: "substrate" | "ethereum",
-  destination: environment.TransferLocation,
+  source: assetsV2.TransferLocation,
+  destination: assetsV2.TransferLocation,
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
-  const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
+  const { data: registry } = useAssetRegistry();
   return useSWR(
-    [context, source, destination, assetHubNativeToken, token, "feeInfo"],
+    [context, source, destination, registry, token, "feeInfo"],
     fetchBridgeFeeInfo,
     {
       errorRetryCount: 10,

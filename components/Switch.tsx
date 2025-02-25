@@ -33,7 +33,7 @@ import {
   snowbridgeEnvironmentAtom,
   snowbridgeContextAtom,
 } from "@/store/snowbridge";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { formSchemaSwitch } from "@/utils/formSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
@@ -59,12 +59,14 @@ import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
+  const { data: assetRegistry } = useAssetRegistry();
 
   const [feeDisplay, setFeeDisplay] = useState("");
   const [balanceCheck, setBalanceCheck] = useState("");
@@ -413,10 +415,7 @@ export const SwitchComponent: FC = () => {
                                 ...parachainsInfo,
                               ].map(({ id, name }) => (
                                 <SelectItem key={id} value={id}>
-                                  <SelectItemWithIcon
-                                    label={name}
-                                    image={id}
-                                  />
+                                  <SelectItemWithIcon label={name} image={id} />
                                 </SelectItem>
                               ))}
                             </SelectGroup>
@@ -481,7 +480,13 @@ export const SwitchComponent: FC = () => {
                     </FormDescription>
                     <FormControl>
                       <>
-                        <SelectedPolkadotAccount source={sourceId} />
+                        <SelectedPolkadotAccount
+                          source={sourceId}
+                          ss58Format={assetRegistry.relaychain.ss58Format}
+                          polkadotAccounts={polkadotAccounts ?? []}
+                          polkadotAccount={polkadotAccount?.address}
+                          onValueChange={setPolkadotAccount}
+                        />
                         <PolkadotBalance
                           sourceAccount={sourceAccount ?? ""}
                           sourceId={sourceId}
@@ -531,7 +536,12 @@ export const SwitchComponent: FC = () => {
                       <FormItem>
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
-                          <Input type="string" placeholder="0.0" className="text-right" {...field} />
+                          <Input
+                            type="string"
+                            placeholder="0.0"
+                            className="text-right"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -542,7 +552,11 @@ export const SwitchComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <FormControl>
-                      <Input type="string" disabled={true} value={tokenSymbol || ''} />
+                      <Input
+                        type="string"
+                        disabled={true}
+                        value={tokenSymbol || ""}
+                      />
                     </FormControl>
                   </FormItem>
                 </div>

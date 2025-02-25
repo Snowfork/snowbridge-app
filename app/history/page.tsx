@@ -2,6 +2,11 @@
 
 import { ErrorDialog } from "@/components/ErrorDialog";
 import {
+  formatTokenData,
+  getEnvDetail,
+  TransferTitle,
+} from "@/components/history/TransferTitle";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -24,33 +29,9 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
-import { useAssetMetadata } from "@/hooks/useAssetMetadata";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
-import { ethereumAccountsAtom } from "@/store/ethereum";
-import { polkadotAccountsAtom } from "@/store/polkadot";
-import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import {
-  Transfer,
-  transferHistoryCacheAtom,
-  transferHistoryShowGlobal,
-  transfersPendingLocalAtom,
-} from "@/store/transferHistory";
-import { encodeAddress } from "@polkadot/util-crypto";
-import { assets, environment, history } from "@snowbridge/api";
-import { TransferLocation } from "@snowbridge/api/dist/environment";
-import { WalletAccount } from "@talismn/connect-wallets";
-import { track } from "@vercel/analytics";
-import { parseUnits } from "ethers";
-import { useAtom, useAtomValue } from "jotai";
-import {
-  LucideGlobe,
-  LucideLoaderCircle,
-  LucideRefreshCw,
-  LucideWallet,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   etherscanAddressLink,
   etherscanERC20TokenLink,
@@ -59,11 +40,23 @@ import {
   subscanEventLink,
   subscanExtrinsicLink,
 } from "@/lib/explorerLinks";
+import { ethereumAccountsAtom } from "@/store/ethereum";
+import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  formatTokenData,
-  getEnvDetail,
-  TransferTitle,
-} from "@/components/history/TransferTitle";
+  Transfer,
+  transferHistoryCacheAtom,
+  transferHistoryShowGlobal,
+  transfersPendingLocalAtom,
+} from "@/store/transferHistory";
+import { encodeAddress } from "@polkadot/util-crypto";
+import { assetsV2, historyV2 } from "@snowbridge/api";
+import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
+import { WalletAccount } from "@talismn/connect-wallets";
+import { track } from "@vercel/analytics";
+import { useAtom, useAtomValue } from "jotai";
+import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 const ITEMS_PER_PAGE = 5;
 const isWalletTransaction = (
@@ -87,115 +80,131 @@ const isWalletTransaction = (
 };
 
 const getExplorerLinks = (
-  env: environment.SnowbridgeEnvironment,
   transfer: Transfer,
-  destination?: environment.TransferLocation,
+  source: assetsV2.TransferLocation,
+  registry: AssetRegistry,
+  destination: assetsV2.TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
-  if (destination?.type == "ethereum") {
-    const ethTransfer = transfer as history.ToEthereumTransferResult;
+  if (transfer.sourceType == "substrate") {
+    const tx = transfer as historyV2.ToEthereumTransferResult;
     links.push({
-      text: "Submitted to Asset Hub",
+      text: `Submitted to ${source.name}`,
       url: subscanExtrinsicLink(
-        env.name,
-        "ah",
-        ethTransfer.submitted.extrinsic_hash,
+        registry.environment,
+        source.parachain!.parachainId,
+        tx.submitted.extrinsic_hash,
       ),
     });
-
-    if (ethTransfer.bridgeHubXcmDelivered) {
+    if (tx.bridgeHubXcmDelivered) {
       links.push({
         text: "Bridge Hub received XCM from Asset Hub",
         url: subscanEventLink(
-          env.name,
-          "bh",
-          ethTransfer.bridgeHubXcmDelivered.event_index,
+          registry.environment,
+          registry.bridgeHubParaId,
+          tx.bridgeHubXcmDelivered.event_index,
         ),
       });
     }
-    if (ethTransfer.bridgeHubChannelDelivered) {
+    if (tx.bridgeHubChannelDelivered) {
       links.push({
         text: "Message delivered to Snowbridge Message Queue",
         url: subscanEventLink(
-          env.name,
-          "bh",
-          ethTransfer.bridgeHubChannelDelivered.event_index,
+          registry.environment,
+          registry.bridgeHubParaId,
+          tx.bridgeHubChannelDelivered.event_index,
         ),
       });
     }
-    if (ethTransfer.bridgeHubMessageQueued) {
+    if (tx.bridgeHubMessageQueued) {
       links.push({
         text: "Message queued on Asset Hub Channel",
         url: subscanEventLink(
-          env.name,
-          "bh",
-          ethTransfer.bridgeHubMessageQueued.event_index,
+          registry.environment,
+          registry.bridgeHubParaId,
+          tx.bridgeHubMessageQueued.event_index,
         ),
       });
     }
-    if (ethTransfer.bridgeHubMessageAccepted) {
+    if (tx.bridgeHubMessageAccepted) {
       links.push({
         text: "Message accepted by Asset Hub Channel",
         url: subscanEventLink(
-          env.name,
-          "bh",
-          ethTransfer.bridgeHubMessageAccepted.event_index,
+          registry.environment,
+          registry.bridgeHubParaId,
+          tx.bridgeHubMessageAccepted.event_index,
         ),
       });
     }
-    if (ethTransfer.ethereumBeefyIncluded) {
+    if (tx.ethereumBeefyIncluded) {
       links.push({
         text: "Message included by beefy client",
         url: etherscanTxHashLink(
-          env.name,
-          ethTransfer.ethereumBeefyIncluded.transactionHash,
+          registry.environment,
+          registry.ethChainId,
+          tx.ethereumBeefyIncluded.transactionHash,
         ),
       });
     }
-    if (ethTransfer.ethereumMessageDispatched) {
+    if (tx.ethereumMessageDispatched) {
       links.push({
         text: "Message dispatched on Ethereum",
         url: etherscanTxHashLink(
-          env.name,
-          ethTransfer.ethereumMessageDispatched.transactionHash,
+          registry.environment,
+          registry.ethChainId,
+          tx.ethereumMessageDispatched.transactionHash,
         ),
       });
     }
   }
   if (destination?.type == "substrate") {
-    const dotTransfer = transfer as history.ToPolkadotTransferResult;
+    const tx = transfer as historyV2.ToPolkadotTransferResult;
     links.push({
       text: "Submitted to Snowbridge Gateway",
-      url: etherscanTxHashLink(env.name, dotTransfer.submitted.transactionHash),
+      url: etherscanTxHashLink(
+        registry.environment,
+        registry.ethChainId,
+        tx.submitted.transactionHash,
+      ),
     });
 
-    if (dotTransfer.beaconClientIncluded) {
+    if (tx.beaconClientIncluded) {
       links.push({
         text: "Included by light client on Bridge Hub",
         url: subscanEventLink(
-          env.name,
-          "bh",
-          dotTransfer.beaconClientIncluded.event_index,
+          registry.environment,
+          registry.bridgeHubParaId,
+          tx.beaconClientIncluded.event_index,
         ),
       });
     }
-    if (dotTransfer.inboundMessageReceived) {
+    if (tx.inboundMessageReceived) {
       links.push({
         text: "Inbound message received on Asset Hub channel",
         url: subscanEventLink(
-          env.name,
-          "bh",
-          dotTransfer.inboundMessageReceived.event_index,
+          registry.environment,
+          registry.bridgeHubParaId,
+          tx.inboundMessageReceived.event_index,
         ),
       });
     }
-    if (dotTransfer.assetHubMessageProcessed) {
+    if (tx.assetHubMessageProcessed) {
       links.push({
         text: "Message dispatched on Asset Hub",
         url: subscanEventLink(
-          env.name,
-          "ah",
-          dotTransfer.assetHubMessageProcessed.event_index,
+          registry.environment,
+          registry.assetHubParaId,
+          tx.assetHubMessageProcessed.event_index,
+        ),
+      });
+    }
+    if (tx.destinationReceived) {
+      links.push({
+        text: `Message received on ${destination.name}`,
+        url: subscanEventLink(
+          registry.environment,
+          tx.destinationReceived.paraId,
+          tx.destinationReceived.event_index,
         ),
       });
     }
@@ -205,53 +214,89 @@ const getExplorerLinks = (
 
 const transferDetail = (
   transfer: Transfer,
-  env: environment.SnowbridgeEnvironment,
-  ss58Format: number,
-  assetErc20Metadata: { [token: string]: assets.ERC20Metadata },
+  registry: assetsV2.AssetRegistry,
 ): JSX.Element => {
-  const destination = getEnvDetail(transfer, env);
+  const { source, destination } = getEnvDetail(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
-    env,
     transfer,
+    source,
+    registry,
     destination,
   );
 
-  let source = transfer.info.sourceAddress;
-  if (source.length === 66) {
-    source = encodeAddress(source, ss58Format);
+  let sourceAddress = transfer.info.sourceAddress;
+  if (
+    transfer.sourceType === "substrate" &&
+    destination.ethChain &&
+    source.parachain
+  ) {
+    if (source.parachain.info.accountType === "AccountId32") {
+      sourceAddress = encodeAddress(
+        sourceAddress,
+        source.parachain.info.ss58Format,
+      );
+    } else {
+      sourceAddress = sourceAddress.substring(0, 42);
+    }
   }
   let beneficiary = transfer.info.beneficiaryAddress;
-  if (beneficiary.length === 66) {
-    beneficiary = encodeAddress(beneficiary, ss58Format);
+  if (
+    transfer.sourceType === "ethereum" &&
+    source.ethChain &&
+    destination.parachain
+  ) {
+    if (destination.parachain.info.accountType === "AccountId32") {
+      beneficiary = encodeAddress(
+        beneficiary,
+        destination.parachain?.info.ss58Format ??
+          registry.relaychain.ss58Format,
+      );
+    } else {
+      // 20 byte address
+      beneficiary = beneficiary.substring(0, 42);
+    }
   }
   const tokenUrl = etherscanERC20TokenLink(
-    env.name,
+    registry.environment,
+    registry.ethChainId,
     transfer.info.tokenAddress,
   );
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
-  if (destination?.paraInfo) {
+  if (transfer.sourceType === "ethereum") {
     sourceAccountUrl = etherscanAddressLink(
-      env.name,
+      registry.environment,
+      source.ethChain!.chainId,
       transfer.info.sourceAddress,
     );
-    beneficiaryAccountUrl = subscanAccountLink(env.name, "ah", beneficiary);
+    beneficiaryAccountUrl = subscanAccountLink(
+      registry.environment,
+      destination.parachain!.parachainId,
+      beneficiary,
+    );
   } else {
     sourceAccountUrl = subscanAccountLink(
-      env.name,
-      "ah",
+      registry.environment,
+      source.parachain!.parachainId,
       transfer.info.sourceAddress,
     );
-    beneficiaryAccountUrl = etherscanAddressLink(env.name, beneficiary);
+    beneficiaryAccountUrl = etherscanAddressLink(
+      registry.environment,
+      destination.ethChain!.chainId,
+      beneficiary,
+    );
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
-    assetErc20Metadata,
-    destination,
+    registry.ethereumChains[registry.ethChainId].assets,
   );
   return (
     <div className="flex-col">
       <div className="p-2">
+        <p>
+          Source{" "}
+          <span className="inline whitespace-pre font-mono">{source.name}</span>{" "}
+        </p>
         <p>
           Value{" "}
           <span className="inline whitespace-pre font-mono">
@@ -274,7 +319,7 @@ const transferDetail = (
         <p>
           From Account{" "}
           <span className="inline whitespace-pre font-mono">
-            {transfer.info.sourceAddress}
+            {sourceAddress}
           </span>{" "}
           <span
             className="text-sm underline cursor-pointer"
@@ -316,7 +361,6 @@ const transferDetail = (
 };
 
 export default function History() {
-  const env = useAtomValue(snowbridgeEnvironmentAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
@@ -327,7 +371,7 @@ export default function History() {
     transfersPendingLocalAtom,
   );
 
-  const { relaychainNativeAsset, erc20Metadata } = useAssetMetadata();
+  const { data: assetRegistry } = useAssetRegistry();
   const {
     data: transfers,
     mutate,
@@ -442,10 +486,9 @@ export default function History() {
   }, [pages, setSelectedItem, setPage, hashItem]);
 
   if (
-    (pages.length === 0 &&
-      isTransfersLoading &&
-      transferHistoryCache.length === 0) ||
-    erc20Metadata === null
+    pages.length === 0 &&
+    isTransfersLoading &&
+    transferHistoryCache.length === 0
   ) {
     return <Loading />;
   }
@@ -512,12 +555,7 @@ export default function History() {
                   <TransferTitle transfer={v} />
                 </AccordionTrigger>
                 <AccordionContent>
-                  {transferDetail(
-                    v,
-                    env,
-                    relaychainNativeAsset?.ss58Format ?? 42,
-                    erc20Metadata,
-                  )}
+                  {transferDetail(v, assetRegistry)}
                 </AccordionContent>
               </AccordionItem>
             ))}

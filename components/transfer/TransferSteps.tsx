@@ -12,13 +12,14 @@ import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
-import { relayChainNativeAssetAtom } from "@/store/snowbridge";
-import { useAtomValue } from "jotai";
 import { RefreshButton } from "../RefreshButton";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { assetsV2 } from "@snowbridge/api";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
   data: ValidationData;
+  registry: assetsV2.AssetRegistry;
   onBack?: MouseEventHandler;
   onRefreshTransfer?: (
     data: ValidationData,
@@ -35,9 +36,9 @@ interface StepData {
 }
 
 function TransferFeeStep(step: StepData) {
-  const relaychain = useAtomValue(relayChainNativeAssetAtom);
+  const { data: assetRegistry } = useAssetRegistry();
   const { data: feeInfo, error } = useBridgeFeeInfo(
-    step.data.source.type,
+    step.data.source,
     step.data.destination,
     step.data.formData.token,
   );
@@ -55,28 +56,29 @@ function TransferFeeStep(step: StepData) {
       </div>
     );
   }
-  if (feeInfo.symbol !== relaychain?.tokenSymbol) {
+  if (feeInfo.symbol !== assetRegistry.relaychain.tokenSymbols) {
     return (
       <div key={step.id} className="flex flex-col gap-4 justify-between">
-        Expecting {relaychain?.tokenSymbol} as fee asset, found {feeInfo.symbol}
-        .
+        Expecting {assetRegistry.relaychain.tokenSymbols} as fee asset, found{" "}
+        {feeInfo.symbol}.
       </div>
     );
   }
 
   const transferFee = parseUnits("0.2", feeInfo.decimals);
   const fee = formatUnits(feeInfo.fee + transferFee, feeInfo.decimals);
+  const name = step.data.source.name;
   return (
     <SubstrateTransferStep
       {...step}
-      title={`Missing fee on ${step.data.source.name}.`}
-      description={`Source account requires a fee on ${step.data.source.name}. This step will Transfer funds from the relaychain.`}
+      title={`Missing fee on ${name}.`}
+      description={`Source account requires a fee on ${name}. This step will Transfer funds from the relaychain.`}
       defaultAmount={fee}
     />
   );
 }
 
-function TransferStepView(step: StepData) {
+function TransferStepView(step: StepData, registry: assetsV2.AssetRegistry) {
   const { depositWeth, approveSpend } = useERC20DepositAndApprove();
   switch (step.step.kind) {
     case TransferStepKind.ApproveERC20:
@@ -120,13 +122,16 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   data,
   onBack,
   onRefreshTransfer,
+  registry,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep(currentStep + 1);
   return (
     <div>
       <TransferSummary data={data} />
-      <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">Steps</h3>
+      <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">
+        Steps
+      </h3>
       <div className="flex flex-col gap-4 mt-5">
         {plan.steps.map((step, i) => (
           <TransferStepView

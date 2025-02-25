@@ -19,10 +19,8 @@ import { Button } from "../ui/button";
 import { LucideLoaderCircle } from "lucide-react";
 import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
 import { parseUnits } from "ethers";
-import { relayChainNativeAssetAtom } from "@/store/snowbridge";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { getEnv } from "@vercel/functions";
-import { getEnvironmentName } from "@/lib/snowbridge";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 interface TransferStepData {
   id: number;
@@ -44,10 +42,9 @@ export function SubstrateTransferStep({
   description,
   defaultAmount,
 }: TransferStepData) {
-  const envName = getEnvironmentName();
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const assetHubNativeToken = useAtomValue(relayChainNativeAssetAtom);
+  const { data: assetRegistry } = useAssetRegistry();
 
   const { transferAsset } = useSubstrateTransfer();
 
@@ -61,16 +58,16 @@ export function SubstrateTransferStep({
   const [error, setError] = useState<Message>();
 
   const targetInfo = useMemo(() => {
-    if (data.source.type === "ethereum" && data.destination.paraInfo) {
+    if (data.source.type === "ethereum" && data.destination.parachain) {
       // Source is ethereum and destination is the parachain.
       return {
-        paraId: data.destination.paraInfo.paraId,
+        paraId: data.destination.parachain.parachainId,
         account: data.formData.beneficiary,
       };
-    } else if (data.destination.type === "ethereum" && data.source.paraInfo) {
+    } else if (data.destination.type === "ethereum" && data.source.parachain) {
       // Destination is ethereum and source is the parachain.
       return {
-        paraId: data.source.paraInfo.paraId,
+        paraId: data.source.parachain.parachainId,
         account: data.formData.sourceAccount,
       };
     } else {
@@ -80,11 +77,11 @@ export function SubstrateTransferStep({
       return null;
     }
   }, [
-    data.destination.paraInfo,
+    data.destination.parachain,
     data.destination.type,
     data.formData.beneficiary,
     data.formData.sourceAccount,
-    data.source.paraInfo,
+    data.source.parachain,
     data.source.type,
   ]);
   const [account, setAccount] = useState(
@@ -196,12 +193,6 @@ export function SubstrateTransferStep({
             <Button
               size="sm"
               onClick={async () => {
-                if (!assetHubNativeToken) {
-                  setError({
-                    text: "Cannot determine Asset Hub native token.",
-                  });
-                  return;
-                }
                 if (!targetInfo) {
                   setError({
                     text: "Could not infer target parachain and beneficiary.",
@@ -246,12 +237,12 @@ export function SubstrateTransferStep({
                       parents: 0,
                       interior: "Here",
                     },
-                    parseUnits(amount, assetHubNativeToken.tokenDecimal),
+                    parseUnits(amount, assetRegistry.relaychain.tokenDecimals),
                   );
                   nextStep();
                   setBusy(false);
                   const link = subscanExtrinsicLink(
-                    envName,
+                    assetRegistry.environment,
                     "relaychain",
                     `${result.blockNumber}-${result.txIndex}`,
                   );

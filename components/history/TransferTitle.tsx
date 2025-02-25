@@ -1,60 +1,63 @@
 import { Transfer } from "@/store/transferHistory";
-import { assets, environment, history } from "@snowbridge/api";
-import { Badge } from "../ui/badge";
+import { assets, assetsV2, historyV2 } from "@snowbridge/api";
 import { LucideGlobe, LucideWallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBalance } from "@/utils/formatting";
 import { parseUnits } from "ethers";
 import { useAtomValue } from "jotai";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
-import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { TransferStatusBadge } from "./TransferStatusBadge";
-
-function getDestinationTokenByAddress(
-  tokenAddress: string,
-  destination?: environment.TransferLocation,
-) {
-  return (destination?.erc20tokensReceivable ?? []).find(
-    (token) => token.address.toLowerCase() === tokenAddress.toLowerCase(),
-  );
-}
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 export function getEnvDetail(
   transfer: Transfer,
-  env: environment.SnowbridgeEnvironment,
+  registry: assetsV2.AssetRegistry,
 ) {
-  if (transfer.info.destinationParachain === undefined) {
-    return env.locations.find((loc) => loc.id === "ethereum");
+  switch (transfer.sourceType) {
+    case "ethereum": {
+      const tx = transfer as historyV2.ToPolkadotTransferResult;
+      const source = assetsV2.getTransferLocation(
+        registry,
+        transfer.sourceType,
+        registry.ethChainId.toString(),
+      );
+      const destination = assetsV2.getTransferLocation(
+        registry,
+        "substrate",
+        tx.info.destinationParachain?.toString() ??
+          registry.assetHubParaId.toString(),
+      );
+      return { source, destination };
+    }
+    case "substrate": {
+      const tx = transfer as historyV2.ToEthereumTransferResult;
+      const source = assetsV2.getTransferLocation(
+        registry,
+        transfer.sourceType,
+        tx.submitted.sourceParachainId.toString(),
+      );
+      const destination = assetsV2.getTransferLocation(
+        registry,
+        "ethereum",
+        registry.ethChainId.toString(),
+      );
+      return { source, destination };
+    }
   }
-
-  let destination = env.locations.find(
-    (loc) => loc.paraInfo?.paraId === transfer.info.destinationParachain,
-  );
-
-  if (
-    destination === undefined &&
-    transfer.info.destinationParachain !== undefined
-  ) {
-    destination = env.locations.find((loc) => loc.id === "assethub");
-  }
-  return destination;
 }
 
 export function formatTokenData(
   transfer: Transfer,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata } | null,
-  destination?: environment.TransferLocation,
+  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
   displayDecimals?: number,
 ) {
   const tokenAddress = transfer.info.tokenAddress.toLowerCase();
   let amount = transfer.info.amount;
-  let tokenConfig = getDestinationTokenByAddress(
-    transfer.info.tokenAddress,
-    destination,
-  );
-  let tokenName = tokenConfig?.id;
+  let tokenConfig =
+    assetErc20MetaData[transfer.info.tokenAddress.toLowerCase()];
+  let tokenName = tokenConfig.name;
   const metaData =
-    assetErc20MetaData !== null && tokenAddress in assetErc20MetaData
+    tokenAddress in assetErc20MetaData
       ? assetErc20MetaData[tokenAddress]
       : null;
   if (metaData !== null) {
@@ -80,15 +83,14 @@ export function TransferTitle({
   showBagde,
 }: TransferTitleProps) {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  const { erc20Metadata } = useAssetMetadata();
+  const { data: assetRegistry } = useAssetRegistry();
 
-  const destination = getEnvDetail(transfer, env);
+  const { source, destination } = getEnvDetail(transfer, assetRegistry);
   const when = new Date(transfer.info.when);
 
   const { tokenName, amount } = formatTokenData(
     transfer,
-    erc20Metadata,
-    destination,
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
   );
 
   if (!(showWallet ?? true) && !(showBagde ?? true)) {

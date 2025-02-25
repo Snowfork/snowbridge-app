@@ -1,6 +1,6 @@
 import { Transfer } from "@/store/transferHistory";
 import { Badge } from "../ui/badge";
-import { assets, environment, history } from "@snowbridge/api";
+import { historyV2 } from "@snowbridge/api";
 import { cn } from "@/lib/utils";
 
 interface TransferStatusBadgeProps {
@@ -12,9 +12,9 @@ export function TransferStatusBadge({
   transfer,
 }: TransferStatusBadgeProps) {
   const badgeStyle =
-    history.TransferStatus.Failed == transfer.status
+    historyV2.TransferStatus.Failed == transfer.status
       ? " bg-destructive"
-      : history.TransferStatus.Pending == transfer.status
+      : historyV2.TransferStatus.Pending == transfer.status
         ? ""
         : "bg-secondary";
   return (
@@ -26,7 +26,7 @@ export function TransferStatusBadge({
         className,
       )}
     >
-      {history.TransferStatus[transfer.status]}
+      {historyV2.TransferStatus[transfer.status]}
     </Badge>
   );
 }

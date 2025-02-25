@@ -1,24 +1,23 @@
 "use client";
-import { Context, assets, environment } from "@snowbridge/api";
+import { Context, assets, assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
-import { getEnvironment } from "@/lib/snowbridge";
 
 interface TokenBalanceProps {
   context: Context;
   token: string;
-  ethereumChainId: bigint;
-  source: environment.TransferLocation;
+  source: assetsV2.TransferLocation;
+  registry: assetsV2.AssetRegistry;
   sourceAccount: string;
 }
 export async function getTokenBalance({
   context,
   token,
-  ethereumChainId,
   source,
+  registry,
   sourceAccount,
 }: TokenBalanceProps): Promise<{
   balance: bigint;
@@ -26,51 +25,52 @@ export async function getTokenBalance({
   nativeBalance: bigint;
   nativeSymbol: string;
   nativeTokenDecimals: number;
+  dotBalance: bigint;
+  dotTokenSymbol: string;
+  dotTokenDecimals: number;
 }> {
   switch (source.type) {
     case "substrate": {
-      if (source.paraInfo?.paraId === undefined) {
-        throw Error(`ParaId not configured for source ${source.name}.`);
-      }
+      const para = source.parachain!;
       const parachain =
-        context.polkadot.api.parachains[source.paraInfo?.paraId] ??
-        context.polkadot.api.assetHub;
-      const location = assets.erc20TokenToAssetLocation(
-        parachain.registry,
-        ethereumChainId,
-        token,
-      );
-      const [balance, nativeBalanceCodec, properties] = await Promise.all([
-        assets.palletAssetsBalance(
+        para && context.hasParachain(para.parachainId)
+          ? await context.parachain(para.parachainId)
+          : await context.assetHub();
+      const [balance, dotBalance, nativeBalance] = await Promise.all([
+        assetsV2.getTokenBalance(
           parachain,
-          location,
+          para.info.specName,
           sourceAccount,
-          "foreignAssets",
+          registry.ethChainId,
+          token,
         ),
-        parachain.query.system.account(sourceAccount),
-        assets.parachainNativeAsset(parachain),
+        assetsV2.getDotBalance(parachain, para.info.specName, sourceAccount),
+        assetsV2.getNativeBalance(parachain, sourceAccount),
       ]);
-      const nativeBalance = BigInt(
-        (nativeBalanceCodec.toPrimitive() as any).data.free,
-      );
       return {
         balance: balance ?? 0n,
         gatewayAllowance: undefined,
         nativeBalance,
-        nativeTokenDecimals: properties.tokenDecimal,
-        nativeSymbol: properties.tokenSymbol,
+        nativeTokenDecimals: para.info.tokenDecimals,
+        nativeSymbol: para.info.tokenSymbols,
+        dotBalance: dotBalance,
+        dotTokenDecimals: registry.relaychain.tokenDecimals,
+        dotTokenSymbol: registry.relaychain.tokenSymbols,
       };
     }
     case "ethereum": {
       const [erc20Asset, nativeBalance] = await Promise.all([
         assets.assetErc20Balance(context, token, sourceAccount),
-        context.ethereum.api.getBalance(sourceAccount),
+        context.ethereum().getBalance(sourceAccount),
       ]);
       return {
         ...erc20Asset,
         nativeBalance,
         nativeSymbol: "ETH",
         nativeTokenDecimals: 18,
+        dotBalance: 0n,
+        dotTokenDecimals: registry.relaychain.tokenDecimals,
+        dotTokenSymbol: registry.relaychain.tokenSymbols,
       };
     }
     default:

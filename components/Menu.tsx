@@ -7,24 +7,15 @@ import {
   MenubarTrigger,
   MenubarSeparator,
 } from "@/components/ui/menubar";
-import { cn } from "@/lib/utils";
-import {
-  relayChainNativeAssetAtom,
-  snowbridgeEnvNameAtom,
-} from "@/store/snowbridge";
+import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
 import {
-  Github,
   LucideArrowRightLeft,
   LucideBarChart,
-  LucideBookText,
-  LucideBug,
   LucideHistory,
-  LucideMenu,
   LucideSend,
   LucideWallet,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { FC } from "react";
 import { Button } from "./ui/button";
@@ -36,27 +27,24 @@ import {
 } from "@/store/polkadot";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
-import { trimAccount } from "@/utils/formatting";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
-import { useAssetMetadata } from "@/hooks/useAssetMetadata";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { windowEthereumTypeAtom } from "@/store/ethereum";
 import { useAppKit } from "@reown/appkit/react";
-import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
+import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
 
   useEthereumProvider();
-  useAssetMetadata();
-  const relayChainNativeAsset = useAtomValue(relayChainNativeAssetAtom);
-  useConnectPolkadotWallet(relayChainNativeAsset?.ss58Format ?? 42);
+  const { data: registry } = useAssetRegistry();
+  useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const wallet = useAtomValue(walletAtom);
 
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const PolkadotWallet = () => {
@@ -74,47 +62,49 @@ export const Menu: FC = () => {
     return (
       <>
         <h1 className="font-semibold py-2">Polkadot</h1>
-        <div className="text-xs">
-          <p>Name: {(polkadotAccount ?? polkadotAccounts[0]).name}</p>
-          <p className="inline">Address: </p>
-          <pre className="inline">
-            {trimAccount((polkadotAccount ?? polkadotAccounts[0]).address, 28)}
-          </pre>
-          <p>
-            Wallet:{" "}
+        <div>
+          <p className="text-xs">Wallet: </p>
+          <div className="flex">
+            <div className="p-2">{wallet?.title}</div>
             <Button
-              className="w-full"
               variant="link"
               onClick={() => setPolkadotWalletModalOpen(true)}
             >
-              {wallet?.title}
+              (change)
             </Button>{" "}
-          </p>
+          </div>
           <p>Account:</p>
         </div>
-        <SelectedPolkadotAccount source="polkadot" />
+        <SelectedPolkadotAccount
+          source="polkadot"
+          ss58Format={registry.relaychain.ss58Format}
+          polkadotAccount={polkadotAccount?.address}
+          polkadotAccounts={polkadotAccounts}
+          onValueChange={setPolkadotAccount}
+        />
       </>
     );
   };
 
   const EthereumWallet = () => {
-    const { account } = useConnectEthereumWallet();
     const walletType = useAtomValue(windowEthereumTypeAtom);
     const { open } = useAppKit();
     return (
       <>
         <div>
           <h1 className="font-semibold py-2">Ethereum</h1>
-          <p className="text-xs">
-            Wallet:{" "}
+          <p className="text-xs">Wallet: </p>{" "}
+          <div className="flex">
+            <div className="p-2">
+              {walletType ? `WalletConnect: ${walletType}` : "Disconnected"}
+            </div>
             <Button
-              className="w-full"
               variant="link"
               onClick={async () => await open({ view: "Connect" })}
             >
-              {walletType ?? "Connect Ethereum"}
+              {walletType ? "(change)" : "(connect)"}
             </Button>{" "}
-          </p>
+          </div>
           <p className="text-xs">Account:</p>
         </div>
         <SelectedEthereumWallet />

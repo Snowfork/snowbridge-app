@@ -1,23 +1,21 @@
-import {
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { getTokenBalance } from "@/utils/balances";
-import { Context, environment } from "@snowbridge/api";
+import { assetsV2, Context } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
+import { useAssetRegistry } from "./useAssetRegistry";
 
 async function fetchTokenBalance([
   context,
   token,
-  ethChainId,
   source,
+  registry,
   sourceAccount,
 ]: [
   Context | null,
   string,
-  number,
-  environment.TransferLocation,
+  assetsV2.TransferLocation,
+  assetsV2.AssetRegistry,
   string | undefined,
   string,
 ]) {
@@ -26,8 +24,8 @@ async function fetchTokenBalance([
   const balance = await getTokenBalance({
     context,
     token,
-    ethereumChainId: BigInt(ethChainId),
     source,
+    registry,
     sourceAccount,
   });
 
@@ -36,20 +34,13 @@ async function fetchTokenBalance([
 
 export function useTokenBalance(
   sourceAccount: string | undefined,
-  source: environment.TransferLocation,
+  source: assetsV2.TransferLocation,
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
-  const environment = useAtomValue(snowbridgeEnvironmentAtom);
+  const { data: registry } = useAssetRegistry();
   return useSWR(
-    [
-      context,
-      token,
-      environment.ethChainId,
-      source,
-      sourceAccount,
-      "nativeBalance",
-    ],
+    [context, token, source, registry, sourceAccount, "nativeBalance"],
     fetchTokenBalance,
   );
 }
