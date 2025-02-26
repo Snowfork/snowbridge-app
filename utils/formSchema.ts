@@ -1,4 +1,7 @@
 "use client";
+import { isHex } from "@polkadot/util";
+import { assetsV2 } from "@snowbridge/api";
+import { WalletAccount, WalletAccount } from "@talismn/connect-wallets";
 import { z } from "zod";
 
 export const formSchemaSwitch = z.object({
@@ -54,3 +57,16 @@ export const transferFormSchema = z.object({
 });
 
 export type TransferFormData = z.infer<typeof transferFormSchema>;
+
+export function filterByAccountType(
+  accountType: assetsV2.AccountType | "both",
+): (_: WalletAccount) => boolean {
+  return function (acc: WalletAccount) {
+    const is20byte = isHex(acc.address) && acc.address.trim().length === 42;
+    return (
+      (accountType === "AccountId20" && is20byte) ||
+      (accountType === "AccountId32" && !is20byte) ||
+      accountType === "both"
+    );
+  };
+}

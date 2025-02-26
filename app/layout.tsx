@@ -8,9 +8,10 @@ import "@/styles/overrides.css";
 import { Providers } from "./providers";
 import Image from "next/image";
 import { Metadata } from "next";
-
 import { metadata as meta } from "@/lib/metadata";
-import { assetRegistry } from "@/lib/server/assets";
+import { getAssetRegistry } from "@/lib/server/assets";
+
+export const revalidate = 43_200_000; // 12 hours: 1000 * 60 * 60 * 12
 
 export const metadata: Metadata = {
   ...meta,
@@ -27,10 +28,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const registry = await assetRegistry();
-  if (registry === null) {
-    console.error("no registry");
-  }
+  const registry = await getAssetRegistry();
   return (
     <html lang="en">
       <head>
@@ -43,7 +41,7 @@ export default async function RootLayout({
         <title>Snowbridge</title>
       </head>
       <body>
-        <Providers registry={registry!}>
+        <Providers registry={registry}>
           <main>
             <div className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
               <div className="w-full max-w-5xl md:gap-4 flex flex-col">

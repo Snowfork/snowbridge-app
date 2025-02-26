@@ -691,7 +691,7 @@ function SubmitButton({
   );
 }
 
-function filterByAccountType(
+export function filterByAccountType(
   accountType: assetsV2.AccountType | "both",
 ): (_: WalletAccount) => boolean {
   return function (acc: WalletAccount) {
