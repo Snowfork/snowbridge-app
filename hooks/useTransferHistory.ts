@@ -3,7 +3,7 @@ import { Transfer } from "@/store/transferHistory";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
-export const REFRESH_INTERVAL: number = 1 * 60 * 1000; // 1 minutes
+export const REFRESH_INTERVAL: number = 5 * 60 * 1000; // 5 minutes
 export const ERROR_RETRY_INTERVAL: number = 1 * 60 * 1000; // 1 minute
 
 const fetchTranferHistory = async (): Promise<Transfer[] | null> => {

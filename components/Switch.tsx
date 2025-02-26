@@ -34,7 +34,7 @@ import {
   snowbridgeContextAtom,
 } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
-import { formSchemaSwitch } from "@/utils/formSchema";
+import { filterByAccountType, formSchemaSwitch } from "@/utils/formSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
@@ -121,12 +121,21 @@ export const SwitchComponent: FC = () => {
   );
 
   useEffect(() => {
-    setSourceAccount(polkadotAccount?.address);
+    const sourceAccounts =
+      polkadotAccounts?.filter(filterByAccountType("AccountId32")) ?? [];
+    const sourceAccountSelected =
+      (sourceAccounts.find((s) => s.address === watchSourceAccount) ??
+      sourceAccounts.length > 0)
+        ? sourceAccounts[0]
+        : undefined;
+    setSourceAccount(sourceAccountSelected?.address);
     form.resetField("sourceAccount", {
-      defaultValue: polkadotAccount?.address,
+      defaultValue: sourceAccountSelected?.address,
     });
-    form.resetField("beneficiary", { defaultValue: polkadotAccount?.address });
-  }, [watchSourceAccount, polkadotAccount, form]);
+    form.resetField("beneficiary", {
+      defaultValue: sourceAccountSelected?.address,
+    });
+  }, [watchSourceAccount, polkadotAccounts, form]);
 
   const beneficiaries: AccountInfo[] = useMemo(
     () =>
@@ -483,8 +492,12 @@ export const SwitchComponent: FC = () => {
                         <SelectedPolkadotAccount
                           source={sourceId}
                           ss58Format={assetRegistry.relaychain.ss58Format}
-                          polkadotAccounts={polkadotAccounts ?? []}
-                          polkadotAccount={polkadotAccount?.address}
+                          polkadotAccounts={
+                            polkadotAccounts?.filter(
+                              filterByAccountType("AccountId32"),
+                            ) ?? []
+                          }
+                          polkadotAccount={watchSourceAccount}
                           onValueChange={setPolkadotAccount}
                         />
                         <PolkadotBalance

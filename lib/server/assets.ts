@@ -3,6 +3,15 @@ import { unstable_cache } from "next/cache";
 import { stringify, parse } from "../json";
 import { assetsV2 } from "@snowbridge/api";
 import { getEnvironmentName } from "../snowbridge";
+import { cache } from "react";
+
+export const getAssetRegistry = cache(async () => {
+  const context = await getServerContext();
+  const registry = await assetsV2.buildRegistry(
+    await assetsV2.fromContext(context),
+  );
+  return registry;
+});
 
 const CACHE_REVALIDATE_IN_SECONDS = 12 * 60 * 60; // 12 hour
 
