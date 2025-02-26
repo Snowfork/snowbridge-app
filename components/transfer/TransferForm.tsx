@@ -4,7 +4,11 @@ import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import { TransferFormData, transferFormSchema } from "@/utils/formSchema";
+import {
+  filterByAccountType,
+  TransferFormData,
+  transferFormSchema,
+} from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assets, assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
@@ -689,17 +693,4 @@ function SubmitButton({
       </Button>
     </div>
   );
-}
-
-export function filterByAccountType(
-  accountType: assetsV2.AccountType | "both",
-): (_: WalletAccount) => boolean {
-  return function (acc: WalletAccount) {
-    const is20byte = isHex(acc.address) && acc.address.trim().length === 42;
-    return (
-      (accountType === "AccountId20" && is20byte) ||
-      (accountType === "AccountId32" && !is20byte) ||
-      accountType === "both"
-    );
-  };
 }

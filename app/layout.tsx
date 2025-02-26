@@ -11,7 +11,7 @@ import { Metadata } from "next";
 import { metadata as meta } from "@/lib/metadata";
 import { getAssetRegistry } from "@/lib/server/assets";
 
-export const revalidate = 43_200_000; // 12 hours: 1000 * 60 * 60 * 12
+export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
 
 export const metadata: Metadata = {
   ...meta,
