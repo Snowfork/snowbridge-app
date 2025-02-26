@@ -11,6 +11,7 @@ import { Metadata } from "next";
 import { metadata as meta } from "@/lib/metadata";
 import { getAssetRegistry } from "@/lib/server/assets";
 
+export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
 
 export const metadata: Metadata = {
