@@ -1,7 +1,7 @@
 "use client";
 import { isHex } from "@polkadot/util";
 import { assetsV2 } from "@snowbridge/api";
-import { WalletAccount, WalletAccount } from "@talismn/connect-wallets";
+import { WalletAccount } from "@talismn/connect-wallets";
 import { z } from "zod";
 
 export const formSchemaSwitch = z.object({
