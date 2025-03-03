@@ -10,6 +10,7 @@ interface TokenBalanceProps {
   context: Context;
   token: string;
   source: assetsV2.TransferLocation;
+  destination: assetsV2.TransferLocation;
   registry: assetsV2.AssetRegistry;
   sourceAccount: string;
 }
@@ -17,6 +18,7 @@ export async function getTokenBalance({
   context,
   token,
   source,
+  destination,
   registry,
   sourceAccount,
 }: TokenBalanceProps): Promise<{
@@ -29,52 +31,49 @@ export async function getTokenBalance({
   dotTokenSymbol: string;
   dotTokenDecimals: number;
 }> {
-  switch (source.type) {
-    case "substrate": {
-      const para = source.parachain!;
-      const parachain =
-        para && context.hasParachain(para.parachainId)
-          ? await context.parachain(para.parachainId)
-          : await context.assetHub();
-      const [balance, dotBalance, nativeBalance] = await Promise.all([
-        assetsV2.getTokenBalance(
-          parachain,
-          para.info.specName,
-          sourceAccount,
-          registry.ethChainId,
-          token,
-        ),
-        assetsV2.getDotBalance(parachain, para.info.specName, sourceAccount),
-        assetsV2.getNativeBalance(parachain, sourceAccount),
-      ]);
-      return {
-        balance: balance ?? 0n,
-        gatewayAllowance: undefined,
-        nativeBalance,
-        nativeTokenDecimals: para.info.tokenDecimals,
-        nativeSymbol: para.info.tokenSymbols,
-        dotBalance: dotBalance,
-        dotTokenDecimals: registry.relaychain.tokenDecimals,
-        dotTokenSymbol: registry.relaychain.tokenSymbols,
-      };
-    }
-    case "ethereum": {
-      const [erc20Asset, nativeBalance] = await Promise.all([
-        assets.assetErc20Balance(context, token, sourceAccount),
-        context.ethereum().getBalance(sourceAccount),
-      ]);
-      return {
-        ...erc20Asset,
-        nativeBalance,
-        nativeSymbol: "ETH",
-        nativeTokenDecimals: 18,
-        dotBalance: 0n,
-        dotTokenDecimals: registry.relaychain.tokenDecimals,
-        dotTokenSymbol: registry.relaychain.tokenSymbols,
-      };
-    }
-    default:
-      throw Error(`Unknown source type ${source.type}.`);
+  if (destination.type === "ethereum") {
+    const para = source.parachain!;
+    const parachain =
+      para && context.hasParachain(para.parachainId)
+        ? await context.parachain(para.parachainId)
+        : await context.assetHub();
+    const [balance, dotBalance, nativeBalance] = await Promise.all([
+      assetsV2.getTokenBalance(
+        parachain,
+        para.info.specName,
+        sourceAccount,
+        registry.ethChainId,
+        token,
+      ),
+      assetsV2.getDotBalance(parachain, para.info.specName, sourceAccount),
+      assetsV2.getNativeBalance(parachain, sourceAccount),
+    ]);
+    return {
+      balance: balance ?? 0n,
+      gatewayAllowance: undefined,
+      nativeBalance,
+      nativeTokenDecimals: para.info.tokenDecimals,
+      nativeSymbol: para.info.tokenSymbols,
+      dotBalance: dotBalance,
+      dotTokenDecimals: registry.relaychain.tokenDecimals,
+      dotTokenSymbol: registry.relaychain.tokenSymbols,
+    };
+  } else if (destination.type === "substrate") {
+    const [erc20Asset, nativeBalance] = await Promise.all([
+      assets.assetErc20Balance(context, token, sourceAccount),
+      context.ethereum().getBalance(sourceAccount),
+    ]);
+    return {
+      ...erc20Asset,
+      nativeBalance,
+      nativeSymbol: "ETH",
+      nativeTokenDecimals: 18,
+      dotBalance: 0n,
+      dotTokenDecimals: registry.relaychain.tokenDecimals,
+      dotTokenSymbol: registry.relaychain.tokenSymbols,
+    };
+  } else {
+    throw Error(`Unknown source type ${source.type}.`);
   }
 }
 

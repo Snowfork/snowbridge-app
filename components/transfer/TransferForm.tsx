@@ -228,7 +228,10 @@ export const TransferForm: FC<TransferFormProps> = ({
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
         assetsV2.getTransferLocation(
           assetRegistry,
-          newSource.type === "ethereum" ? "substrate" : "ethereum",
+          newSource.type === "ethereum" &&
+            newSource.key === assetRegistry.ethChainId.toString()
+            ? "substrate"
+            : "ethereum",
           destination,
         ),
       );
@@ -497,6 +500,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           source.type,
                           source.key,
                         )}
+                        destination={destination}
                         sourceAccount={watchSourceAccount}
                         registry={assetRegistry}
                         token={token}

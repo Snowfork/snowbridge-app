@@ -6,6 +6,7 @@ import { FormLabel } from "./ui/form";
 
 interface BalanceDisplayProps {
   source: assetsV2.TransferLocation;
+  destination: assetsV2.TransferLocation;
   registry: assetsV2.AssetRegistry;
   token: string;
   displayDecimals: number;
@@ -15,6 +16,7 @@ interface BalanceDisplayProps {
 
 export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   source,
+  destination,
   registry,
   token,
   tokenMetadata,
@@ -23,6 +25,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   const { data: balanceInfo, error } = useTokenBalance(
     sourceAccount,
     source,
+    destination,
     token,
   );
   useEffect(() => {
