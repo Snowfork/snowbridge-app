@@ -65,7 +65,7 @@ export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
+  const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const { data: assetRegistry } = useAssetRegistry();
 
   const [feeDisplay, setFeeDisplay] = useState("");
@@ -116,25 +116,21 @@ export const SwitchComponent: FC = () => {
   const amount = form.watch("amount");
   const watchSourceAccount = form.watch("sourceAccount");
 
-  const [sourceAccount, setSourceAccount] = useState<string | undefined>(
-    polkadotAccount?.address,
-  );
-
   useEffect(() => {
     const sourceAccounts =
       polkadotAccounts?.filter(filterByAccountType("AccountId32")) ?? [];
-    const sourceAccountSelected =
-      (sourceAccounts.find((s) => s.address === watchSourceAccount) ??
-      sourceAccounts.length > 0)
-        ? sourceAccounts[0]
-        : undefined;
-    setSourceAccount(sourceAccountSelected?.address);
-    form.resetField("sourceAccount", {
-      defaultValue: sourceAccountSelected?.address,
-    });
-    form.resetField("beneficiary", {
-      defaultValue: sourceAccountSelected?.address,
-    });
+    const sourceAccountSelected = sourceAccounts.find(
+      (s) =>
+        s.address === watchSourceAccount || watchSourceAccount === undefined,
+    );
+    if (sourceAccountSelected) {
+      form.resetField("sourceAccount", {
+        defaultValue: sourceAccountSelected?.address,
+      });
+      form.resetField("beneficiary", {
+        defaultValue: sourceAccountSelected?.address,
+      });
+    }
   }, [watchSourceAccount, polkadotAccounts, form]);
 
   const beneficiaries: AccountInfo[] = useMemo(
@@ -167,7 +163,7 @@ export const SwitchComponent: FC = () => {
       !beneficiary ||
       !sourceId ||
       !destinationId ||
-      !sourceAccount
+      !watchSourceAccount
     ) {
       return;
     }
@@ -211,7 +207,7 @@ export const SwitchComponent: FC = () => {
           palletName: switchPair[0].id,
         });
       }
-      const transactionFee = await transaction.paymentInfo(sourceAccount);
+      const transactionFee = await transaction.paymentInfo(watchSourceAccount);
 
       setTransaction(transaction);
       setFeeDisplay(transactionFee.partialFee.toHuman());
@@ -228,7 +224,7 @@ export const SwitchComponent: FC = () => {
     beneficiary,
     sourceId,
     destinationId,
-    sourceAccount,
+    watchSourceAccount,
     amount,
     parachainsInfo,
   ]);
@@ -312,7 +308,7 @@ export const SwitchComponent: FC = () => {
       }
 
       const { signer, address } = polkadotAccounts?.find(
-        (val) => val.address === sourceAccount,
+        (val) => val.address === watchSourceAccount,
       )!;
       if (!signer) {
         throw new Error("Signer is not available");
@@ -384,7 +380,7 @@ export const SwitchComponent: FC = () => {
     assetHubSufficientTokenAvailable,
     topUpCheck.xcmFee,
     topUpCheck.xcmBalance,
-    sourceAccount,
+    watchSourceAccount,
   ]);
 
   return (
@@ -498,10 +494,10 @@ export const SwitchComponent: FC = () => {
                             ) ?? []
                           }
                           polkadotAccount={watchSourceAccount}
-                          onValueChange={setPolkadotAccount}
+                          onValueChange={field.onChange}
                         />
                         <PolkadotBalance
-                          sourceAccount={sourceAccount ?? ""}
+                          sourceAccount={watchSourceAccount}
                           sourceId={sourceId}
                           destinationId={destinationId}
                           parachainInfo={parachainsInfo}
@@ -600,7 +596,7 @@ export const SwitchComponent: FC = () => {
               {topUpCheck.xcmFee >= topUpCheck.xcmBalance &&
               sourceId !== "assethub" ? (
                 <TopUpXcmFee
-                  sourceAccount={sourceAccount ?? ""}
+                  sourceAccount={watchSourceAccount}
                   beneficiary={beneficiary}
                   targetChainInfo={
                     // target for transfer is source of switch
