@@ -50,8 +50,12 @@ import {
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
-import { isHex } from "@polkadot/util";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
+import {
+  getEthereumNetwork,
+  switchNetwork,
+  getChainId,
+} from "@/lib/client/web3modal";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
@@ -225,10 +229,14 @@ export const TransferForm: FC<TransferFormProps> = ({
             accounts && accounts.length > 0 ? accounts[0].address : undefined,
         });
       }
+
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
         assetsV2.getTransferLocation(
           assetRegistry,
-          newSource.type === "ethereum" ? "substrate" : "ethereum",
+          newSource.type === "ethereum" &&
+            newSource.key === assetRegistry.ethChainId.toString()
+            ? "substrate"
+            : "ethereum",
           destination,
         ),
       );
@@ -251,6 +259,20 @@ export const TransferForm: FC<TransferFormProps> = ({
         defaultValue: formData.beneficiary,
       });
       form.setValue("beneficiary", formData.beneficiary);
+    }
+    try {
+      const chainId = getChainId();
+      if (newSource.type === "ethereum" && newDestination.type === "ethereum") {
+        if (chainId?.toString() !== newSource.key) {
+          switchNetwork(getEthereumNetwork(Number(newSource.key)));
+        }
+      } else {
+        if (chainId?.toString() !== assetRegistry.ethChainId.toString()) {
+          switchNetwork(getEthereumNetwork(assetRegistry.ethChainId));
+        }
+      }
+    } catch (error) {
+      console.error(error);
     }
   }, [
     destination.type,
@@ -347,7 +369,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         await onValidated({
           source: assetsV2.getTransferLocation(
             assetRegistry,
-            source.id,
+            source.type,
             source.key,
           ),
           destination,
@@ -497,6 +519,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           source.type,
                           source.key,
                         )}
+                        destination={destination}
                         sourceAccount={watchSourceAccount}
                         registry={assetRegistry}
                         token={token}

@@ -1,10 +1,4 @@
-import {
-  assets,
-  Context,
-  environment,
-  historyV2,
-  subscan,
-} from "@snowbridge/api";
+import { assets, Context, environment, historyV2 } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import { AbstractProvider } from "ethers";
 

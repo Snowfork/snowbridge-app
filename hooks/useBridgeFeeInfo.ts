@@ -22,7 +22,7 @@ async function fetchBridgeFeeInfo([
   if (context === null) {
     return;
   }
-  if (source.type === "substrate" && source.parachain) {
+  if (destination.type === "ethereum" && source.parachain) {
     const fee = await toEthereumV2.getDeliveryFee(
       {
         assetHub: await context.assetHub(),
@@ -38,7 +38,7 @@ async function fetchBridgeFeeInfo([
       delivery: fee,
       type: source.type,
     };
-  } else if (source.type === "ethereum") {
+  } else if (destination.type === "substrate") {
     const para = registry.parachains[destination.key];
     const fee = await toPolkadotV2.getDeliveryFee(
       {

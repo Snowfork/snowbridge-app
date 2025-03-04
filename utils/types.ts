@@ -147,10 +147,12 @@ export interface ValidationData {
 
 export type ValidationResult =
   | toEthereumV2.ValidationResult
+  | toEthereumV2.ValidationResultEvm
   | toPolkadotV2.ValidationResult;
 
 export type MessageReciept =
   | toEthereumV2.MessageReceipt
+  | toEthereumV2.MessageReceiptEvm
   | toPolkadotV2.MessageReceipt;
 
 export enum TransferStepKind {
