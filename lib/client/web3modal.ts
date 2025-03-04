@@ -3,7 +3,12 @@
 import { getEnvironment } from "@/lib/snowbridge";
 import { metadata } from "@/lib/metadata";
 import { AppKit, createAppKit } from "@reown/appkit/react";
-import { mainnet, sepolia } from "@reown/appkit/networks";
+import {
+  AppKitNetwork,
+  mainnet,
+  moonbeam,
+  sepolia,
+} from "@reown/appkit/networks";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
 
 const walletConnectProjectId = () => {
@@ -16,14 +21,21 @@ const walletConnectProjectId = () => {
   return projectId;
 };
 
-export const supportedEthNetworks = [mainnet, sepolia];
+export const supportedEthNetworks: AppKitNetwork[] = [
+  mainnet,
+  sepolia,
+  moonbeam,
+];
 
 export function getEnvEthereumNetwork() {
-  const env = getEnvironment();
-  const network =
-    supportedEthNetworks.find((n) => n.id === env.ethChainId) ?? null;
+  const { ethChainId } = getEnvironment();
+  return getEthereumNetwork(ethChainId);
+}
+
+export function getEthereumNetwork(chainId: number) {
+  const network = supportedEthNetworks.find((n) => n.id === chainId) ?? null;
   if (!network) {
-    throw Error("Cannot find ethereum network for chainId {env.ethChainId}.");
+    throw Error(`Cannot find ethereum network for chainId ${chainId}.`);
   }
 
   return network;
@@ -44,7 +56,7 @@ export const initializeWeb3Modal = () => {
 
   modal = createAppKit({
     adapters: [new EthersAdapter()],
-    networks: [network],
+    networks: [network, moonbeam],
     themeMode: "light",
     metadata: {
       name: metadata.title,
@@ -61,6 +73,14 @@ export const initializeWeb3Modal = () => {
   initialized = true;
   console.log("Web3modal initialized.");
 };
+
+export function getChainId() {
+  return modal.getChainId();
+}
+
+export function switchNetwork(appKitNetwork: AppKitNetwork) {
+  modal.switchNetwork(appKitNetwork);
+}
 
 export function getModalError() {
   if (!initialized || !modal) {

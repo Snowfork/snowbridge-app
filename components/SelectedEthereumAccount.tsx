@@ -23,7 +23,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
     }
   }, [account]);
 
-  if (account !== null && chainId !== null && chainId === env.ethChainId) {
+  if (account !== null && chainId !== null) {
     return (
       <div
         onClick={async () => await open({ view: "Account" })}

@@ -12,7 +12,29 @@ import { Context, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
+function validateEvmSubstrateDestination({
+  source,
+  destination,
+}: ValidationData) {
+  if (source.type !== "ethereum") {
+    throw Error(`Invalid form state: source type mismatch.`);
+  }
+  if (destination.type !== "ethereum") {
+    throw Error(`Invalid form state: destination type mismatch.`);
+  }
+  if (source.parachain === undefined) {
+    throw Error(`Invalid form state: source does not have parachain info.`);
+  }
+  if (source.ethChain === undefined) {
+    throw Error(`Invalid form state: source does not have ethereum info.`);
+  }
+  return { parachain: source.parachain, ethChain: source.ethChain };
+}
+
 function validateSubstrateDestination({ source, destination }: ValidationData) {
+  if (source.type !== "substrate") {
+    throw Error(`Invalid form state: source type mismatch.`);
+  }
   if (destination.type !== "ethereum") {
     throw Error(`Invalid form state: destination type mismatch.`);
   }
@@ -22,7 +44,10 @@ function validateSubstrateDestination({ source, destination }: ValidationData) {
   return source.parachain;
 }
 
-function validateEthereumDestination({ destination }: ValidationData) {
+function validateEthereumDestination({ source, destination }: ValidationData) {
+  if (source.type !== "ethereum") {
+    throw Error(`Invalid form state: source type mismatch.`);
+  }
   if (destination.type !== "substrate") {
     throw Error(`Invalid form state: destination type mismatch.`);
   }
@@ -30,6 +55,37 @@ function validateEthereumDestination({ destination }: ValidationData) {
     throw Error(`Invalid form state: destination does not have parachain id.`);
   }
   return destination.parachain;
+}
+
+async function validateEvmSubstrateSigner(
+  data: ValidationData,
+  { ethereumAccount, ethereumProvider }: SignerInfo,
+) {
+  if (!ethereumProvider) throw Error(`Ethereum Wallet not connected.`);
+  if (!ethereumAccount) throw Error(`Wallet account not selected.`);
+  if (ethereumAccount !== data.formData.sourceAccount) {
+    throw Error(`Selected account does not match source data.`);
+  }
+  const signer = await ethereumProvider.getSigner(ethereumAccount);
+
+  const { ethChain, parachain } = validateEvmSubstrateDestination(data);
+  const network = await ethereumProvider.getNetwork();
+  if (network.chainId !== BigInt(ethChain.chainId)) {
+    throw Error(`Ethereum provider chainId mismatch.`);
+  }
+  if (
+    signer.address.toLowerCase() !== data.formData.sourceAccount.toLowerCase()
+  ) {
+    throw Error(`Source account mismatch.`);
+  }
+  return {
+    ethereumAccount,
+    ethereumProvider,
+    network,
+    ethChain,
+    parachain,
+    signer,
+  };
 }
 
 function validateSubstrateSigner(
@@ -74,59 +130,91 @@ async function validateEthereumSigner(
 async function planSend(
   context: Context,
   data: ValidationData,
-): Promise<toEthereumV2.ValidationResult | toPolkadotV2.ValidationResult> {
-  const { source, amountInSmallestUnit, formData, assetRegistry, fee } = data;
-  switch (source.type) {
-    case "substrate": {
-      const parachain = validateSubstrateDestination(data);
-      const sourceParachainApi = await context.parachain(parachain.parachainId);
-      const tx = await toEthereumV2.createTransfer(
-        sourceParachainApi,
-        assetRegistry,
-        formData.sourceAccount,
-        formData.beneficiary,
-        formData.token,
-        amountInSmallestUnit,
-        fee.delivery as toEthereumV2.DeliveryFee,
-      );
-      const plan = await toEthereumV2.validateTransfer(
-        {
-          assetHub: await context.assetHub(),
-          bridgeHub: await context.bridgeHub(),
-          sourceParachain: sourceParachainApi,
-          gateway: context.gateway(),
-        },
-        tx,
-      );
-      console.log(plan);
-      return plan;
-    }
-    case "ethereum": {
-      const paraInfo = validateEthereumDestination(data);
-      const tx = await toPolkadotV2.createTransfer(
-        assetRegistry,
-        formData.sourceAccount,
-        formData.beneficiary,
-        formData.token,
-        paraInfo.parachainId,
-        amountInSmallestUnit,
-        fee.delivery as toPolkadotV2.DeliveryFee,
-      );
-      const plan = await toPolkadotV2.validateTransfer(
-        {
-          assetHub: await context.assetHub(),
-          bridgeHub: await context.bridgeHub(),
-          ethereum: context.ethereum(),
-          gateway: context.gateway(),
-          destParachain: await context.parachain(paraInfo.parachainId),
-        },
-        tx,
-      );
-      console.log(plan);
-      return plan;
-    }
-    default:
-      throw Error(`Invalid form state: cannot infer source type.`);
+): Promise<
+  | toEthereumV2.ValidationResult
+  | toPolkadotV2.ValidationResult
+  | toEthereumV2.ValidationResultEvm
+> {
+  const {
+    source,
+    destination,
+    amountInSmallestUnit,
+    formData,
+    assetRegistry,
+    fee,
+  } = data;
+  if (source.type === "ethereum" && destination.type === "ethereum") {
+    const { parachain, ethChain } = validateEvmSubstrateDestination(data);
+    const sourceParachainApi = await context.parachain(parachain.parachainId);
+    const tx = await toEthereumV2.createTransferEvm(
+      sourceParachainApi,
+      assetRegistry,
+      formData.sourceAccount,
+      formData.beneficiary,
+      formData.token,
+      amountInSmallestUnit,
+      fee.delivery as toEthereumV2.DeliveryFee,
+    );
+    const plan = await toEthereumV2.validateTransferEvm(
+      {
+        assetHub: await context.assetHub(),
+        sourceEthChain: context.ethChain(ethChain.chainId),
+        bridgeHub: await context.bridgeHub(),
+        sourceParachain: sourceParachainApi,
+        gateway: context.gateway(),
+      },
+      tx,
+    );
+    console.log(plan);
+    return plan;
+  } else if (source.type === "substrate" && destination.type === "ethereum") {
+    const parachain = validateSubstrateDestination(data);
+    const sourceParachainApi = await context.parachain(parachain.parachainId);
+    const tx = await toEthereumV2.createTransfer(
+      sourceParachainApi,
+      assetRegistry,
+      formData.sourceAccount,
+      formData.beneficiary,
+      formData.token,
+      amountInSmallestUnit,
+      fee.delivery as toEthereumV2.DeliveryFee,
+    );
+    const plan = await toEthereumV2.validateTransfer(
+      {
+        assetHub: await context.assetHub(),
+        bridgeHub: await context.bridgeHub(),
+        sourceParachain: sourceParachainApi,
+        gateway: context.gateway(),
+      },
+      tx,
+    );
+    console.log(plan);
+    return plan;
+  } else if (source.type === "ethereum" && destination.type === "substrate") {
+    const paraInfo = validateEthereumDestination(data);
+    const tx = await toPolkadotV2.createTransfer(
+      assetRegistry,
+      formData.sourceAccount,
+      formData.beneficiary,
+      formData.token,
+      paraInfo.parachainId,
+      amountInSmallestUnit,
+      fee.delivery as toPolkadotV2.DeliveryFee,
+    );
+    const plan = await toPolkadotV2.validateTransfer(
+      {
+        assetHub: await context.assetHub(),
+        bridgeHub: await context.bridgeHub(),
+        ethereum: context.ethereum(),
+        gateway: context.gateway(),
+        destParachain: await context.parachain(paraInfo.parachainId),
+      },
+      tx,
+    );
+    console.log(plan);
+    return plan;
+  } else {
+    throw Error(`Invalid form state: cannot infer source type.`);
   }
 }
 
@@ -141,44 +229,54 @@ async function sendToken(
       cause: plan,
     });
   }
-
-  switch (data.source.type) {
-    case "substrate": {
-      const { paraInfo, polkadotAccount } = validateSubstrateSigner(
-        data,
-        signerInfo,
-      );
-      const tx = plan.transfer as toEthereumV2.Transfer;
-      const result = await toEthereumV2.signAndSend(
-        await context.parachain(paraInfo.parachainId),
-        tx,
-        polkadotAccount.address,
-        {
-          signer: polkadotAccount.signer! as Signer,
-          withSignedTransaction: true,
-        },
-      );
-      console.log(result);
-      return result;
+  const { source, destination } = data;
+  if (source.type === "ethereum" && destination.type === "ethereum") {
+    const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
+    const transfer = plan.transfer as toEthereumV2.TransferEvm;
+    const response = await signer.sendTransaction(transfer.tx);
+    const receipt = await response.wait();
+    if (!receipt) {
+      throw Error(`Could not fetch transaction receipt.`);
     }
-    case "ethereum": {
-      const { signer } = await validateEthereumSigner(data, signerInfo);
-      const transfer = plan.transfer as toPolkadotV2.Transfer;
-      const response = await signer.sendTransaction(transfer.tx);
-      const receipt = await response.wait();
-      if (!receipt) {
-        throw Error(`Could not fetch transaction receipt.`);
-      }
-      const result = await toPolkadotV2.getMessageReceipt(receipt);
-      if (!result) {
-        throw Error(`Could not fetch message receipt.`);
-      }
-      console.log(result);
-      return result;
+    const result = await toEthereumV2.getMessageReceipt(
+      await context.parachain(source.parachain!.parachainId),
+      receipt,
+    );
+    console.log(result);
+    return result;
+  } else if (source.type === "substrate" && destination.type === "ethereum") {
+    const { paraInfo, polkadotAccount } = validateSubstrateSigner(
+      data,
+      signerInfo,
+    );
+    const tx = plan.transfer as toEthereumV2.Transfer;
+    const result = await toEthereumV2.signAndSend(
+      await context.parachain(paraInfo.parachainId),
+      tx,
+      polkadotAccount.address,
+      {
+        signer: polkadotAccount.signer! as Signer,
+        withSignedTransaction: true,
+      },
+    );
+    console.log(result);
+    return result;
+  } else if (source.type === "ethereum" && destination.type === "substrate") {
+    const { signer } = await validateEthereumSigner(data, signerInfo);
+    const transfer = plan.transfer as toPolkadotV2.Transfer;
+    const response = await signer.sendTransaction(transfer.tx);
+    const receipt = await response.wait();
+    if (!receipt) {
+      throw Error(`Could not fetch transaction receipt.`);
     }
-    default: {
-      throw Error(`Invalid form state: cannot infer source type.`);
+    const result = await toPolkadotV2.getMessageReceipt(receipt);
+    if (!result) {
+      throw Error(`Could not fetch message receipt.`);
     }
+    console.log(result);
+    return result;
+  } else {
+    throw Error(`Invalid form state: cannot infer source type.`);
   }
 }
 

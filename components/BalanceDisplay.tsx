@@ -59,9 +59,9 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   }
 
   const dotBalance =
-    source.type === "substrate" &&
+    destination.type === "ethereum" &&
     source.parachain &&
-    source.parachain?.parachainId !== registry.assetHubParaId
+    source.parachain.parachainId !== registry.assetHubParaId
       ? ` ;  ${formatBalance({
           number: balanceInfo.dotBalance ?? 0n,
           decimals: Number(balanceInfo.dotTokenDecimals),

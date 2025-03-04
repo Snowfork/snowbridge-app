@@ -29,11 +29,11 @@ function sendResultToHistory(
   data: ValidationData,
   result: MessageReciept,
 ): Transfer {
-  switch (data.source.type) {
-    case "ethereum": {
+  switch (data.destination.type) {
+    case "substrate": {
       const sendResult = result as toPolkadotV2.MessageReceipt;
       const transfer: historyV2.ToPolkadotTransferResult = {
-        sourceType: data.source.type,
+        sourceType: "ethereum",
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
@@ -55,10 +55,10 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
-    case "substrate": {
+    case "ethereum": {
       const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {
-        sourceType: data.source.type,
+        sourceType: "substrate",
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
