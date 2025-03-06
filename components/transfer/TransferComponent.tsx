@@ -153,7 +153,6 @@ export const TransferComponent: FC = () => {
       const result = await sendToken(data, plan);
       if (requestId.current != req) return;
 
-      setBusy(null);
       const messageId = result.messageId ?? "0x";
       const historyItem = sendResultToHistory(messageId, data, result);
       addPendingTransaction({
@@ -164,6 +163,7 @@ export const TransferComponent: FC = () => {
       track("Sending Complete", { ...data.formData, messageId });
       const transferData = base64url.encode(JSON.stringify(historyItem));
       router.push(`/txcomplete?transfer=${transferData}`);
+      setBusy(null);
     } catch (err) {
       console.error(err);
       if (requestId.current != req) return;
