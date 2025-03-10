@@ -13,7 +13,7 @@ export function getEnvDetail(
   transfer: Transfer,
   registry: assetsV2.AssetRegistry,
 ) {
-  switch (transfer.sourceType) {
+  switch (transfer.sourceType as string) {
     case "ethereum": {
       const tx = transfer as historyV2.ToPolkadotTransferResult;
       const source = assetsV2.getTransferLocation(
@@ -42,6 +42,10 @@ export function getEnvDetail(
         registry.ethChainId.toString(),
       );
       return { source, destination };
+    }
+    default: {
+      console.error("Unknown transfer", transfer);
+      throw Error(`Unknown transfer type ${transfer.sourceType}`);
     }
   }
 }
