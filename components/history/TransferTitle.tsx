@@ -55,6 +55,7 @@ export function formatTokenData(
   assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
   displayDecimals?: number,
 ) {
+  console.log("XXXXX", transfer);
   const tokenAddress = transfer.info.tokenAddress.toLowerCase();
   let amount = transfer.info.amount;
   let tokenConfig =
