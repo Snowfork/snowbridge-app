@@ -164,7 +164,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   ).find((asset) =>
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       asset
-    ].name.match(/Ether/),
+    ].name.match(/^Ether/),
   );
   const firstToken =
     ethAsset ?? firstSource.destinations[firstDestination.key][0];

@@ -1,3 +1,5 @@
+import { ETHER_TOKEN_ADDRESS } from "@snowbridge/api/dist/assets_v2";
+
 export const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
   local_e2e: {},
   paseo_sepolia: {
@@ -120,6 +122,7 @@ export const uniswapTokenLink = (
   if (!baseUrl) {
     return `#no-uniswap-url-for-token-${token}`;
   }
+  if (token === ETHER_TOKEN_ADDRESS) token = "NATIVE";
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}explore/tokens/ethereum/${token}`;
 };

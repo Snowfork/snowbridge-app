@@ -23,6 +23,7 @@ export async function getTokenBalance({
   sourceAccount,
 }: TokenBalanceProps): Promise<{
   balance: bigint;
+  isNativeTransfer: boolean;
   gatewayAllowance?: bigint;
   nativeBalance: bigint;
   nativeSymbol: string;
@@ -51,6 +52,7 @@ export async function getTokenBalance({
     return {
       balance: balance ?? 0n,
       gatewayAllowance: undefined,
+      isNativeTransfer: false,
       nativeBalance,
       nativeTokenDecimals: para.info.tokenDecimals,
       nativeSymbol: para.info.tokenSymbols,
@@ -59,13 +61,23 @@ export async function getTokenBalance({
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
   } else if (destination.type === "substrate") {
-    const [erc20Asset, nativeBalance] = await Promise.all([
-      assets.assetErc20Balance(context, token, sourceAccount),
-      context.ethereum().getBalance(sourceAccount),
-    ]);
+    const nativeBalance = await context.ethereum().getBalance(sourceAccount);
+    let erc20Asset: { balance: bigint; gatewayAllowance?: bigint } = {
+      balance: nativeBalance,
+    };
+    let isNativeTransfer = true;
+    if (token !== assetsV2.ETHER_TOKEN_ADDRESS) {
+      erc20Asset = await assets.assetErc20Balance(
+        context,
+        token,
+        sourceAccount,
+      );
+      isNativeTransfer = false;
+    }
     return {
       ...erc20Asset,
       nativeBalance,
+      isNativeTransfer,
       nativeSymbol: "ETH",
       nativeTokenDecimals: 18,
       dotBalance: 0n,

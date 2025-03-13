@@ -76,10 +76,13 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         })} ${tokenMetadata.symbol})`
       : "";
 
-  const tokenBalance = `${formatBalance({
-    number: balanceInfo.balance,
-    decimals: Number(tokenMetadata.decimals),
-  })} ${tokenMetadata.symbol}`;
+  let tokenBalance = "";
+  if (!balanceInfo.isNativeTransfer) {
+    tokenBalance = `${formatBalance({
+      number: balanceInfo.balance,
+      decimals: Number(tokenMetadata.decimals),
+    })} ${tokenMetadata.symbol}`;
+  }
 
   const nativeBalance = `${formatBalance({
     number: balanceInfo.nativeBalance,
@@ -93,7 +96,8 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
         (sourceAccount ? " visible" : " hidden")
       }
     >
-      Balances: {nativeBalance} {dotBalance} ; {tokenBalance} {allowance}
+      Balances: {nativeBalance} {dotBalance}{" "}
+      {!balanceInfo.isNativeTransfer ? ";" : ""} {tokenBalance} {allowance}
     </FormLabel>
   );
 };

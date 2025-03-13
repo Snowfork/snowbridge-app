@@ -50,7 +50,10 @@ import {
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
+import {
+  AssetRegistry,
+  ETHER_TOKEN_ADDRESS,
+} from "@snowbridge/api/dist/assets_v2";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
@@ -303,7 +306,7 @@ const transferDetail = (
             {amount} {tokenName}
           </span>{" "}
         </p>
-        <p>
+        <p hidden={transfer.info.tokenAddress === ETHER_TOKEN_ADDRESS}>
           Token Address{" "}
           <span className="inline whitespace-pre font-mono">
             {transfer.info.tokenAddress}

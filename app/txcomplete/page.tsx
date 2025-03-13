@@ -31,6 +31,7 @@ import {
   stellasSwapTokenLink,
   uniswapTokenLink,
 } from "@/lib/explorerLinks";
+import { isValid } from "zod";
 
 const Loading = () => {
   return (
@@ -207,16 +208,25 @@ function TxComponent() {
             historyV2.toPolkadotTransferById(messageId),
             historyV2.toEthereumTransferById(messageId),
           ]);
-          return { txData: toP ?? toE, inHistory: true };
+          return {
+            txData: toP ?? toE ?? transfer,
+            inHistory: (toP ?? toE) !== undefined,
+          };
         } else {
           switch (sourceType) {
             case "ethereum": {
               const txData = await historyV2.toPolkadotTransferById(messageId);
-              return { txData, inHistory: true };
+              return {
+                txData: txData ?? transfer,
+                inHistory: txData !== undefined,
+              };
             }
             case "substrate": {
               const txData = await historyV2.toEthereumTransferById(messageId);
-              return { txData, inHistory: true };
+              return {
+                txData: txData ?? transfer,
+                inHistory: txData !== undefined,
+              };
             }
           }
         }
