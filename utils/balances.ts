@@ -59,10 +59,20 @@ export async function getTokenBalance({
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
   } else if (destination.type === "substrate") {
-    const [erc20Asset, nativeBalance] = await Promise.all([
-      assets.assetErc20Balance(context, token, sourceAccount),
-      context.ethereum().getBalance(sourceAccount),
-    ]);
+    const nativeBalance = await context.ethereum().getBalance(sourceAccount);
+    let erc20Asset: { balance: bigint; gatewayAllowance?: bigint };
+    if (token !== assetsV2.ETHER_TOKEN_ADDRESS) {
+      erc20Asset = await assets.assetErc20Balance(
+        context,
+        token,
+        sourceAccount,
+      );
+    } else {
+      erc20Asset = {
+        balance: nativeBalance,
+        gatewayAllowance: undefined,
+      };
+    }
     return {
       ...erc20Asset,
       nativeBalance,
