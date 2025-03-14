@@ -82,7 +82,8 @@ export async function createContext(
       gateway: config.GATEWAY_CONTRACT,
       beefy: config.BEEFY_CONTRACT,
     },
-    graphqlApiUrl: overrides?.graphqlApiUrl ?? config.GRAPHQL_API_URL,
+    graphqlApiUrl:
+      overrides?.graphqlApiUrl ?? config.NEXT_PUBLIC_GRAPHQL_API_URL,
   });
 }
 
