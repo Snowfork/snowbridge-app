@@ -63,11 +63,11 @@ importers:
         specifier: ^1.6.9
         version: 1.6.9(@ethersproject/sha2@5.7.0)(@types/react@18.3.12)(bufferutil@4.0.8)(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
       '@snowbridge/api':
-        specifier: 0.1.43
-        version: 0.1.43(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)
+        specifier: 0.1.44
+        version: 0.1.44(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)
       '@snowbridge/contract-types':
-        specifier: 0.1.43
-        version: 0.1.43(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 0.1.44
+        version: 0.1.44(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@talismn/connect-components':
         specifier: ^1.1.9
         version: 1.1.9(@polkadot/api@14.3.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.56.2(@polkadot/api@14.3.1(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@13.2.3)(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1358,11 +1358,11 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@snowbridge/api@0.1.43':
-    resolution: {integrity: sha512-8b/pchXOnXLMITE4n1YydXsJipXS8ok1zlceICUp9G5zA3liewHZMeMvivbACZhdZT5aM6I6AEWlyHNmZmgvXQ==}
+  '@snowbridge/api@0.1.44':
+    resolution: {integrity: sha512-1PaPyMR2KkVB73ZgEY87EQerMHNVyMnLCPgtyeKhOmSuuCHeppFSJZXGbKixMYh9g33H+QMsBTJnz/NFdb5ofg==}
 
-  '@snowbridge/contract-types@0.1.43':
-    resolution: {integrity: sha512-hG63Jtb3oNuRUA1HwAWVgUJ2xzlbscbuOtMsQASBmGtBQ3MP+sUlVpzb3R+RvKhkkrjYseLJumh202nXFA7eFQ==}
+  '@snowbridge/contract-types@0.1.44':
+    resolution: {integrity: sha512-0sz11hgghkxJewqmOLAHOIZVPfylJnUtPQi4wNRliX1k7Wee0JX5RBtLEf5iB7uREs2Zd+OC6DTXuowgheiQUQ==}
 
   '@substrate/connect-extension-protocol@2.2.1':
     resolution: {integrity: sha512-GoafTgm/Jey9E4Xlj4Z5ZBt/H4drH2CNq8VrAro80rtoznrXnFDNVivLQzZN0Xaj2g8YXSn9pC9Oc9IovYZJXw==}
@@ -6232,14 +6232,14 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@snowbridge/api@0.1.43(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)':
+  '@snowbridge/api@0.1.44(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@polkadot/api': 14.3.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring': 13.2.3(@polkadot/util-crypto@13.2.3(@polkadot/util@13.2.3))(@polkadot/util@13.2.3)
       '@polkadot/types': 14.3.1
       '@polkadot/util': 13.2.3
       '@polkadot/util-crypto': 13.2.3(@polkadot/util@13.2.3)
-      '@snowbridge/contract-types': 0.1.43(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@snowbridge/contract-types': 0.1.44(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@typechain/ethers-v6': 0.5.1(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)
       ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       rxjs: 7.8.1
@@ -6250,7 +6250,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@snowbridge/contract-types@0.1.43(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/contract-types@0.1.44(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
