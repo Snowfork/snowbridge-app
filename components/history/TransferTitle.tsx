@@ -59,7 +59,7 @@ export function formatTokenData(
   let amount = transfer.info.amount;
   let tokenConfig =
     assetErc20MetaData[transfer.info.tokenAddress.toLowerCase()];
-  let tokenName = tokenConfig.name;
+  let tokenName = tokenConfig?.name;
   const metaData =
     tokenAddress in assetErc20MetaData
       ? assetErc20MetaData[tokenAddress]
