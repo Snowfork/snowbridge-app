@@ -18,10 +18,21 @@ export function createStepsFromPlan(
   const errors = [];
   const steps: TransferStep[] = [];
 
+  let dryRunFailedLog:
+    | toEthereumV2.ValidationLog
+    | toPolkadotV2.ValidationLog
+    | null = null;
   switch (data.source.type) {
     case "substrate": {
       const p = plan as toEthereumV2.ValidationResult;
       for (const log of p.logs) {
+        if (
+          log.kind === toEthereumV2.ValidationKind.Error &&
+          log.reason === toEthereumV2.ValidationReason.DryRunFailed
+        ) {
+          dryRunFailedLog = log;
+          continue;
+        }
         if (log.kind === toEthereumV2.ValidationKind.Warning) {
           console.warn("Plan validation warning: ", log.message);
           continue;
@@ -47,6 +58,13 @@ export function createStepsFromPlan(
     case "ethereum": {
       const p = plan as toPolkadotV2.ValidationResult;
       for (const log of p.logs) {
+        if (
+          log.kind === toPolkadotV2.ValidationKind.Error &&
+          log.reason === toPolkadotV2.ValidationReason.DryRunFailed
+        ) {
+          dryRunFailedLog = log;
+          continue;
+        }
         if (log.kind === toPolkadotV2.ValidationKind.Warning) {
           console.warn("Plan validation warning: ", log.message);
           continue;
@@ -85,6 +103,11 @@ export function createStepsFromPlan(
             errors.push(log);
             break;
         }
+      }
+      // If there are no other logs but dry run failed then display dry run failed to the user.
+      // Else expect that the dry run failed because of the other error logs.
+      if (errors.length === 0 && dryRunFailedLog !== null) {
+        errors.push(dryRunFailedLog);
       }
       steps.sort((a, b) => a.displayOrder - b.displayOrder);
       return {
