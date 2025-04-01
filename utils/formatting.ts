@@ -23,6 +23,9 @@ export function formatBalance({
   displayDecimals?: number;
 }): string {
   const replaceZeros = (str: string): string => {
+    if (!str) {
+      return "0";
+    }
     const newStr = str.replace(/(\.0+)$/, "").replace(/(0+)$/, "");
     if (newStr !== "") return newStr;
     return "0";
