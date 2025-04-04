@@ -30,6 +30,7 @@ async function fetchBridgeFeeInfo([
       },
       source.parachain.parachainId,
       registry,
+      token,
     );
     return {
       fee: fee.totalFeeInDot,
