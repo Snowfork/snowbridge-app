@@ -39,23 +39,34 @@ export async function getTokenBalance({
         ? await context.parachain(para.parachainId)
         : await context.assetHub();
 
-    const sourceParachain = registry.parachains[para && para.parachainId];
+    const sourceParaId = para.parachainId;
+    const sourceParachain = registry.parachains[sourceParaId];
     const sourceAssetMetadata =
       sourceParachain && sourceParachain.assets[token.toLowerCase()];
     if (!sourceAssetMetadata) {
       throw Error(
-        `Token ${token} not registered on source parachain ${para && para.parachainId}.`,
+        `Token ${token} not registered on source parachain ${sourceParaId}.`,
       );
     }
-    const [balance, dotBalance, nativeBalance] = await Promise.all([
-      assetsV2.getTokenBalance(
+    let balance: any;
+    // For DOT on AH, get it from the native balance pallet.
+    if (
+      sourceParaId == registry.assetHubParaId &&
+      sourceAssetMetadata.location?.parents == 1 &&
+      sourceAssetMetadata.location?.interior == "Here"
+    ) {
+      balance = await assetsV2.getNativeBalance(parachain, sourceAccount);
+    } else {
+      balance = await assetsV2.getTokenBalance(
         parachain,
         para.info.specName,
         sourceAccount,
         registry.ethChainId,
         token,
         sourceAssetMetadata,
-      ),
+      );
+    }
+    const [dotBalance, nativeBalance] = await Promise.all([
       assetsV2.getDotBalance(parachain, para.info.specName, sourceAccount),
       assetsV2.getNativeBalance(parachain, sourceAccount),
     ]);
