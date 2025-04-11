@@ -89,6 +89,24 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     decimals: balanceInfo.nativeTokenDecimals,
   })} ${balanceInfo.nativeSymbol}`;
 
+  if (
+    destination.type === "ethereum" &&
+    source.parachain &&
+    source.parachain.parachainId == registry.assetHubParaId &&
+    tokenMetadata.symbol == "DOT"
+  ) {
+    return (
+      <FormLabel
+        className={
+          "text-sm text-right text-muted-foreground px-1 " +
+          (sourceAccount ? " visible" : " hidden")
+        }
+      >
+        Balances: {nativeBalance}
+      </FormLabel>
+    );
+  }
+
   return (
     <FormLabel
       className={
