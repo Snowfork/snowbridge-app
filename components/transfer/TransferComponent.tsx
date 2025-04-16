@@ -145,9 +145,9 @@ export const TransferComponent: FC = () => {
         setBusy(null);
         return;
       }
+      setBusy("Preflight checks successful. Submitting transfer...");
 
       error = "Error submitting transfer.";
-      setBusy("Submitting transfer...");
       track("Sending Token", { ...data?.formData });
 
       const result = await sendToken(data, plan);
@@ -163,7 +163,7 @@ export const TransferComponent: FC = () => {
       track("Sending Complete", { ...data.formData, messageId });
       const transferData = base64url.encode(JSON.stringify(historyItem));
       router.push(`/txcomplete?transfer=${transferData}`);
-      setBusy(null);
+      setBusy("Transfer successful...");
     } catch (err) {
       console.error(err);
       if (requestId.current != req) return;
@@ -202,8 +202,7 @@ export const TransferComponent: FC = () => {
         registry={registry}
         onBack={() => backToForm(formData)}
         onRefreshTransfer={async (_, refreshOnly) =>
-          await validateAndSubmit(validationData, refreshOnly ?? false)
-        }
+          await validateAndSubmit(validationData, refreshOnly ?? false)}
       />
     );
   } else if (!plan) {
@@ -213,8 +212,7 @@ export const TransferComponent: FC = () => {
         formData={validationData?.formData ?? formData}
         onValidated={async (data) => await validateAndSubmit(data, false)}
         onError={async (form, error) =>
-          showError("Error validating transfer form.", form)
-        }
+          showError("Error validating transfer form.", form)}
       />
     );
   }
