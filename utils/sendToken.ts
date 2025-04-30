@@ -22,8 +22,8 @@ export function createStepsFromPlan(
     | toEthereumV2.ValidationLog
     | toPolkadotV2.ValidationLog
     | null = null;
-  switch (data.source.type) {
-    case "substrate": {
+  switch (data.destination.type) {
+    case "ethereum": {
       const p = plan as toEthereumV2.ValidationResult;
       for (const log of p.logs) {
         if (
@@ -55,7 +55,7 @@ export function createStepsFromPlan(
         plan,
       };
     }
-    case "ethereum": {
+    case "substrate": {
       const p = plan as toPolkadotV2.ValidationResult;
       for (const log of p.logs) {
         if (
