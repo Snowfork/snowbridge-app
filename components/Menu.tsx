@@ -137,7 +137,7 @@ export const Menu: FC = () => {
         {envName === "polkadot_mainnet" ? (
           <MenubarMenu>
             <MenubarTrigger>
-              <Link href="/switch" className="flex items-center">
+              <Link href="/kusama" className="flex items-center">
                 <LucideBird />
                 <p className="pl-2 hidden md:flex">To Kusama</p>
               </Link>

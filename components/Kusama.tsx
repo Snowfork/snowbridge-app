@@ -91,21 +91,14 @@ export const KusamaComponent: FC = () => {
     ISubmittableResult
   > | null>(null);
 
-  const parachainsInfo =
-    parachainConfigs[snowbridgeEnvironment.name as SnowbridgeEnvironmentNames];
-
-  const [tokenSymbol, setTokenSymbol] = useState<string | null>(
-    parachainsInfo[0]?.switchPair[0]?.tokenMetadata.symbol,
-  );
-
   const form: UseFormReturn<FormDataSwitch> = useForm<
     z.infer<typeof formSchemaSwitch>
   >({
     resolver: zodResolver(formSchemaSwitch),
     defaultValues: {
-      source: "assethub",
-      destination: parachainsInfo[0]?.id,
-      token: parachainsInfo[0]?.switchPair[0]?.tokenMetadata.symbol,
+      source: "polkadotAssethub",
+      destination: "polkadotKusama",
+      token: "",
       amount: "0.0",
     },
   });
@@ -144,18 +137,18 @@ export const KusamaComponent: FC = () => {
   );
 
   useEffect(() => {
-    if (sourceId === "assethub") {
-      if (!parachainsInfo.some(({ id }) => id === destinationId)) {
+    if (sourceId === "polkadotAssethub") {
+      if (destinationId != "kusamaAssetHub") {
         form.resetField("destination", {
-          defaultValue: parachainsInfo[0]?.id,
+          defaultValue: "kusamaAssetHub",
         });
       }
     } else {
       form.resetField("destination", {
-        defaultValue: "assethub",
+        defaultValue: "polkadotAssethub",
       });
     }
-  }, [destinationId, form, parachainsInfo, sourceId]);
+  }, [destinationId, form, sourceId]);
 
   const buildTransaction = useCallback(async () => {
     if (
@@ -174,43 +167,14 @@ export const KusamaComponent: FC = () => {
     try {
       let transaction;
 
-      if (sourceId === "assethub") {
-        if (destinationId === "assethub") {
+      if (sourceId === "polkadotAssethub") {
+        if (destinationId === "polkadotAssethub") {
           return;
+          // TODO transaction
+        } else {
+          // TODO transaction
         }
-        const destination = parachainsInfo.find(
-          ({ id }) => id === destinationId,
-        )!;
-        // take first switch pair - may be selectable in future version
-        const switchPair = destination.switchPair[0];
-        setTokenSymbol(switchPair.tokenMetadata.symbol);
-
-        transaction = await assetHubToParachainTransfer({
-          context,
-          beneficiary,
-          paraId: destination.parachainId,
-          palletName: switchPair.id,
-          amount: parseUnits(amount, switchPair.tokenMetadata.decimals),
-        });
-      } else {
-        const { parachainId, switchPair } = parachainsInfo.find(
-          ({ id }) => id === sourceId,
-        )!; // TODO: handle not exists?
-
-        setTokenSymbol(switchPair[0].tokenMetadata.symbol);
-
-        transaction = await parachainToAssetHubTransfer({
-          context,
-          beneficiary,
-          amount: parseUnits(amount, switchPair[0].tokenMetadata.decimals),
-          parachainId,
-          palletName: switchPair[0].id,
-        });
       }
-      const transactionFee = await transaction.paymentInfo(watchSourceAccount);
-
-      setTransaction(transaction);
-      setFeeDisplay(transactionFee.partialFee.toHuman());
     } catch (err) {
       console.error(err);
       setError({
@@ -226,7 +190,6 @@ export const KusamaComponent: FC = () => {
     destinationId,
     watchSourceAccount,
     amount,
-    parachainsInfo,
   ]);
 
   useEffect(() => {
@@ -257,7 +220,7 @@ export const KusamaComponent: FC = () => {
     }
 
     try {
-      if (destinationId === "assethub") {
+      if (destinationId === "polkadotAssethub") {
         if (!assetHubSufficientTokenAvailable) {
           setError({
             title: "Insufficient Tokens.",
@@ -316,7 +279,7 @@ export const KusamaComponent: FC = () => {
       setBusyMessage("Waiting for transaction to be confirmed by wallet.");
 
       const subscanHost =
-        sourceId === "assethub"
+        sourceId === "polkadotAssethub"
           ? "https://assethub-polkadot.subscan.io"
           : "https://spiritnet.subscan.io";
       await transaction.signAndSend(address, { signer }, (result) => {
@@ -329,7 +292,7 @@ export const KusamaComponent: FC = () => {
             closeButton: true,
             duration: 60000,
             id: "transfer_success",
-            description: "Token transfer was succesfully initiated.",
+            description: "Token transfer was successfully initiated.",
             action: {
               label: "View",
               onClick: () =>
@@ -346,7 +309,7 @@ export const KusamaComponent: FC = () => {
             closeButton: true,
             duration: 60000,
             id: "transfer_error",
-            description: "Token transfer was unsuccesful.",
+            description: "Token transfer was unsuccessful.",
             action: {
               label: "View",
               onClick: () =>
@@ -364,7 +327,7 @@ export const KusamaComponent: FC = () => {
       setBusyMessage("");
       setError({
         title: "Transaction Failed",
-        description: `Error occured while trying to send transaction.`,
+        description: `Error occurred while trying to send transaction.`,
         errors: [],
       });
     }
@@ -387,9 +350,10 @@ export const KusamaComponent: FC = () => {
     <>
       <Card className="w-auto md:w-2/3">
         <CardHeader>
-          <CardTitle>Polar Path</CardTitle>
+          <CardTitle>Transfer to Kusama</CardTitle>
           <CardDescription className="hidden md:flex">
-            Switch Parachain tokens for ERC-20 Parachain tokens via Asset Hub.
+            Transfer tokens from Polkadot Asset Hub to Kusama Asset Hub, and
+            back.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -404,7 +368,7 @@ export const KusamaComponent: FC = () => {
                   name="source"
                   render={({ field }) => (
                     <FormItem {...field}>
-                      <FormLabel>Source</FormLabel>
+                      <FormLabel>From</FormLabel>
                       <FormControl>
                         <Select
                           onValueChange={field.onChange}
@@ -415,14 +379,24 @@ export const KusamaComponent: FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {[
-                                { id: "assethub", name: "Asset Hub" },
-                                ...parachainsInfo,
-                              ].map(({ id, name }) => (
-                                <SelectItem key={id} value={id}>
-                                  <SelectItemWithIcon label={name} image={id} />
-                                </SelectItem>
-                              ))}
+                              <SelectItem
+                                key={"polkadotAssethub"}
+                                value={"polkadotAssethub"}
+                              >
+                                <SelectItemWithIcon
+                                  label="Polkadot Asset Hub"
+                                  image="assethub"
+                                />
+                              </SelectItem>
+                              <SelectItem
+                                key={"kusamaAssethub"}
+                                value={"kusamaAssethub"}
+                              >
+                                <SelectItemWithIcon
+                                  label="Kusama Asset Hub"
+                                  image="assethub-kusama"
+                                />
+                              </SelectItem>
                             </SelectGroup>
                           </SelectContent>
                         </Select>
@@ -436,7 +410,7 @@ export const KusamaComponent: FC = () => {
                   name="destination"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Destination</FormLabel>
+                      <FormLabel>To</FormLabel>
                       <FormControl>
                         <Select
                           onValueChange={field.onChange}
@@ -447,22 +421,26 @@ export const KusamaComponent: FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {sourceId !== "assethub" ? (
-                                <SelectItem key={"assethub"} value={"assethub"}>
+                              {sourceId !== "polkadotAssethub" ? (
+                                <SelectItem
+                                  key={"polkadotAssethub"}
+                                  value={"polkadotAssethub"}
+                                >
                                   <SelectItemWithIcon
-                                    label="Asset Hub"
+                                    label="Polkadot Asset Hub"
                                     image="assethub"
                                   />
                                 </SelectItem>
                               ) : (
-                                parachainsInfo.map(({ id, name }) => (
-                                  <SelectItem key={id} value={id}>
-                                    <SelectItemWithIcon
-                                      label={name}
-                                      image={id}
-                                    />
-                                  </SelectItem>
-                                ))
+                                <SelectItem
+                                  key={"kusamaAssethub"}
+                                  value={"kusamaAssethub"}
+                                >
+                                  <SelectItemWithIcon
+                                    label="Kusama Asset Hub"
+                                    image="assethub-kusama"
+                                  />
+                                </SelectItem>
                               )}
                             </SelectGroup>
                           </SelectContent>
@@ -479,7 +457,7 @@ export const KusamaComponent: FC = () => {
                 name="sourceAccount"
                 render={({ field }) => (
                   <FormItem {...field}>
-                    <FormLabel>Source Account</FormLabel>
+                    <FormLabel>From Account</FormLabel>
                     <FormDescription className="hidden md:flex">
                       Account on the source.
                     </FormDescription>
@@ -500,7 +478,7 @@ export const KusamaComponent: FC = () => {
                           sourceAccount={watchSourceAccount}
                           sourceId={sourceId}
                           destinationId={destinationId}
-                          parachainInfo={parachainsInfo}
+                          parachainInfo=""
                           beneficiary={beneficiary}
                           handleSufficientTokens={handleSufficientTokens}
                           handleTopUpCheck={handleTopUpCheck}
@@ -518,7 +496,7 @@ export const KusamaComponent: FC = () => {
                 name="beneficiary"
                 render={({ field }) => (
                   <FormItem {...field}>
-                    <FormLabel>Beneficiary</FormLabel>
+                    <FormLabel>To Account</FormLabel>
                     <FormDescription className="hidden md:flex">
                       Receiver account on the destination.
                     </FormDescription>
@@ -561,11 +539,7 @@ export const KusamaComponent: FC = () => {
                   <FormItem>
                     <FormLabel>Unit</FormLabel>
                     <FormControl>
-                      <Input
-                        type="string"
-                        disabled={true}
-                        value={tokenSymbol || ""}
-                      />
+                      <Input type="string" disabled={true} value="" />
                     </FormControl>
                   </FormItem>
                 </div>
@@ -573,56 +547,16 @@ export const KusamaComponent: FC = () => {
               <div className="text-sm text-right text-muted-foreground px-1">
                 Fee: {feeDisplay}
                 <br />
-                {sourceId === "assethub" ? null : (
-                  <>
-                    {" "}
-                    XCM Fee:{" "}
-                    {formatBalance({
-                      number: BigInt(topUpCheck.xcmFee),
-                      decimals:
-                        parachainsInfo.find(({ id }) => id === sourceId)
-                          ?.switchPair?.[0].xcmFee.decimals ?? 10, // fallback to denomination of polkadot.
-
-                      displayDecimals: 3,
-                    })}{" "}
-                    {
-                      parachainsInfo.find(({ id }) => id === sourceId)
-                        ?.switchPair[0].xcmFee.symbol
-                    }
-                  </>
-                )}
+                {sourceId === "polkadotAssethub" ? null : <> XCM Fee: </>}
               </div>
               <br />
-              {topUpCheck.xcmFee >= topUpCheck.xcmBalance &&
-              sourceId !== "assethub" ? (
-                <TopUpXcmFee
-                  sourceAccount={watchSourceAccount}
-                  beneficiary={beneficiary}
-                  targetChainInfo={
-                    // target for transfer is source of switch
-                    parachainsInfo.find(({ id }) => id === sourceId)!
-                  }
-                  parachainSufficientTokenAvailable={
-                    parachainSufficientTokenAvailable
-                  }
-                  assetHubSufficientTokenAvailable={
-                    assetHubSufficientTokenAvailable
-                  }
-                  polkadotAccounts={polkadotAccounts!}
-                  xcmBalance={topUpCheck.xcmBalance}
-                  xcmBalanceDestination={topUpCheck.xcmBalanceDestination}
-                  formData={form.getValues()}
-                  destinationId={destinationId}
-                />
-              ) : (
-                <Button
-                  disabled={!transaction}
-                  className="w-full my-8 action-button"
-                  type="submit"
-                >
-                  Submit
-                </Button>
-              )}
+              <Button
+                disabled={!transaction}
+                className="w-full my-8 action-button"
+                type="submit"
+              >
+                Submit
+              </Button>
             </form>
           </Form>
         </CardContent>
