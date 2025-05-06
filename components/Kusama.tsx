@@ -1,5 +1,5 @@
 "use client";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, Key, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -24,10 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import {
-  assetHubToParachainTransfer,
-  parachainToAssetHubTransfer,
-} from "@/utils/onSwitch";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
   snowbridgeEnvironmentAtom,
@@ -47,13 +43,7 @@ import { BusyDialog } from "./BusyDialog";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { ISubmittableResult } from "@polkadot/types/types";
-import PolkadotBalance from "./Balances";
-import { parseUnits } from "ethers";
 import { toast } from "sonner";
-import {
-  parachainConfigs,
-  SnowbridgeEnvironmentNames,
-} from "@/utils/parachainConfigs";
 
 import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
@@ -108,6 +98,8 @@ export const KusamaComponent: FC = () => {
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
   const watchSourceAccount = form.watch("sourceAccount");
+  const tokens =
+    assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId];
 
   useEffect(() => {
     const sourceAccounts =
@@ -137,18 +129,15 @@ export const KusamaComponent: FC = () => {
   );
 
   useEffect(() => {
-    if (sourceId === "polkadotAssethub") {
-      if (destinationId != "kusamaAssetHub") {
-        form.resetField("destination", {
-          defaultValue: "kusamaAssetHub",
-        });
-      }
-    } else {
-      form.resetField("destination", {
-        defaultValue: "polkadotAssethub",
-      });
+    if (sourceId === "polkadotAssethub" && destinationId !== "kusamaAssethub") {
+      form.setValue("destination", "kusamaAssethub");
+    } else if (
+      sourceId === "kusamaAssethub" &&
+      destinationId !== "polkadotAssethub"
+    ) {
+      form.setValue("destination", "polkadotAssethub");
     }
-  }, [destinationId, form, sourceId]);
+  }, [sourceId, destinationId, form, tokens]);
 
   const buildTransaction = useCallback(async () => {
     if (
@@ -385,7 +374,7 @@ export const KusamaComponent: FC = () => {
                               >
                                 <SelectItemWithIcon
                                   label="Polkadot Asset Hub"
-                                  image="assethub"
+                                  image="assethubpolkadot"
                                 />
                               </SelectItem>
                               <SelectItem
@@ -394,7 +383,7 @@ export const KusamaComponent: FC = () => {
                               >
                                 <SelectItemWithIcon
                                   label="Kusama Asset Hub"
-                                  image="assethub-kusama"
+                                  image="assethubkusama"
                                 />
                               </SelectItem>
                             </SelectGroup>
@@ -428,7 +417,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Polkadot Asset Hub"
-                                    image="assethub"
+                                    image="assethubpolkadot"
                                   />
                                 </SelectItem>
                               ) : (
@@ -438,7 +427,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Kusama Asset Hub"
-                                    image="assethub-kusama"
+                                    image="assethubkusama"
                                   />
                                 </SelectItem>
                               )}
@@ -474,16 +463,6 @@ export const KusamaComponent: FC = () => {
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
                         />
-                        <PolkadotBalance
-                          sourceAccount={watchSourceAccount}
-                          sourceId={sourceId}
-                          destinationId={destinationId}
-                          parachainInfo=""
-                          beneficiary={beneficiary}
-                          handleSufficientTokens={handleSufficientTokens}
-                          handleTopUpCheck={handleTopUpCheck}
-                          handleBalanceCheck={handleBalanceCheck}
-                        />
                       </>
                     </FormControl>
                     <FormMessage />
@@ -505,8 +484,7 @@ export const KusamaComponent: FC = () => {
                         accounts={beneficiaries}
                         field={field}
                         allowManualInput={false}
-                        disabled={true}
-                        destination="kilt"
+                        destination={destinationId}
                       />
                     </FormControl>
                     <FormMessage />
@@ -537,9 +515,38 @@ export const KusamaComponent: FC = () => {
                 </div>
                 <div className="w-1/3">
                   <FormItem>
-                    <FormLabel>Unit</FormLabel>
+                    <FormLabel className="invisible">Token</FormLabel>
                     <FormControl>
-                      <Input type="string" disabled={true} value="" />
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a token" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {Object.values(tokens?.assets ?? {}).map((t) => {
+                              const assetId = t.token?.toLowerCase();
+                              const asset =
+                                assetId &&
+                                assetRegistry.ethereumChains?.[
+                                  assetRegistry.ethChainId
+                                ]?.assets?.[assetId];
+                              // Skip rendering if asset or assetId is missing
+                              if (!assetId || !asset) return null;
+
+                              return (
+                                <SelectItem key={assetId} value={assetId}>
+                                  <SelectItemWithIcon
+                                    label={asset.name}
+                                    image={asset.symbol}
+                                    altImage="token_generic"
+                                  />
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectGroup>
+                        </SelectContent>
+                        <FormMessage />
+                      </Select>
                     </FormControl>
                   </FormItem>
                 </div>
