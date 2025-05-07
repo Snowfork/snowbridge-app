@@ -30,6 +30,10 @@ export type ErrorInfo = {
   errors: ValidationError[];
 };
 
+export enum Chain {
+  Polkadot, Kusama
+}
+
 export type FormDataSwitch = {
   source: string;
   sourceAccount: string;
@@ -139,6 +143,8 @@ export type KusamaFeeInfo = {
   fee: bigint;
   decimals: number;
   symbol: string;
+  // Add delivery property to match FeeInfo structure
+  delivery?: toKusama.DeliveryFee;
 };
 
 export interface ValidationData {
@@ -152,13 +158,15 @@ export interface ValidationData {
 }
 
 export interface KusamaValidationData {
-  formData: TransferFormData;
   assetRegistry: assetsV2.AssetRegistry;
   source: string;
   destination: string;
+  sourceAccount: string;
+  beneficiary: string;
+  token: string;
   tokenMetadata: assets.ERC20Metadata;
   amountInSmallestUnit: bigint;
-  fee: FeeInfo;
+  fee: KusamaFeeInfo;
 }
 
 export type ValidationResult =

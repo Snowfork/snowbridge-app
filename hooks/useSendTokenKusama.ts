@@ -13,8 +13,15 @@ function validateSubstrateDestination({
   source,
   destination,
 }: KusamaValidationData) {
-  if (source !== "polkadotAssethub" && destination !== "kusamaAssethub") || (source !== "kusamaAssethub" && destination !== "polkadotAssethub") {
-    throw Error(`Invalid form state: source and destination combination mismatch.`);
+  console.log(source);
+  console.log(destination);
+  if (
+    !(source === "polkadotAssethub" && destination === "kusamaAssethub") &&
+    !(source === "kusamaAssethub" && destination === "polkadotAssethub")
+  ) {
+    throw Error(
+      `Invalid form state: source and destination combination mismatch.`,
+    );
   }
 }
 
@@ -25,7 +32,7 @@ function validateSubstrateSigner(
   if (!polkadotAccount) {
     throw Error(`Polkadot Wallet not connected.`);
   }
-  if (polkadotAccount.address !== data.formData.sourceAccount) {
+  if (polkadotAccount.address !== data.sourceAccount) {
     throw Error(`Source account mismatch.`);
   }
   return {
@@ -41,27 +48,35 @@ async function planSend(
   const {
     source,
     destination,
+    sourceAccount,
+    beneficiary,
+    token,
     amountInSmallestUnit,
-    formData,
     assetRegistry,
     fee,
   } = data;
-  if (source === "polkadotAssetHub" && destination == "kusamaAssetHub") {
+  if (source == "polkadotAssethub" && destination == "kusamaAssethub") {
     validateSubstrateDestination(data);
     const sourceAssetHub = await context.assetHub();
     const destAssetHub = await context.kusamaAssetHub();
     if (!destAssetHub) {
       throw Error(`Kusama AssetHub could not connect`);
     }
+    // Create a new delivery fee object
+    const deliveryFee: toKusama.DeliveryFee = {
+      baseFee: fee.fee,
+      totalFeeInDot: fee.fee,
+    };
+
     const tx = await toKusama.createTransfer(
       sourceAssetHub,
       Direction.ToKusama,
       assetRegistry,
-      formData.sourceAccount,
-      formData.beneficiary,
-      formData.token,
+      sourceAccount,
+      beneficiary,
+      token,
       amountInSmallestUnit,
-      fee as toKusama.DeliveryFee,
+      deliveryFee,
     );
     const plan = await toKusama.validateTransfer(
       {
@@ -80,15 +95,21 @@ async function planSend(
     if (!sourceAssetHub) {
       throw Error(`Kusama AssetHub could not connect`);
     }
+    // Create a new delivery fee object
+    const deliveryFee: toKusama.DeliveryFee = {
+      baseFee: fee.fee,
+      totalFeeInDot: fee.fee,
+    };
+
     const tx = await toKusama.createTransfer(
       sourceAssetHub,
       Direction.ToPolkadot,
       assetRegistry,
-      formData.sourceAccount,
-      formData.beneficiary,
-      formData.token,
+      sourceAccount,
+      beneficiary,
+      token,
       amountInSmallestUnit,
-      fee as toKusama.DeliveryFee,
+      deliveryFee,
     );
     const plan = await toKusama.validateTransfer(
       {
@@ -123,10 +144,11 @@ async function sendToken(
   );
   let sourceAssetHub: any;
   if (source == "polkadotAssethub") {
-    sourceAssetHub = context.assetHub()
+    sourceAssetHub = context.assetHub();
   } else {
-    sourceAssetHub = context.kusamaAssetHub()
+    sourceAssetHub = context.kusamaAssetHub();
   }
+  console.log(sourceAssetHub);
   const tx = plan.transfer as toKusama.Transfer;
   const result = await toKusama.signAndSend(
     sourceAssetHub,
@@ -141,7 +163,7 @@ async function sendToken(
   return result;
 }
 
-export function useSendToken(): [
+export function useSendKusamaToken(): [
   (data: KusamaValidationData) => Promise<toKusama.ValidationResult>,
   (data: KusamaValidationData, plan: toKusama.ValidationResult) => Promise<MessageReciept>,
 ] {
@@ -162,7 +184,7 @@ export function useSendToken(): [
       if (context === null) throw Error("No context");
       return await sendToken(context, data, plan, {
         polkadotAccount: (polkadotAccounts ?? []).find(
-          (pa) => pa.address === data.formData.sourceAccount,
+          (pa) => pa.address === data.sourceAccount,
         ),
         ethereumAccount: ethereumAccount ?? undefined,
         ethereumProvider: ethereumProvider ?? undefined,

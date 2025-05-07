@@ -15,21 +15,22 @@ async function fetchKusamaFeeInfo([
   if (context === null) {
     return;
   }
-  const fee = await toKusama.getDeliveryFee(
+  const deliveryFee = await toKusama.getDeliveryFee(
     await context.assetHub(),
     1000000000n,
   );
   return {
-    fee: fee.totalFeeInDot,
+    fee: deliveryFee.totalFeeInDot,
     decimals: registry.relaychain.tokenDecimals ?? 0,
     symbol: registry.relaychain.tokenSymbols ?? "",
+    delivery: deliveryFee,
   };
 }
 
 export function useKusamaFeeInfo(
   source: string,
   destination: string,
-  token: string,
+  token: string | assetsV2.Asset | undefined,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
   const { data: registry } = useAssetRegistry();

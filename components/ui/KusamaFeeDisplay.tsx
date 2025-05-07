@@ -7,7 +7,7 @@ import { useKusamaFeeInfo } from "@/hooks/useKusamaFeeInfo";
 interface KusamaFeeDisplayProps {
   source: string;
   destination: string;
-  token: string | undefined;
+  token: string | assetsV2.Asset | undefined;
   displayDecimals: number;
   className?: string;
 }

@@ -30,28 +30,23 @@ import {
   snowbridgeContextAtom,
 } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
-import { filterByAccountType, formSchemaSwitch } from "@/utils/formSchema";
+import { filterByAccountType, TransferFormData, transferFormSchema } from "@/utils/formSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { AccountInfo, ErrorInfo, FormDataSwitch } from "@/utils/types";
+import { AccountInfo, ErrorInfo, FeeInfo, FormDataSwitch, KusamaValidationData } from "@/utils/types";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { SelectAccount } from "./SelectAccount";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { BusyDialog } from "./BusyDialog";
 import { SendErrorDialog } from "./SendErrorDialog";
-import { SubmittableExtrinsic } from "@polkadot/api/types";
-import { ISubmittableResult } from "@polkadot/types/types";
-import { toast } from "sonner";
-
-import { TopUpXcmFee } from "./TopUpXcmFee";
-import { assetsV2, toPolkadot } from "@snowbridge/api";
-import { formatBalance } from "@/utils/formatting";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
-import { FeeDisplay } from "@/components/FeeDisplay";
 import { KusamaFeeDisplay } from "@/components/ui/KusamaFeeDisplay";
+import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
+import { parseUnits } from "ethers";
+import { toKusama } from "@snowbridge/api";
 
 export const KusamaComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -60,33 +55,14 @@ export const KusamaComponent: FC = () => {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const { data: assetRegistry } = useAssetRegistry();
 
-  const [feeDisplay, setFeeDisplay] = useState("");
-  const [balanceCheck, setBalanceCheck] = useState("");
-
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
-  const [
-    assetHubSufficientTokenAvailable,
-    setAssetHubSufficientTokenAvailable,
-  ] = useState(true);
-  const [
-    parachainSufficientTokenAvailable,
-    setParachainSufficientTokenAvailable,
-  ] = useState(true);
-  const [topUpCheck, setTopUpCheck] = useState({
-    xcmFee: 0n,
-    xcmBalance: 0n,
-    xcmBalanceDestination: 0n,
-  });
-  const [transaction, setTransaction] = useState<SubmittableExtrinsic<
-    "promise",
-    ISubmittableResult
-  > | null>(null);
+  const [planSend, sendToken] = useSendKusamaToken();
 
-  const form: UseFormReturn<FormDataSwitch> = useForm<
-    z.infer<typeof formSchemaSwitch>
+  const form: UseFormReturn<TransferFormData> = useForm<
+    z.infer<typeof transferFormSchema>
   >({
-    resolver: zodResolver(formSchemaSwitch),
+    resolver: zodResolver(transferFormSchema),
     defaultValues: {
       source: "polkadotAssethub",
       destination: "polkadotKusama",
@@ -101,7 +77,8 @@ export const KusamaComponent: FC = () => {
   const amount = form.watch("amount");
   const watchSourceAccount = form.watch("sourceAccount");
   const tokens =
-    assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId];
+    assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId]
+      .assets;
 
   const ethAsset = Object.keys(
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
@@ -111,12 +88,9 @@ export const KusamaComponent: FC = () => {
     ].name.match(/^Ether/),
   );
 
-  const firstToken =
-    ethAsset ?? tokens?.assets["0x0000000000000000000000000000000000000000"];
+  const firstToken = ethAsset ?? "0x0000000000000000000000000000000000000000";
 
   const [token, setToken] = useState(firstToken);
-
-  console.log(tokens);
 
   useEffect(() => {
     const sourceAccounts =
@@ -158,12 +132,53 @@ export const KusamaComponent: FC = () => {
 
   const onSubmit = useCallback(async () => {
     console.log("SUBMITTING");
-    if (!transaction || !context) {
+    if (token === undefined) {
+      setError({
+        title: "Token error",
+        description: `Please select a token`,
+        errors: [],
+      });
       return;
     }
-  }, [
-    context,
-  ]);
+
+    if (tokens === undefined) {
+      setError({
+        title: "Token error",
+        description: `Token to be sent could not be found.`,
+        errors: [],
+      });
+      return;
+    }
+
+    let feeForNow = 1333794429n;
+
+    let asset =
+      assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[token];
+    let data: KusamaValidationData = {
+      source: sourceId,
+      destination: destinationId,
+      sourceAccount: watchSourceAccount,
+      beneficiary,
+      token,
+      assetRegistry: assetRegistry,
+      tokenMetadata: tokens[token],
+      amountInSmallestUnit: parseUnits(amount, asset.decimals),
+      fee: {
+        fee: feeForNow,
+        decimals: asset.decimals,
+        symbol: asset.symbol,
+        delivery: {
+          baseFee: feeForNow,
+          totalFeeInDot: feeForNow,
+        },
+      },
+    };
+    console.log("Data", data);
+    const plan = await planSend(data);
+    console.log("Plan: ", plan);
+    const result = await sendToken(data, plan);
+    console.log(result);
+  }, [context, sourceId, destinationId]);
 
   return (
     <>
@@ -350,41 +365,50 @@ export const KusamaComponent: FC = () => {
                   />
                 </div>
                 <div className="w-1/3">
-                  <FormItem>
-                    <FormLabel className="invisible">Token</FormLabel>
-                    <FormControl>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a token" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {Object.values(tokens?.assets ?? {}).map((t) => {
-                              const assetId = t.token?.toLowerCase();
-                              const asset =
-                                assetId &&
-                                assetRegistry.ethereumChains?.[
-                                  assetRegistry.ethChainId
-                                ]?.assets?.[assetId];
-                              // Skip rendering if asset or assetId is missing
-                              if (!assetId || !asset) return null;
+                  <FormField
+                    control={form.control}
+                    name="token"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="invisible">Token</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a token" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {Object.values(tokens ?? {}).map((t) => {
+                                  const assetId = t.token?.toLowerCase();
+                                  const asset =
+                                    assetId &&
+                                    assetRegistry.ethereumChains?.[
+                                      assetRegistry.ethChainId
+                                    ]?.assets?.[assetId];
+                                  // Skip rendering if asset or assetId is missing
+                                  if (!assetId || !asset) return null;
 
-                              return (
-                                <SelectItem key={assetId} value={assetId}>
-                                  <SelectItemWithIcon
-                                    label={asset.name}
-                                    image={asset.symbol}
-                                    altImage="token_generic"
-                                  />
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectGroup>
-                        </SelectContent>
-                        <FormMessage />
-                      </Select>
-                    </FormControl>
-                  </FormItem>
+                                  return (
+                                    <SelectItem key={assetId} value={assetId}>
+                                      <SelectItemWithIcon
+                                        label={asset.name}
+                                        image={asset.symbol}
+                                        altImage="token_generic"
+                                      />
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectGroup>
+                            </SelectContent>
+                            <FormMessage />
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
               <div className="text-sm text-center text-muted-foreground px-1 mt-1">
@@ -399,7 +423,6 @@ export const KusamaComponent: FC = () => {
               </div>
               <br />
               <Button
-                disabled={!transaction}
                 className="w-full my-8 action-button"
                 type="submit"
               >
