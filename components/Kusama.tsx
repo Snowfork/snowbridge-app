@@ -47,6 +47,8 @@ import { KusamaFeeDisplay } from "@/components/ui/KusamaFeeDisplay";
 import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
 import { parseUnits } from "ethers";
 import { toKusama } from "@snowbridge/api";
+import PolkadotBalance from "@/components/Balances";
+import { parachainConfigs, SnowbridgeEnvironmentNames } from "@/utils/parachainConfigs";
 
 export const KusamaComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -58,6 +60,38 @@ export const KusamaComponent: FC = () => {
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
   const [planSend, sendToken] = useSendKusamaToken();
+
+  const [balanceCheck, setBalanceCheck] = useState("");
+  const [
+    assetHubSufficientTokenAvailable,
+    setAssetHubSufficientTokenAvailable,
+  ] = useState(true);
+  const [
+    parachainSufficientTokenAvailable,
+    setParachainSufficientTokenAvailable,
+  ] = useState(true);
+  const [topUpCheck, setTopUpCheck] = useState({
+    xcmFee: 0n,
+    xcmBalance: 0n,
+    xcmBalanceDestination: 0n,
+  });
+
+  const handleSufficientTokens = (
+    assetHubSufficient: boolean,
+    parachainSufficient: boolean,
+  ) => {
+    setAssetHubSufficientTokenAvailable(assetHubSufficient);
+    setParachainSufficientTokenAvailable(parachainSufficient);
+  };
+  const handleBalanceCheck = (fetchBalance: string) => {
+    setBalanceCheck(fetchBalance);
+  };
+  const handleTopUpCheck = useCallback(
+    (xcmFee: bigint, xcmBalance: bigint, xcmBalanceDestination: bigint) => {
+      setTopUpCheck({ xcmFee, xcmBalance, xcmBalanceDestination });
+    },
+    [],
+  );
 
   const form: UseFormReturn<TransferFormData> = useForm<
     z.infer<typeof transferFormSchema>
@@ -71,11 +105,15 @@ export const KusamaComponent: FC = () => {
     },
   });
 
+  const parachainsInfo =
+    parachainConfigs[snowbridgeEnvironment.name as SnowbridgeEnvironmentNames];
+
   const sourceId = form.watch("source");
   const destinationId = form.watch("destination");
   const beneficiary = form.watch("beneficiary");
   const amount = form.watch("amount");
   const watchSourceAccount = form.watch("sourceAccount");
+  const watchToken = form.watch("token");
   const tokens =
     assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId]
       .assets;
@@ -85,12 +123,12 @@ export const KusamaComponent: FC = () => {
   ).find((asset) =>
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       asset
-    ].name.match(/^Ether/),
+      ].name.match(/^Ether/),
   );
 
   const firstToken = ethAsset ?? "0x0000000000000000000000000000000000000000";
 
-  const [token, setToken] = useState(firstToken);
+ //const [token, setToken] = useState(firstToken);
 
   useEffect(() => {
     const sourceAccounts =
@@ -131,8 +169,7 @@ export const KusamaComponent: FC = () => {
   }, [sourceId, destinationId, form, tokens]);
 
   const onSubmit = useCallback(async () => {
-    console.log("SUBMITTING");
-    if (token === undefined) {
+    if (watchToken === undefined) {
       setError({
         title: "Token error",
         description: `Please select a token`,
@@ -150,19 +187,40 @@ export const KusamaComponent: FC = () => {
       return;
     }
 
+    let asset =
+      assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
+        watchToken
+      ];
+
+    // Fallback to parachain metadata if decimals are missing or empty
+    if (!asset?.decimals || asset.decimals === "") {
+      asset = tokens?.[watchToken];
+    }
+
+    let amountInSmallestUnit = parseUnits(amount, asset.decimals);
+    if (amountInSmallestUnit === 0n) {
+      setError({
+        title: "Amount not specified",
+        description: `Please specify an amount.`,
+        errors: [],
+      });
+      return;
+    }
+
     let feeForNow = 1333794429n;
 
-    let asset =
-      assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[token];
+    console.log("TOKEN");
+    console.log(watchToken);
+
     let data: KusamaValidationData = {
       source: sourceId,
       destination: destinationId,
       sourceAccount: watchSourceAccount,
       beneficiary,
-      token,
+      token: watchToken,
       assetRegistry: assetRegistry,
-      tokenMetadata: tokens[token],
-      amountInSmallestUnit: parseUnits(amount, asset.decimals),
+      tokenMetadata: tokens[watchToken],
+      amountInSmallestUnit: amountInSmallestUnit,
       fee: {
         fee: feeForNow,
         decimals: asset.decimals,
@@ -173,12 +231,11 @@ export const KusamaComponent: FC = () => {
         },
       },
     };
-    console.log("Data", data);
+    console.log("PLAN", data);
     const plan = await planSend(data);
-    console.log("Plan: ", plan);
-    const result = await sendToken(data, plan);
-    console.log(result);
-  }, [context, sourceId, destinationId]);
+    //const result = await sendToken(data, plan);
+    //console.log(result);
+  }, [context, sourceId, destinationId, watchToken, watchSourceAccount, beneficiary, amount]);
 
   return (
     <>
@@ -308,6 +365,16 @@ export const KusamaComponent: FC = () => {
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
                         />
+                        <PolkadotBalance
+                          sourceAccount={watchSourceAccount}
+                          sourceId={sourceId}
+                          destinationId={destinationId}
+                          parachainInfo={parachainsInfo}
+                          beneficiary={beneficiary}
+                          handleSufficientTokens={handleSufficientTokens}
+                          handleTopUpCheck={handleTopUpCheck}
+                          handleBalanceCheck={handleBalanceCheck}
+                        />
                       </>
                     </FormControl>
                     <FormMessage />
@@ -341,26 +408,20 @@ export const KusamaComponent: FC = () => {
                 <div className="w-2/3">
                   <FormField
                     control={form.control}
-                    name="token"
+                    name="amount"
                     render={({ field }) => (
-                      <FormField
-                        control={form.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Amount</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="string"
-                                placeholder="0.0"
-                                className="text-right"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <FormItem>
+                        <FormLabel>Amount</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="string"
+                            placeholder="0.0"
+                            className="text-right"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
                   />
                 </div>
@@ -417,7 +478,7 @@ export const KusamaComponent: FC = () => {
                   className="inline"
                   source={sourceId}
                   destination={destinationId}
-                  token={token}
+                  token={watchToken}
                   displayDecimals={8}
                 />
               </div>
