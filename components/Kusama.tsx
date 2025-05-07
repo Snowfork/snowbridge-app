@@ -46,10 +46,12 @@ import { ISubmittableResult } from "@polkadot/types/types";
 import { toast } from "sonner";
 
 import { TopUpXcmFee } from "./TopUpXcmFee";
-import { toPolkadot } from "@snowbridge/api";
+import { assetsV2, toPolkadot } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { FeeDisplay } from "@/components/FeeDisplay";
+import { KusamaFeeDisplay } from "@/components/ui/KusamaFeeDisplay";
 
 export const KusamaComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -88,7 +90,7 @@ export const KusamaComponent: FC = () => {
     defaultValues: {
       source: "polkadotAssethub",
       destination: "polkadotKusama",
-      token: "",
+      token: "0x0000000000000000000000000000000000000000",
       amount: "0.0",
     },
   });
@@ -100,6 +102,21 @@ export const KusamaComponent: FC = () => {
   const watchSourceAccount = form.watch("sourceAccount");
   const tokens =
     assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId];
+
+  const ethAsset = Object.keys(
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
+  ).find((asset) =>
+    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+      asset
+    ].name.match(/^Ether/),
+  );
+
+  const firstToken =
+    ethAsset ?? tokens?.assets["0x0000000000000000000000000000000000000000"];
+
+  const [token, setToken] = useState(firstToken);
+
+  console.log(tokens);
 
   useEffect(() => {
     const sourceAccounts =
@@ -139,200 +156,13 @@ export const KusamaComponent: FC = () => {
     }
   }, [sourceId, destinationId, form, tokens]);
 
-  const buildTransaction = useCallback(async () => {
-    if (
-      !context ||
-      !beneficiary ||
-      !sourceId ||
-      !destinationId ||
-      !watchSourceAccount
-    ) {
-      return;
-    }
-
-    if (!(Number(amount) > 0)) {
-      return;
-    }
-    try {
-      let transaction;
-
-      if (sourceId === "polkadotAssethub") {
-        if (destinationId === "polkadotAssethub") {
-          return;
-          // TODO transaction
-        } else {
-          // TODO transaction
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      setError({
-        title: "Send Error",
-        description: `Error occured while trying to create transaction.`,
-        errors: [],
-      });
-    }
-  }, [
-    context,
-    beneficiary,
-    sourceId,
-    destinationId,
-    watchSourceAccount,
-    amount,
-  ]);
-
-  useEffect(() => {
-    setTransaction(null);
-    const timeout = setTimeout(buildTransaction, 700);
-    return () => clearTimeout(timeout);
-  }, [buildTransaction]);
-
-  const handleSufficientTokens = (
-    assetHubSufficient: boolean,
-    parachainSufficient: boolean,
-  ) => {
-    setAssetHubSufficientTokenAvailable(assetHubSufficient);
-    setParachainSufficientTokenAvailable(parachainSufficient);
-  };
-  const handleBalanceCheck = (fetchBalance: string) => {
-    setBalanceCheck(fetchBalance);
-  };
-  const handleTopUpCheck = useCallback(
-    (xcmFee: bigint, xcmBalance: bigint, xcmBalanceDestination: bigint) => {
-      setTopUpCheck({ xcmFee, xcmBalance, xcmBalanceDestination });
-    },
-    [],
-  );
   const onSubmit = useCallback(async () => {
+    console.log("SUBMITTING");
     if (!transaction || !context) {
       return;
     }
-
-    try {
-      if (destinationId === "polkadotAssethub") {
-        if (!assetHubSufficientTokenAvailable) {
-          setError({
-            title: "Insufficient Tokens.",
-            description:
-              "Your account on Asset Hub does not have the required tokens. Please ensure you meet the sufficient or existential deposit requirements.",
-            errors: [
-              {
-                kind: "toPolkadot",
-                code: toPolkadot.SendValidationCode.BeneficiaryAccountMissing,
-                message:
-                  "To complete the transaction, your Asset Hub account must hold specific tokens. Without these, the account cannot be activated or used.",
-              },
-            ],
-          });
-          return;
-        }
-        if (topUpCheck.xcmFee >= topUpCheck.xcmBalance) {
-          // this shouldn't really happen because it should be caught by the top up dialogue
-          setError({
-            title: "Insufficient XCM Remote Fee Payment Tokens.",
-            description:
-              "Switches with destination Asset Hub require you to hold Relay Chain native tokens (e.g., DOT) on the source chain. You can teleport or reserve-transfer tokens to meet these requirements.",
-            errors: [],
-          });
-
-          return;
-        }
-      }
-
-      if (!parachainSufficientTokenAvailable) {
-        setError({
-          title: "Insufficient Tokens.",
-          description:
-            "The beneficiary's account does not meet the sufficient or existential deposit requirements. Please ensure they have enough funds on the destination account to complete the transaction.",
-          errors: [],
-        });
-        return;
-      }
-
-      if (Number(balanceCheck) < Number(amount)) {
-        setError({
-          title: "Transfer amount below balance.",
-          description:
-            "The source's account does have enough balance to complete the transaction. Please ensure you have enough funds to complete the transaction.",
-          errors: [],
-        });
-        return;
-      }
-
-      const { signer, address } = polkadotAccounts?.find(
-        (val) => val.address === watchSourceAccount,
-      )!;
-      if (!signer) {
-        throw new Error("Signer is not available");
-      }
-      setBusyMessage("Waiting for transaction to be confirmed by wallet.");
-
-      const subscanHost =
-        sourceId === "polkadotAssethub"
-          ? "https://assethub-polkadot.subscan.io"
-          : "https://spiritnet.subscan.io";
-      await transaction.signAndSend(address, { signer }, (result) => {
-        setBusyMessage("Currently in flight");
-
-        if (result.isFinalized && !result.dispatchError) {
-          setBusyMessage("");
-          toast.info("Transfer Successful", {
-            position: "bottom-center",
-            closeButton: true,
-            duration: 60000,
-            id: "transfer_success",
-            description: "Token transfer was successfully initiated.",
-            action: {
-              label: "View",
-              onClick: () =>
-                window.open(
-                  `${subscanHost}/extrinsic/${result.txHash}`,
-                  "_blank",
-                ),
-            },
-          });
-        } else if (result.isError || result.dispatchError) {
-          setBusyMessage("");
-          toast.info("Transfer unsuccessful", {
-            position: "bottom-center",
-            closeButton: true,
-            duration: 60000,
-            id: "transfer_error",
-            description: "Token transfer was unsuccessful.",
-            action: {
-              label: "View",
-              onClick: () =>
-                window.open(
-                  `${subscanHost}/extrinsic/${result.txHash}`,
-                  "_blank",
-                ),
-            },
-          });
-        }
-      });
-
-      setBusyMessage("");
-    } catch (err) {
-      setBusyMessage("");
-      setError({
-        title: "Transaction Failed",
-        description: `Error occurred while trying to send transaction.`,
-        errors: [],
-      });
-    }
   }, [
-    transaction,
     context,
-    destinationId,
-    parachainSufficientTokenAvailable,
-    balanceCheck,
-    amount,
-    polkadotAccounts,
-    sourceId,
-    assetHubSufficientTokenAvailable,
-    topUpCheck.xcmFee,
-    topUpCheck.xcmBalance,
-    watchSourceAccount,
   ]);
 
   return (
@@ -496,20 +326,26 @@ export const KusamaComponent: FC = () => {
                 <div className="w-2/3">
                   <FormField
                     control={form.control}
-                    name="amount"
+                    name="token"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="string"
-                            placeholder="0.0"
-                            className="text-right"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="amount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Amount</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="string"
+                                placeholder="0.0"
+                                className="text-right"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
                   />
                 </div>
@@ -551,10 +387,15 @@ export const KusamaComponent: FC = () => {
                   </FormItem>
                 </div>
               </div>
-              <div className="text-sm text-right text-muted-foreground px-1">
-                Fee: {feeDisplay}
-                <br />
-                {sourceId === "polkadotAssethub" ? null : <> XCM Fee: </>}
+              <div className="text-sm text-center text-muted-foreground px-1 mt-1">
+                Delivery Fee:{" "}
+                <KusamaFeeDisplay
+                  className="inline"
+                  source={sourceId}
+                  destination={destinationId}
+                  token={token}
+                  displayDecimals={8}
+                />
               </div>
               <br />
               <Button

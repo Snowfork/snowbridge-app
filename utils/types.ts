@@ -6,7 +6,7 @@ import {
   assets,
   assetsV2,
   toEthereumV2,
-  toPolkadotV2,
+  toPolkadotV2, toKusama,
 } from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
@@ -135,11 +135,27 @@ export type FeeInfo = {
   type: assetsV2.SourceType;
 };
 
+export type KusamaFeeInfo = {
+  fee: bigint;
+  decimals: number;
+  symbol: string;
+};
+
 export interface ValidationData {
   formData: TransferFormData;
   assetRegistry: assetsV2.AssetRegistry;
   source: assetsV2.TransferLocation;
   destination: assetsV2.TransferLocation;
+  tokenMetadata: assets.ERC20Metadata;
+  amountInSmallestUnit: bigint;
+  fee: FeeInfo;
+}
+
+export interface KusamaValidationData {
+  formData: TransferFormData;
+  assetRegistry: assetsV2.AssetRegistry;
+  source: string;
+  destination: string;
   tokenMetadata: assets.ERC20Metadata;
   amountInSmallestUnit: bigint;
   fee: FeeInfo;
