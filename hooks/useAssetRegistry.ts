@@ -4,7 +4,7 @@ import { assetsV2 } from "@snowbridge/api";
 import { useContext } from "react";
 import useSWR from "swr";
 
-export const REFRESH_INTERVAL: number = 2 * 60 * 60 * 1000; // 2 hour
+export const REFRESH_INTERVAL: number = 5 * 60 * 1000; // 5 minutes
 export const ERROR_RETRY_INTERVAL: number = 10 * 60 * 1000; // 10 minute
 
 const fetchAssetMetadata = async (): Promise<assetsV2.AssetRegistry | null> => {
