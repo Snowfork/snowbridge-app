@@ -176,9 +176,6 @@ export const KusamaComponent: FC = () => {
 
     let feeForNow = 1333794429n;
 
-    console.log("TOKEN");
-    console.log(watchToken);
-
     let data: KusamaValidationData = {
       source: sourceId,
       destination: destinationId,
@@ -198,11 +195,20 @@ export const KusamaComponent: FC = () => {
         },
       },
     };
-    console.log("PLAN", data);
+    console.log("data", data);
     const plan = await planSend(data);
-    //const result = await sendToken(data, plan);
-    //console.log(result);
-  }, [context, sourceId, destinationId, watchToken, watchSourceAccount, beneficiary, amount]);
+    console.log("plan", plan);
+    const result = await sendToken(data, plan);
+    console.log("result", result);
+  }, [
+    context,
+    sourceId,
+    destinationId,
+    watchToken,
+    watchSourceAccount,
+    beneficiary,
+    amount,
+  ]);
 
   return (
     <>
@@ -336,9 +342,7 @@ export const KusamaComponent: FC = () => {
                           <KusamaBalanceDisplay
                             source={sourceId}
                             sourceAccount={watchSourceAccount}
-                            registry={assetRegistry}
                             token={watchToken}
-                            tokenMetadata={tokens[watchToken]}
                             displayDecimals={8}
                           />
                         </div>

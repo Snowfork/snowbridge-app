@@ -13,8 +13,6 @@ function validateSubstrateDestination({
   source,
   destination,
 }: KusamaValidationData) {
-  console.log(source);
-  console.log(destination);
   if (
     !(source === "polkadotAssethub" && destination === "kusamaAssethub") &&
     !(source === "kusamaAssethub" && destination === "polkadotAssethub")
@@ -88,7 +86,7 @@ async function planSend(
     );
     console.log(plan);
     return plan;
-  } else if (source == "kusamaAssetHub" && destination === "polkadotAssetHub") {
+  } else if (source == "kusamaAssethub" && destination === "polkadotAssethub") {
     validateSubstrateDestination(data);
     const sourceAssetHub = await context.kusamaAssetHub();
     const destAssetHub = await context.assetHub();
@@ -116,7 +114,7 @@ async function planSend(
         sourceAssetHub: sourceAssetHub,
         destAssetHub: destAssetHub,
       },
-      Direction.ToKusama,
+      Direction.ToPolkadot,
       tx,
     );
     console.log(plan);
@@ -144,11 +142,10 @@ async function sendToken(
   );
   let sourceAssetHub: any;
   if (source == "polkadotAssethub") {
-    sourceAssetHub = context.assetHub();
+    sourceAssetHub = await context.assetHub();
   } else {
-    sourceAssetHub = context.kusamaAssetHub();
+    sourceAssetHub = await context.kusamaAssetHub();
   }
-  console.log(sourceAssetHub);
   const tx = plan.transfer as toKusama.Transfer;
   const result = await toKusama.signAndSend(
     sourceAssetHub,
@@ -159,7 +156,6 @@ async function sendToken(
       withSignedTransaction: true,
     },
   );
-  console.log(result);
   return result;
 }
 

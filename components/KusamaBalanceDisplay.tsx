@@ -6,18 +6,14 @@ import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
 
 interface BalanceDisplayKusamaProps {
   source: string;
-  registry: assetsV2.AssetRegistry;
   token: string;
   displayDecimals: number;
-  tokenMetadata: assets.ERC20Metadata | null;
   sourceAccount: string;
 }
 
 export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
   source,
-  registry,
   token,
-  tokenMetadata,
   sourceAccount,
 }) => {
   const { data: balanceInfo, error } = useKusamaTokenBalance(
@@ -42,7 +38,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
       </FormLabel>
     );
   }
-  if (balanceInfo === undefined || tokenMetadata === null) {
+  if (balanceInfo === undefined) {
     return (
       <FormLabel
         className={
