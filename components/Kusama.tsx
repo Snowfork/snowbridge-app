@@ -46,9 +46,8 @@ import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { KusamaFeeDisplay } from "@/components/ui/KusamaFeeDisplay";
 import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
 import { parseUnits } from "ethers";
-import { toKusama } from "@snowbridge/api";
-import PolkadotBalance from "@/components/Balances";
 import { parachainConfigs, SnowbridgeEnvironmentNames } from "@/utils/parachainConfigs";
+import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
 
 export const KusamaComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
@@ -60,38 +59,6 @@ export const KusamaComponent: FC = () => {
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
   const [planSend, sendToken] = useSendKusamaToken();
-
-  const [balanceCheck, setBalanceCheck] = useState("");
-  const [
-    assetHubSufficientTokenAvailable,
-    setAssetHubSufficientTokenAvailable,
-  ] = useState(true);
-  const [
-    parachainSufficientTokenAvailable,
-    setParachainSufficientTokenAvailable,
-  ] = useState(true);
-  const [topUpCheck, setTopUpCheck] = useState({
-    xcmFee: 0n,
-    xcmBalance: 0n,
-    xcmBalanceDestination: 0n,
-  });
-
-  const handleSufficientTokens = (
-    assetHubSufficient: boolean,
-    parachainSufficient: boolean,
-  ) => {
-    setAssetHubSufficientTokenAvailable(assetHubSufficient);
-    setParachainSufficientTokenAvailable(parachainSufficient);
-  };
-  const handleBalanceCheck = (fetchBalance: string) => {
-    setBalanceCheck(fetchBalance);
-  };
-  const handleTopUpCheck = useCallback(
-    (xcmFee: bigint, xcmBalance: bigint, xcmBalanceDestination: bigint) => {
-      setTopUpCheck({ xcmFee, xcmBalance, xcmBalanceDestination });
-    },
-    [],
-  );
 
   const form: UseFormReturn<TransferFormData> = useForm<
     z.infer<typeof transferFormSchema>
@@ -193,7 +160,7 @@ export const KusamaComponent: FC = () => {
       ];
 
     // Fallback to parachain metadata if decimals are missing or empty
-    if (!asset?.decimals || asset.decimals === "") {
+    if (!asset?.decimals || asset.decimals === 0) {
       asset = tokens?.[watchToken];
     }
 
@@ -365,16 +332,16 @@ export const KusamaComponent: FC = () => {
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
                         />
-                        <PolkadotBalance
-                          sourceAccount={watchSourceAccount}
-                          sourceId={sourceId}
-                          destinationId={destinationId}
-                          parachainInfo={parachainsInfo}
-                          beneficiary={beneficiary}
-                          handleSufficientTokens={handleSufficientTokens}
-                          handleTopUpCheck={handleTopUpCheck}
-                          handleBalanceCheck={handleBalanceCheck}
-                        />
+                        <div className={"flex flex-row-reverse"}>
+                          <KusamaBalanceDisplay
+                            source={sourceId}
+                            sourceAccount={watchSourceAccount}
+                            registry={assetRegistry}
+                            token={watchToken}
+                            tokenMetadata={tokens[watchToken]}
+                            displayDecimals={8}
+                          />
+                        </div>
                       </>
                     </FormControl>
                     <FormMessage />
