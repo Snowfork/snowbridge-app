@@ -544,7 +544,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                     <SelectAccount
                       accounts={beneficiaries}
                       field={field}
-                      allowManualInput={false}
+                      allowManualInput={true}
                       destination={destination.id}
                     />
                   </FormControl>
