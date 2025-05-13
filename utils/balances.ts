@@ -1,5 +1,5 @@
 "use client";
-import { Context, assets, assetsV2 } from "@snowbridge/api";
+import { assets, assetsV2, Context } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
@@ -28,21 +28,21 @@ export async function getTokenBalance({
   nativeBalance: bigint;
   nativeSymbol: string;
   nativeTokenDecimals: number;
+  hasDotBalance: boolean;
   dotBalance: bigint;
   dotTokenSymbol: string;
   dotTokenDecimals: number;
 }> {
   if (destination.type === "ethereum") {
     const para = source.parachain!;
-    const parachain =
-      para && context.hasParachain(para.parachainId)
-        ? await context.parachain(para.parachainId)
-        : await context.assetHub();
+    const parachain = para && context.hasParachain(para.parachainId)
+      ? await context.parachain(para.parachainId)
+      : await context.assetHub();
 
     const sourceParaId = para.parachainId;
     const sourceParachain = registry.parachains[sourceParaId];
-    const sourceAssetMetadata =
-      sourceParachain && sourceParachain.assets[token.toLowerCase()];
+    const sourceAssetMetadata = sourceParachain &&
+      sourceParachain.assets[token.toLowerCase()];
     if (!sourceAssetMetadata) {
       throw Error(
         `Token ${token} not registered on source parachain ${sourceParaId}.`,
@@ -66,10 +66,19 @@ export async function getTokenBalance({
         sourceAssetMetadata,
       );
     }
-    const [dotBalance, nativeBalance] = await Promise.all([
-      assetsV2.getDotBalance(parachain, para.info.specName, sourceAccount),
-      assetsV2.getNativeBalance(parachain, sourceAccount),
-    ]);
+    let dotBalance;
+    if (sourceParachain.features.hasDotBalance) {
+      dotBalance = await assetsV2.getDotBalance(
+        parachain,
+        para.info.specName,
+        sourceAccount,
+      );
+    }
+    const nativeBalance = await assetsV2.getNativeBalance(
+      parachain,
+      sourceAccount,
+    );
+
     return {
       balance: balance ?? 0n,
       gatewayAllowance: undefined,
@@ -77,6 +86,7 @@ export async function getTokenBalance({
       nativeBalance,
       nativeTokenDecimals: para.info.tokenDecimals,
       nativeSymbol: para.info.tokenSymbols,
+      hasDotBalance: sourceParachain.features.hasDotBalance,
       dotBalance: dotBalance,
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,
@@ -101,6 +111,7 @@ export async function getTokenBalance({
       isNativeTransfer,
       nativeSymbol: "ETH",
       nativeTokenDecimals: 18,
+      hasDotBalance: false,
       dotBalance: 0n,
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,
