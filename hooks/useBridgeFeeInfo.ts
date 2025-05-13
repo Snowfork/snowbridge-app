@@ -32,10 +32,18 @@ async function fetchBridgeFeeInfo([
       registry,
       token,
     );
+    let feeValue = fee.totalFeeInDot;
+    let decimals = registry.relaychain.tokenDecimals ?? 0;
+    let symbol = registry.relaychain.tokenSymbols ?? "";
+    if (fee.totalFeeInNative) {
+      feeValue = fee.totalFeeInNative;
+      decimals = source.parachain.info.tokenDecimals;
+      symbol = source.parachain.info.tokenSymbols;
+    }
     return {
-      fee: fee.totalFeeInDot,
-      decimals: registry.relaychain.tokenDecimals ?? 0,
-      symbol: registry.relaychain.tokenSymbols ?? "",
+      fee: feeValue,
+      decimals,
+      symbol,
       delivery: fee,
       type: source.type,
     };
