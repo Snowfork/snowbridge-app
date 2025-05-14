@@ -1,5 +1,5 @@
 "use client";
-import { Context, assets, assetsV2 } from "@snowbridge/api";
+import { assets, assetsV2, Context } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
 import { RemoteAssetId } from "./types";
@@ -28,6 +28,7 @@ export async function getTokenBalance({
   nativeBalance: bigint;
   nativeSymbol: string;
   nativeTokenDecimals: number;
+  hasDotBalance: boolean;
   dotBalance: bigint;
   dotTokenSymbol: string;
   dotTokenDecimals: number;
@@ -66,10 +67,19 @@ export async function getTokenBalance({
         sourceAssetMetadata,
       );
     }
-    const [dotBalance, nativeBalance] = await Promise.all([
-      assetsV2.getDotBalance(parachain, para.info.specName, sourceAccount),
-      assetsV2.getNativeBalance(parachain, sourceAccount),
-    ]);
+    let dotBalance;
+    if (sourceParachain.features.hasDotBalance) {
+      dotBalance = await assetsV2.getDotBalance(
+        parachain,
+        para.info.specName,
+        sourceAccount,
+      );
+    }
+    const nativeBalance = await assetsV2.getNativeBalance(
+      parachain,
+      sourceAccount,
+    );
+
     return {
       balance: balance ?? 0n,
       gatewayAllowance: undefined,
@@ -77,7 +87,8 @@ export async function getTokenBalance({
       nativeBalance,
       nativeTokenDecimals: para.info.tokenDecimals,
       nativeSymbol: para.info.tokenSymbols,
-      dotBalance: dotBalance,
+      hasDotBalance: sourceParachain.features.hasDotBalance,
+      dotBalance: dotBalance ?? 0n,
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
@@ -101,6 +112,7 @@ export async function getTokenBalance({
       isNativeTransfer,
       nativeSymbol: "ETH",
       nativeTokenDecimals: 18,
+      hasDotBalance: false,
       dotBalance: 0n,
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,

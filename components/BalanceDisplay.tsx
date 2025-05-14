@@ -36,10 +36,8 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   if (error && !balanceInfo) {
     return (
       <FormLabel
-        className={
-          "text-sm text-right text-muted-foreground px-1 " +
-          (sourceAccount ? " visible" : " hidden")
-        }
+        className={"text-sm text-right text-muted-foreground px-1 " +
+          (sourceAccount ? " visible" : " hidden")}
       >
         Balances: Error...
       </FormLabel>
@@ -48,46 +46,53 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   if (balanceInfo === undefined || tokenMetadata === null) {
     return (
       <FormLabel
-        className={
-          "text-sm text-right text-muted-foreground px-1 " +
-          (sourceAccount ? " visible" : " hidden")
-        }
+        className={"text-sm text-right text-muted-foreground px-1 " +
+          (sourceAccount ? " visible" : " hidden")}
       >
         Balances: Fetching...
       </FormLabel>
     );
   }
 
-  const dotBalance =
-    destination.type === "ethereum" &&
-    source.parachain &&
-    source.parachain.parachainId !== registry.assetHubParaId
-      ? ` ;  ${formatBalance({
-          number: balanceInfo.dotBalance ?? 0n,
-          decimals: Number(balanceInfo.dotTokenDecimals),
-        })} ${balanceInfo.dotTokenSymbol}`
-      : "";
+  const dotBalance = destination.type === "ethereum" &&
+      source.parachain &&
+      source.parachain.parachainId !== registry.assetHubParaId &&
+      source.parachain.features.hasDotBalance
+    ? ` ;  ${
+      formatBalance({
+        number: balanceInfo.dotBalance ?? 0n,
+        decimals: Number(balanceInfo.dotTokenDecimals),
+      })
+    } ${balanceInfo.dotTokenSymbol}`
+    : "";
 
-  const allowance =
-    balanceInfo.gatewayAllowance !== undefined
-      ? ` (Allowance: ${formatBalance({
-          number: balanceInfo.gatewayAllowance ?? 0n,
-          decimals: Number(tokenMetadata.decimals),
-        })} ${tokenMetadata.symbol})`
-      : "";
+  const allowance = balanceInfo.gatewayAllowance !== undefined
+    ? ` (Allowance: ${
+      formatBalance({
+        number: balanceInfo.gatewayAllowance ?? 0n,
+        decimals: Number(tokenMetadata.decimals),
+      })
+    } ${tokenMetadata.symbol})`
+    : "";
 
+  const isNativeTransfer = balanceInfo.isNativeTransfer ||
+    tokenMetadata.symbol === balanceInfo.nativeSymbol;
   let tokenBalance = "";
-  if (!balanceInfo.isNativeTransfer) {
-    tokenBalance = `${formatBalance({
-      number: balanceInfo.balance,
-      decimals: Number(tokenMetadata.decimals),
-    })} ${tokenMetadata.symbol}`;
+  if (!isNativeTransfer) {
+    tokenBalance = `${
+      formatBalance({
+        number: balanceInfo.balance,
+        decimals: Number(tokenMetadata.decimals),
+      })
+    } ${tokenMetadata.symbol}`;
   }
 
-  const nativeBalance = `${formatBalance({
-    number: balanceInfo.nativeBalance,
-    decimals: balanceInfo.nativeTokenDecimals,
-  })} ${balanceInfo.nativeSymbol}`;
+  const nativeBalance = `${
+    formatBalance({
+      number: balanceInfo.nativeBalance,
+      decimals: balanceInfo.nativeTokenDecimals,
+    })
+  } ${balanceInfo.nativeSymbol}`;
 
   if (
     destination.type === "ethereum" &&
@@ -97,10 +102,8 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   ) {
     return (
       <FormLabel
-        className={
-          "text-sm text-right text-muted-foreground px-1 " +
-          (sourceAccount ? " visible" : " hidden")
-        }
+        className={"text-sm text-right text-muted-foreground px-1 " +
+          (sourceAccount ? " visible" : " hidden")}
       >
         Balances: {nativeBalance}
       </FormLabel>
@@ -109,13 +112,11 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
 
   return (
     <FormLabel
-      className={
-        "text-sm text-right text-muted-foreground px-1 " +
-        (sourceAccount ? " visible" : " hidden")
-      }
+      className={"text-sm text-right text-muted-foreground px-1 " +
+        (sourceAccount ? " visible" : " hidden")}
     >
-      Balances: {nativeBalance} {dotBalance}{" "}
-      {!balanceInfo.isNativeTransfer ? ";" : ""} {tokenBalance} {allowance}
+      Balances: {nativeBalance} {dotBalance} {!isNativeTransfer ? ";" : ""}{" "}
+      {tokenBalance} {allowance}
     </FormLabel>
   );
 };

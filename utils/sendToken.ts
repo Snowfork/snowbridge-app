@@ -49,6 +49,10 @@ export function createStepsFromPlan(
           errors.push(log);
         }
       }
+      if (errors.length === 0 && dryRunFailedLog !== null) {
+        errors.push(dryRunFailedLog);
+      }
+      steps.sort((a, b) => a.displayOrder - b.displayOrder);
       return {
         steps,
         errors,

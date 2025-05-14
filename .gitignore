@@ -36,7 +36,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-## environment. Includes your secrets. 
+## environment. Includes your secrets.
 *.env
 .env*
 !.env.example
+
+public/.*.registry.json
