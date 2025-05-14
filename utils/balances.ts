@@ -35,14 +35,15 @@ export async function getTokenBalance({
 }> {
   if (destination.type === "ethereum") {
     const para = source.parachain!;
-    const parachain = para && context.hasParachain(para.parachainId)
-      ? await context.parachain(para.parachainId)
-      : await context.assetHub();
+    const parachain =
+      para && context.hasParachain(para.parachainId)
+        ? await context.parachain(para.parachainId)
+        : await context.assetHub();
 
     const sourceParaId = para.parachainId;
     const sourceParachain = registry.parachains[sourceParaId];
-    const sourceAssetMetadata = sourceParachain &&
-      sourceParachain.assets[token.toLowerCase()];
+    const sourceAssetMetadata =
+      sourceParachain && sourceParachain.assets[token.toLowerCase()];
     if (!sourceAssetMetadata) {
       throw Error(
         `Token ${token} not registered on source parachain ${sourceParaId}.`,
@@ -87,7 +88,7 @@ export async function getTokenBalance({
       nativeTokenDecimals: para.info.tokenDecimals,
       nativeSymbol: para.info.tokenSymbols,
       hasDotBalance: sourceParachain.features.hasDotBalance,
-      dotBalance: dotBalance,
+      dotBalance: dotBalance ?? 0n,
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
