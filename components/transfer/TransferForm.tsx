@@ -52,9 +52,9 @@ import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
+  getChainId,
   getEthereumNetwork,
   switchNetwork,
-  getChainId,
 } from "@/lib/client/web3modal";
 
 function getBeneficiaries(
@@ -164,10 +164,10 @@ export const TransferForm: FC<TransferFormProps> = ({
   ).find((asset) =>
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       asset
-    ].name.match(/^Ether/),
+    ].name.match(/^Ether/)
   );
-  const firstToken =
-    ethAsset ?? firstSource.destinations[firstDestination.key][0];
+  const firstToken = ethAsset ??
+    firstSource.destinations[firstDestination.key][0];
 
   const [source, setSource] = useState(firstSource);
   const [sourceAccount, setSourceAccount] = useState<string>();
@@ -207,10 +207,9 @@ export const TransferForm: FC<TransferFormProps> = ({
   );
 
   useEffect(() => {
-    const newSourceAccount =
-      source.type == "ethereum"
-        ? (ethereumAccount ?? undefined)
-        : polkadotAccount?.address;
+    const newSourceAccount = source.type == "ethereum"
+      ? (ethereumAccount ?? undefined)
+      : polkadotAccount?.address;
     setSourceAccount(newSourceAccount);
 
     let newDestinations = destinations;
@@ -225,8 +224,9 @@ export const TransferForm: FC<TransferFormProps> = ({
           filterByAccountType(accountType),
         );
         form.resetField("sourceAccount", {
-          defaultValue:
-            accounts && accounts.length > 0 ? accounts[0].address : undefined,
+          defaultValue: accounts && accounts.length > 0
+            ? accounts[0].address
+            : undefined,
         });
       }
 
@@ -238,12 +238,13 @@ export const TransferForm: FC<TransferFormProps> = ({
             ? "substrate"
             : "ethereum",
           destination,
-        ),
+        )
       );
       setDestinations(newDestinations);
     }
-    const newDestination =
-      newDestinations.find((d) => d.id == watchDestination) ??
+    const newDestination = newDestinations.find((d) =>
+      d.id == watchDestination
+    ) ??
       newDestinations[0];
     setDestination(newDestination);
     form.resetField("destination", { defaultValue: newDestination.id });
@@ -251,7 +252,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     const newTokens = newSource.destinations[newDestination.key];
     const newToken =
       newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
-      newTokens[0];
+        newTokens[0];
     setToken(newToken);
     form.resetField("token", { defaultValue: newToken });
     if (formData?.beneficiary) {
@@ -329,12 +330,14 @@ export const TransferForm: FC<TransferFormProps> = ({
           if (dhMin > minimumTransferAmount) minimumTransferAmount = dhMin;
         }
         if (amountInSmallestUnit < minimumTransferAmount) {
-          const errorMessage = `Cannot send less than minimum value of ${formatBalance(
-            {
-              number: minimumTransferAmount,
-              decimals: Number(tokenMetadata.decimals.toString()),
-            },
-          )} ${tokenMetadata.symbol}.`;
+          const errorMessage = `Cannot send less than minimum value of ${
+            formatBalance(
+              {
+                number: minimumTransferAmount,
+                decimals: Number(tokenMetadata.decimals.toString()),
+              },
+            )
+          } ${tokenMetadata.symbol}.`;
           form.setError(
             "amount",
             {
@@ -489,29 +492,25 @@ export const TransferForm: FC<TransferFormProps> = ({
                 </div>
                 <FormControl>
                   <div>
-                    {source.type == "ethereum" ? (
-                      <SelectedEthereumWallet field={field} />
-                    ) : (
-                      <SelectedPolkadotAccount
-                        source={source.id}
-                        polkadotAccounts={
-                          polkadotAccounts?.filter(
+                    {source.type == "ethereum"
+                      ? <SelectedEthereumWallet field={field} />
+                      : (
+                        <SelectedPolkadotAccount
+                          source={source.id}
+                          polkadotAccounts={polkadotAccounts?.filter(
                             filterByAccountType(
                               assetRegistry.parachains[source.key].info
                                 .accountType,
                             ),
-                          ) ?? []
-                        }
-                        polkadotAccount={watchSourceAccount}
-                        onValueChange={field.onChange}
-                        ss58Format={
-                          assetRegistry.parachains[source.key]?.info
+                          ) ?? []}
+                          polkadotAccount={watchSourceAccount}
+                          onValueChange={field.onChange}
+                          ss58Format={assetRegistry.parachains[source.key]?.info
                             .ss58Format ??
-                          assetRegistry.relaychain.ss58Format ??
-                          0
-                        }
-                      />
-                    )}
+                            assetRegistry.relaychain.ss58Format ??
+                            0}
+                        />
+                      )}
                     <div className="flex flex-row-reverse pt-1">
                       <BalanceDisplay
                         source={assetsV2.getTransferLocation(
@@ -592,10 +591,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                         <SelectContent>
                           <SelectGroup>
                             {source.destinations[destination.key].map((t) => {
-                              const asset =
-                                assetRegistry.ethereumChains[
-                                  assetRegistry.ethChainId
-                                ].assets[t.toLowerCase()];
+                              const asset = assetRegistry.ethereumChains[
+                                assetRegistry.ethChainId
+                              ].assets[t.toLowerCase()];
                               return (
                                 <SelectItem key={t} value={t}>
                                   <SelectItemWithIcon
@@ -700,19 +698,18 @@ function SubmitButton({
   return (
     <div className="flex flex-col items-center">
       <Button
-        disabled={
-          context === null || tokenMetadata === null || validating || !feeInfo
-        }
+        disabled={context === null || tokenMetadata === null || validating ||
+          !feeInfo}
         className="w-1/3 action-button"
         type="submit"
       >
         {context === null
           ? "Connecting..."
           : validating
-            ? "Validating..."
-            : !feeInfo
-              ? "Fetching Fees..."
-              : "Submit"}
+          ? "Validating..."
+          : !feeInfo
+          ? "Fetching Fees..."
+          : "Submit"}
       </Button>
     </div>
   );

@@ -40,4 +40,6 @@ next-env.d.ts
 *.env
 .env*
 !.env.example
+
+public/.*.registry.json
 .idea
