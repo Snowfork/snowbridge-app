@@ -30,23 +30,32 @@ import {
   snowbridgeContextAtom,
 } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
-import { filterByAccountType, TransferFormData, transferFormSchema } from "@/utils/formSchema";
+import {
+  filterByAccountType,
+  TransferFormData,
+  transferFormSchema,
+} from "@/utils/formSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { AccountInfo, ErrorInfo, FeeInfo, FormDataSwitch, KusamaValidationData } from "@/utils/types";
+import {
+  AccountInfo,
+  ErrorInfo,
+  KusamaValidationData,
+} from "@/utils/types";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
-import { SelectAccount } from "./SelectAccount";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { BusyDialog } from "./BusyDialog";
-import { SendErrorDialog } from "./SendErrorDialog";
-import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
-import { KusamaFeeDisplay } from "@/components/ui/KusamaFeeDisplay";
 import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
 import { parseUnits } from "ethers";
-import { parachainConfigs, SnowbridgeEnvironmentNames } from "@/utils/parachainConfigs";
+import { useKusamaFeeInfo } from "@/hooks/useKusamaFeeInfo";
+import { toast } from "sonner";
+import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
+import { KusamaFeeDisplay } from "@/components/ui/KusamaFeeDisplay";
+import { SendErrorDialog } from "@/components/SendErrorDialog";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { SelectAccount } from "@/components/SelectAccount";
+import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
 
 export const KusamaComponent: FC = () => {
@@ -72,9 +81,6 @@ export const KusamaComponent: FC = () => {
     },
   });
 
-  const parachainsInfo =
-    parachainConfigs[snowbridgeEnvironment.name as SnowbridgeEnvironmentNames];
-
   const sourceId = form.watch("source");
   const destinationId = form.watch("destination");
   const beneficiary = form.watch("beneficiary");
@@ -84,18 +90,7 @@ export const KusamaComponent: FC = () => {
   const tokens =
     assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId]
       .assets;
-
-  const ethAsset = Object.keys(
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
-  ).find((asset) =>
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
-      asset
-      ].name.match(/^Ether/),
-  );
-
-  const firstToken = ethAsset ?? "0x0000000000000000000000000000000000000000";
-
- //const [token, setToken] = useState(firstToken);
+  const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId);
 
   useEffect(() => {
     const sourceAccounts =
@@ -136,70 +131,132 @@ export const KusamaComponent: FC = () => {
   }, [sourceId, destinationId, form, tokens]);
 
   const onSubmit = useCallback(async () => {
-    if (watchToken === undefined) {
-      setError({
-        title: "Token error",
-        description: `Please select a token`,
-        errors: [],
-      });
-      return;
-    }
+    try {
+      if (feeInfo === undefined) {
+        setError({
+          title: "Fee Info Error",
+          description: `Fee info could not be found`,
+          errors: [],
+        });
+        return;
+      }
 
-    if (tokens === undefined) {
-      setError({
-        title: "Token error",
-        description: `Token to be sent could not be found.`,
-        errors: [],
-      });
-      return;
-    }
+      if (watchToken === undefined) {
+        setError({
+          title: "Token error",
+          description: `Please select a token`,
+          errors: [],
+        });
+        return;
+      }
 
-    let asset =
-      assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-        watchToken
-      ];
+      if (tokens === undefined) {
+        setError({
+          title: "Token error",
+          description: `Token to be sent could not be found.`,
+          errors: [],
+        });
+        return;
+      }
 
-    // Fallback to parachain metadata if decimals are missing or empty
-    if (!asset?.decimals || asset.decimals === 0) {
-      asset = tokens?.[watchToken];
-    }
+      let asset =
+        assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
+          watchToken
+        ];
 
-    let amountInSmallestUnit = parseUnits(amount, asset.decimals);
-    if (amountInSmallestUnit === 0n) {
-      setError({
-        title: "Amount not specified",
-        description: `Please specify an amount.`,
-        errors: [],
-      });
-      return;
-    }
+      // Fallback to parachain metadata if decimals are missing or empty
+      if (!asset?.decimals || asset.decimals === 0) {
+        asset = tokens?.[watchToken];
+      }
 
-    let feeForNow = 1333794429n;
+      let amountInSmallestUnit = parseUnits(amount, asset.decimals);
+      if (amountInSmallestUnit === 0n) {
+        setError({
+          title: "Amount not specified",
+          description: `Please specify an amount.`,
+          errors: [],
+        });
+        return;
+      }
 
-    let data: KusamaValidationData = {
-      source: sourceId,
-      destination: destinationId,
-      sourceAccount: watchSourceAccount,
-      beneficiary,
-      token: watchToken,
-      assetRegistry: assetRegistry,
-      tokenMetadata: tokens[watchToken],
-      amountInSmallestUnit: amountInSmallestUnit,
-      fee: {
-        fee: feeForNow,
-        decimals: asset.decimals,
-        symbol: asset.symbol,
-        delivery: {
-          baseFee: feeForNow,
-          totalFeeInDot: feeForNow,
+      let data: KusamaValidationData = {
+        source: sourceId,
+        destination: destinationId,
+        sourceAccount: watchSourceAccount,
+        beneficiary,
+        token: watchToken,
+        assetRegistry: assetRegistry,
+        tokenMetadata: tokens[watchToken],
+        amountInSmallestUnit: amountInSmallestUnit,
+        fee: {
+          fee: feeInfo.fee,
+          decimals: asset.decimals,
+          symbol: asset.symbol,
+          delivery: {
+            totalFeeInDot: feeInfo.fee,
+            xcmBridgeFee: 0n,
+            bridgeHubDeliveryFee: 0n,
+          },
         },
-      },
-    };
-    console.log("data", data);
-    const plan = await planSend(data);
-    console.log("plan", plan);
-    const result = await sendToken(data, plan);
-    console.log("result", result);
+      };
+
+      console.log("feeInfo", feeInfo);
+      console.log("beneficiary", beneficiary);
+      console.log("data", data);
+      setBusyMessage("Validating transaction");
+      const plan = await planSend(data);
+      console.log("plan", plan);
+      setBusyMessage("Sending transaction");
+      const result = await sendToken(data, plan);
+      console.log("result", result);
+
+      const subscanHost =
+        sourceId === "polkadotAssethub"
+          ? "https://assethub-polkadot.subscan.io"
+          : "https://assethub-kusama.subscan.io";
+      if (result.success && !result.dispatchError) {
+        setBusyMessage("");
+        toast.info("Transfer Successful", {
+          position: "bottom-center",
+          closeButton: true,
+          duration: 60000,
+          id: "transfer_success",
+          description: "Token transfer was succesfully initiated.",
+          action: {
+            label: "View",
+            onClick: () =>
+              window.open(
+                `${subscanHost}/extrinsic/${result.txHash}`,
+                "_blank",
+              ),
+          },
+        });
+      } else if (!result.success || result.dispatchError) {
+        setBusyMessage("");
+        toast.info("Transfer unsuccessful", {
+          position: "bottom-center",
+          closeButton: true,
+          duration: 60000,
+          id: "transfer_error",
+          description: "Token transfer was unsuccesful.",
+          action: {
+            label: "View",
+            onClick: () =>
+              window.open(
+                `${subscanHost}/extrinsic/${result.txHash}`,
+                "_blank",
+              ),
+          },
+        });
+      }
+    } catch (err) {
+      setBusyMessage("");
+      setError({
+        title: "Transaction Failed",
+        description: `Error occurred while trying to send transaction.`,
+        errors: [],
+      });
+    }
   }, [
     context,
     sourceId,
@@ -208,6 +265,7 @@ export const KusamaComponent: FC = () => {
     watchSourceAccount,
     beneficiary,
     amount,
+    feeInfo,
   ]);
 
   return (
@@ -454,10 +512,7 @@ export const KusamaComponent: FC = () => {
                 />
               </div>
               <br />
-              <Button
-                className="w-full my-8 action-button"
-                type="submit"
-              >
+              <Button className="w-full my-8 action-button" type="submit">
                 Submit
               </Button>
             </form>

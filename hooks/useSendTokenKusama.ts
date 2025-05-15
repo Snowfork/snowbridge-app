@@ -3,11 +3,10 @@ import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { KusamaValidationData, MessageReciept, SignerInfo } from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
-import { Context, toEthereumV2, toKusama, toPolkadotV2 } from "@snowbridge/api";
+import { Context, forKusama } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
-import { Direction } from "../../snowbridge/web/packages/api/src/toKusama";
-import { ApiPromise } from "@polkadot/api";
+import { Direction } from "../../snowbridge/web/packages/api/src/forKusama";
 
 function validateSubstrateDestination({
   source,
@@ -42,7 +41,7 @@ function validateSubstrateSigner(
 async function planSend(
   context: Context,
   data: KusamaValidationData,
-): Promise<toKusama.ValidationResult> {
+): Promise<forKusama.ValidationResult> {
   const {
     source,
     destination,
@@ -61,12 +60,13 @@ async function planSend(
       throw Error(`Kusama AssetHub could not connect`);
     }
     // Create a new delivery fee object
-    const deliveryFee: toKusama.DeliveryFee = {
-      baseFee: fee.fee,
+    const deliveryFee: forKusama.DeliveryFee = {
+      bridgeHubDeliveryFee: 0n,
+      xcmBridgeFee: 0n,
       totalFeeInDot: fee.fee,
     };
 
-    const tx = await toKusama.createTransfer(
+    const tx = await forKusama.createTransfer(
       sourceAssetHub,
       Direction.ToKusama,
       assetRegistry,
@@ -76,7 +76,7 @@ async function planSend(
       amountInSmallestUnit,
       deliveryFee,
     );
-    const plan = await toKusama.validateTransfer(
+    const plan = await forKusama.validateTransfer(
       {
         sourceAssetHub: sourceAssetHub,
         destAssetHub: destAssetHub,
@@ -94,12 +94,13 @@ async function planSend(
       throw Error(`Kusama AssetHub could not connect`);
     }
     // Create a new delivery fee object
-    const deliveryFee: toKusama.DeliveryFee = {
-      baseFee: fee.fee,
+    const deliveryFee: forKusama.DeliveryFee = {
+      bridgeHubDeliveryFee: 0n,
+      xcmBridgeFee: 0n,
       totalFeeInDot: fee.fee,
     };
 
-    const tx = await toKusama.createTransfer(
+    const tx = await forKusama.createTransfer(
       sourceAssetHub,
       Direction.ToPolkadot,
       assetRegistry,
@@ -109,7 +110,7 @@ async function planSend(
       amountInSmallestUnit,
       deliveryFee,
     );
-    const plan = await toKusama.validateTransfer(
+    const plan = await forKusama.validateTransfer(
       {
         sourceAssetHub: sourceAssetHub,
         destAssetHub: destAssetHub,
@@ -127,9 +128,9 @@ async function planSend(
 async function sendToken(
   context: Context,
   data: KusamaValidationData,
-  plan: toKusama.ValidationResult,
+  plan: forKusama.ValidationResult,
   signerInfo: SignerInfo,
-): Promise<toKusama.MessageReceipt> {
+): Promise<forKusama.MessageReceipt> {
   if (!plan.success) {
     throw Error(`Cannot execute a failed plan.`, {
       cause: plan,
@@ -146,8 +147,8 @@ async function sendToken(
   } else {
     sourceAssetHub = await context.kusamaAssetHub();
   }
-  const tx = plan.transfer as toKusama.Transfer;
-  const result = await toKusama.signAndSend(
+  const tx = plan.transfer as forKusama.Transfer;
+  const result = await forKusama.signAndSend(
     sourceAssetHub,
     tx,
     polkadotAccount.address,
@@ -160,8 +161,8 @@ async function sendToken(
 }
 
 export function useSendKusamaToken(): [
-  (data: KusamaValidationData) => Promise<toKusama.ValidationResult>,
-  (data: KusamaValidationData, plan: toKusama.ValidationResult) => Promise<MessageReciept>,
+  (data: KusamaValidationData) => Promise<forKusama.ValidationResult>,
+  (data: KusamaValidationData, plan: forKusama.ValidationResult) => Promise<MessageReciept>,
 ] {
   const context = useAtomValue(snowbridgeContextAtom);
   const plan = useCallback(
@@ -176,7 +177,7 @@ export function useSendKusamaToken(): [
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const send = useCallback(
-    async (data: KusamaValidationData, plan: toKusama.ValidationResult) => {
+    async (data: KusamaValidationData, plan: forKusama.ValidationResult) => {
       if (context === null) throw Error("No context");
       return await sendToken(context, data, plan, {
         polkadotAccount: (polkadotAccounts ?? []).find(

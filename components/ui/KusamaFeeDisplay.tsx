@@ -1,4 +1,3 @@
-import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatBalance } from "@/utils/formatting";
 import { assetsV2 } from "@snowbridge/api";
 import { FC, useEffect } from "react";
@@ -14,12 +13,10 @@ interface KusamaFeeDisplayProps {
 
 export const KusamaFeeDisplay: FC<KusamaFeeDisplayProps> = ({
   source,
-  destination,
-  token,
   displayDecimals,
   className,
 }) => {
-  const { data: feeInfo, error } = useKusamaFeeInfo(source, destination, token);
+  const { data: feeInfo, error } = useKusamaFeeInfo(source);
   useEffect(() => {
     if (error) {
       console.error(error);

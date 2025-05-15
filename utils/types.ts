@@ -6,7 +6,8 @@ import {
   assets,
   assetsV2,
   toEthereumV2,
-  toPolkadotV2, toKusama,
+  toPolkadotV2,
+  forKusama,
 } from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
@@ -143,8 +144,7 @@ export type KusamaFeeInfo = {
   fee: bigint;
   decimals: number;
   symbol: string;
-  // Add delivery property to match FeeInfo structure
-  delivery?: toKusama.DeliveryFee;
+  delivery: forKusama.DeliveryFee;
 };
 
 export interface ValidationData {
