@@ -2,7 +2,7 @@
 import { assets, assetsV2, Context } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
-import { RemoteAssetId } from "./types";
+import { AssetHub, RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
 
@@ -145,7 +145,7 @@ export async function getKusamaTokenBalance({
   dotTokenSymbol: string;
   dotTokenDecimals: number;
 }> {
-  if (source === "polkadotAssethub") {
+  if (source === AssetHub.Polkadot) {
     const parachain = await context.assetHub();
     const sourceParaId = registry.assetHubParaId;
     const sourceMetadata = registry.parachains[sourceParaId];
@@ -209,7 +209,7 @@ export async function getKusamaTokenBalance({
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
-  } else if (source === "kusamaAssethub") {
+  } else if (source === AssetHub.Kusama) {
     const parachain = await context.kusamaAssetHub();
     if (!parachain) {
       throw Error(`Unable to connect to Kusama AssetHub.`);

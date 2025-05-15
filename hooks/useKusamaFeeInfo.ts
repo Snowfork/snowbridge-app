@@ -3,7 +3,7 @@ import { assetsV2, Context, forKusama } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import { useAssetRegistry } from "./useAssetRegistry";
-import { KusamaFeeInfo } from "@/utils/types";
+import { AssetHub, KusamaFeeInfo } from "@/utils/types";
 import { Direction } from "../../snowbridge/web/packages/api/src/forKusama";
 import { ApiPromise } from "@polkadot/api";
 
@@ -41,7 +41,7 @@ async function fetchKusamaFeeInfo([context, registry, direction]: [
 
 export function useKusamaFeeInfo(source: string) {
   let direction: Direction;
-  if (source === "polkadotAssethub") {
+  if (source === AssetHub.Polkadot) {
     direction = Direction.ToKusama;
   } else {
     direction = Direction.ToPolkadot;

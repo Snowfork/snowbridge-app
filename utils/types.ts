@@ -31,8 +31,9 @@ export type ErrorInfo = {
   errors: ValidationError[];
 };
 
-export enum Chain {
-  Polkadot, Kusama
+export enum AssetHub {
+  Polkadot = "polkadotAssetHub",
+  Kusama = "kusamaAssetHub",
 }
 
 export type FormDataSwitch = {

@@ -1,7 +1,7 @@
 import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { KusamaValidationData, MessageReciept, SignerInfo } from "@/utils/types";
+import { AssetHub, KusamaValidationData, MessageReciept, SignerInfo } from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
 import { Context, forKusama } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
@@ -13,8 +13,8 @@ function validateSubstrateDestination({
   destination,
 }: KusamaValidationData) {
   if (
-    !(source === "polkadotAssethub" && destination === "kusamaAssethub") &&
-    !(source === "kusamaAssethub" && destination === "polkadotAssethub")
+    !(source === AssetHub.Polkadot && destination === AssetHub.Kusama) &&
+    !(source === AssetHub.Kusama && destination === AssetHub.Polkadot)
   ) {
     throw Error(
       `Invalid form state: source and destination combination mismatch.`,
@@ -52,7 +52,7 @@ async function planSend(
     assetRegistry,
     fee,
   } = data;
-  if (source == "polkadotAssethub" && destination == "kusamaAssethub") {
+  if (source == AssetHub.Polkadot && destination == AssetHub.Kusama) {
     validateSubstrateDestination(data);
     const sourceAssetHub = await context.assetHub();
     const destAssetHub = await context.kusamaAssetHub();
@@ -86,7 +86,7 @@ async function planSend(
     );
     console.log(plan);
     return plan;
-  } else if (source == "kusamaAssethub" && destination === "polkadotAssethub") {
+  } else if (source == AssetHub.Kusama && destination === AssetHub.Polkadot) {
     validateSubstrateDestination(data);
     const sourceAssetHub = await context.kusamaAssetHub();
     const destAssetHub = await context.assetHub();
@@ -142,7 +142,7 @@ async function sendToken(
     signerInfo,
   );
   let sourceAssetHub: any;
-  if (source == "polkadotAssethub") {
+  if (source == AssetHub.Polkadot) {
     sourceAssetHub = await context.assetHub();
   } else {
     sourceAssetHub = await context.kusamaAssetHub();

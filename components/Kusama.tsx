@@ -38,7 +38,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { AccountInfo, ErrorInfo, KusamaValidationData } from "@/utils/types";
+import { AccountInfo, AssetHub, ErrorInfo, KusamaValidationData } from "@/utils/types";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
@@ -71,8 +71,8 @@ export const KusamaComponent: FC = () => {
   >({
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
-      source: "polkadotAssethub",
-      destination: "polkadotKusama",
+      source: AssetHub.Polkadot,
+      destination: AssetHub.Kusama,
       token: "0x0000000000000000000000000000000000000000",
       amount: "0.0",
     },
@@ -117,13 +117,13 @@ export const KusamaComponent: FC = () => {
   );
 
   useEffect(() => {
-    if (sourceId === "polkadotAssethub" && destinationId !== "kusamaAssethub") {
-      form.setValue("destination", "kusamaAssethub");
+    if (sourceId === AssetHub.Polkadot && destinationId !== AssetHub.Kusama) {
+      form.setValue("destination", AssetHub.Kusama);
     } else if (
-      sourceId === "kusamaAssethub" &&
-      destinationId !== "polkadotAssethub"
+      sourceId === AssetHub.Kusama &&
+      destinationId !== AssetHub.Polkadot
     ) {
-      form.setValue("destination", "polkadotAssethub");
+      form.setValue("destination", AssetHub.Polkadot);
     }
   }, [sourceId, destinationId, form, tokens]);
 
@@ -266,7 +266,7 @@ export const KusamaComponent: FC = () => {
       console.log("result", result);
 
       const subscanHost =
-        sourceId === "polkadotAssethub"
+        sourceId === AssetHub.Polkadot
           ? "https://assethub-polkadot.subscan.io"
           : "https://assethub-kusama.subscan.io";
       if (result.success && !result.dispatchError) {
@@ -358,8 +358,8 @@ export const KusamaComponent: FC = () => {
                           <SelectContent>
                             <SelectGroup>
                               <SelectItem
-                                key={"polkadotAssethub"}
-                                value={"polkadotAssethub"}
+                                key={AssetHub.Polkadot}
+                                value={AssetHub.Polkadot}
                               >
                                 <SelectItemWithIcon
                                   label="Polkadot Asset Hub"
@@ -367,8 +367,8 @@ export const KusamaComponent: FC = () => {
                                 />
                               </SelectItem>
                               <SelectItem
-                                key={"kusamaAssethub"}
-                                value={"kusamaAssethub"}
+                                key={AssetHub.Kusama}
+                                value={AssetHub.Kusama}
                               >
                                 <SelectItemWithIcon
                                   label="Kusama Asset Hub"
@@ -399,10 +399,10 @@ export const KusamaComponent: FC = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {sourceId !== "polkadotAssethub" ? (
+                              {sourceId !== AssetHub.Polkadot ? (
                                 <SelectItem
-                                  key={"polkadotAssethub"}
-                                  value={"polkadotAssethub"}
+                                  key={AssetHub.Polkadot}
+                                  value={AssetHub.Polkadot}
                                 >
                                   <SelectItemWithIcon
                                     label="Polkadot Asset Hub"
@@ -411,8 +411,8 @@ export const KusamaComponent: FC = () => {
                                 </SelectItem>
                               ) : (
                                 <SelectItem
-                                  key={"kusamaAssethub"}
-                                  value={"kusamaAssethub"}
+                                  key={AssetHub.Kusama}
+                                  value={AssetHub.Kusama}
                                 >
                                   <SelectItemWithIcon
                                     label="Kusama Asset Hub"
