@@ -43,6 +43,7 @@ export type AccountInfo = {
   key: string;
   name: string;
   type: "substrate" | "ethereum";
+  label?: string;
 };
 
 export type TokenMetadata = {

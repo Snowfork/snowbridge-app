@@ -17,7 +17,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
-import { SelectAccount } from "../SelectAccount";
+import { EditableSelectAccount } from "../EditableSelectAccount";
 import { SelectedEthereumWallet } from "../SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "../SelectedPolkadotAccount";
 import { Button } from "../ui/button";
@@ -77,12 +77,14 @@ function getBeneficiaries(
         if (x.type === "ethereum") {
           return {
             key: x.address,
+            label: `${x.name} (${trimAccount(x.address, 20)})`,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
             type: "ethereum" as environment.SourceType,
           };
         } else {
           return {
             key: transformSs58Format(x.address, ss58Format),
+            label: x.name,
             name: x.name,
             type: destination.type,
           };
@@ -98,6 +100,7 @@ function getBeneficiaries(
       if (!beneficiaries.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
         beneficiaries.push({
           key: x,
+          label: x,
           name: x,
           type: "ethereum" as environment.SourceType,
         });
@@ -115,6 +118,7 @@ function getBeneficiaries(
           beneficiaries.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
+            label: `${x.name} (${trimAccount(x.address, 20)})`,
             type: "ethereum" as environment.SourceType,
           });
         }
@@ -540,10 +544,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormItem>
                   <FormLabel>To account</FormLabel>
                   <FormControl>
-                    <SelectAccount
+                    <EditableSelectAccount
                       accounts={beneficiaries}
                       field={field}
-                      allowManualInput={false}
                       destination={destination.id}
                     />
                   </FormControl>
