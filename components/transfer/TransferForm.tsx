@@ -77,12 +77,14 @@ function getBeneficiaries(
         if (x.type === "ethereum") {
           return {
             key: x.address,
+            label: `${x.name} (${trimAccount(x.address, 20)})`,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
             type: "ethereum" as environment.SourceType,
           };
         } else {
           return {
             key: transformSs58Format(x.address, ss58Format),
+            label: x.name,
             name: x.name,
             type: destination.type,
           };
@@ -98,6 +100,7 @@ function getBeneficiaries(
       if (!beneficiaries.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
         beneficiaries.push({
           key: x,
+          label: x,
           name: x,
           type: "ethereum" as environment.SourceType,
         });
@@ -115,6 +118,7 @@ function getBeneficiaries(
           beneficiaries.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
+            label: `${x.name} (${trimAccount(x.address, 20)})`,
             type: "ethereum" as environment.SourceType,
           });
         }
