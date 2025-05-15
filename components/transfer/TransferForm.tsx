@@ -17,7 +17,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
-import { SelectAccount } from "../SelectAccount";
+import { EditableSelectAccount } from "../EditableSelectAccount";
 import { SelectedEthereumWallet } from "../SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "../SelectedPolkadotAccount";
 import { Button } from "../ui/button";
@@ -541,10 +541,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormItem>
                   <FormLabel>To account</FormLabel>
                   <FormControl>
-                    <SelectAccount
+                    <EditableSelectAccount
                       accounts={beneficiaries}
                       field={field}
-                      allowManualInput={true}
                       destination={destination.id}
                     />
                   </FormControl>
