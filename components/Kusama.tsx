@@ -1,5 +1,6 @@
 "use client";
 import { FC, Key, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -26,7 +27,6 @@ import {
 } from "./ui/select";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  snowbridgeEnvironmentAtom,
   snowbridgeContextAtom,
 } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
@@ -38,11 +38,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import {
-  AccountInfo,
-  ErrorInfo,
-  KusamaValidationData,
-} from "@/utils/types";
+import { AccountInfo, ErrorInfo, KusamaValidationData } from "@/utils/types";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
@@ -57,12 +53,13 @@ import { Button } from "./ui/button";
 import { SelectAccount } from "@/components/SelectAccount";
 import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
+import { ValidationError } from "jest-validate";
+import { formatBalance } from "@/utils/formatting";
 
 export const KusamaComponent: FC = () => {
-  const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
+  const router = useRouter();
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const { data: assetRegistry } = useAssetRegistry();
 
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -169,6 +166,15 @@ export const KusamaComponent: FC = () => {
         asset = tokens?.[watchToken];
       }
 
+      if (asset === undefined) {
+        setError({
+          title: "Asset error",
+          description: `Asset to transfer could not be found in metadata.`,
+          errors: [],
+        });
+        return;
+      }
+
       let amountInSmallestUnit = parseUnits(amount, asset.decimals);
       if (amountInSmallestUnit === 0n) {
         setError({
@@ -203,9 +209,58 @@ export const KusamaComponent: FC = () => {
       console.log("feeInfo", feeInfo);
       console.log("beneficiary", beneficiary);
       console.log("data", data);
+
       setBusyMessage("Validating transaction");
       const plan = await planSend(data);
+      setBusyMessage("");
+
       console.log("plan", plan);
+      if (!plan.success) {
+        let errors: ValidationError[] = [];
+        for (const planLog of plan.logs) {
+          errors.push(planLog);
+        }
+        setError({
+          title: "Validation Errors",
+          description: `Errors were found during transaction validation`,
+          errors: errors,
+        });
+        return;
+      }
+
+      if (asset.symbol === "DOT") {
+        let totalFee =
+          feeInfo.fee +
+          plan.data.sourceExecutionFee +
+          data.amountInSmallestUnit;
+        if (totalFee > plan.data.dotBalance) {
+          let formattedTotalFee = formatBalance({
+            number: totalFee,
+            decimals: 10,
+          });
+          setError({
+            title: "DOT balance too low",
+            description: `DOT balance should be at least ${formattedTotalFee} to cover the DOT token transfer, delivery and extrinsic fee`,
+            errors: [],
+          });
+          return;
+        }
+      } else {
+        let totalFee = feeInfo.fee + plan.data.sourceExecutionFee;
+        if (totalFee > plan.data.dotBalance) {
+          let formattedTotalFee = formatBalance({
+            number: totalFee,
+            decimals: 10,
+          });
+          setError({
+            title: "DOT balance too low",
+            description: `DOT balance should be at least ${formattedTotalFee} to cover delivery and extrinsic fee`,
+            errors: [],
+          });
+          return;
+        }
+      }
+
       setBusyMessage("Sending transaction");
       const result = await sendToken(data, plan);
       console.log("result", result);
@@ -221,7 +276,7 @@ export const KusamaComponent: FC = () => {
           closeButton: true,
           duration: 60000,
           id: "transfer_success",
-          description: "Token transfer was succesfully initiated.",
+          description: "Token transfer was successfully initiated.",
           action: {
             label: "View",
             onClick: () =>
@@ -231,6 +286,7 @@ export const KusamaComponent: FC = () => {
               ),
           },
         });
+        router.push("/history");
       } else if (!result.success || result.dispatchError) {
         setBusyMessage("");
         toast.info("Transfer unsuccessful", {
@@ -238,7 +294,7 @@ export const KusamaComponent: FC = () => {
           closeButton: true,
           duration: 60000,
           id: "transfer_error",
-          description: "Token transfer was unsuccesful.",
+          description: "Token transfer was unsuccessful.",
           action: {
             label: "View",
             onClick: () =>
@@ -519,7 +575,11 @@ export const KusamaComponent: FC = () => {
           </Form>
         </CardContent>
       </Card>
-      <BusyDialog open={busyMessage !== ""} description={busyMessage} />
+      <BusyDialog
+        open={busyMessage !== ""}
+        description={busyMessage}
+        dismiss={() => setBusyMessage("")}
+      />
       <SendErrorDialog
         info={error}
         formData={form.getValues()}
