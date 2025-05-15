@@ -29,9 +29,9 @@ export const EditableSelectAccount: FC<SelectAccountProps> = ({
   const options = useRef(displayAccounts).current;
 
   const onChange = (option: any) => {
-    setValue(option);
+    setValue(option.value);
     setInputValue(option ? option.label : "");
-    field.onChange(option);
+    field.onChange(option.value);
   };
 
   const onInputChange = (
@@ -40,6 +40,7 @@ export const EditableSelectAccount: FC<SelectAccountProps> = ({
   ) => {
     if (action === "input-change") {
       setInputValue(inputValue);
+      field.onChange(inputValue);
     }
   };
 
