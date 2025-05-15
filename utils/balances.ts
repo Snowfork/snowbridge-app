@@ -2,7 +2,7 @@
 import { assets, assetsV2, Context } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
-import { RemoteAssetId } from "./types";
+import { AssetHub, RemoteAssetId } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
 
@@ -14,6 +14,15 @@ interface TokenBalanceProps {
   registry: assetsV2.AssetRegistry;
   sourceAccount: string;
 }
+
+interface TokenBalanceKusamaProps {
+  context: Context;
+  token: string;
+  source: string;
+  registry: assetsV2.AssetRegistry;
+  sourceAccount: string;
+}
+
 export async function getTokenBalance({
   context,
   token,
@@ -119,6 +128,146 @@ export async function getTokenBalance({
     };
   } else {
     throw Error(`Unknown source type ${source.type}.`);
+  }
+}
+
+export async function getKusamaTokenBalance({
+  context,
+  token,
+  source,
+  registry,
+  sourceAccount,
+}: TokenBalanceKusamaProps): Promise<{
+  tokenBalance: bigint;
+  tokenSymbol: string;
+  tokenDecimals: number;
+  dotBalance: bigint;
+  dotTokenSymbol: string;
+  dotTokenDecimals: number;
+}> {
+  if (source === AssetHub.Polkadot) {
+    const parachain = await context.assetHub();
+    const sourceParaId = registry.assetHubParaId;
+    const sourceMetadata = registry.parachains[sourceParaId];
+    if (!sourceMetadata) {
+      throw Error(
+        `Polkadot AssetHub parachain metadata not found (parachain ${sourceParaId}).`,
+      );
+    }
+    const sourceAssetMetadata = sourceMetadata.assets[token.toLowerCase()];
+    if (!sourceAssetMetadata) {
+      throw Error(
+        `Token ${token} not registered on Polkadot AssetHub (parachain ${sourceParaId}).`,
+      );
+    }
+
+    let dotBalance: bigint;
+    let tokenBalance: bigint;
+    // If the token being sent is also DOT, we only need to fetch the DOT balance.
+    if (
+      sourceAssetMetadata.location?.parents == 1 &&
+      sourceAssetMetadata.location?.interior == "Here"
+    ) {
+      dotBalance = tokenBalance = await assetsV2.getDotBalance(
+        parachain,
+        sourceMetadata.info.specName,
+        sourceAccount,
+      );
+    } else {
+      // For DOT on AH, get it from the native balance pallet.
+      [dotBalance, tokenBalance] = await Promise.all([
+        assetsV2.getDotBalance(
+          parachain,
+          sourceMetadata.info.specName,
+          sourceAccount,
+        ),
+        await assetsV2.getTokenBalance(
+          parachain,
+          sourceMetadata.info.specName,
+          sourceAccount,
+          registry.ethChainId,
+          token,
+          sourceAssetMetadata,
+        ),
+      ]);
+    }
+
+    let tokenDecimals = sourceAssetMetadata.decimals;
+    let tokenSymbol = sourceAssetMetadata.symbol;
+    if (!tokenDecimals || !tokenSymbol) {
+      tokenDecimals =
+        registry.ethereumChains[registry.ethChainId].assets[token].decimals;
+      tokenSymbol =
+        registry.ethereumChains[registry.ethChainId].assets[token].symbol;
+    }
+
+    return {
+      tokenBalance,
+      tokenDecimals,
+      tokenSymbol,
+      dotBalance,
+      dotTokenDecimals: registry.relaychain.tokenDecimals,
+      dotTokenSymbol: registry.relaychain.tokenSymbols,
+    };
+  } else if (source === AssetHub.Kusama) {
+    const parachain = await context.kusamaAssetHub();
+    if (!parachain) {
+      throw Error(`Unable to connect to Kusama AssetHub.`);
+    }
+    const sourceParaId = registry.kusama?.assetHubParaId;
+    if (!sourceParaId) {
+      throw Error(`Kusama AssetHub parachain ID not set.`);
+    }
+    const sourceMetadata = registry.kusama?.parachains[sourceParaId];
+    if (!sourceMetadata) {
+      throw Error(
+        `Polkadot AssetHub parachain metadata not found (parachain ${sourceParaId}).`,
+      );
+    }
+    const sourceAssetMetadata = sourceMetadata.assets[token.toLowerCase()];
+    if (!sourceAssetMetadata) {
+      throw Error(
+        `Token ${token} not registered on Polkadot AssetHub (parachain ${sourceParaId}).`,
+      );
+    }
+
+    const [dotBalance, tokenBalance] = await Promise.all([
+      // For DOT on KSM, get it from the foreign assets pallet.
+      assetsV2.getDotBalance(
+        parachain,
+        sourceMetadata.info.specName,
+        sourceAccount,
+      ),
+      // Get token balance
+      await assetsV2.getTokenBalance(
+        parachain,
+        sourceMetadata.info.specName,
+        sourceAccount,
+        registry.ethChainId,
+        token,
+        sourceAssetMetadata,
+      ),
+    ]);
+
+    let tokenDecimals = sourceAssetMetadata.decimals;
+    let tokenSymbol = sourceAssetMetadata.symbol;
+    if (!tokenDecimals || !tokenSymbol) {
+      tokenDecimals =
+        registry.ethereumChains[registry.ethChainId].assets[token].decimals;
+      tokenSymbol =
+        registry.ethereumChains[registry.ethChainId].assets[token].symbol;
+    }
+
+    return {
+      tokenBalance,
+      tokenDecimals,
+      tokenSymbol,
+      dotBalance,
+      dotTokenDecimals: registry.relaychain.tokenDecimals,
+      dotTokenSymbol: registry.relaychain.tokenSymbols,
+    };
+  } else {
+    throw Error(`Unknown source type ${source}.`);
   }
 }
 
