@@ -162,7 +162,7 @@ async function sendToken(
 
 export function useSendKusamaToken(): [
   (data: KusamaValidationData) => Promise<forKusama.ValidationResult>,
-  (data: KusamaValidationData, plan: forKusama.ValidationResult) => Promise<MessageReciept>,
+  (data: KusamaValidationData, plan: forKusama.ValidationResult) => Promise<forKusama.MessageReceipt>,
 ] {
   const context = useAtomValue(snowbridgeContextAtom);
   const plan = useCallback(

@@ -53,7 +53,6 @@ import { Button } from "./ui/button";
 import { SelectAccount } from "@/components/SelectAccount";
 import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
-import { ValidationError } from "jest-validate";
 import { formatBalance } from "@/utils/formatting";
 
 export const KusamaComponent: FC = () => {
@@ -216,9 +215,13 @@ export const KusamaComponent: FC = () => {
 
       console.log("plan", plan);
       if (!plan.success) {
-        let errors: ValidationError[] = [];
+        let errors: any[] = [];
         for (const planLog of plan.logs) {
-          errors.push(planLog);
+          errors.push({
+            kind: "forKusama",
+            reason: planLog.reason,
+            message: planLog.message,
+          });
         }
         setError({
           title: "Validation Errors",

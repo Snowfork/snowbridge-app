@@ -23,7 +23,8 @@ import {
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
   | ({ kind: "toPolkadot" } & toPolkadot.SendValidationError)
-  | ({ kind: "toEthereum" } & toEthereum.SendValidationError);
+  | ({ kind: "toEthereum" } & toEthereum.SendValidationError)
+  | ({ kind: "forKusama" } & forKusama.ValidationLog);
 
 export type ErrorInfo = {
   title: string;
@@ -173,12 +174,14 @@ export interface KusamaValidationData {
 export type ValidationResult =
   | toEthereumV2.ValidationResult
   | toEthereumV2.ValidationResultEvm
-  | toPolkadotV2.ValidationResult;
+  | toPolkadotV2.ValidationResult
+  | forKusama.ValidationResult;
 
 export type MessageReciept =
   | toEthereumV2.MessageReceipt
   | toEthereumV2.MessageReceiptEvm
-  | toPolkadotV2.MessageReceipt;
+  | toPolkadotV2.MessageReceipt
+  | forKusama.MessageReceipt;
 
 export enum TransferStepKind {
   DepositWETH,
