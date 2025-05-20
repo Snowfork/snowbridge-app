@@ -1,7 +1,12 @@
 import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { AssetHub, KusamaValidationData, MessageReciept, SignerInfo } from "@/utils/types";
+import {
+  AssetHub,
+  KusamaValidationData,
+  MessageReciept,
+  SignerInfo,
+} from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
 import { Context, forKusama } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
@@ -162,7 +167,10 @@ async function sendToken(
 
 export function useSendKusamaToken(): [
   (data: KusamaValidationData) => Promise<forKusama.ValidationResult>,
-  (data: KusamaValidationData, plan: forKusama.ValidationResult) => Promise<forKusama.MessageReceipt>,
+  (
+    data: KusamaValidationData,
+    plan: forKusama.ValidationResult,
+  ) => Promise<forKusama.MessageReceipt>,
 ] {
   const context = useAtomValue(snowbridgeContextAtom);
   const plan = useCallback(

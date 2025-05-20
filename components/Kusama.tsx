@@ -26,9 +26,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
-import {
-  snowbridgeContextAtom,
-} from "@/store/snowbridge";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
 import {
   filterByAccountType,
@@ -38,7 +36,12 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { AccountInfo, AssetHub, ErrorInfo, KusamaValidationData } from "@/utils/types";
+import {
+  AccountInfo,
+  AssetHub,
+  ErrorInfo,
+  KusamaValidationData,
+} from "@/utils/types";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
