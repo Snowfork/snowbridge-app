@@ -49,7 +49,11 @@ export function createStepsFromPlan(
           errors.push(log);
         }
       }
-      if (errors.length === 0 && dryRunFailedLog !== null) {
+      if (
+        errors.length === 0 &&
+        steps.length == 0 &&
+        dryRunFailedLog !== null
+      ) {
         errors.push(dryRunFailedLog);
       }
       steps.sort((a, b) => a.displayOrder - b.displayOrder);
@@ -110,7 +114,11 @@ export function createStepsFromPlan(
       }
       // If there are no other logs but dry run failed then display dry run failed to the user.
       // Else expect that the dry run failed because of the other error logs.
-      if (errors.length === 0 && dryRunFailedLog !== null) {
+      if (
+        errors.length === 0 &&
+        steps.length === 0 &&
+        dryRunFailedLog !== null
+      ) {
         errors.push(dryRunFailedLog);
       }
       steps.sort((a, b) => a.displayOrder - b.displayOrder);
