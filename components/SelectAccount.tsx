@@ -108,7 +108,8 @@ export const SelectAccount: FC<SelectAccountProps> = ({
           defaultPressed={false}
           pressed={!accountFromWallet}
           onPressedChange={(p) => setBeneficiaryFromWallet(!p)}
-          className="text-xs"
+          className="text-sm"
+          size="xs"
         >
           Input account manually.
         </Toggle>
