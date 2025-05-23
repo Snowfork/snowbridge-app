@@ -1,5 +1,4 @@
 import { FC, useEffect } from "react";
-import { assets, assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { FormLabel } from "./ui/form";
 import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
@@ -51,17 +50,17 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
     );
   }
 
-  const dotBalance = `${formatBalance({
-    number: balanceInfo.dotBalance ?? 0n,
-    decimals: Number(balanceInfo.dotTokenDecimals),
-  })} ${balanceInfo.dotTokenSymbol}`;
+  const nativeBalance = `${formatBalance({
+    number: balanceInfo.nativeBalance ?? 0n,
+    decimals: Number(balanceInfo.feeTokenDecimals),
+  })} ${balanceInfo.feeTokenSymbol}`;
 
   let tokenBalance = `${formatBalance({
     number: balanceInfo.tokenBalance,
     decimals: Number(balanceInfo.tokenDecimals),
   })} ${balanceInfo.tokenSymbol}`;
 
-  if (balanceInfo.tokenSymbol === balanceInfo.dotTokenSymbol) {
+  if (balanceInfo.tokenSymbol === balanceInfo.feeTokenSymbol) {
     return (
       <FormLabel
         className={
@@ -69,7 +68,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
           (sourceAccount ? " visible" : " hidden")
         }
       >
-        Balance: {dotBalance}{" "}
+        Balance: {nativeBalance}{" "}
       </FormLabel>
     );
   }
@@ -81,7 +80,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
         (sourceAccount ? " visible" : " hidden")
       }
     >
-      Balances: {tokenBalance} {dotBalance}{" "}
+      Balances: {tokenBalance} {nativeBalance}{" "}
     </FormLabel>
   );
 };

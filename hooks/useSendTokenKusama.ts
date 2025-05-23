@@ -68,7 +68,7 @@ async function planSend(
     const deliveryFee: forKusama.DeliveryFee = {
       bridgeHubDeliveryFee: 0n,
       xcmBridgeFee: 0n,
-      totalFeeInDot: fee.fee,
+      totalFeeInNative: fee.fee,
     };
 
     const tx = await forKusama.createTransfer(
@@ -102,7 +102,7 @@ async function planSend(
     const deliveryFee: forKusama.DeliveryFee = {
       bridgeHubDeliveryFee: 0n,
       xcmBridgeFee: 0n,
-      totalFeeInDot: fee.fee,
+      totalFeeInNative: fee.fee,
     };
 
     const tx = await forKusama.createTransfer(

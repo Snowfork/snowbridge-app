@@ -20,6 +20,12 @@ import {
   ContractTransactionResponse,
 } from "ethers";
 
+export const DOT_DECIMALS = 10;
+export const KSM_DECIMALS = 12;
+
+export const DOT_SYMBOL = "DOT";
+export const KSM_SYMBOL = "KSM";
+
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
   | ({ kind: "toPolkadot" } & toPolkadot.SendValidationError)

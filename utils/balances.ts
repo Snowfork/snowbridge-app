@@ -2,7 +2,14 @@
 import { assets, assetsV2, Context } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
-import { AssetHub, RemoteAssetId } from "./types";
+import {
+  AssetHub,
+  DOT_DECIMALS,
+  DOT_SYMBOL,
+  KSM_DECIMALS,
+  KSM_SYMBOL,
+  RemoteAssetId,
+} from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
 
@@ -141,9 +148,9 @@ export async function getKusamaTokenBalance({
   tokenBalance: bigint;
   tokenSymbol: string;
   tokenDecimals: number;
-  dotBalance: bigint;
-  dotTokenSymbol: string;
-  dotTokenDecimals: number;
+  nativeBalance: bigint;
+  feeTokenSymbol: string;
+  feeTokenDecimals: number;
 }> {
   if (source === AssetHub.Polkadot) {
     const parachain = await context.assetHub();
@@ -161,26 +168,17 @@ export async function getKusamaTokenBalance({
       );
     }
 
-    let dotBalance: bigint;
+    let nativeBalance: bigint;
     let tokenBalance: bigint;
     // If the token being sent is also DOT, we only need to fetch the DOT balance.
-    if (
-      sourceAssetMetadata.location?.parents == 1 &&
-      sourceAssetMetadata.location?.interior == "Here"
-    ) {
-      dotBalance = tokenBalance = await assetsV2.getDotBalance(
+    if (sourceAssetMetadata.symbol === DOT_SYMBOL) {
+      nativeBalance = tokenBalance = await assetsV2.getNativeBalance(
         parachain,
-        sourceMetadata.info.specName,
         sourceAccount,
       );
     } else {
-      // For DOT on AH, get it from the native balance pallet.
-      [dotBalance, tokenBalance] = await Promise.all([
-        assetsV2.getDotBalance(
-          parachain,
-          sourceMetadata.info.specName,
-          sourceAccount,
-        ),
+      [nativeBalance, tokenBalance] = await Promise.all([
+        await assetsV2.getNativeBalance(parachain, sourceAccount),
         await assetsV2.getTokenBalance(
           parachain,
           sourceMetadata.info.specName,
@@ -205,9 +203,9 @@ export async function getKusamaTokenBalance({
       tokenBalance,
       tokenDecimals,
       tokenSymbol,
-      dotBalance,
-      dotTokenDecimals: registry.relaychain.tokenDecimals,
-      dotTokenSymbol: registry.relaychain.tokenSymbols,
+      nativeBalance,
+      feeTokenDecimals: DOT_DECIMALS,
+      feeTokenSymbol: DOT_SYMBOL,
     };
   } else if (source === AssetHub.Kusama) {
     const parachain = await context.kusamaAssetHub();
@@ -231,23 +229,27 @@ export async function getKusamaTokenBalance({
       );
     }
 
-    const [dotBalance, tokenBalance] = await Promise.all([
-      // For DOT on KSM, get it from the foreign assets pallet.
-      assetsV2.getDotBalance(
+    let nativeBalance: bigint;
+    let tokenBalance: bigint;
+    // If the token being sent is also KSM, we only need to fetch the KSM balance.
+    if (sourceAssetMetadata.symbol === KSM_SYMBOL) {
+      nativeBalance = tokenBalance = await assetsV2.getNativeBalance(
         parachain,
-        sourceMetadata.info.specName,
         sourceAccount,
-      ),
-      // Get token balance
-      await assetsV2.getTokenBalance(
-        parachain,
-        sourceMetadata.info.specName,
-        sourceAccount,
-        registry.ethChainId,
-        token,
-        sourceAssetMetadata,
-      ),
-    ]);
+      );
+    } else {
+      [nativeBalance, tokenBalance] = await Promise.all([
+        await assetsV2.getNativeBalance(parachain, sourceAccount),
+        await assetsV2.getTokenBalance(
+          parachain,
+          sourceMetadata.info.specName,
+          sourceAccount,
+          registry.ethChainId,
+          token,
+          sourceAssetMetadata,
+        ),
+      ]);
+    }
 
     let tokenDecimals = sourceAssetMetadata.decimals;
     let tokenSymbol = sourceAssetMetadata.symbol;
@@ -262,9 +264,9 @@ export async function getKusamaTokenBalance({
       tokenBalance,
       tokenDecimals,
       tokenSymbol,
-      dotBalance,
-      dotTokenDecimals: registry.relaychain.tokenDecimals,
-      dotTokenSymbol: registry.relaychain.tokenSymbols,
+      nativeBalance,
+      feeTokenDecimals: KSM_DECIMALS,
+      feeTokenSymbol: KSM_SYMBOL,
     };
   } else {
     throw Error(`Unknown source type ${source}.`);

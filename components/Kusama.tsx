@@ -39,7 +39,11 @@ import { z } from "zod";
 import {
   AccountInfo,
   AssetHub,
+  DOT_DECIMALS,
+  DOT_SYMBOL,
   ErrorInfo,
+  KSM_DECIMALS,
+  KSM_SYMBOL,
   KusamaValidationData,
 } from "@/utils/types";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
@@ -201,7 +205,7 @@ export const KusamaComponent: FC = () => {
           decimals: asset.decimals,
           symbol: asset.symbol,
           delivery: {
-            totalFeeInDot: feeInfo.fee,
+            totalFeeInNative: feeInfo.fee,
             xcmBridgeFee: 0n,
             bridgeHubDeliveryFee: 0n,
           },
@@ -234,33 +238,39 @@ export const KusamaComponent: FC = () => {
         return;
       }
 
-      if (asset.symbol === "DOT") {
+      if (
+        (asset.symbol === DOT_SYMBOL && sourceId == AssetHub.Polkadot) ||
+        (asset.symbol === KSM_SYMBOL && sourceId == AssetHub.Kusama)
+      ) {
         let totalFee =
           feeInfo.fee +
           plan.data.sourceExecutionFee +
           data.amountInSmallestUnit;
-        if (totalFee > plan.data.dotBalance) {
+        if (totalFee > plan.data.nativeBalance) {
           let formattedTotalFee = formatBalance({
             number: totalFee,
-            decimals: 10,
+            decimals: asset.decimals,
           });
           setError({
-            title: "DOT balance too low",
-            description: `DOT balance should be at least ${formattedTotalFee} to cover the DOT token transfer, delivery and extrinsic fee`,
+            title: `${asset.symbol} balance too low`,
+            description: `${asset.symbol} balance should be at least ${formattedTotalFee} to cover the ${asset.symbol} token transfer, delivery and extrinsic fee`,
             errors: [],
           });
           return;
         }
       } else {
+        const isPolkadot = sourceId === AssetHub.Polkadot;
+        const feeSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
+        const feeDecimals = isPolkadot ? DOT_DECIMALS : KSM_DECIMALS;
         let totalFee = feeInfo.fee + plan.data.sourceExecutionFee;
-        if (totalFee > plan.data.dotBalance) {
+        if (totalFee > plan.data.nativeBalance) {
           let formattedTotalFee = formatBalance({
             number: totalFee,
-            decimals: 10,
+            decimals: feeDecimals,
           });
           setError({
-            title: "DOT balance too low",
-            description: `DOT balance should be at least ${formattedTotalFee} to cover delivery and extrinsic fee`,
+            title: `${feeSymbol} balance too low`,
+            description: `${feeSymbol} balance should be at least ${formattedTotalFee} to cover delivery and extrinsic fee`,
             errors: [],
           });
           return;
