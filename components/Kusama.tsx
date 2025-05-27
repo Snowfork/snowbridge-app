@@ -206,8 +206,9 @@ export const KusamaComponent: FC = () => {
           symbol: asset.symbol,
           delivery: {
             totalFeeInNative: feeInfo.fee,
-            xcmBridgeFee: 0n,
-            bridgeHubDeliveryFee: 0n,
+            destinationFee: feeInfo.delivery.destinationFee,
+            xcmBridgeFee: feeInfo.delivery.xcmBridgeFee,
+            bridgeHubDeliveryFee: feeInfo.delivery.bridgeHubDeliveryFee,
           },
         },
       };
@@ -325,7 +326,7 @@ export const KusamaComponent: FC = () => {
       setBusyMessage("");
       setError({
         title: "Transaction Failed",
-        description: `Error occurred while trying to send transaction.`,
+        description: `Error occurred while trying to send transaction: ${err}.`,
         errors: [],
       });
     }

@@ -23,18 +23,22 @@ async function fetchKusamaFeeInfo([context, registry, direction]: [
     return;
   }
   let sourceAssetHub: ApiPromise | undefined;
+  let destAssetHub: ApiPromise | undefined;
   if (direction == Direction.ToPolkadot) {
     sourceAssetHub = await context.kusamaAssetHub();
+    destAssetHub = await context.assetHub();
   } else {
     sourceAssetHub = await context.assetHub();
+    destAssetHub = await context.kusamaAssetHub();
   }
 
-  if (!sourceAssetHub) {
+  if (!sourceAssetHub || !destAssetHub) {
     return;
   }
 
   const deliveryFee = await forKusama.getDeliveryFee(
     sourceAssetHub,
+    destAssetHub,
     direction,
     registry,
   );

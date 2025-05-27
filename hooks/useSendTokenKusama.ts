@@ -66,8 +66,9 @@ async function planSend(
     }
     // Create a new delivery fee object
     const deliveryFee: forKusama.DeliveryFee = {
-      bridgeHubDeliveryFee: 0n,
-      xcmBridgeFee: 0n,
+      bridgeHubDeliveryFee: fee.delivery.bridgeHubDeliveryFee,
+      xcmBridgeFee: fee.delivery.xcmBridgeFee,
+      destinationFee: fee.delivery.destinationFee,
       totalFeeInNative: fee.fee,
     };
 
@@ -100,8 +101,9 @@ async function planSend(
     }
     // Create a new delivery fee object
     const deliveryFee: forKusama.DeliveryFee = {
-      bridgeHubDeliveryFee: 0n,
-      xcmBridgeFee: 0n,
+      bridgeHubDeliveryFee: fee.delivery.bridgeHubDeliveryFee,
+      xcmBridgeFee: fee.delivery.xcmBridgeFee,
+      destinationFee: fee.delivery.destinationFee,
       totalFeeInNative: fee.fee,
     };
 
