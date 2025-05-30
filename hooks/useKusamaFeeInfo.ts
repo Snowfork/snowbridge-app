@@ -14,10 +14,11 @@ import {
 import { Direction } from "../../snowbridge/web/packages/api/src/forKusama";
 import { ApiPromise } from "@polkadot/api";
 
-async function fetchKusamaFeeInfo([context, registry, direction]: [
+async function fetchKusamaFeeInfo([context, registry, direction, token]: [
   Context | null,
   assetsV2.AssetRegistry,
   Direction,
+  string,
 ]): Promise<KusamaFeeInfo | undefined> {
   if (context === null) {
     return;
@@ -41,6 +42,7 @@ async function fetchKusamaFeeInfo([context, registry, direction]: [
     destAssetHub,
     direction,
     registry,
+    token,
   );
   const isPolkadot = direction == Direction.ToKusama;
   const tokenSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
@@ -54,7 +56,7 @@ async function fetchKusamaFeeInfo([context, registry, direction]: [
   };
 }
 
-export function useKusamaFeeInfo(source: string) {
+export function useKusamaFeeInfo(source: string, token: string | undefined) {
   let direction: Direction;
   if (source === AssetHub.Polkadot) {
     direction = Direction.ToKusama;
@@ -65,7 +67,7 @@ export function useKusamaFeeInfo(source: string) {
   const context = useAtomValue(snowbridgeContextAtom);
   const { data: registry } = useAssetRegistry();
   return useSWR(
-    [context, registry, direction, "kusamaFeeInfo"],
+    [context, registry, direction, token, "kusamaFeeInfo"],
     fetchKusamaFeeInfo,
     {
       errorRetryCount: 10,

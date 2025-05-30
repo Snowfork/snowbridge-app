@@ -93,7 +93,7 @@ export const KusamaComponent: FC = () => {
   const tokens =
     assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId]
       .assets;
-  const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId);
+  const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId, watchToken);
 
   useEffect(() => {
     const sourceAccounts =

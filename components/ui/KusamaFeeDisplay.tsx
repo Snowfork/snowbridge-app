@@ -6,7 +6,7 @@ import { useKusamaFeeInfo } from "@/hooks/useKusamaFeeInfo";
 interface KusamaFeeDisplayProps {
   source: string;
   destination: string;
-  token: string | assetsV2.Asset | undefined;
+  token: string;
   displayDecimals: number;
   className?: string;
 }
@@ -15,8 +15,9 @@ export const KusamaFeeDisplay: FC<KusamaFeeDisplayProps> = ({
   source,
   displayDecimals,
   className,
+  token
 }) => {
-  const { data: feeInfo, error } = useKusamaFeeInfo(source);
+  const { data: feeInfo, error } = useKusamaFeeInfo(source, token);
   useEffect(() => {
     if (error) {
       console.error(error);
