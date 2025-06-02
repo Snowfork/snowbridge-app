@@ -202,7 +202,8 @@ export const TransferComponent: FC = () => {
         registry={registry}
         onBack={() => backToForm(formData)}
         onRefreshTransfer={async (_, refreshOnly) =>
-          await validateAndSubmit(validationData, refreshOnly ?? false)}
+          await validateAndSubmit(validationData, refreshOnly ?? false)
+        }
       />
     );
   } else if (!plan) {
@@ -212,7 +213,8 @@ export const TransferComponent: FC = () => {
         formData={validationData?.formData ?? formData}
         onValidated={async (data) => await validateAndSubmit(data, false)}
         onError={async (form, error) =>
-          showError("Error validating transfer form.", form)}
+          showError("Error validating transfer form.", form)
+        }
       />
     );
   }

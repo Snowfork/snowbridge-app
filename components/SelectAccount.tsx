@@ -42,18 +42,20 @@ export const SelectAccount: FC<SelectAccountProps> = ({
 
   useEffect(() => {
     // unset account selection if selected account is no longer found in accounts
-    if (!allowManualInput && !selectedAccount) {
+    if ((!allowManualInput || accountFromWallet) && !selectedAccount) {
       field.onChange(undefined);
     }
+    if (!accountFromWallet) return;
+
     // if the field is not set and there are accounts available, select the first account
     if (!field.value && accounts.length > 0) {
       field.onChange(accounts[0].key);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
-  }, [accounts, field.value, allowManualInput]);
+  }, [accounts, field.value, allowManualInput, accountFromWallet]);
 
   let input: JSX.Element;
-  if (!allowManualInput && accountFromWallet && accounts.length > 0) {
+  if ((!allowManualInput || accountFromWallet) && accounts.length > 0) {
     input = (
       <Select
         key={(destination ?? "unk") + accounts.length}
@@ -106,7 +108,8 @@ export const SelectAccount: FC<SelectAccountProps> = ({
           defaultPressed={false}
           pressed={!accountFromWallet}
           onPressedChange={(p) => setBeneficiaryFromWallet(!p)}
-          className="text-xs"
+          className="text-sm"
+          size="xs"
         >
           Input account manually.
         </Toggle>
