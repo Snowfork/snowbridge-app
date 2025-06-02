@@ -55,7 +55,8 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "utf-8-validate": "^5.0.10",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "base-x": ">=5.0.1",
   },
   "devDependencies": {
     "@babel/core": "^7.26.10",
