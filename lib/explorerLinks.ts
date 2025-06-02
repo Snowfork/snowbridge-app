@@ -25,6 +25,7 @@ export const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     subscan_3369: "https://mythos.subscan.io/",
     subscan_relaychain: "https://polkadot.subscan.io/",
     subscan_2086: "https://spiritnet.subscan.io/",
+    subscan_kusama_1000: "https://assethub-kusama.subscan.io/",
   },
   westend_sepolia: {
     etherscan_11155111: "https://sepolia.etherscan.io/",
@@ -75,7 +76,7 @@ export const etherscanERC20TokenLink = (
 
 export const subscanExtrinsicLink = (
   envName: string,
-  para: number | "relaychain",
+  para: number | "relaychain" | string,
   extrinsicIndex: string,
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
@@ -88,7 +89,7 @@ export const subscanExtrinsicLink = (
 
 export const subscanEventLink = (
   envName: string,
-  para: number,
+  para: number | string,
   eventIndex: string,
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
@@ -102,7 +103,7 @@ export const subscanEventLink = (
 
 export const subscanAccountLink = (
   envName: string,
-  para: number,
+  para: number | string,
   address: string,
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];

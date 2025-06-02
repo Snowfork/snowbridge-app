@@ -43,6 +43,22 @@ export function getEnvDetail(
       );
       return { source, destination };
     }
+    case "kusama": {
+      const tx = transfer as historyV2.ToPolkadotTransferResult;
+      const source = assetsV2.getTransferLocationKusama(
+        registry,
+        tx.info.sourceNetwork ?? "polkadot",
+        tx.info.sourceParachain?.toString() ??
+          registry.assetHubParaId.toString(),
+      );
+      const destination = assetsV2.getTransferLocationKusama(
+        registry,
+        tx.info.destinationNetwork ?? "kusama",
+        tx.info.destinationParachain?.toString() ??
+          registry.assetHubParaId.toString(),
+      );
+      return { source, destination };
+    }
     default: {
       console.error("Unknown transfer", transfer);
       throw Error(`Unknown transfer type ${transfer.sourceType}`);
