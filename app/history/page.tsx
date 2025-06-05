@@ -53,6 +53,7 @@ import { assetsV2, historyV2 } from "@snowbridge/api";
 import {
   AssetRegistry,
   ETHER_TOKEN_ADDRESS,
+  getTransferLocation,
 } from "@snowbridge/api/dist/assets_v2";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
@@ -298,13 +299,15 @@ const transferDetail = (
       <div className="p-2">
         <p>
           Source{" "}
-          <span className="inline whitespace-pre font-mono">{source.name}</span>{" "}
+          <span className="inline whitespace-pre font-mono">{source.name}</span>
+          {" "}
         </p>
         <p>
           Value{" "}
           <span className="inline whitespace-pre font-mono">
             {amount} {tokenName}
-          </span>{" "}
+          </span>
+          {" "}
         </p>
         <p hidden={transfer.info.tokenAddress === ETHER_TOKEN_ADDRESS}>
           Token Address{" "}
@@ -440,6 +443,9 @@ export default function History() {
       allTransfers.push(pending);
     }
     for (const transfer of transferHistoryCache) {
+      //HACK: Remove this, hack for acala to not break prod
+      // We need to add a proper filter here to make sure the transfer meta data is in the registry
+      if ((transfer as any)?.info?.destinationParachain === 2000) continue;
       transfer.isWalletTransaction = isWalletTransaction(
         polkadotAccounts,
         ethereumAccounts,
@@ -565,10 +571,8 @@ export default function History() {
           </Accordion>
           <br></br>
           <div
-            className={
-              "justify-self-center align-middle " +
-              (pages.length > 0 ? "hidden" : "")
-            }
+            className={"justify-self-center align-middle " +
+              (pages.length > 0 ? "hidden" : "")}
           >
             <p className="text-muted-foreground text-center">No history.</p>
           </div>
