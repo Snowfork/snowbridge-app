@@ -298,15 +298,13 @@ const transferDetail = (
       <div className="p-2">
         <p>
           Source{" "}
-          <span className="inline whitespace-pre font-mono">{source.name}</span>
-          {" "}
+          <span className="inline whitespace-pre font-mono">{source.name}</span>{" "}
         </p>
         <p>
           Value{" "}
           <span className="inline whitespace-pre font-mono">
             {amount} {tokenName}
-          </span>
-          {" "}
+          </span>{" "}
         </p>
         <p hidden={transfer.info.tokenAddress === ETHER_TOKEN_ADDRESS}>
           Token Address{" "}
@@ -570,8 +568,10 @@ export default function History() {
           </Accordion>
           <br></br>
           <div
-            className={"justify-self-center align-middle " +
-              (pages.length > 0 ? "hidden" : "")}
+            className={
+              "justify-self-center align-middle " +
+              (pages.length > 0 ? "hidden" : "")
+            }
           >
             <p className="text-muted-foreground text-center">No history.</p>
           </div>
