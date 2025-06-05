@@ -100,21 +100,14 @@ export const KusamaComponent: FC = () => {
     const sourceAccounts =
       polkadotAccounts?.filter(filterByAccountType("AccountId32")) ?? [];
 
-    // If no account is selected but accounts are available, select the first one
-    if (!watchSourceAccount && sourceAccounts.length > 0) {
-      const firstAccount = sourceAccounts[0];
-      form.setValue("sourceAccount", firstAccount.address);
-      return;
-    }
-
     const sourceAccountSelected = sourceAccounts.find(
       (s) =>
         s.address === watchSourceAccount || watchSourceAccount === undefined,
     );
-    if (sourceAccountSelected) {
-      form.resetField("sourceAccount", {
-        defaultValue: sourceAccountSelected?.address,
-      });
+
+    if (!sourceAccountSelected && sourceAccounts.length > 0) {
+      const firstAccount = sourceAccounts[0];
+      form.setValue("sourceAccount", firstAccount.address);
     }
   }, [watchSourceAccount, polkadotAccounts, form]);
 

@@ -27,7 +27,6 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
   polkadotAccounts,
   polkadotAccount,
 }) => {
-  console.log("source", source);
   return (
     <Select
       onValueChange={onValueChange}
