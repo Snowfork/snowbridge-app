@@ -220,9 +220,6 @@ const transferDetail = (
   registry: assetsV2.AssetRegistry,
 ): JSX.Element => {
   const { source, destination } = getEnvDetail(transfer, registry);
-  if (!source || !destination) {
-    return <div className="flex-col">No detail found.</div>;
-  }
   const links: { text: string; url: string }[] = getExplorerLinks(
     transfer,
     source,
@@ -376,9 +373,6 @@ export default function History() {
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
   );
-
-  console.log("transferHistoryCache", transferHistoryCache)
-  console.log("transfersPendingLocal", transfersPendingLocal)
 
   const { data: assetRegistry } = useAssetRegistry();
   const {
