@@ -61,6 +61,7 @@ import { SelectAccount } from "@/components/SelectAccount";
 import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
 import { formatBalance } from "@/utils/formatting";
+import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 
 export const KusamaComponent: FC = () => {
   const router = useRouter();
@@ -98,15 +99,20 @@ export const KusamaComponent: FC = () => {
   useEffect(() => {
     const sourceAccounts =
       polkadotAccounts?.filter(filterByAccountType("AccountId32")) ?? [];
+
+    // If no account is selected but accounts are available, select the first one
+    if (!watchSourceAccount && sourceAccounts.length > 0) {
+      const firstAccount = sourceAccounts[0];
+      form.setValue("sourceAccount", firstAccount.address);
+      return;
+    }
+
     const sourceAccountSelected = sourceAccounts.find(
       (s) =>
         s.address === watchSourceAccount || watchSourceAccount === undefined,
     );
     if (sourceAccountSelected) {
       form.resetField("sourceAccount", {
-        defaultValue: sourceAccountSelected?.address,
-      });
-      form.resetField("beneficiary", {
         defaultValue: sourceAccountSelected?.address,
       });
     }
@@ -380,7 +386,7 @@ export const KusamaComponent: FC = () => {
                               >
                                 <SelectItemWithIcon
                                   label="Polkadot Asset Hub"
-                                  image="assethubpolkadot"
+                                  image={sourceId}
                                 />
                               </SelectItem>
                               <SelectItem
@@ -389,7 +395,7 @@ export const KusamaComponent: FC = () => {
                               >
                                 <SelectItemWithIcon
                                   label="Kusama Asset Hub"
-                                  image="assethubkusama"
+                                  image={sourceId}
                                 />
                               </SelectItem>
                             </SelectGroup>
@@ -423,7 +429,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Polkadot Asset Hub"
-                                    image="assethubpolkadot"
+                                    image={sourceId}
                                   />
                                 </SelectItem>
                               ) : (
@@ -433,7 +439,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Kusama Asset Hub"
-                                    image="assethubkusama"
+                                    image={sourceId}
                                   />
                                 </SelectItem>
                               )}
@@ -585,9 +591,14 @@ export const KusamaComponent: FC = () => {
                 />
               </div>
               <br />
-              <Button className="w-full my-8 action-button" type="submit">
-                Submit
-              </Button>
+
+              {!polkadotAccounts || polkadotAccounts.length === 0 ? (
+                <ConnectPolkadotWalletButton variant="default" />
+              ) : (
+                <Button className="w-full my-8 action-button" type="submit">
+                  Submit
+                </Button>
+              )}
             </form>
           </Form>
         </CardContent>
