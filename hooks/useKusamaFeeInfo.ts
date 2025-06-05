@@ -11,8 +11,9 @@ import {
   KSM_SYMBOL,
   KusamaFeeInfo,
 } from "@/utils/types";
-import { Direction } from "../../snowbridge/web/packages/api/src/forKusama";
+
 import { ApiPromise } from "@polkadot/api";
+import { Direction } from "@snowbridge/api/dist/forKusama";
 
 async function fetchKusamaFeeInfo([context, registry, direction, token]: [
   Context | null,

@@ -11,7 +11,7 @@ import { Signer } from "@polkadot/api/types";
 import { Context, forKusama } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
-import { Direction } from "../../snowbridge/web/packages/api/src/forKusama";
+import { Direction } from "@snowbridge/api/dist/forKusama";
 
 function validateSubstrateDestination({
   source,
