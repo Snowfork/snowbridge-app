@@ -53,7 +53,6 @@ import { assetsV2, historyV2 } from "@snowbridge/api";
 import {
   AssetRegistry,
   ETHER_TOKEN_ADDRESS,
-  getTransferLocation,
 } from "@snowbridge/api/dist/assets_v2";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
