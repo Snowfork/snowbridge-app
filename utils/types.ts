@@ -7,6 +7,7 @@ import {
   assetsV2,
   toEthereumV2,
   toPolkadotV2,
+  forKusama,
 } from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
@@ -19,16 +20,28 @@ import {
   ContractTransactionResponse,
 } from "ethers";
 
+export const DOT_DECIMALS = 10;
+export const KSM_DECIMALS = 12;
+
+export const DOT_SYMBOL = "DOT";
+export const KSM_SYMBOL = "KSM";
+
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
   | ({ kind: "toPolkadot" } & toPolkadot.SendValidationError)
-  | ({ kind: "toEthereum" } & toEthereum.SendValidationError);
+  | ({ kind: "toEthereum" } & toEthereum.SendValidationError)
+  | ({ kind: "forKusama" } & forKusama.ValidationLog);
 
 export type ErrorInfo = {
   title: string;
   description: string;
   errors: ValidationError[];
 };
+
+export enum AssetHub {
+  Polkadot = "polkadotAssetHub",
+  Kusama = "kusamaAssetHub",
+}
 
 export type FormDataSwitch = {
   source: string;
@@ -135,6 +148,13 @@ export type FeeInfo = {
   type: assetsV2.SourceType;
 };
 
+export type KusamaFeeInfo = {
+  fee: bigint;
+  decimals: number;
+  symbol: string;
+  delivery: forKusama.DeliveryFee;
+};
+
 export interface ValidationData {
   formData: TransferFormData;
   assetRegistry: assetsV2.AssetRegistry;
@@ -145,15 +165,29 @@ export interface ValidationData {
   fee: FeeInfo;
 }
 
+export interface KusamaValidationData {
+  assetRegistry: assetsV2.AssetRegistry;
+  source: string;
+  destination: string;
+  sourceAccount: string;
+  beneficiary: string;
+  token: string;
+  tokenMetadata: assets.ERC20Metadata;
+  amountInSmallestUnit: bigint;
+  fee: KusamaFeeInfo;
+}
+
 export type ValidationResult =
   | toEthereumV2.ValidationResult
   | toEthereumV2.ValidationResultEvm
-  | toPolkadotV2.ValidationResult;
+  | toPolkadotV2.ValidationResult
+  | forKusama.ValidationResult;
 
 export type MessageReciept =
   | toEthereumV2.MessageReceipt
   | toEthereumV2.MessageReceiptEvm
-  | toPolkadotV2.MessageReceipt;
+  | toPolkadotV2.MessageReceipt
+  | forKusama.MessageReceipt;
 
 export enum TransferStepKind {
   DepositWETH,

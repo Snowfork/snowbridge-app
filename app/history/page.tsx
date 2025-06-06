@@ -89,7 +89,36 @@ const getExplorerLinks = (
   destination: assetsV2.TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
-  if (transfer.sourceType == "substrate") {
+  if (transfer.sourceType == "kusama") {
+    const tx = transfer as historyV2.ToPolkadotTransferResult;
+    if (tx.destinationReceived) {
+      let sourceParaId: string = source.parachain!.parachainId.toString();
+      if (transfer.info.sourceNetwork == "kusama") {
+        sourceParaId = "kusama_" + sourceParaId;
+      }
+      let destinationParaId: string = tx.destinationReceived.paraId.toString();
+      if (transfer.info.sourceNetwork == "polkadot") {
+        destinationParaId = "kusama_" + destinationParaId;
+      }
+      links.push({
+        text: `Submitted to ${source.name}`,
+        url: subscanExtrinsicLink(
+          registry.environment,
+          sourceParaId,
+          tx.submitted.transactionHash,
+        ),
+      });
+      links.push({
+        text: `Message received on ${destination.name}`,
+        url: subscanEventLink(
+          registry.environment,
+          destinationParaId,
+          tx.destinationReceived.event_index,
+        ),
+      });
+    }
+    return links;
+  } else if (transfer.sourceType == "substrate") {
     const tx = transfer as historyV2.ToEthereumTransferResult;
     links.push({
       text: `Submitted to ${source.name}`,
@@ -277,6 +306,25 @@ const transferDetail = (
       destination.parachain!.parachainId,
       beneficiary,
     );
+  } else if (transfer.sourceType === "kusama") {
+    let sourceParachain = source.parachain!.parachainId.toString();
+    let destParachain = destination.parachain!.parachainId.toString();
+    if (transfer.info.sourceNetwork == "kusama") {
+      sourceParachain = "kusama_" + sourceParachain;
+    }
+    if (transfer.info.destinationNetwork == "kusama") {
+      destParachain = "kusama_" + sourceParachain;
+    }
+    sourceAccountUrl = subscanAccountLink(
+      registry.environment,
+      sourceParachain,
+      transfer.info.sourceAddress,
+    );
+    beneficiaryAccountUrl = subscanAccountLink(
+      registry.environment,
+      destParachain,
+      beneficiary,
+    );
   } else {
     sourceAccountUrl = subscanAccountLink(
       registry.environment,
@@ -443,7 +491,6 @@ export default function History() {
       //HACK: Remove this, hack for acala to not break prod
       // We need to add a proper filter here to make sure the transfer meta data is in the registry
       if ((transfer as any)?.info?.destinationParachain === 2000) continue;
-      if ((transfer as any)?.sourceType === "kusama") continue;
       transfer.isWalletTransaction = isWalletTransaction(
         polkadotAccounts,
         ethereumAccounts,

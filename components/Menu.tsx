@@ -12,6 +12,7 @@ import { useAtom, useAtomValue } from "jotai";
 import {
   LucideArrowRightLeft,
   LucideBarChart,
+  LucideBird,
   LucideHistory,
   LucideSend,
   LucideWallet,
@@ -133,6 +134,16 @@ export const Menu: FC = () => {
             </MenubarTrigger>
           </MenubarMenu>
         )}
+        {envName === "polkadot_mainnet" ? (
+          <MenubarMenu>
+            <MenubarTrigger>
+              <Link href="/kusama" className="flex items-center">
+                <LucideBird />
+                <p className="pl-2 hidden md:flex">To Kusama</p>
+              </Link>
+            </MenubarTrigger>
+          </MenubarMenu>
+        ) : null}
         <MenubarMenu>
           <MenubarTrigger>
             <Link href="/status" className="flex items-center">

@@ -44,7 +44,7 @@ export type ContextOverrides = {
 
 export async function createContext(
   ethereumProvider: AbstractProvider,
-  { config, ethChainId, name }: SnowbridgeEnvironment,
+  { kusamaConfig, config, ethChainId, name }: SnowbridgeEnvironment,
   overrides?: ContextOverrides,
 ) {
   const parachains = {
@@ -65,7 +65,8 @@ export async function createContext(
         config.ETHEREUM_CHAINS[ethChainId]("")),
   );
   ethChains[ethChainId.toString()] = ethereumProvider;
-  return new Context({
+
+  let context: any = {
     environment: name,
     ethereum: {
       ethChainId,
@@ -83,7 +84,17 @@ export async function createContext(
       beefy: config.BEEFY_CONTRACT,
     },
     graphqlApiUrl: overrides?.graphqlApiUrl ?? config.GRAPHQL_API_URL,
-  });
+  };
+
+  if (name === "polkadot_mainnet" && kusamaConfig) {
+    context.kusama = {
+      assetHubParaId: kusamaConfig.ASSET_HUB_PARAID,
+      bridgeHubParaId: kusamaConfig.BRIDGE_HUB_PARAID,
+      parachains: kusamaConfig.PARACHAINS,
+    };
+  }
+
+  return new Context(context);
 }
 
 export function getErrorMessage(err: any) {
