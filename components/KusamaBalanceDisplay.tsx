@@ -15,11 +15,14 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
   token,
   sourceAccount,
 }) => {
+  console.log("fetching balances")
   const { data: balanceInfo, error } = useKusamaTokenBalance(
     sourceAccount,
     source,
     token,
   );
+  console.log("balanceInfo", balanceInfo)
+  console.log("error", error)
   useEffect(() => {
     if (error) {
       console.error(error);

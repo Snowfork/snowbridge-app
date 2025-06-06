@@ -379,7 +379,7 @@ export const KusamaComponent: FC = () => {
                               >
                                 <SelectItemWithIcon
                                   label="Polkadot Asset Hub"
-                                  image={sourceId}
+                                  image={AssetHub.Polkadot}
                                 />
                               </SelectItem>
                               <SelectItem
@@ -388,7 +388,7 @@ export const KusamaComponent: FC = () => {
                               >
                                 <SelectItemWithIcon
                                   label="Kusama Asset Hub"
-                                  image={sourceId}
+                                  image={AssetHub.Kusama}
                                 />
                               </SelectItem>
                             </SelectGroup>
@@ -422,7 +422,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Polkadot Asset Hub"
-                                    image={sourceId}
+                                    image={AssetHub.Polkadot}
                                   />
                                 </SelectItem>
                               ) : (
@@ -432,7 +432,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Kusama Asset Hub"
-                                    image={sourceId}
+                                    image={AssetHub.Kusama}
                                   />
                                 </SelectItem>
                               )}
