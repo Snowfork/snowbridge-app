@@ -108,7 +108,9 @@ export const KusamaComponent: FC = () => {
     console.log("sourceAccountSelected", sourceAccountSelected)
 
     if (
-      ((!sourceAccountSelected || watchSourceAccount === undefined) && sourceAccounts.length > 0) {
+      (!sourceAccountSelected || watchSourceAccount === undefined) &&
+      sourceAccounts.length > 0
+    ) {
       const firstAccount = sourceAccounts[0];
       form.setValue("sourceAccount", firstAccount.address);
     }
