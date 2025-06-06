@@ -9,60 +9,83 @@ import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 
-export function getEnvDetail(
+export function getChainIdentifiers(
   transfer: Transfer,
   registry: assetsV2.AssetRegistry,
 ) {
   switch (transfer.sourceType as string) {
+    case "kusama": {
+      const tx = transfer as historyV2.ToPolkadotTransferResult;
+      return {
+        sourceType: transfer.sourceType,
+        destinationType: "kusama",
+        sourceId: tx.info.sourceParachain?.toString() ??
+          registry.assetHubParaId.toString(),
+        destinationId: tx.info.destinationParachain?.toString() ??
+          registry.assetHubParaId.toString(),
+        sourceNetwork: tx.info.destinationNetwork ?? "kusama",
+        destinationNetwork: tx.info.destinationNetwork ?? "kusama",
+      };
+    }
     case "ethereum": {
       const tx = transfer as historyV2.ToPolkadotTransferResult;
-      const source = assetsV2.getTransferLocation(
-        registry,
-        transfer.sourceType,
-        registry.ethChainId.toString(),
-      );
-      const destination = assetsV2.getTransferLocation(
-        registry,
-        "substrate",
-        tx.info.destinationParachain?.toString() ??
+      return {
+        sourceType: transfer.sourceType,
+        destinationType: "substrate",
+        sourceId: registry.ethChainId.toString(),
+        destinationId: tx.info.destinationParachain?.toString() ??
           registry.assetHubParaId.toString(),
-      );
-      return { source, destination };
+      };
     }
     case "substrate": {
       const tx = transfer as historyV2.ToEthereumTransferResult;
-      const source = assetsV2.getTransferLocation(
-        registry,
-        transfer.sourceType,
-        tx.submitted.sourceParachainId.toString(),
-      );
-      const destination = assetsV2.getTransferLocation(
-        registry,
-        "ethereum",
-        registry.ethChainId.toString(),
-      );
-      return { source, destination };
+      return {
+        sourceType: transfer.sourceType,
+        destinationType: "ethereum",
+        sourceId: tx.submitted.sourceParachainId.toString(),
+        destinationId: registry.ethChainId.toString(),
+      };
     }
-    case "kusama": {
-      const tx = transfer as historyV2.ToPolkadotTransferResult;
-      const source = assetsV2.getTransferLocationKusama(
-        registry,
-        tx.info.sourceNetwork ?? "polkadot",
-        tx.info.sourceParachain?.toString() ??
-          registry.assetHubParaId.toString(),
-      );
-      const destination = assetsV2.getTransferLocationKusama(
-        registry,
-        tx.info.destinationNetwork ?? "kusama",
-        tx.info.destinationParachain?.toString() ??
-          registry.assetHubParaId.toString(),
-      );
-      return { source, destination };
-    }
-    default: {
-      console.error("Unknown transfer", transfer);
-      throw Error(`Unknown transfer type ${transfer.sourceType}`);
-    }
+  }
+  return null;
+}
+
+export function getEnvDetail(
+  transfer: Transfer,
+  registry: assetsV2.AssetRegistry,
+) {
+  const id = getChainIdentifiers(
+    transfer,
+    registry,
+  );
+  if (!id) {
+    console.error("Unknown transfer", transfer);
+    throw Error(`Unknown transfer type ${transfer.sourceType}`);
+  }
+  if (id.sourceType === "kusama") {
+    const source = assetsV2.getTransferLocationKusama(
+      registry,
+      id.sourceNetwork,
+      id.sourceId,
+    );
+    const destination = assetsV2.getTransferLocationKusama(
+      registry,
+      id.destinationNetwork,
+      id.destinationId,
+    );
+    return { source, destination };
+  } else {
+    const source = assetsV2.getTransferLocation(
+      registry,
+      id.sourceType,
+      id.sourceId,
+    );
+    const destination = assetsV2.getTransferLocation(
+      registry,
+      id.destinationType,
+      id.destinationId,
+    );
+    return { source, destination };
   }
 }
 
@@ -76,10 +99,9 @@ export function formatTokenData(
   let tokenConfig =
     assetErc20MetaData[transfer.info.tokenAddress.toLowerCase()];
   let tokenName = tokenConfig?.name;
-  const metaData =
-    tokenAddress in assetErc20MetaData
-      ? assetErc20MetaData[tokenAddress]
-      : null;
+  const metaData = tokenAddress in assetErc20MetaData
+    ? assetErc20MetaData[tokenAddress]
+    : null;
   if (metaData !== null) {
     amount = formatBalance({
       number: parseUnits(transfer.info.amount, 0),
@@ -105,7 +127,7 @@ export function TransferTitle({
   const env = useAtomValue(snowbridgeEnvironmentAtom);
   const { data: assetRegistry } = useAssetRegistry();
 
-  const { source, destination } = getEnvDetail(transfer, assetRegistry);
+  const { destination } = getEnvDetail(transfer, assetRegistry);
   const when = new Date(transfer.info.when);
 
   const { tokenName, amount } = formatTokenData(
