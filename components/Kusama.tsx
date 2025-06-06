@@ -97,6 +97,7 @@ export const KusamaComponent: FC = () => {
   const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId, watchToken);
 
   useEffect(() => {
+    console.log("CHECKING WATCHED ACCOUNT")
     const sourceAccounts =
       polkadotAccounts?.filter(filterByAccountType("AccountId32")) ?? [];
 
