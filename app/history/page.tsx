@@ -491,7 +491,6 @@ export default function History() {
       //HACK: Remove this, hack for acala to not break prod
       // We need to add a proper filter here to make sure the transfer meta data is in the registry
       if ((transfer as any)?.info?.destinationParachain === 2000) continue;
-      if ((transfer as any)?.sourceType === "kusama") continue;
       transfer.isWalletTransaction = isWalletTransaction(
         polkadotAccounts,
         ethereumAccounts,
