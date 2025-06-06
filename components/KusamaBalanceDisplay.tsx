@@ -15,7 +15,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
   token,
   sourceAccount,
 }) => {
-  console.log("fetching balances")
+  console.log("fetching balances for account", sourceAccount)
   const { data: balanceInfo, error } = useKusamaTokenBalance(
     sourceAccount,
     source,

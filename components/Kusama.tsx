@@ -109,6 +109,7 @@ export const KusamaComponent: FC = () => {
       const firstAccount = sourceAccounts[0];
       form.setValue("sourceAccount", firstAccount.address);
     }
+    console.log("watchSourceAccount", watchSourceAccount)
   }, [watchSourceAccount, polkadotAccounts, form]);
 
   const beneficiaries: AccountInfo[] = useMemo(
