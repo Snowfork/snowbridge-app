@@ -97,7 +97,6 @@ export const KusamaComponent: FC = () => {
   const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId, watchToken);
 
   useEffect(() => {
-    console.log("CHECKING WATCHED ACCOUNT")
     const sourceAccounts =
       polkadotAccounts?.filter(filterByAccountType("AccountId32")) ?? [];
 
@@ -105,7 +104,6 @@ export const KusamaComponent: FC = () => {
       (s) =>
         s.address === watchSourceAccount || watchSourceAccount === undefined,
     );
-    console.log("sourceAccountSelected", sourceAccountSelected)
 
     if (
       (!sourceAccountSelected || watchSourceAccount === undefined) &&
@@ -114,7 +112,6 @@ export const KusamaComponent: FC = () => {
       const firstAccount = sourceAccounts[0];
       form.setValue("sourceAccount", firstAccount.address);
     }
-    console.log("watchSourceAccount", watchSourceAccount)
   }, [watchSourceAccount, polkadotAccounts, form]);
 
   const beneficiaries: AccountInfo[] = useMemo(
