@@ -1,5 +1,6 @@
 "use client";
 import { assets, assetsV2, Context } from "@snowbridge/api";
+import { paraImplementation } from "@snowbridge/api/dist/parachains";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
 import {
@@ -51,20 +52,20 @@ export async function getTokenBalance({
 }> {
   if (destination.type === "ethereum") {
     const para = source.parachain!;
-    const parachain =
-      para && context.hasParachain(para.parachainId)
-        ? await context.parachain(para.parachainId)
-        : await context.assetHub();
+    const parachain = para && context.hasParachain(para.parachainId)
+      ? await context.parachain(para.parachainId)
+      : await context.assetHub();
 
     const sourceParaId = para.parachainId;
     const sourceParachain = registry.parachains[sourceParaId];
-    const sourceAssetMetadata =
-      sourceParachain && sourceParachain.assets[token.toLowerCase()];
+    const sourceAssetMetadata = sourceParachain &&
+      sourceParachain.assets[token.toLowerCase()];
     if (!sourceAssetMetadata) {
       throw Error(
         `Token ${token} not registered on source parachain ${sourceParaId}.`,
       );
     }
+    const paraImp = await paraImplementation(parachain);
     let balance: any;
     // For DOT on AH, get it from the native balance pallet.
     if (
@@ -72,11 +73,9 @@ export async function getTokenBalance({
       sourceAssetMetadata.location?.parents == 1 &&
       sourceAssetMetadata.location?.interior == "Here"
     ) {
-      balance = await assetsV2.getNativeBalance(parachain, sourceAccount);
+      balance = await paraImp.getNativeBalance(sourceAccount);
     } else {
-      balance = await assetsV2.getTokenBalance(
-        parachain,
-        para.info.specName,
+      balance = await paraImp.getTokenBalance(
         sourceAccount,
         registry.ethChainId,
         token,
@@ -85,14 +84,11 @@ export async function getTokenBalance({
     }
     let dotBalance;
     if (sourceParachain.features.hasDotBalance) {
-      dotBalance = await assetsV2.getDotBalance(
-        parachain,
-        para.info.specName,
+      dotBalance = await paraImp.getDotBalance(
         sourceAccount,
       );
     }
-    const nativeBalance = await assetsV2.getNativeBalance(
-      parachain,
+    const nativeBalance = await paraImp.getNativeBalance(
       sourceAccount,
     );
 
@@ -167,21 +163,19 @@ export async function getKusamaTokenBalance({
         `Token ${token} not registered on Polkadot AssetHub (parachain ${sourceParaId}).`,
       );
     }
+    const paraImp = await paraImplementation(parachain);
 
     let nativeBalance: bigint;
     let tokenBalance: bigint;
     // If the token being sent is also DOT, we only need to fetch the DOT balance.
     if (sourceAssetMetadata.symbol === DOT_SYMBOL) {
-      nativeBalance = tokenBalance = await assetsV2.getNativeBalance(
-        parachain,
+      nativeBalance = tokenBalance = await paraImp.getNativeBalance(
         sourceAccount,
       );
     } else {
       [nativeBalance, tokenBalance] = await Promise.all([
-        await assetsV2.getNativeBalance(parachain, sourceAccount),
-        await assetsV2.getTokenBalance(
-          parachain,
-          sourceMetadata.info.specName,
+        await paraImp.getNativeBalance(sourceAccount),
+        await paraImp.getTokenBalance(
           sourceAccount,
           registry.ethChainId,
           token,
@@ -229,20 +223,18 @@ export async function getKusamaTokenBalance({
       );
     }
 
+    const paraImp = await paraImplementation(parachain);
     let nativeBalance: bigint;
     let tokenBalance: bigint;
     // If the token being sent is also KSM, we only need to fetch the KSM balance.
     if (sourceAssetMetadata.symbol === KSM_SYMBOL) {
-      nativeBalance = tokenBalance = await assetsV2.getNativeBalance(
-        parachain,
+      nativeBalance = tokenBalance = await paraImp.getNativeBalance(
         sourceAccount,
       );
     } else {
       [nativeBalance, tokenBalance] = await Promise.all([
-        await assetsV2.getNativeBalance(parachain, sourceAccount),
-        await assetsV2.getTokenBalance(
-          parachain,
-          sourceMetadata.info.specName,
+        await paraImp.getNativeBalance(sourceAccount),
+        await paraImp.getTokenBalance(
           sourceAccount,
           registry.ethChainId,
           token,
