@@ -65,6 +65,7 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide
 
 .selectIcon {
     margin: 4px 10px 4px 4px;
+    border-radius: 50%;
 }
 
 button.action-button {
