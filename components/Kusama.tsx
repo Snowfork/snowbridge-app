@@ -111,6 +111,7 @@ export const KusamaComponent: FC = () => {
     ) {
       const firstAccount = sourceAccounts[0];
       form.setValue("sourceAccount", firstAccount.address);
+      form.setValue("beneficiary", firstAccount.address);
     }
   }, [watchSourceAccount, polkadotAccounts, form]);
 
@@ -470,6 +471,7 @@ export const KusamaComponent: FC = () => {
                           }
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
+                          placeholder={"Connect wallet to select an account"}
                         />
                         <div className={"flex flex-row-reverse"}>
                           <KusamaBalanceDisplay
