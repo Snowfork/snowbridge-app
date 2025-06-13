@@ -347,15 +347,13 @@ const transferDetail = (
       <div className="p-2">
         <p>
           Source{" "}
-          <span className="inline whitespace-pre font-mono">{source.name}</span>
-          {" "}
+          <span className="inline whitespace-pre font-mono">{source.name}</span>{" "}
         </p>
         <p>
           Value{" "}
           <span className="inline whitespace-pre font-mono">
             {amount} {tokenName}
-          </span>
-          {" "}
+          </span>{" "}
         </p>
         <p hidden={transfer.info.tokenAddress === ETHER_TOKEN_ADDRESS}>
           Token Address{" "}
@@ -461,15 +459,15 @@ export default function History() {
   }, [transfers, setTransferHistoryCache]);
 
   useEffect(() => {
-    const oldTransferCutoff = new Date().getTime() - (14 * 24 * 60 * 60 * 1000); // 2 weeks
+    const oldTransferCutoff = new Date().getTime() - 14 * 24 * 60 * 60 * 1000; // 2 weeks
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
         transferHistoryCache.find(
           (h) =>
             h.id?.toLowerCase() === transfersPendingLocal[i].id?.toLowerCase(),
         ) ||
-        (new Date(transfersPendingLocal[i].info.when).getTime() <
-          oldTransferCutoff)
+        new Date(transfersPendingLocal[i].info.when).getTime() <
+          oldTransferCutoff
       ) {
         setTransfersPendingLocal({
           kind: "remove",
@@ -501,7 +499,8 @@ export default function History() {
           !(id.sourceId in assetRegistry.parachains)) ||
         (id.destinationType === "substrate" &&
           !(id.destinationId in assetRegistry.parachains))
-      ) continue;
+      )
+        continue;
 
       transfer.isWalletTransaction = isWalletTransaction(
         polkadotAccounts,
@@ -628,8 +627,10 @@ export default function History() {
           </Accordion>
           <br></br>
           <div
-            className={"justify-self-center align-middle " +
-              (pages.length > 0 ? "hidden" : "")}
+            className={
+              "justify-self-center align-middle " +
+              (pages.length > 0 ? "hidden" : "")
+            }
           >
             <p className="text-muted-foreground text-center">No history.</p>
           </div>

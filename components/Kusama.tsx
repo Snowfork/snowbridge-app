@@ -111,6 +111,7 @@ export const KusamaComponent: FC = () => {
     ) {
       const firstAccount = sourceAccounts[0];
       form.setValue("sourceAccount", firstAccount.address);
+      form.setValue("beneficiary", firstAccount.address);
     }
   }, [watchSourceAccount, polkadotAccounts, form]);
 
@@ -305,7 +306,11 @@ export const KusamaComponent: FC = () => {
               ),
           },
         });
-        router.push("/history");
+        // delay slightly, to give the indexer time to index the transaction
+        // and show it on the history page
+        setTimeout(() => {
+          router.push("/history");
+        }, 3000);
       } else if (!result.success || result.dispatchError) {
         setBusyMessage("");
         toast.info("Transfer unsuccessful", {
@@ -470,6 +475,7 @@ export const KusamaComponent: FC = () => {
                           }
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
+                          placeholder={"Connect wallet to select an account"}
                         />
                         <div className={"flex flex-row-reverse"}>
                           <KusamaBalanceDisplay

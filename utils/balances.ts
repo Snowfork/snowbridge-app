@@ -52,14 +52,15 @@ export async function getTokenBalance({
 }> {
   if (destination.type === "ethereum") {
     const para = source.parachain!;
-    const parachain = para && context.hasParachain(para.parachainId)
-      ? await context.parachain(para.parachainId)
-      : await context.assetHub();
+    const parachain =
+      para && context.hasParachain(para.parachainId)
+        ? await context.parachain(para.parachainId)
+        : await context.assetHub();
 
     const sourceParaId = para.parachainId;
     const sourceParachain = registry.parachains[sourceParaId];
-    const sourceAssetMetadata = sourceParachain &&
-      sourceParachain.assets[token.toLowerCase()];
+    const sourceAssetMetadata =
+      sourceParachain && sourceParachain.assets[token.toLowerCase()];
     if (!sourceAssetMetadata) {
       throw Error(
         `Token ${token} not registered on source parachain ${sourceParaId}.`,
@@ -84,13 +85,9 @@ export async function getTokenBalance({
     }
     let dotBalance;
     if (sourceParachain.features.hasDotBalance) {
-      dotBalance = await paraImp.getDotBalance(
-        sourceAccount,
-      );
+      dotBalance = await paraImp.getDotBalance(sourceAccount);
     }
-    const nativeBalance = await paraImp.getNativeBalance(
-      sourceAccount,
-    );
+    const nativeBalance = await paraImp.getNativeBalance(sourceAccount);
 
     return {
       balance: balance ?? 0n,
@@ -169,9 +166,8 @@ export async function getKusamaTokenBalance({
     let tokenBalance: bigint;
     // If the token being sent is also DOT, we only need to fetch the DOT balance.
     if (sourceAssetMetadata.symbol === DOT_SYMBOL) {
-      nativeBalance = tokenBalance = await paraImp.getNativeBalance(
-        sourceAccount,
-      );
+      nativeBalance = tokenBalance =
+        await paraImp.getNativeBalance(sourceAccount);
     } else {
       [nativeBalance, tokenBalance] = await Promise.all([
         await paraImp.getNativeBalance(sourceAccount),
@@ -228,9 +224,8 @@ export async function getKusamaTokenBalance({
     let tokenBalance: bigint;
     // If the token being sent is also KSM, we only need to fetch the KSM balance.
     if (sourceAssetMetadata.symbol === KSM_SYMBOL) {
-      nativeBalance = tokenBalance = await paraImp.getNativeBalance(
-        sourceAccount,
-      );
+      nativeBalance = tokenBalance =
+        await paraImp.getNativeBalance(sourceAccount);
     } else {
       [nativeBalance, tokenBalance] = await Promise.all([
         await paraImp.getNativeBalance(sourceAccount),

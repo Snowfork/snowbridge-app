@@ -18,6 +18,7 @@ type SelectedPolkadotAccountProps = {
   polkadotAccounts: WalletAccount[];
   polkadotAccount?: string;
   onValueChange?: (address: string) => void;
+  placeholder?: string;
 };
 
 export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
@@ -26,6 +27,7 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
   ss58Format,
   polkadotAccounts,
   polkadotAccount,
+  placeholder,
 }) => {
   return (
     <Select
@@ -33,7 +35,7 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
       value={polkadotAccount ?? polkadotAccounts[0]?.address}
     >
       <SelectTrigger>
-        <SelectValue placeholder="Select an account" />
+        <SelectValue placeholder={placeholder ?? "Select an account"} />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
