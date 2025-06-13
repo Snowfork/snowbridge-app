@@ -8,7 +8,12 @@ import {
   ValidationResult,
 } from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
-import { Context, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
+import {
+  Context,
+  toEthereumV2,
+  toEthereumFromEVMV2,
+  toPolkadotV2,
+} from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
@@ -133,7 +138,7 @@ async function planSend(
 ): Promise<
   | toEthereumV2.ValidationResult
   | toPolkadotV2.ValidationResult
-  | toEthereumV2.ValidationResultEvm
+  | toEthereumFromEVMV2.ValidationResultEvm
 > {
   const {
     source,
@@ -146,7 +151,7 @@ async function planSend(
   if (source.type === "ethereum" && destination.type === "ethereum") {
     const { parachain, ethChain } = validateEvmSubstrateDestination(data);
     const sourceParachainApi = await context.parachain(parachain.parachainId);
-    const tx = await toEthereumV2.createTransferEvm(
+    const tx = await toEthereumFromEVMV2.createTransferEvm(
       sourceParachainApi,
       assetRegistry,
       formData.sourceAccount,
@@ -155,7 +160,7 @@ async function planSend(
       amountInSmallestUnit,
       fee.delivery as toEthereumV2.DeliveryFee,
     );
-    const plan = await toEthereumV2.validateTransferEvm(
+    const plan = await toEthereumFromEVMV2.validateTransferEvm(
       {
         assetHub: await context.assetHub(),
         sourceEthChain: context.ethChain(ethChain.chainId),
@@ -232,13 +237,13 @@ async function sendToken(
   const { source, destination } = data;
   if (source.type === "ethereum" && destination.type === "ethereum") {
     const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
-    const transfer = plan.transfer as toEthereumV2.TransferEvm;
+    const transfer = plan.transfer as toEthereumFromEVMV2.TransferEvm;
     const response = await signer.sendTransaction(transfer.tx);
     const receipt = await response.wait();
     if (!receipt) {
       throw Error(`Could not fetch transaction receipt.`);
     }
-    const result = await toEthereumV2.getMessageReceipt(
+    const result = await toEthereumFromEVMV2.getMessageReceipt(
       await context.parachain(source.parachain!.parachainId),
       receipt,
     );
