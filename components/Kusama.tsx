@@ -306,7 +306,11 @@ export const KusamaComponent: FC = () => {
               ),
           },
         });
-        router.push("/history");
+        // delay slightly, to give the indexer time to index the transaction
+        // and show it on the history page
+        setTimeout(() => {
+          router.push("/history");
+        }, 3000);
       } else if (!result.success || result.dispatchError) {
         setBusyMessage("");
         toast.info("Transfer unsuccessful", {
