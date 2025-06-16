@@ -215,10 +215,6 @@ export const KusamaComponent: FC = () => {
         },
       };
 
-      console.log("feeInfo", feeInfo);
-      console.log("beneficiary", beneficiary);
-      console.log("data", data);
-
       setBusyMessage("Validating transaction");
       const plan = await planSend(data);
       setBusyMessage("");
