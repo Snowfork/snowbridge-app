@@ -19,9 +19,11 @@ export function getChainIdentifiers(
       return {
         sourceType: transfer.sourceType,
         destinationType: "kusama",
-        sourceId: tx.info.sourceParachain?.toString() ??
+        sourceId:
+          tx.info.sourceParachain?.toString() ??
           registry.assetHubParaId.toString(),
-        destinationId: tx.info.destinationParachain?.toString() ??
+        destinationId:
+          tx.info.destinationParachain?.toString() ??
           registry.assetHubParaId.toString(),
         sourceNetwork: tx.info.destinationNetwork ?? "kusama",
         destinationNetwork: tx.info.destinationNetwork ?? "kusama",
@@ -33,7 +35,8 @@ export function getChainIdentifiers(
         sourceType: transfer.sourceType,
         destinationType: "substrate",
         sourceId: registry.ethChainId.toString(),
-        destinationId: tx.info.destinationParachain?.toString() ??
+        destinationId:
+          tx.info.destinationParachain?.toString() ??
           registry.assetHubParaId.toString(),
       };
     }
@@ -54,10 +57,7 @@ export function getEnvDetail(
   transfer: Transfer,
   registry: assetsV2.AssetRegistry,
 ) {
-  const id = getChainIdentifiers(
-    transfer,
-    registry,
-  );
+  const id = getChainIdentifiers(transfer, registry);
   if (!id) {
     console.error("Unknown transfer", transfer);
     throw Error(`Unknown transfer type ${transfer.sourceType}`);
@@ -65,12 +65,12 @@ export function getEnvDetail(
   if (id.sourceType === "kusama") {
     const source = assetsV2.getTransferLocationKusama(
       registry,
-      id.sourceNetwork!,
+      transfer.info.sourceNetwork!,
       id.sourceId,
     );
     const destination = assetsV2.getTransferLocationKusama(
       registry,
-      id.destinationNetwork!,
+      transfer.info.destinationNetwork!,
       id.destinationId,
     );
     return { source, destination };
@@ -99,9 +99,10 @@ export function formatTokenData(
   let tokenConfig =
     assetErc20MetaData[transfer.info.tokenAddress.toLowerCase()];
   let tokenName = tokenConfig?.name;
-  const metaData = tokenAddress in assetErc20MetaData
-    ? assetErc20MetaData[tokenAddress]
-    : null;
+  const metaData =
+    tokenAddress in assetErc20MetaData
+      ? assetErc20MetaData[tokenAddress]
+      : null;
   if (metaData !== null) {
     amount = formatBalance({
       number: parseUnits(transfer.info.amount, 0),
