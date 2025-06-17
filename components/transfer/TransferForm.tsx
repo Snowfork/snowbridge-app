@@ -58,6 +58,8 @@ import {
 } from "@/lib/client/web3modal";
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
+import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
+import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
@@ -133,6 +135,85 @@ interface TransferFormProps {
   assetRegistry: assetsV2.AssetRegistry;
 }
 
+function initialFormData(
+  locations: assetsV2.Source[],
+  registry: assetsV2.AssetRegistry,
+  params: ReadonlyURLSearchParams,
+) {
+  let source = locations[0];
+  const querySource = params.get("source");
+  if (querySource) {
+    const sourceLocation = locations.find(
+      (l) =>
+        l.id.toLowerCase() === querySource.toLowerCase() ||
+        l.key.toLowerCase() == querySource.toLowerCase(),
+    );
+    if (sourceLocation) {
+      source = sourceLocation;
+    }
+  }
+
+  const destinations = Object.keys(source.destinations).map((destination) =>
+    assetsV2.getTransferLocation(
+      registry,
+      source.type === "substrate" || source.id.match(/_evm$/)
+        ? "ethereum"
+        : "substrate",
+      destination,
+    ),
+  );
+
+  let destination = destinations[0];
+  const queryDestination = params.get("destination");
+  if (queryDestination) {
+    const destinationLocation = destinations.find(
+      (l) =>
+        l.id.toLowerCase() === queryDestination.toLowerCase() ||
+        l.key.toLowerCase() == queryDestination.toLowerCase(),
+    );
+    if (destinationLocation) {
+      destination = destinationLocation;
+    }
+  }
+  const assets = Object.keys(
+    registry.ethereumChains[registry.ethChainId].assets,
+  );
+
+  const tokens = source.destinations[destination.key];
+  let token = tokens[0];
+  const queryToken = params.get("token");
+  if (queryToken) {
+    const ethAsset = assets.find((asset) => {
+      const assetMeta =
+        registry.ethereumChains[registry.ethChainId].assets[asset];
+      return (
+        assetMeta.name.toLowerCase() === token.toLowerCase() ||
+        assetMeta.symbol.toLowerCase() === queryToken.toLowerCase() ||
+        assetMeta.token.toLowerCase() == queryToken.toLowerCase()
+      );
+    });
+    if (ethAsset) {
+      token = ethAsset;
+    }
+  } else {
+    const ethAsset = assets.find((asset) =>
+      registry.ethereumChains[registry.ethChainId].assets[asset].name.match(
+        /^Ether/,
+      ),
+    );
+    if (ethAsset) {
+      token = ethAsset;
+    }
+  }
+
+  return {
+    source,
+    token,
+    destination,
+    destinations,
+  };
+}
+
 export const TransferForm: FC<TransferFormProps> = ({
   onValidated,
   onError,
@@ -151,25 +232,14 @@ export const TransferForm: FC<TransferFormProps> = ({
     [assetRegistry],
   );
 
-  const firstSource = locations[0];
-  const firstDestinations = Object.keys(firstSource.destinations).map(
-    (destination) =>
-      assetsV2.getTransferLocation(
-        assetRegistry,
-        firstSource.type === "ethereum" ? "substrate" : "ethereum",
-        destination,
-      ),
-  );
-  const firstDestination = firstDestinations[0];
-  const ethAsset = Object.keys(
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
-  ).find((asset) =>
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
-      asset
-    ].name.match(/^Ether/),
-  );
-  const firstToken =
-    ethAsset ?? firstSource.destinations[firstDestination.key][0];
+  const formParams = useSearchParams();
+
+  const {
+    source: firstSource,
+    destinations: firstDestinations,
+    destination: firstDestination,
+    token: firstToken,
+  } = initialFormData(locations, assetRegistry, formParams);
 
   const [source, setSource] = useState(firstSource);
   const [sourceAccount, setSourceAccount] = useState<string>();

@@ -14,7 +14,7 @@ import {
 import { historyV2, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
-import { FC, useRef, useState } from "react";
+import { FC, Suspense, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { TransferBusy } from "./TransferBusy";
 import { TransferError } from "./TransferError";
@@ -23,6 +23,7 @@ import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
 import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { LucideLoaderCircle } from "lucide-react";
 
 function sendResultToHistory(
   messageId: string,
@@ -208,14 +209,16 @@ export const TransferComponent: FC = () => {
     );
   } else if (!plan) {
     content = (
-      <TransferForm
-        assetRegistry={registry}
-        formData={validationData?.formData ?? formData}
-        onValidated={async (data) => await validateAndSubmit(data, false)}
-        onError={async (form, error) =>
-          showError("Error validating transfer form.", form)
-        }
-      />
+      <Suspense fallback={<Loading />}>
+        <TransferForm
+          assetRegistry={registry}
+          formData={validationData?.formData ?? formData}
+          onValidated={async (data) => await validateAndSubmit(data, false)}
+          onError={async (form, error) =>
+            showError("Error validating transfer form.", form)
+          }
+        />
+      </Suspense>
     );
   }
 
@@ -226,5 +229,14 @@ export const TransferComponent: FC = () => {
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>
+  );
+};
+
+const Loading = () => {
+  return (
+    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
+      Loading Transfer Form{" "}
+      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+    </div>
   );
 };

@@ -2,10 +2,10 @@ import { type useRouter } from "next/navigation";
 import {
   toPolkadot,
   toEthereum,
-  environment,
   assets,
   assetsV2,
   toEthereumV2,
+  toEthereumFromEVMV2,
   toPolkadotV2,
   forKusama,
 } from "@snowbridge/api";
@@ -179,13 +179,13 @@ export interface KusamaValidationData {
 
 export type ValidationResult =
   | toEthereumV2.ValidationResult
-  | toEthereumV2.ValidationResultEvm
+  | toEthereumFromEVMV2.ValidationResultEvm
   | toPolkadotV2.ValidationResult
   | forKusama.ValidationResult;
 
 export type MessageReciept =
   | toEthereumV2.MessageReceipt
-  | toEthereumV2.MessageReceiptEvm
+  | toEthereumFromEVMV2.MessageReceiptEvm
   | toPolkadotV2.MessageReceipt
   | forKusama.MessageReceipt;
 
