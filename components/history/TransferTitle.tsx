@@ -65,12 +65,12 @@ export function getEnvDetail(
   if (id.sourceType === "kusama") {
     const source = assetsV2.getTransferLocationKusama(
       registry,
-      id.sourceNetwork!,
+      transfer.info.sourceNetwork!,
       id.sourceId,
     );
     const destination = assetsV2.getTransferLocationKusama(
       registry,
-      id.destinationNetwork!,
+      transfer.info.destinationNetwork!,
       id.destinationId,
     );
     return { source, destination };
