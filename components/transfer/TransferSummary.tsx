@@ -2,8 +2,10 @@ import { FC } from "react";
 import { ValidationData } from "@/utils/types";
 import { etherscanAddressLink, subscanAccountLink } from "@/lib/explorerLinks";
 import { FeeDisplay } from "../FeeDisplay";
-import { useBridgeStatus } from "@/hooks/useBridgeStatus";
-import { estimateDelivery } from "@/lib/bridgeStatus";
+import {
+  estimateDelivery,
+  useEstimatedDelivery,
+} from "@/hooks/useEstimatedDelivery";
 import { Table, TableBody, TableRow, TableCell } from "../ui/table";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 
@@ -12,15 +14,7 @@ interface TransferSummaryProps {
 }
 
 export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
-  const {
-    data: status,
-    isLoading: isStatusLoading,
-    isValidating: isStatusValidating,
-    error: statusError,
-  } = useBridgeStatus();
-
-  const isRefreshing = isStatusLoading || isStatusValidating;
-
+  const { data: deliveryLatency, error: latencyError } = useEstimatedDelivery();
   let sourceAccountDisplay = data.formData.sourceAccount;
   let beneficiaryDisplay = data.formData.beneficiary;
   let sourceAccountLink: string;
@@ -95,6 +89,12 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
               </TableCell>
             </TableRow>
             <TableRow>
+              <TableCell className="font-bold">Transfer Amount</TableCell>
+              <TableCell>
+                {data.formData.amount} {data.tokenMetadata.symbol}
+              </TableCell>
+            </TableRow>
+            <TableRow>
               <TableCell className="font-bold">Transfer Fee</TableCell>
               <TableCell>
                 {" "}
@@ -112,11 +112,11 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
               <TableCell>
                 {" "}
                 <span className="">
-                  {isRefreshing
+                  {deliveryLatency === null
                     ? "Calculating..."
-                    : statusError
+                    : latencyError
                       ? "Could not estimate delivery"
-                      : estimateDelivery(data.source.type, status)}
+                      : estimateDelivery(data.source.type, deliveryLatency)}
                 </span>
                 <span className="text-muted-foreground">
                   {" "}

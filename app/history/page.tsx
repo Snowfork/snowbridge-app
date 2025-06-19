@@ -459,7 +459,7 @@ export default function History() {
   }, [transfers, setTransferHistoryCache]);
 
   useEffect(() => {
-    const oldTransferCutoff = new Date().getTime() - 14 * 24 * 60 * 60 * 1000; // 2 weeks
+    const oldTransferCutoff = new Date().getTime() - 4 * 60 * 60 * 1000; // 4 hours
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
         transferHistoryCache.find(
@@ -518,11 +518,12 @@ export default function History() {
     }
     return pages;
   }, [
-    showGlobal,
-    transferHistoryCache,
     transfersPendingLocal,
-    ethereumAccounts,
+    transferHistoryCache,
+    assetRegistry,
     polkadotAccounts,
+    ethereumAccounts,
+    showGlobal,
   ]);
 
   useMemo(() => {
