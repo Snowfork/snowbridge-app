@@ -30,7 +30,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { useTransferHistory } from "@/hooks/useTransferHistory";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import {
@@ -60,7 +59,8 @@ import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useContext, useEffect, useMemo, useState } from "react";
+import { RegistryContext } from "../providers";
 
 const ITEMS_PER_PAGE = 5;
 const isWalletTransaction = (
@@ -423,7 +423,7 @@ export default function History() {
     transfersPendingLocalAtom,
   );
 
-  const { data: assetRegistry } = useAssetRegistry();
+  const assetRegistry = useContext(RegistryContext)!;
   const {
     data: transfers,
     mutate,
