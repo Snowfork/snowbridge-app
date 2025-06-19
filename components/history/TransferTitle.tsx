@@ -4,10 +4,9 @@ import { LucideGlobe, LucideWallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBalance } from "@/utils/formatting";
 import { parseUnits } from "ethers";
-import { useAtomValue } from "jotai";
-import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { TransferStatusBadge } from "./TransferStatusBadge";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { useContext } from "react";
+import { RegistryContext } from "@/app/providers";
 
 export function getChainIdentifiers(
   transfer: Transfer,
@@ -125,8 +124,7 @@ export function TransferTitle({
   showWallet,
   showBagde,
 }: TransferTitleProps) {
-  const env = useAtomValue(snowbridgeEnvironmentAtom);
-  const { data: assetRegistry } = useAssetRegistry();
+  const assetRegistry = useContext(RegistryContext)!;
 
   const { destination } = getEnvDetail(transfer, assetRegistry);
   const when = new Date(transfer.info.when);

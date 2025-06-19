@@ -1,5 +1,12 @@
 "use client";
-import { FC, Key, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FC,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -25,9 +32,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
+import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import {
   filterByAccountType,
   TransferFormData,
@@ -47,7 +54,6 @@ import {
   KusamaValidationData,
 } from "@/utils/types";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { useSendKusamaToken } from "@/hooks/useSendTokenKusama";
 import { parseUnits } from "ethers";
 import { useKusamaFeeInfo } from "@/hooks/useKusamaFeeInfo";
@@ -62,12 +68,13 @@ import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
 import { formatBalance } from "@/utils/formatting";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
+import { RegistryContext } from "@/app/providers";
 
 export const KusamaComponent: FC = () => {
   const router = useRouter();
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const { data: assetRegistry } = useAssetRegistry();
+  const assetRegistry = useContext(RegistryContext)!;
 
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");

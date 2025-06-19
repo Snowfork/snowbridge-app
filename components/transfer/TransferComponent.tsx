@@ -14,7 +14,7 @@ import {
 import { historyV2, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
-import { FC, Suspense, useRef, useState } from "react";
+import { FC, Suspense, useContext, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { TransferBusy } from "./TransferBusy";
 import { TransferError } from "./TransferError";
@@ -22,8 +22,8 @@ import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { LucideLoaderCircle } from "lucide-react";
+import { RegistryContext } from "@/app/providers";
 
 function sendResultToHistory(
   messageId: string,
@@ -97,7 +97,7 @@ export const TransferComponent: FC = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
-  const { data: registry } = useAssetRegistry();
+  const registry = useContext(RegistryContext)!;
 
   const { mutate: refreshHistory } = useTransferHistory();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);

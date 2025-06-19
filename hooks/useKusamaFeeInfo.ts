@@ -2,7 +2,6 @@ import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { assetsV2, Context, forKusama } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
-import { useAssetRegistry } from "./useAssetRegistry";
 import {
   AssetHub,
   DOT_DECIMALS,
@@ -14,6 +13,8 @@ import {
 
 import { ApiPromise } from "@polkadot/api";
 import { Direction } from "@snowbridge/api/dist/forKusama";
+import { useContext } from "react";
+import { RegistryContext } from "@/app/providers";
 
 async function fetchKusamaFeeInfo([context, registry, direction, token]: [
   Context | null,
@@ -66,7 +67,7 @@ export function useKusamaFeeInfo(source: string, token: string | undefined) {
   }
 
   const context = useAtomValue(snowbridgeContextAtom);
-  const { data: registry } = useAssetRegistry();
+  const registry = useContext(RegistryContext)!;
   return useSWR(
     [context, registry, direction, token, "kusamaFeeInfo"],
     fetchKusamaFeeInfo,

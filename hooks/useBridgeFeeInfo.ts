@@ -2,8 +2,9 @@ import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { assetsV2, Context, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
-import { useAssetRegistry } from "./useAssetRegistry";
 import { FeeInfo } from "@/utils/types";
+import { useContext } from "react";
+import { RegistryContext } from "@/app/providers";
 
 async function fetchBridgeFeeInfo([
   context,
@@ -78,7 +79,7 @@ export function useBridgeFeeInfo(
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
-  const { data: registry } = useAssetRegistry();
+  const registry = useContext(RegistryContext)!;
   return useSWR(
     [context, source, destination, registry, token, "feeInfo"],
     fetchBridgeFeeInfo,
