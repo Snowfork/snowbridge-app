@@ -3,8 +3,8 @@ import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
-export const REFRESH_INTERVAL: number = 30 * 1000; // 30 minutes
-export const ERROR_RETRY_INTERVAL: number = 30 * 1000; // 30 minute
+export const REFRESH_INTERVAL: number = 2 * 60 * 1000; // 2 minutes
+export const ERROR_RETRY_INTERVAL: number = 2 * 60 * 1000; // 2 minute
 
 export const useTransferHistory = () => {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
@@ -12,8 +12,6 @@ export const useTransferHistory = () => {
     refreshInterval: REFRESH_INTERVAL,
     suspense: true,
     fallbackData: [],
-    revalidateOnFocus: false,
-    revalidateOnMount: true,
     errorRetryInterval: ERROR_RETRY_INTERVAL,
     errorRetryCount: 120, // Retry 120 times every minute (2 hours)
   });
