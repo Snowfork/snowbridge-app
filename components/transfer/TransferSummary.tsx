@@ -131,20 +131,15 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
                 {data.formData.amount} {data.tokenMetadata.symbol}
               </TableCell>
             </TableRow>
-            <TableRow
-              hidden={
-                !executionFee || !sourceTokenSymbol || !sourceTokenDecimals
-              }
-            >
+            <TableRow>
               <TableCell className="font-bold">Execution Fee</TableCell>
               <TableCell>
                 {executionFee && sourceTokenSymbol && sourceTokenDecimals
                   ? formatBalance({
                       number: executionFee,
                       decimals: sourceTokenDecimals,
-                    })
-                  : "Could not calculate..."}{" "}
-                {sourceTokenSymbol}
+                    }) + ` ${sourceTokenSymbol}`
+                  : "Calculating..."}{" "}
               </TableCell>
             </TableRow>
             <TableRow>
