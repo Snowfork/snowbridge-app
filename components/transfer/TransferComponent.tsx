@@ -138,7 +138,6 @@ export const TransferComponent: FC = () => {
       setBusy("Doing some preflight checks...");
       track("Validate Send", { ...data?.formData });
 
-      setSourceExecutionFee(null);
       setValidationData(data);
       setFormData(data.formData);
 
@@ -223,7 +222,10 @@ export const TransferComponent: FC = () => {
           message={error}
           plan={plan}
           data={validationData}
-          onBack={() => backToForm(formData)}
+          onBack={() => {
+            backToForm(formData);
+            setSourceExecutionFee(null);
+          }}
         />
       </>
     );
@@ -235,7 +237,10 @@ export const TransferComponent: FC = () => {
           <TransferBusy
             data={validationData}
             message={busy}
-            onBack={() => backToForm(formData)}
+            onBack={() => {
+              backToForm(formData);
+              setSourceExecutionFee(null);
+            }}
           />
         </>
       );
@@ -247,7 +252,10 @@ export const TransferComponent: FC = () => {
           plan={plan}
           data={validationData}
           registry={registry}
-          onBack={() => backToForm(formData)}
+          onBack={() => {
+            backToForm(formData);
+            setSourceExecutionFee(null);
+          }}
           onRefreshTransfer={async (_, refreshOnly) =>
             await validateAndSubmit(
               validationData,
