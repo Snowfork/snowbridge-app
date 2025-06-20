@@ -34,7 +34,7 @@ export const TransferError: FC<TransferErrorProps> = ({
   data,
 }) => {
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 pt-4">
       <div className="flex">
         <LucideAlertCircle className="mx-2 text-destructive" />
         {message}
