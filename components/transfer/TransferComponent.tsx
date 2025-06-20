@@ -186,6 +186,7 @@ export const TransferComponent: FC = () => {
       refreshHistory();
       track("Sending Complete", { ...data.formData, messageId });
       const transferData = base64url.encode(JSON.stringify(historyItem));
+      setSourceExecutionFee(null);
       router.push(`/txcomplete?transfer=${transferData}`);
       setBusy("Transfer successful...");
     } catch (err) {
