@@ -59,7 +59,6 @@ import {
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
-import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,

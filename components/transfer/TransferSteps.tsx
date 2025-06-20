@@ -8,7 +8,6 @@ import { FC, MouseEventHandler, useContext, useState } from "react";
 import { Button } from "../ui/button";
 import { EthereumTxStep } from "./EthereumTxStep";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
-import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
@@ -128,7 +127,6 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   const nextStep = () => setCurrentStep(currentStep + 1);
   return (
     <div>
-      <TransferSummary data={data} />
       <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">
         Steps
       </h3>
