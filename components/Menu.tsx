@@ -18,7 +18,7 @@ import {
   LucideWallet,
 } from "lucide-react";
 import Link from "next/link";
-import { FC } from "react";
+import { FC, useContext } from "react";
 import { Button } from "./ui/button";
 import {
   polkadotAccountAtom,
@@ -33,13 +33,13 @@ import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { windowEthereumTypeAtom } from "@/store/ethereum";
 import { useAppKit } from "@reown/appkit/react";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { RegistryContext } from "@/app/providers";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
 
   useEthereumProvider();
-  const { data: registry } = useAssetRegistry();
+  const registry = useContext(RegistryContext)!;
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
   const wallet = useAtomValue(walletAtom);
@@ -144,14 +144,6 @@ export const Menu: FC = () => {
             </MenubarTrigger>
           </MenubarMenu>
         ) : null}
-        <MenubarMenu>
-          <MenubarTrigger>
-            <Link href="/status" className="flex items-center">
-              <LucideBarChart />
-              <p className="pl-2 hidden md:flex">Status</p>
-            </Link>
-          </MenubarTrigger>
-        </MenubarMenu>
         <MenubarMenu>
           <MenubarTrigger>
             <Link href="/history" className="flex items-center">

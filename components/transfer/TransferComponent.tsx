@@ -14,7 +14,15 @@ import {
 import { historyV2, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
-import { FC, useRef, useState } from "react";
+import {
+  Dispatch,
+  FC,
+  SetStateAction,
+  Suspense,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { TransferBusy } from "./TransferBusy";
 import { TransferError } from "./TransferError";
@@ -22,7 +30,9 @@ import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { LucideLoaderCircle } from "lucide-react";
+import { RegistryContext } from "@/app/providers";
+import { TransferSummary } from "./TransferSummary";
 
 function sendResultToHistory(
   messageId: string,
@@ -96,7 +106,7 @@ export const TransferComponent: FC = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
-  const { data: registry } = useAssetRegistry();
+  const registry = useContext(RegistryContext)!;
 
   const { mutate: refreshHistory } = useTransferHistory();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
@@ -120,6 +130,7 @@ export const TransferComponent: FC = () => {
   const validateAndSubmit = async (
     data: ValidationData,
     refreshOnly: boolean,
+    setSourceExecutionFee: Dispatch<SetStateAction<bigint | null>>,
   ) => {
     const req = requestId.current;
     let error = "Some preflight checks failed...";
@@ -132,6 +143,19 @@ export const TransferComponent: FC = () => {
 
       const plan = await planSend(data);
       if (requestId.current != req) return;
+
+      switch (data.source.type) {
+        case "ethereum": {
+          const p = plan as toPolkadotV2.ValidationResult;
+          setSourceExecutionFee(p.data.feeInfo?.executionFee ?? null);
+          break;
+        }
+        case "substrate": {
+          const p = plan as toEthereumV2.ValidationResult;
+          setSourceExecutionFee(p.data.sourceExecutionFee);
+          break;
+        }
+      }
 
       const steps = createStepsFromPlan(data, plan);
       setPlanData(steps);
@@ -162,6 +186,7 @@ export const TransferComponent: FC = () => {
       refreshHistory();
       track("Sending Complete", { ...data.formData, messageId });
       const transferData = base64url.encode(JSON.stringify(historyItem));
+      setSourceExecutionFee(null);
       router.push(`/txcomplete?transfer=${transferData}`);
       setBusy("Transfer successful...");
     } catch (err) {
@@ -176,46 +201,86 @@ export const TransferComponent: FC = () => {
     }
   };
 
+  const [sourceExecutionFee, setSourceExecutionFee] = useState<bigint | null>(
+    null,
+  );
+
+  let summary = <></>;
+  if (validationData) {
+    summary = (
+      <TransferSummary
+        data={validationData}
+        executionFee={sourceExecutionFee}
+      />
+    );
+  }
   let content;
   if (error !== null) {
     content = (
-      <TransferError
-        message={error}
-        plan={plan}
-        data={validationData}
-        onBack={() => backToForm(formData)}
-      />
+      <>
+        {summary}
+        <TransferError
+          message={error}
+          plan={plan}
+          data={validationData}
+          onBack={() => {
+            backToForm(formData);
+            setSourceExecutionFee(null);
+          }}
+        />
+      </>
     );
   } else if (busy !== null) {
-    content = (
-      <TransferBusy
-        data={validationData}
-        message={busy}
-        onBack={() => backToForm(formData)}
-      />
-    );
+    if (validationData)
+      content = (
+        <>
+          {summary}
+          <TransferBusy
+            data={validationData}
+            message={busy}
+            onBack={() => {
+              backToForm(formData);
+              setSourceExecutionFee(null);
+            }}
+          />
+        </>
+      );
   } else if (plan && validationData) {
     content = (
-      <TransferSteps
-        plan={plan}
-        data={validationData}
-        registry={registry}
-        onBack={() => backToForm(formData)}
-        onRefreshTransfer={async (_, refreshOnly) =>
-          await validateAndSubmit(validationData, refreshOnly ?? false)
-        }
-      />
+      <>
+        {summary}
+        <TransferSteps
+          plan={plan}
+          data={validationData}
+          registry={registry}
+          onBack={() => {
+            backToForm(formData);
+            setSourceExecutionFee(null);
+          }}
+          onRefreshTransfer={async (_, refreshOnly) =>
+            await validateAndSubmit(
+              validationData,
+              refreshOnly ?? false,
+              setSourceExecutionFee,
+            )
+          }
+        />
+      </>
     );
   } else if (!plan) {
     content = (
-      <TransferForm
-        assetRegistry={registry}
-        formData={validationData?.formData ?? formData}
-        onValidated={async (data) => await validateAndSubmit(data, false)}
-        onError={async (form, error) =>
-          showError("Error validating transfer form.", form)
-        }
-      />
+      <Suspense fallback={<Loading />}>
+        <TransferForm
+          assetRegistry={registry}
+          formData={validationData?.formData ?? formData}
+          onValidated={async (data) =>
+            await validateAndSubmit(data, false, setSourceExecutionFee)
+          }
+          onError={async (form, error) =>
+            showError("Error validating transfer form.", form)
+          }
+        />
+      </Suspense>
     );
   }
 
@@ -226,5 +291,14 @@ export const TransferComponent: FC = () => {
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>
+  );
+};
+
+const Loading = () => {
+  return (
+    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
+      Loading Transfer Form{" "}
+      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+    </div>
   );
 };

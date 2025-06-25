@@ -3,7 +3,7 @@ import { decodeAddress } from "@polkadot/util-crypto";
 import { u8aToHex } from "@polkadot/util";
 import { TransferStep, ValidationData } from "@/utils/types";
 import { useAtomValue } from "jotai";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -20,7 +20,7 @@ import { LucideLoaderCircle } from "lucide-react";
 import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
 import { parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { RegistryContext } from "@/app/providers";
 
 interface TransferStepData {
   id: number;
@@ -44,7 +44,8 @@ export function SubstrateTransferStep({
 }: TransferStepData) {
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const { data: assetRegistry } = useAssetRegistry();
+
+  const assetRegistry = useContext(RegistryContext)!;
 
   const { transferAsset } = useSubstrateTransfer();
 

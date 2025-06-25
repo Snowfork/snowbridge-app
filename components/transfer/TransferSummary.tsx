@@ -2,25 +2,24 @@ import { FC } from "react";
 import { ValidationData } from "@/utils/types";
 import { etherscanAddressLink, subscanAccountLink } from "@/lib/explorerLinks";
 import { FeeDisplay } from "../FeeDisplay";
-import { useBridgeStatus } from "@/hooks/useBridgeStatus";
-import { estimateDelivery } from "@/lib/bridgeStatus";
+import {
+  estimateDelivery,
+  useEstimatedDelivery,
+} from "@/hooks/useEstimatedDelivery";
 import { Table, TableBody, TableRow, TableCell } from "../ui/table";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
+import { formatBalance } from "@/utils/formatting";
 
 interface TransferSummaryProps {
   data: ValidationData;
+  executionFee: bigint | null;
 }
 
-export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
-  const {
-    data: status,
-    isLoading: isStatusLoading,
-    isValidating: isStatusValidating,
-    error: statusError,
-  } = useBridgeStatus();
-
-  const isRefreshing = isStatusLoading || isStatusValidating;
-
+export const TransferSummary: FC<TransferSummaryProps> = ({
+  data,
+  executionFee,
+}) => {
+  const { data: deliveryLatency, error: latencyError } = useEstimatedDelivery();
   let sourceAccountDisplay = data.formData.sourceAccount;
   let beneficiaryDisplay = data.formData.beneficiary;
   let sourceAccountLink: string;
@@ -63,6 +62,18 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
     );
   }
 
+  let sourceTokenSymbol: string | null = null;
+  let sourceTokenDecimals: number | null = null;
+  switch (data.source.type) {
+    case "ethereum":
+      sourceTokenSymbol = "ETH";
+      sourceTokenDecimals = 18;
+      break;
+    case "substrate":
+      sourceTokenSymbol = data.source.parachain?.info.tokenSymbols ?? null;
+      sourceTokenDecimals = data.source.parachain?.info.tokenDecimals ?? null;
+      break;
+  }
   return (
     <div className="flex flex-col">
       <p className="text-l my-2 font-semibold font-highlight">
@@ -94,17 +105,51 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
                 </span>
               </TableCell>
             </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">Transfer Fee</TableCell>
+            <TableRow
+              hidden={
+                !(
+                  data.tokenMetadata.symbol === data.fee.symbol &&
+                  data.fee.symbol === sourceTokenSymbol
+                )
+              }
+            >
+              <TableCell className="font-bold">Total Amount</TableCell>
               <TableCell>
-                {" "}
-                <FeeDisplay
-                  className="inline"
-                  source={data.source}
-                  destination={data.destination}
-                  token={data.formData.token}
-                  displayDecimals={8}
-                />
+                {formatBalance({
+                  number:
+                    data.amountInSmallestUnit +
+                    data.fee.fee +
+                    (executionFee ?? 0n),
+                  decimals: data.tokenMetadata.decimals,
+                })}{" "}
+                {data.tokenMetadata.symbol}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-bold">Transfer Amount</TableCell>
+              <TableCell>
+                {data.formData.amount} {data.tokenMetadata.symbol}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-bold">Execution Fee</TableCell>
+              <TableCell>
+                {executionFee && sourceTokenSymbol && sourceTokenDecimals
+                  ? formatBalance({
+                      number: executionFee,
+                      decimals: sourceTokenDecimals,
+                    }) + ` ${sourceTokenSymbol}`
+                  : "Calculating..."}{" "}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-bold">Bridge Fee</TableCell>
+              <TableCell>
+                {formatBalance({
+                  number: data.fee.fee,
+                  decimals: data.fee.decimals,
+                })}{" "}
+                {data.fee.symbol}
               </TableCell>
             </TableRow>
             <TableRow>
@@ -112,11 +157,11 @@ export const TransferSummary: FC<TransferSummaryProps> = ({ data }) => {
               <TableCell>
                 {" "}
                 <span className="">
-                  {isRefreshing
+                  {deliveryLatency === null
                     ? "Calculating..."
-                    : statusError
+                    : latencyError
                       ? "Could not estimate delivery"
-                      : estimateDelivery(data.source.type, status)}
+                      : estimateDelivery(data.source.type, deliveryLatency)}
                 </span>
                 <span className="text-muted-foreground">
                   {" "}

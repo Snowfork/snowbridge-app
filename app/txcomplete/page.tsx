@@ -17,14 +17,13 @@ import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { LucideLoaderCircle } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useMemo } from "react";
+import { Suspense, useContext, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { RefreshButton } from "@/components/RefreshButton";
 import { cn } from "@/lib/utils";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import useSWR from "swr";
 import {
   getDappLink,
@@ -32,6 +31,7 @@ import {
   uniswapTokenLink,
 } from "@/lib/explorerLinks";
 import { isValid } from "zod";
+import { RegistryContext } from "../providers";
 
 const Loading = () => {
   return (
@@ -176,8 +176,7 @@ function TxCard(props: TxCardProps) {
 
 function TxComponent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const { data: registry } = useAssetRegistry();
+  const registry = useContext(RegistryContext)!;
 
   const [messageId, sourceType, transfer] = useMemo(() => {
     const messageId = searchParams.get("messageId");

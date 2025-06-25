@@ -1,5 +1,12 @@
 "use client";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FC,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Card,
   CardContent,
@@ -59,14 +66,13 @@ import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadot } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
+import { RegistryContext } from "@/app/providers";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
-  const { data: assetRegistry } = useAssetRegistry();
+  const assetRegistry = useContext(RegistryContext)!;
 
   const [feeDisplay, setFeeDisplay] = useState("");
   const [balanceCheck, setBalanceCheck] = useState("");

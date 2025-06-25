@@ -1,7 +1,6 @@
 import { FC } from "react";
 import { Button } from "../ui/button";
 import Image from "next/image";
-import { TransferSummary } from "./TransferSummary";
 import { ValidationData } from "@/utils/types";
 
 interface TransferBusyProps {
@@ -9,18 +8,9 @@ interface TransferBusyProps {
   data?: ValidationData;
   onBack?: () => Promise<unknown> | unknown;
 }
-export const TransferBusy: FC<TransferBusyProps> = ({
-  message,
-  onBack,
-  data,
-}) => {
+export const TransferBusy: FC<TransferBusyProps> = ({ message, onBack }) => {
   return (
     <div className="flex flex-col">
-      {data !== undefined ? (
-        <TransferSummary data={data} />
-      ) : (
-        <div className="hidden" />
-      )}
       <div className="items-center flex flex-col mt-20">
         <Image
           className="animate-bounce mb-2"

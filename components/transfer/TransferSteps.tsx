@@ -4,17 +4,16 @@ import {
   TransferStepKind,
   ValidationData,
 } from "@/utils/types";
-import { FC, MouseEventHandler, useState } from "react";
+import { FC, MouseEventHandler, useContext, useState } from "react";
 import { Button } from "../ui/button";
 import { EthereumTxStep } from "./EthereumTxStep";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
-import { TransferSummary } from "./TransferSummary";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
-import { useAssetRegistry } from "@/hooks/useAssetRegistry";
 import { assetsV2 } from "@snowbridge/api";
+import { RegistryContext } from "@/app/providers";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -36,7 +35,7 @@ interface StepData {
 }
 
 function TransferFeeStep(step: StepData) {
-  const { data: assetRegistry } = useAssetRegistry();
+  const assetRegistry = useContext(RegistryContext)!;
   const { data: feeInfo, error } = useBridgeFeeInfo(
     step.data.source,
     step.data.destination,
@@ -128,7 +127,6 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   const nextStep = () => setCurrentStep(currentStep + 1);
   return (
     <div>
-      <TransferSummary data={data} />
       <h3 className="text-2xl font-semibold leading-none tracking-tight mt-7">
         Steps
       </h3>

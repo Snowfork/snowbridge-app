@@ -1,9 +1,10 @@
+import { RegistryContext } from "@/app/providers";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { getTokenBalance } from "@/utils/balances";
 import { assetsV2, Context } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
+import { useContext } from "react";
 import useSWR from "swr";
-import { useAssetRegistry } from "./useAssetRegistry";
 
 async function fetchTokenBalance([
   context,
@@ -42,7 +43,7 @@ export function useTokenBalance(
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
-  const { data: registry } = useAssetRegistry();
+  const registry = useContext(RegistryContext)!;
   return useSWR(
     [
       context,
