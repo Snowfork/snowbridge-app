@@ -9,7 +9,8 @@ import { Providers } from "./providers";
 import Image from "next/image";
 import { Metadata } from "next";
 import { metadata as meta } from "@/lib/metadata";
-import { getAssetRegistry } from "@/lib/server/assets";
+import { assetRegistryFor } from "@snowbridge/registry";
+import { getEnvironmentName } from "@/lib/snowbridge";
 
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
@@ -29,7 +30,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const registry = await getAssetRegistry();
+  const registry = assetRegistryFor(getEnvironmentName());
   return (
     <html lang="en">
       <head>

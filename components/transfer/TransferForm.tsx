@@ -59,6 +59,7 @@ import {
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
@@ -131,12 +132,12 @@ interface TransferFormProps {
   onValidated: (data: ValidationData) => Promise<unknown> | unknown;
   onError: (form: TransferFormData, error: Error) => Promise<unknown> | unknown;
   formData?: TransferFormData;
-  assetRegistry: assetsV2.AssetRegistry;
+  assetRegistry: AssetRegistry;
 }
 
 function initialFormData(
   locations: assetsV2.Source[],
-  registry: assetsV2.AssetRegistry,
+  registry: AssetRegistry,
   params: ReadonlyURLSearchParams,
 ) {
   let source = locations[0];

@@ -50,10 +50,7 @@ import {
 } from "@/store/transferHistory";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import {
-  AssetRegistry,
-  ETHER_TOKEN_ADDRESS,
-} from "@snowbridge/api/dist/assets_v2";
+import { AssetRegistry } from "@snowbridge/base-types";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
@@ -247,7 +244,7 @@ const getExplorerLinks = (
 
 const transferDetail = (
   transfer: Transfer,
-  registry: assetsV2.AssetRegistry,
+  registry: AssetRegistry,
 ): JSX.Element => {
   const { source, destination } = getEnvDetail(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
@@ -355,7 +352,7 @@ const transferDetail = (
             {amount} {tokenName}
           </span>{" "}
         </p>
-        <p hidden={transfer.info.tokenAddress === ETHER_TOKEN_ADDRESS}>
+        <p hidden={transfer.info.tokenAddress === assetsV2.ETHER_TOKEN_ADDRESS}>
           Token Address{" "}
           <span className="inline whitespace-pre font-mono">
             {transfer.info.tokenAddress}

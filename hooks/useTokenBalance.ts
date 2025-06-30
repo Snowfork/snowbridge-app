@@ -2,6 +2,7 @@ import { RegistryContext } from "@/app/providers";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { getTokenBalance } from "@/utils/balances";
 import { assetsV2, Context } from "@snowbridge/api";
+import { AssetRegistry } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useContext } from "react";
 import useSWR from "swr";
@@ -18,7 +19,7 @@ async function fetchTokenBalance([
   string,
   assetsV2.TransferLocation,
   assetsV2.TransferLocation,
-  assetsV2.AssetRegistry,
+  AssetRegistry,
   string | undefined,
   string,
 ]) {

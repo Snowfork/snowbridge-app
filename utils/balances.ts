@@ -13,13 +13,14 @@ import {
 } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 interface TokenBalanceProps {
   context: Context;
   token: string;
   source: assetsV2.TransferLocation;
   destination: assetsV2.TransferLocation;
-  registry: assetsV2.AssetRegistry;
+  registry: AssetRegistry;
   sourceAccount: string;
 }
 
@@ -27,7 +28,7 @@ interface TokenBalanceKusamaProps {
   context: Context;
   token: string;
   source: string;
-  registry: assetsV2.AssetRegistry;
+  registry: AssetRegistry;
   sourceAccount: string;
 }
 

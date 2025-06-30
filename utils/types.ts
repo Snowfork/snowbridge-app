@@ -19,6 +19,7 @@ import {
   ContractTransactionReceipt,
   ContractTransactionResponse,
 } from "ethers";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 export const DOT_DECIMALS = 10;
 export const KSM_DECIMALS = 12;
@@ -157,7 +158,7 @@ export type KusamaFeeInfo = {
 
 export interface ValidationData {
   formData: TransferFormData;
-  assetRegistry: assetsV2.AssetRegistry;
+  assetRegistry: AssetRegistry;
   source: assetsV2.TransferLocation;
   destination: assetsV2.TransferLocation;
   tokenMetadata: assets.ERC20Metadata;
@@ -166,7 +167,7 @@ export interface ValidationData {
 }
 
 export interface KusamaValidationData {
-  assetRegistry: assetsV2.AssetRegistry;
+  assetRegistry: AssetRegistry;
   source: string;
   destination: string;
   sourceAccount: string;

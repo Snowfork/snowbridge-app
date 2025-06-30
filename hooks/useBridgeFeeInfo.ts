@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { FeeInfo } from "@/utils/types";
 import { useContext } from "react";
 import { RegistryContext } from "@/app/providers";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 async function fetchBridgeFeeInfo([
   context,
@@ -16,7 +17,7 @@ async function fetchBridgeFeeInfo([
   Context | null,
   assetsV2.TransferLocation,
   assetsV2.TransferLocation,
-  assetsV2.AssetRegistry,
+  AssetRegistry,
   string,
   string,
 ]): Promise<FeeInfo | undefined> {
