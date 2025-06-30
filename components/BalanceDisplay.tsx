@@ -3,11 +3,12 @@ import { assets, assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { FormLabel } from "./ui/form";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 interface BalanceDisplayProps {
   source: assetsV2.TransferLocation;
   destination: assetsV2.TransferLocation;
-  registry: assetsV2.AssetRegistry;
+  registry: AssetRegistry;
   token: string;
   displayDecimals: number;
   tokenMetadata: assets.ERC20Metadata | null;

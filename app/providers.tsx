@@ -1,6 +1,6 @@
 "use client";
 
-import { AssetRegistry } from "@snowbridge/api/dist/assets_v2";
+import { AssetRegistry } from "@snowbridge/base-types";
 import { Provider } from "jotai";
 import { createContext } from "react";
 

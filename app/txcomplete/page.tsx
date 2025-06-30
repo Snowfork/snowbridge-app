@@ -32,6 +32,7 @@ import {
 } from "@/lib/explorerLinks";
 import { isValid } from "zod";
 import { RegistryContext } from "../providers";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 const Loading = () => {
   return (
@@ -46,7 +47,7 @@ interface TxCardProps {
   transfer: Transfer;
   refresh: () => unknown | Promise<unknown>;
   inHistory: boolean;
-  registry: assetsV2.AssetRegistry;
+  registry: AssetRegistry;
 }
 function TxCard(props: TxCardProps) {
   const { transfer, refresh, inHistory, registry } = props;

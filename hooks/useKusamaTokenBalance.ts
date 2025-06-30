@@ -1,7 +1,8 @@
 import { RegistryContext } from "@/app/providers";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { getKusamaTokenBalance, getTokenBalance } from "@/utils/balances";
-import { assetsV2, Context } from "@snowbridge/api";
+import { getKusamaTokenBalance } from "@/utils/balances";
+import { Context } from "@snowbridge/api";
+import { AssetRegistry } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useContext } from "react";
 import useSWR from "swr";
@@ -16,7 +17,7 @@ async function fetchKusamaTokenBalance([
   Context | null,
   string,
   string,
-  assetsV2.AssetRegistry,
+  AssetRegistry,
   string | undefined,
   string,
 ]) {

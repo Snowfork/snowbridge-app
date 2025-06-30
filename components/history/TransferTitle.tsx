@@ -7,10 +7,11 @@ import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useContext } from "react";
 import { RegistryContext } from "@/app/providers";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 export function getChainIdentifiers(
   transfer: Transfer,
-  registry: assetsV2.AssetRegistry,
+  registry: AssetRegistry,
 ) {
   switch (transfer.sourceType as string) {
     case "kusama": {
@@ -52,10 +53,7 @@ export function getChainIdentifiers(
   return null;
 }
 
-export function getEnvDetail(
-  transfer: Transfer,
-  registry: assetsV2.AssetRegistry,
-) {
+export function getEnvDetail(transfer: Transfer, registry: AssetRegistry) {
   const id = getChainIdentifiers(transfer, registry);
   if (!id) {
     console.error("Unknown transfer", transfer);

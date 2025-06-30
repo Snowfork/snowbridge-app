@@ -14,11 +14,12 @@ import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
 import { assetsV2 } from "@snowbridge/api";
 import { RegistryContext } from "@/app/providers";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
   data: ValidationData;
-  registry: assetsV2.AssetRegistry;
+  registry: AssetRegistry;
   onBack?: MouseEventHandler;
   onRefreshTransfer?: (
     data: ValidationData,
@@ -77,7 +78,7 @@ function TransferFeeStep(step: StepData) {
   );
 }
 
-function TransferStepView(step: StepData, registry: assetsV2.AssetRegistry) {
+function TransferStepView(step: StepData, registry: AssetRegistry) {
   const { depositWeth, approveSpend } = useERC20DepositAndApprove();
   switch (step.step.kind) {
     case TransferStepKind.ApproveERC20:

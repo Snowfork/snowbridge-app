@@ -15,10 +15,11 @@ import { ApiPromise } from "@polkadot/api";
 import { Direction } from "@snowbridge/api/dist/forKusama";
 import { useContext } from "react";
 import { RegistryContext } from "@/app/providers";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 async function fetchKusamaFeeInfo([context, registry, direction, token]: [
   Context | null,
-  assetsV2.AssetRegistry,
+  AssetRegistry,
   Direction,
   string,
 ]): Promise<KusamaFeeInfo | undefined> {
