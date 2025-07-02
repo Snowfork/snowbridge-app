@@ -63,17 +63,17 @@ importers:
         specifier: ^1.7.7
         version: 1.7.7(@ethersproject/sha2@5.7.0)(@types/react@18.3.12)(bufferutil@4.0.8)(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
       '@snowbridge/api':
-        specifier: 0.1.65
-        version: 0.1.65(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)
+        specifier: 0.1.66
+        version: 0.1.66(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)
       '@snowbridge/base-types':
-        specifier: 0.1.65
-        version: 0.1.65
+        specifier: 0.1.66
+        version: 0.1.66
       '@snowbridge/contract-types':
-        specifier: 0.1.65
-        version: 0.1.65(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 0.1.66
+        version: 0.1.66(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@snowbridge/registry':
-        specifier: 0.1.65
-        version: 0.1.65
+        specifier: 0.1.66
+        version: 0.1.66
       '@talismn/connect-components':
         specifier: ^1.1.9
         version: 1.1.9(@polkadot/api@15.10.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.58.6(@polkadot/api@15.10.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@13.4.4)(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1392,20 +1392,20 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@snowbridge/api@0.1.65':
-    resolution: {integrity: sha512-2kNsG/1hrHDjzgxCUA1amEJ2km6BcdWrIbl+vMZj21QfjvaFv1WVNGcueckWom7868sRVTTh+1Sraa+daJmoRg==}
+  '@snowbridge/api@0.1.66':
+    resolution: {integrity: sha512-1PSi0B7db/f4rHLMw2ijZc2fhMR7RsPM1vD9oHB+3F/tDS5wjeLpfIrnY+EOb/wOYUYjSl/hVNnnRAP6Da7xVA==}
 
-  '@snowbridge/base-types@0.1.65':
-    resolution: {integrity: sha512-8LI9aCBncvrS0ZIdDANdI3J1lGnCtFkkSu89Y5tJc0pNWfrXN6wUhemtoGUhLi+2AVuvgmCeXYmol+FC8lcXew==}
+  '@snowbridge/base-types@0.1.66':
+    resolution: {integrity: sha512-vq9V9cWik+DAuVQcF1Lkc7gKPWNDevt/uqFBg0i+Ms23AfgLjztHzx4DZlnrQEPp3kZ+RKsIJnkEsNc9ht5diw==}
 
-  '@snowbridge/contract-types@0.1.65':
-    resolution: {integrity: sha512-UnWyL6Y1RrlSoqy/BA7fUmpiR8ydOAqYoQ8ox1V7LfG/NzX9ph3TgU5qXcpessFnHs6rhuUj/w/UJ3SYjO41rQ==}
+  '@snowbridge/contract-types@0.1.66':
+    resolution: {integrity: sha512-Yn1LCpHhL58Gm8kaRync0ZimOoORoU7SqkmxKx89CaM8423UPIS45bBGDR7EMzKD7IYyv+ZXTFIAm9qLQItNRw==}
 
-  '@snowbridge/contracts@0.1.65':
-    resolution: {integrity: sha512-AncYl/bOCMJSOJh0xnXkfPQQNOPAqvbdTjhnhMQuLUZ5OY9xMYkANE8cmz4jnRIx8YFGI+/T1IrAOBb+A5lmnw==}
+  '@snowbridge/contracts@0.1.66':
+    resolution: {integrity: sha512-6hGT3rSpgpIBvDltp+5I33pHQYEvWOGP4H/+2Rs8R6UvDslTrjakwDgcnsNe75YWbGOEahWHJoTgGhyt8NMM/w==}
 
-  '@snowbridge/registry@0.1.65':
-    resolution: {integrity: sha512-kRT3+7WJH0FnvwrkhPo7HkDs++VeKNVEYh6DFDp5LU/82fprent1TjuzMMHvpojW0VivVq2TvSmIFTfZlkazRw==}
+  '@snowbridge/registry@0.1.66':
+    resolution: {integrity: sha512-6q1qDhW0gbynAvwY5GaHuvCkla0QHcaxl2Doa/OAKflyl28c5eZchy1K+Ai76tRku/Aaatw6LZE/Y0E4XIzp8Q==}
 
   '@substrate/connect-extension-protocol@2.2.1':
     resolution: {integrity: sha512-GoafTgm/Jey9E4Xlj4Z5ZBt/H4drH2CNq8VrAro80rtoznrXnFDNVivLQzZN0Xaj2g8YXSn9pC9Oc9IovYZJXw==}
@@ -6408,15 +6408,15 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@snowbridge/api@0.1.65(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)':
+  '@snowbridge/api@0.1.66(bufferutil@4.0.8)(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@polkadot/api': 15.10.2(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring': 13.4.4(@polkadot/util-crypto@13.4.4(@polkadot/util@13.4.4))(@polkadot/util@13.4.4)
       '@polkadot/types': 15.10.2
       '@polkadot/util': 13.4.4
       '@polkadot/util-crypto': 13.4.4(@polkadot/util@13.4.4)
-      '@snowbridge/base-types': 0.1.65
-      '@snowbridge/contract-types': 0.1.65(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@snowbridge/base-types': 0.1.66
+      '@snowbridge/contract-types': 0.1.66(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@typechain/ethers-v6': 0.5.1(ethers@6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10))(typechain@8.3.2(typescript@5.6.3))(typescript@5.6.3)
       ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       rxjs: 7.8.1
@@ -6427,21 +6427,21 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@snowbridge/base-types@0.1.65': {}
+  '@snowbridge/base-types@0.1.66': {}
 
-  '@snowbridge/contract-types@0.1.65(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/contract-types@0.1.66(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@snowbridge/contracts': 0.1.65
+      '@snowbridge/contracts': 0.1.66
       ethers: 6.13.5(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@snowbridge/contracts@0.1.65': {}
+  '@snowbridge/contracts@0.1.66': {}
 
-  '@snowbridge/registry@0.1.65':
+  '@snowbridge/registry@0.1.66':
     dependencies:
-      '@snowbridge/base-types': 0.1.65
+      '@snowbridge/base-types': 0.1.66
 
   '@substrate/connect-extension-protocol@2.2.1':
     optional: true
@@ -7722,7 +7722,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.2(eslint@8.57.1)
       eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.57.1)
@@ -7751,20 +7751,20 @@ snapshots:
       debug: 4.3.7
       enhanced-resolve: 5.17.1
       eslint: 8.57.1
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
       fast-glob: 3.3.2
       get-tsconfig: 4.8.1
       is-bun-module: 1.2.1
       is-glob: 4.0.3
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
     transitivePeerDependencies:
       - '@typescript-eslint/parser'
       - eslint-import-resolver-node
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -7775,7 +7775,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -7786,7 +7786,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
