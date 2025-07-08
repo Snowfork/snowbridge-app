@@ -61,8 +61,7 @@ export async function createContext(
   const ethChains: { [ethChainId: string]: string | AbstractProvider } = {};
   Object.keys(config.ETHEREUM_CHAINS).forEach(
     (ethChainId) =>
-      (ethChains[ethChainId.toString()] =
-        config.ETHEREUM_CHAINS[ethChainId]("")),
+      (ethChains[ethChainId.toString()] = config.ETHEREUM_CHAINS[ethChainId]),
   );
   ethChains[ethChainId.toString()] = ethereumProvider;
 
