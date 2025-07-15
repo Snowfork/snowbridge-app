@@ -106,12 +106,17 @@ export function getErrorMessage(err: any) {
 }
 
 export async function getTransferHistoryV2() {
+  const env = getEnvironment();
   console.log("Fetching transfer history.");
 
-  const toEthereum = await historyV2.toEthereumHistory();
+  const toEthereum = await historyV2.toEthereumHistory(
+    env.config.GRAPHQL_API_URL,
+  );
   console.log("To Ethereum transfers V2:", toEthereum.length);
 
-  const toPolkadot = await historyV2.toPolkadotHistory();
+  const toPolkadot = await historyV2.toPolkadotHistory(
+    env.config.GRAPHQL_API_URL,
+  );
   console.log("To Polkadot transfers V2:", toPolkadot.length);
 
   const transfers = [...toEthereum, ...toPolkadot];
