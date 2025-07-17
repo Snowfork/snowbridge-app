@@ -149,10 +149,9 @@ async function planSend(
     fee,
   } = data;
   if (source.type === "ethereum" && destination.type === "ethereum") {
-    const { parachain, ethChain } = validateEvmSubstrateDestination(data);
-    const sourceParachainApi = await context.parachain(parachain.parachainId);
+    const { parachain } = validateEvmSubstrateDestination(data);
     const tx = await toEthereumFromEVMV2.createTransferEvm(
-      sourceParachainApi,
+      { sourceParaId: parachain.parachainId, context },
       assetRegistry,
       formData.sourceAccount,
       formData.beneficiary,
@@ -160,23 +159,13 @@ async function planSend(
       amountInSmallestUnit,
       fee.delivery as toEthereumV2.DeliveryFee,
     );
-    const plan = await toEthereumFromEVMV2.validateTransferEvm(
-      {
-        assetHub: await context.assetHub(),
-        sourceEthChain: context.ethChain(ethChain.chainId),
-        bridgeHub: await context.bridgeHub(),
-        sourceParachain: sourceParachainApi,
-        gateway: context.gateway(),
-      },
-      tx,
-    );
+    const plan = await toEthereumFromEVMV2.validateTransferEvm(context, tx);
     console.log(plan);
     return plan;
   } else if (source.type === "substrate" && destination.type === "ethereum") {
     const parachain = validateSubstrateDestination(data);
-    const sourceParachainApi = await context.parachain(parachain.parachainId);
     const tx = await toEthereumV2.createTransfer(
-      sourceParachainApi,
+      { sourceParaId: parachain.parachainId, context },
       assetRegistry,
       formData.sourceAccount,
       formData.beneficiary,
@@ -184,15 +173,7 @@ async function planSend(
       amountInSmallestUnit,
       fee.delivery as toEthereumV2.DeliveryFee,
     );
-    const plan = await toEthereumV2.validateTransfer(
-      {
-        assetHub: await context.assetHub(),
-        bridgeHub: await context.bridgeHub(),
-        sourceParachain: sourceParachainApi,
-        gateway: context.gateway(),
-      },
-      tx,
-    );
+    const plan = await toEthereumV2.validateTransfer(context, tx);
     console.log(plan);
     return plan;
   } else if (source.type === "ethereum" && destination.type === "substrate") {
@@ -244,7 +225,7 @@ async function sendToken(
       throw Error(`Could not fetch transaction receipt.`);
     }
     const result = await toEthereumFromEVMV2.getMessageReceipt(
-      await context.parachain(source.parachain!.parachainId),
+      { sourceParaId: source.parachain!.parachainId, context },
       receipt,
     );
     console.log(result);
@@ -256,7 +237,7 @@ async function sendToken(
     );
     const tx = plan.transfer as toEthereumV2.Transfer;
     const result = await toEthereumV2.signAndSend(
-      await context.parachain(paraInfo.parachainId),
+      context,
       tx,
       polkadotAccount.address,
       {

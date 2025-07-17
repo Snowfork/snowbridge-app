@@ -17,7 +17,10 @@ async function getEstimatedDeliveryTime([env]: [
 ]): Promise<BridgeLatency | null> {
   try {
     const channelId = utils.paraIdToChannelId(env.config.ASSET_HUB_PARAID);
-    const estimated = await subsquid.fetchEstimatedDeliveryTime(channelId);
+    const estimated = await subsquid.fetchEstimatedDeliveryTime(
+      env.config.GRAPHQL_API_URL,
+      channelId,
+    );
     console.log("Estimated Delivery", estimated);
     if (
       !estimated ||

@@ -33,6 +33,7 @@ import {
 import { isValid } from "zod";
 import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
+import { getEnvironment } from "@/lib/snowbridge";
 
 const Loading = () => {
   return (
@@ -178,6 +179,7 @@ function TxCard(props: TxCardProps) {
 function TxComponent() {
   const searchParams = useSearchParams();
   const registry = useContext(RegistryContext)!;
+  const environment = getEnvironment();
 
   const [messageId, sourceType, transfer] = useMemo(() => {
     const messageId = searchParams.get("messageId");
@@ -205,8 +207,14 @@ function TxComponent() {
       if (messageId !== null) {
         if (sourceType === null) {
           const [toP, toE] = await Promise.all([
-            historyV2.toPolkadotTransferById(messageId),
-            historyV2.toEthereumTransferById(messageId),
+            historyV2.toPolkadotTransferById(
+              environment.config.GRAPHQL_API_URL,
+              messageId,
+            ),
+            historyV2.toEthereumTransferById(
+              environment.config.GRAPHQL_API_URL,
+              messageId,
+            ),
           ]);
           return {
             txData: toP ?? toE ?? transfer,
@@ -215,14 +223,20 @@ function TxComponent() {
         } else {
           switch (sourceType) {
             case "ethereum": {
-              const txData = await historyV2.toPolkadotTransferById(messageId);
+              const txData = await historyV2.toPolkadotTransferById(
+                environment.config.GRAPHQL_API_URL,
+                messageId,
+              );
               return {
                 txData: txData ?? transfer,
                 inHistory: txData !== undefined,
               };
             }
             case "substrate": {
-              const txData = await historyV2.toEthereumTransferById(messageId);
+              const txData = await historyV2.toEthereumTransferById(
+                environment.config.GRAPHQL_API_URL,
+                messageId,
+              );
               return {
                 txData: txData ?? transfer,
                 inHistory: txData !== undefined,
