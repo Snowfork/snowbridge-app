@@ -57,7 +57,7 @@ export const SendErrorDialog: FC<{
     }
     if (
       error.errorKind === "toPolkadotV2" &&
-      error.reason === toPolkadotV2.ValidationReason.InsufficientTokenBalance
+      error.reason === toPolkadotV2.ValidationReason.GatewaySpenderLimitReached
     ) {
       return (
         <Button className="py-1" size="sm" onClick={onApproveSpend}>
