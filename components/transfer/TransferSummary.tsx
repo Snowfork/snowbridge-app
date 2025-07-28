@@ -143,7 +143,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className="font-bold">Bridge Fee</TableCell>
+              <TableCell className="font-bold">Delivery Fee</TableCell>
               <TableCell>
                 {formatBalance({
                   number: data.fee.fee,

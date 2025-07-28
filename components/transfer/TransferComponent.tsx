@@ -11,7 +11,12 @@ import {
   TransferPlanSteps,
   ValidationData,
 } from "@/utils/types";
-import { historyV2, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
+import {
+  forInterParachain,
+  historyV2,
+  toEthereumV2,
+  toPolkadotV2,
+} from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
 import {
@@ -173,6 +178,8 @@ export const TransferComponent: FC = () => {
         data.source.type === "substrate" &&
         data.destination.type === "substrate"
       ) {
+        const p = plan as forInterParachain.ValidationResult;
+        setSourceExecutionFee(p.data.sourceExecutionFee);
       } else {
         console.warn(
           "could not infer transfer type",
