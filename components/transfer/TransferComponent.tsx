@@ -38,62 +38,75 @@ function sendResultToHistory(
   messageId: string,
   data: ValidationData,
   result: MessageReciept,
-): Transfer {
-  switch (data.destination.type) {
-    case "substrate": {
-      const sendResult = result as toPolkadotV2.MessageReceipt;
-      const transfer: historyV2.ToPolkadotTransferResult = {
-        sourceType: "ethereum",
-        id: messageId ?? sendResult.messageId,
-        status: historyV2.TransferStatus.Pending,
-        info: {
-          amount: data.amountInSmallestUnit.toString(),
-          sourceAddress: data.formData.sourceAccount,
-          beneficiaryAddress: data.formData.beneficiary,
-          tokenAddress: data.formData.token,
-          when: new Date(),
-          destinationParachain: data.destination.parachain?.parachainId,
-        },
-        submitted: {
-          blockNumber: sendResult.blockNumber ?? 0,
-          channelId: sendResult.channelId,
-          messageId: messageId ?? sendResult.messageId,
-          transactionHash: sendResult.txHash ?? "",
-          nonce: Number(sendResult.nonce.toString()),
-        },
-      };
+): Transfer | null {
+  if (
+    data.source.type === "ethereum" &&
+    data.destination.type === "substrate"
+  ) {
+    const sendResult = result as toPolkadotV2.MessageReceipt;
+    const transfer: historyV2.ToPolkadotTransferResult = {
+      sourceType: "ethereum",
+      id: messageId ?? sendResult.messageId,
+      status: historyV2.TransferStatus.Pending,
+      info: {
+        amount: data.amountInSmallestUnit.toString(),
+        sourceAddress: data.formData.sourceAccount,
+        beneficiaryAddress: data.formData.beneficiary,
+        tokenAddress: data.formData.token,
+        when: new Date(),
+        destinationParachain: data.destination.parachain?.parachainId,
+      },
+      submitted: {
+        blockNumber: sendResult.blockNumber ?? 0,
+        channelId: sendResult.channelId,
+        messageId: messageId ?? sendResult.messageId,
+        transactionHash: sendResult.txHash ?? "",
+        nonce: Number(sendResult.nonce.toString()),
+      },
+    };
 
-      return { ...transfer, isWalletTransaction: true };
-    }
-    case "ethereum": {
-      const sendResult = result as toEthereumV2.MessageReceipt;
-      const transfer: historyV2.ToEthereumTransferResult = {
-        sourceType: "substrate",
-        id: messageId ?? sendResult.messageId,
-        status: historyV2.TransferStatus.Pending,
-        info: {
-          amount: data.amountInSmallestUnit.toString(),
-          sourceAddress: data.formData.sourceAccount,
-          beneficiaryAddress: data.formData.beneficiary,
-          tokenAddress: data.formData.token,
-          when: new Date(),
-        },
-        submitted: {
-          block_num: sendResult.blockNumber,
-          block_timestamp: 0,
-          messageId: messageId ?? sendResult.messageId,
-          account_id: data.formData.sourceAccount,
-          extrinsic_hash: sendResult.txHash,
-          success: sendResult.success,
-          bridgeHubMessageId: "",
-          sourceParachainId: data.source.parachain!.parachainId,
-        },
-      };
+    return { ...transfer, isWalletTransaction: true };
+  } else if (
+    (data.source.type === "ethereum" || data.source.type === "substrate") &&
+    data.destination.type === "ethereum"
+  ) {
+    const sendResult = result as toEthereumV2.MessageReceipt;
+    const transfer: historyV2.ToEthereumTransferResult = {
+      sourceType: "substrate",
+      id: messageId ?? sendResult.messageId,
+      status: historyV2.TransferStatus.Pending,
+      info: {
+        amount: data.amountInSmallestUnit.toString(),
+        sourceAddress: data.formData.sourceAccount,
+        beneficiaryAddress: data.formData.beneficiary,
+        tokenAddress: data.formData.token,
+        when: new Date(),
+      },
+      submitted: {
+        block_num: sendResult.blockNumber,
+        block_timestamp: 0,
+        messageId: messageId ?? sendResult.messageId,
+        account_id: data.formData.sourceAccount,
+        extrinsic_hash: sendResult.txHash,
+        success: sendResult.success,
+        bridgeHubMessageId: "",
+        sourceParachainId: data.source.parachain!.parachainId,
+      },
+    };
 
-      return { ...transfer, isWalletTransaction: true };
-    }
-    default:
-      throw Error(`Unknown type '${data.source.type}'`);
+    return { ...transfer, isWalletTransaction: true };
+  } else if (
+    data.source.type === "substrate" &&
+    data.destination.type === "substrate"
+  ) {
+    return null;
+  } else {
+    console.error(
+      "Could not infer transfer type",
+      data.source,
+      data.destination,
+    );
+    throw Error(`Unknown type '${data.source.type}'`);
   }
 }
 
@@ -144,17 +157,28 @@ export const TransferComponent: FC = () => {
       const plan = await planSend(data);
       if (requestId.current != req) return;
 
-      switch (data.source.type) {
-        case "ethereum": {
-          const p = plan as toPolkadotV2.ValidationResult;
-          setSourceExecutionFee(p.data.feeInfo?.executionFee ?? null);
-          break;
-        }
-        case "substrate": {
-          const p = plan as toEthereumV2.ValidationResult;
-          setSourceExecutionFee(p.data.sourceExecutionFee);
-          break;
-        }
+      if (
+        data.source.type === "ethereum" &&
+        data.destination.type === "substrate"
+      ) {
+        const p = plan as toPolkadotV2.ValidationResult;
+        setSourceExecutionFee(p.data.feeInfo?.executionFee ?? null);
+      } else if (
+        (data.source.type === "substrate" || data.source.type === "ethereum") &&
+        data.destination.type === "ethereum"
+      ) {
+        const p = plan as toEthereumV2.ValidationResult;
+        setSourceExecutionFee(p.data.sourceExecutionFee);
+      } else if (
+        data.source.type === "substrate" &&
+        data.destination.type === "substrate"
+      ) {
+      } else {
+        console.warn(
+          "could not infer transfer type",
+          data.source,
+          data.destination,
+        );
       }
 
       const steps = createStepsFromPlan(data, plan);
@@ -179,16 +203,27 @@ export const TransferComponent: FC = () => {
 
       const messageId = result.messageId ?? "0x";
       const historyItem = sendResultToHistory(messageId, data, result);
-      addPendingTransaction({
-        kind: "add",
-        transfer: historyItem,
-      });
-      refreshHistory();
+      if (historyItem !== null) {
+        addPendingTransaction({
+          kind: "add",
+          transfer: historyItem,
+        });
+        refreshHistory();
+      }
       track("Sending Complete", { ...data.formData, messageId });
-      const transferData = base64url.encode(JSON.stringify(historyItem));
       setSourceExecutionFee(null);
-      router.push(`/txcomplete?transfer=${transferData}`);
       setBusy("Transfer successful...");
+      if (
+        !(
+          data.source.type === "substrate" &&
+          data.destination.type === "substrate"
+        )
+      ) {
+        const transferData = base64url.encode(JSON.stringify(historyItem));
+        router.push(`/txcomplete?transfer=${transferData}`);
+      } else {
+        router.push(`todo/statuspagehere`);
+      }
     } catch (err) {
       console.error(err);
       if (requestId.current != req) return;

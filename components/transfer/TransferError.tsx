@@ -2,7 +2,7 @@ import { FC } from "react";
 import { Button } from "../ui/button";
 import { TransferPlanSteps, ValidationData } from "@/utils/types";
 import { LucideAlertCircle } from "lucide-react";
-import { toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
+import { forInterParachain, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 
 interface TransferErrorProps {
   message?: string;
@@ -12,7 +12,10 @@ interface TransferErrorProps {
 }
 
 export function overrideMessage(
-  error: toEthereumV2.ValidationLog | toPolkadotV2.ValidationLog,
+  error:
+    | toEthereumV2.ValidationLog
+    | toPolkadotV2.ValidationLog
+    | forInterParachain.ValidationLog,
   data?: ValidationData,
 ) {
   switch (data?.source.id) {

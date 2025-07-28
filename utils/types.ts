@@ -206,7 +206,11 @@ export interface TransferStep {
 
 export interface TransferPlanSteps {
   steps: TransferStep[];
-  errors: (toEthereumV2.ValidationLog | toPolkadotV2.ValidationLog)[];
+  errors: (
+    | toEthereumV2.ValidationLog
+    | toPolkadotV2.ValidationLog
+    | forInterParachain.ValidationLog
+  )[];
   plan: ValidationResult;
 }
 
