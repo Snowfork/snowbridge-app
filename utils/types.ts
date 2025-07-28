@@ -25,6 +25,11 @@ export const KSM_DECIMALS = 12;
 export const DOT_SYMBOL = "DOT";
 export const KSM_SYMBOL = "KSM";
 
+export type TransferType =
+  | "toPolkadotV2"
+  | "toEthereumV2"
+  | "forInterParachain";
+
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
   | ({ errorKind: "toPolkadotV2" } & toPolkadotV2.ValidationLog)

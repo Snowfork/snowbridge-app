@@ -1,6 +1,5 @@
 import { Context, environment, historyV2 } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
-import { ERC20Metadata } from "@snowbridge/base-types";
 import { AbstractProvider } from "ethers";
 
 export function getEnvironmentName() {

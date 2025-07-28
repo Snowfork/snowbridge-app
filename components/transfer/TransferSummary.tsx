@@ -9,6 +9,7 @@ import {
 import { Table, TableBody, TableRow, TableCell } from "../ui/table";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { formatBalance } from "@/utils/formatting";
+import { inferTransferType } from "@/utils/inferTransferType";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -74,6 +75,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       sourceTokenDecimals = data.source.parachain?.info.tokenDecimals ?? null;
       break;
   }
+  const transferType = inferTransferType(data.source, data.destination);
   return (
     <div className="flex flex-col">
       <p className="text-l my-2 font-semibold font-highlight">
@@ -161,14 +163,22 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
                     ? "Calculating..."
                     : latencyError
                       ? "Could not estimate delivery"
-                      : estimateDelivery(data.source.type, deliveryLatency)}
+                      : estimateDelivery(
+                          data.source,
+                          data.destination,
+                          deliveryLatency,
+                        )}
                 </span>
                 <span className="text-muted-foreground">
                   {" "}
                   (up to{" "}
-                  {data.source.type === "ethereum"
+                  {transferType === "toPolkadotV2"
                     ? "25 minutes"
-                    : "1 hour 30 minutes"}
+                    : transferType === "toEthereumV2"
+                      ? "1 hour 30 minutes"
+                      : transferType === "forInterParachain"
+                        ? "5 minutes"
+                        : "unknown upper bound"}
                   )
                 </span>
               </TableCell>
