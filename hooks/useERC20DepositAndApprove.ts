@@ -1,7 +1,7 @@
 import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { ContractResponse, ValidationData } from "@/utils/types";
-import { toPolkadot } from "@snowbridge/api";
+import { toPolkadotV2 } from "@snowbridge/api";
 import { parseUnits } from "ethers";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
@@ -38,12 +38,14 @@ export function useERC20DepositAndApprove(): {
       ) {
         throw Error("Selected signer does not match source address.");
       }
-      const response = await toPolkadot.approveTokenSpend(
+      const approveTx = await toPolkadotV2.approveTokenSpend(
         context,
-        signer,
+        signerAddress,
         data.formData.token,
         parseUnits(amount, data.tokenMetadata.decimals),
       );
+
+      const response = await signer.sendTransaction(approveTx);
 
       console.log("approval response", response);
       const FIVE_MINUTES = 60_000 * 5;
@@ -71,12 +73,12 @@ export function useERC20DepositAndApprove(): {
       ) {
         throw Error("Selected signer does not match source address.");
       }
-      const response = await toPolkadot.depositWeth(
-        context,
-        signer,
+      const depositTx = await toPolkadotV2.depositWeth(
+        signerAddress,
         data.formData.token,
         parseUnits(amount, data.tokenMetadata.decimals),
       );
+      const response = await signer.sendTransaction(depositTx);
       console.log("deposit response", response);
       const FIVE_MINUTES = 60_000 * 5;
       const receipt = await response.wait(1, FIVE_MINUTES);

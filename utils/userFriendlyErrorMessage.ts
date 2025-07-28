@@ -1,5 +1,5 @@
 "use client";
-import { toEthereum, toPolkadot } from "@snowbridge/api";
+import { toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import { ValidationError, FormDataSwitch } from "./types";
 import { TransferFormData } from "./formSchema";
 
@@ -10,19 +10,19 @@ export function userFriendlyErrorMessage({
   error: ValidationError;
   formData: TransferFormData | FormDataSwitch;
 }) {
-  if (error.kind === "toPolkadot") {
+  if (error.errorKind === "toPolkadotV2") {
     if (
-      error.code == toPolkadot.SendValidationCode.BeneficiaryAccountMissing &&
+      error.reason == toPolkadotV2.ValidationReason.AccountDoesNotExist &&
       formData.destination === "assethub"
     ) {
       return "Beneficiary does not hold existential deposit on destination. Already have DOT on Polkadot? Teleport DOT to the beneficiary address on Asset Hub using your wallet.";
     }
-    if (error.code == toPolkadot.SendValidationCode.InsufficientFee) {
+    if (error.reason == toPolkadotV2.ValidationReason.InsufficientEther) {
       return "Insufficient ETH balance to pay transfer fees.";
     }
     return error.message;
-  } else if (error.kind === "toEthereum") {
-    if (error.code == toEthereum.SendValidationCode.InsufficientFee) {
+  } else if (error.errorKind === "toEthereumV2") {
+    if (error.reason == toEthereumV2.ValidationReason.InsufficientDotFee) {
       return "Insufficient DOT balance to pay transfer fees. Already have DOT on Polkadot? Teleport DOT to the source address on Asset Hub using your wallet.";
     }
     return error.message;

@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { toPolkadot } from "@snowbridge/api";
+import { toPolkadotV2 } from "@snowbridge/api";
 import { useState, useCallback, FC, useMemo } from "react";
 import { Button } from "./ui/button";
 
@@ -106,8 +106,9 @@ export const TopUpXcmFee: FC<Props> = ({
           description: "Please follow the sufficient or existential deposit",
           errors: [
             {
-              kind: "toPolkadot",
-              code: toPolkadot.SendValidationCode.BeneficiaryAccountMissing,
+              errorKind: "toPolkadotV2",
+              kind: toPolkadotV2.ValidationKind.Error,
+              reason: toPolkadotV2.ValidationReason.AccountDoesNotExist,
               message:
                 "Asset Hub requires that you hold specific tokens in order for an account to be active.",
             },

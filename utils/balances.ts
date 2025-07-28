@@ -1,5 +1,5 @@
 "use client";
-import { assets, assetsV2, Context } from "@snowbridge/api";
+import { assetsV2, Context } from "@snowbridge/api";
 import { paraImplementation } from "@snowbridge/api/dist/parachains";
 import { formatBalance } from "@/utils/formatting";
 import { ApiPromise } from "@polkadot/api";
@@ -109,7 +109,7 @@ export async function getTokenBalance({
     };
     let isNativeTransfer = true;
     if (token !== assetsV2.ETHER_TOKEN_ADDRESS) {
-      erc20Asset = await assets.assetErc20Balance(
+      erc20Asset = await assetsV2.assetErc20Balance(
         context,
         token,
         sourceAccount,

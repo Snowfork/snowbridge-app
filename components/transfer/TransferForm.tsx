@@ -10,7 +10,7 @@ import {
   transferFormSchema,
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
-import { assets, assetsV2, Context, environment } from "@snowbridge/api";
+import { assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
@@ -59,7 +59,7 @@ import {
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
@@ -759,7 +759,7 @@ interface SubmitButtonProps {
   destination: assetsV2.TransferLocation;
   source: assetsV2.Source;
   feeInfo?: FeeInfo;
-  tokenMetadata: assets.ERC20Metadata | null;
+  tokenMetadata: ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
   context: Context | null;

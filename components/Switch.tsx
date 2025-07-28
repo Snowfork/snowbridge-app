@@ -63,7 +63,7 @@ import {
 } from "@/utils/parachainConfigs";
 
 import { TopUpXcmFee } from "./TopUpXcmFee";
-import { toPolkadot } from "@snowbridge/api";
+import { toPolkadotV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { RegistryContext } from "@/app/providers";
@@ -271,8 +271,9 @@ export const SwitchComponent: FC = () => {
               "Your account on Asset Hub does not have the required tokens. Please ensure you meet the sufficient or existential deposit requirements.",
             errors: [
               {
-                kind: "toPolkadot",
-                code: toPolkadot.SendValidationCode.BeneficiaryAccountMissing,
+                errorKind: "toPolkadotV2",
+                kind: toPolkadotV2.ValidationKind.Error,
+                reason: toPolkadotV2.ValidationReason.AccountDoesNotExist,
                 message:
                   "To complete the transaction, your Asset Hub account must hold specific tokens. Without these, the account cannot be activated or used.",
               },
