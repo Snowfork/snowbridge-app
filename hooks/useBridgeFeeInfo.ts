@@ -1,5 +1,11 @@
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { assetsV2, Context, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
+import {
+  assetsV2,
+  Context,
+  forInterParachain,
+  toEthereumV2,
+  toPolkadotV2,
+} from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import { FeeInfo } from "@/utils/types";
@@ -24,7 +30,27 @@ async function fetchBridgeFeeInfo([
   if (context === null) {
     return;
   }
-  if (destination.type === "ethereum" && source.parachain) {
+  if (source.type === "substrate" && destination.type === "substrate") {
+    const fee = await forInterParachain.getDeliveryFee(
+      {
+        context,
+        sourceParaId: source.parachain!.parachainId,
+        destinationParaId: destination.parachain!.parachainId,
+      },
+      registry,
+      token,
+    );
+    let feeValue = fee.totalFeeInDot;
+    let decimals = registry.relaychain.tokenDecimals ?? 0;
+    let symbol = registry.relaychain.tokenSymbols ?? "";
+    return {
+      fee: feeValue,
+      decimals,
+      symbol,
+      delivery: fee,
+      type: source.type,
+    };
+  } else if (destination.type === "ethereum" && source.parachain) {
     const fee = await toEthereumV2.getDeliveryFee(
       {
         assetHub: await context.assetHub(),

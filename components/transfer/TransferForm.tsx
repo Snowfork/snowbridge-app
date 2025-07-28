@@ -156,9 +156,7 @@ function initialFormData(
   const destinations = Object.keys(source.destinations).map((destination) =>
     assetsV2.getTransferLocation(
       registry,
-      source.type === "substrate" || source.id.match(/_evm$/)
-        ? "ethereum"
-        : "substrate",
+      source.destinations[destination].type,
       destination,
     ),
   );
@@ -179,7 +177,7 @@ function initialFormData(
     registry.ethereumChains[registry.ethChainId].assets,
   );
 
-  const tokens = source.destinations[destination.key];
+  const tokens = source.destinations[destination.key].assets;
   let token = tokens[0];
   const queryToken = params.get("token");
   if (queryToken) {
@@ -305,10 +303,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
         assetsV2.getTransferLocation(
           assetRegistry,
-          newSource.type === "ethereum" &&
-            newSource.key === assetRegistry.ethChainId.toString()
-            ? "substrate"
-            : "ethereum",
+          newSource.destinations[destination].type,
           destination,
         ),
       );
@@ -320,7 +315,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     setDestination(newDestination);
     form.resetField("destination", { defaultValue: newDestination.id });
 
-    const newTokens = newSource.destinations[newDestination.key];
+    const newTokens = newSource.destinations[newDestination.key].assets;
     const newToken =
       newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
       newTokens[0];
@@ -699,21 +694,23 @@ export const TransferForm: FC<TransferFormProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {source.destinations[destination.key].map((t) => {
-                              const asset =
-                                assetRegistry.ethereumChains[
-                                  assetRegistry.ethChainId
-                                ].assets[t.toLowerCase()];
-                              return (
-                                <SelectItem key={t} value={t}>
-                                  <SelectItemWithIcon
-                                    label={asset.name}
-                                    image={asset.symbol}
-                                    altImage="token_generic"
-                                  />
-                                </SelectItem>
-                              );
-                            })}
+                            {source.destinations[destination.key].assets.map(
+                              (t) => {
+                                const asset =
+                                  assetRegistry.ethereumChains[
+                                    assetRegistry.ethChainId
+                                  ].assets[t.toLowerCase()];
+                                return (
+                                  <SelectItem key={t} value={t}>
+                                    <SelectItemWithIcon
+                                      label={asset.name}
+                                      image={asset.symbol}
+                                      altImage="token_generic"
+                                    />
+                                  </SelectItem>
+                                );
+                              },
+                            )}
                           </SelectGroup>
                         </SelectContent>
                         <FormMessage />
