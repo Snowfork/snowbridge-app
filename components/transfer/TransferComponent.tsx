@@ -44,7 +44,7 @@ function sendResultToHistory(
   messageId: string,
   data: ValidationData,
   result: MessageReciept,
-): Transfer | null {
+): Transfer {
   switch (inferTransferType(data.source, data.destination)) {
     case "toEthereumV2": {
       const sendResult = result as toEthereumV2.MessageReceipt;
@@ -99,7 +99,30 @@ function sendResultToHistory(
       return { ...transfer, isWalletTransaction: true };
     }
     case "forInterParachain": {
-      return null;
+      const sendResult = result as forInterParachain.MessageReceipt;
+      return {
+        sourceType: "substrate",
+        id: messageId ?? sendResult.messageId,
+        status: historyV2.TransferStatus.Pending,
+        info: {
+          amount: data.amountInSmallestUnit.toString(),
+          sourceAddress: data.formData.sourceAccount,
+          beneficiaryAddress: data.formData.beneficiary,
+          tokenAddress: data.formData.token,
+          when: new Date(),
+        },
+        submitted: {
+          block_num: sendResult.blockNumber,
+          block_timestamp: 0,
+          messageId: messageId ?? sendResult.messageId,
+          account_id: data.formData.sourceAccount,
+          extrinsic_hash: sendResult.txHash,
+          success: sendResult.success,
+          bridgeHubMessageId: "",
+          sourceParachainId: data.source.parachain!.parachainId,
+        },
+        isWalletTransaction: true,
+      };
     }
   }
 }
@@ -202,11 +225,11 @@ export const TransferComponent: FC = () => {
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);
       setBusy("Transfer successful...");
+      const transferData = base64url.encode(JSON.stringify(historyItem));
       if (transferType !== "forInterParachain") {
-        const transferData = base64url.encode(JSON.stringify(historyItem));
         router.push(`/txcomplete?transfer=${transferData}`);
       } else {
-        router.push(`todo/statuspagehere`);
+        router.push(`/localtxcomplete?transfer=${transferData}`);
       }
     } catch (err) {
       console.error(err);

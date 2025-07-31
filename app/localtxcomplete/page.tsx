@@ -46,11 +46,10 @@ const Loading = () => {
 interface TxCardProps {
   transfer: Transfer;
   refresh: () => unknown | Promise<unknown>;
-  inHistory: boolean;
   registry: AssetRegistry;
 }
 function TxCard(props: TxCardProps) {
-  const { transfer, refresh, inHistory, registry } = props;
+  const { transfer, refresh, registry } = props;
   const { destination } = getEnvDetail(transfer, registry);
   const links: { name: string; link: string }[] = [];
 
@@ -121,40 +120,7 @@ function TxCard(props: TxCardProps) {
                 : "",
             )}
           >
-            Transfer can take up to{" "}
-            {destination.type !== "ethereum" ? "25 minutes" : "35-90 minutes"}
-          </div>
-          <div
-            className={
-              transfer.status !== historyV2.TransferStatus.Complete ||
-              links.length == 0
-                ? "hidden"
-                : ""
-            }
-          >
-            App Links
-            <ul className="p-2 list-inside list-disc">
-              {links.map(({ name, link }) => {
-                return (
-                  <li key={name}>
-                    <Link
-                      className={cn("underline", !inHistory ? "hidden" : "")}
-                      href={link}
-                    >
-                      {name}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <div>
-            <Link
-              className={cn("underline text-sm", !inHistory ? "hidden" : "")}
-              href={`/history#${transfer.id}`}
-            >
-              See in History
-            </Link>
+            Transfer can take up to 5 minutes.
           </div>
           <div className="flex justify-end">
             <RefreshButton
@@ -195,13 +161,13 @@ function TxComponent() {
   }, [searchParams]);
 
   const {
-    data: { txData, inHistory },
+    data: txData,
     error,
     mutate,
     isLoading,
     isValidating,
   } = useSWR(
-    [registry.environment, "completedtx", sourceType, messageId],
+    [registry.environment, "localcompletedtx", sourceType, messageId],
     async ([, , sourceType, messageId]) => {
       if (messageId !== null) {
         if (sourceType === null) {
@@ -215,10 +181,7 @@ function TxComponent() {
               messageId,
             ),
           ]);
-          return {
-            txData: toP ?? toE ?? transfer,
-            inHistory: (toP ?? toE) !== undefined,
-          };
+          return toP ?? toE ?? transfer;
         } else {
           switch (sourceType) {
             case "ethereum": {
@@ -226,30 +189,24 @@ function TxComponent() {
                 environment.config.GRAPHQL_API_URL,
                 messageId,
               );
-              return {
-                txData: txData ?? transfer,
-                inHistory: txData !== undefined,
-              };
+              return txData ?? transfer;
             }
             case "substrate": {
               const txData = await historyV2.toEthereumTransferById(
                 environment.config.GRAPHQL_API_URL,
                 messageId,
               );
-              return {
-                txData: txData ?? transfer,
-                inHistory: txData !== undefined,
-              };
+              return txData ?? transfer;
             }
           }
         }
       }
-      return { txData: transfer, inHistory: false };
+      return transfer;
     },
     {
       refreshInterval: 60 * 1000, // 1 minute
       suspense: true,
-      fallbackData: { txData: transfer, inHistory: false },
+      fallbackData: transfer,
     },
   );
 
@@ -265,7 +222,6 @@ function TxComponent() {
   return (
     <TxCard
       transfer={txData}
-      inHistory={inHistory}
       registry={registry}
       refresh={async () => await mutate()}
     />
