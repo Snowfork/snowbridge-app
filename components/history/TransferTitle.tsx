@@ -41,13 +41,23 @@ export function getChainIdentifiers(
       };
     }
     case "substrate": {
-      const tx = transfer as historyV2.ToEthereumTransferResult;
-      return {
-        sourceType: transfer.sourceType,
-        destinationType: "ethereum",
-        sourceId: tx.submitted.sourceParachainId.toString(),
-        destinationId: registry.ethChainId.toString(),
-      };
+      if (transfer.info.destinationParachain) {
+        const tx = transfer as historyV2.InterParachainTransfer;
+        return {
+          sourceType: transfer.sourceType,
+          destinationType: transfer.sourceType,
+          sourceId: tx.submitted.sourceParachainId.toString(),
+          destinationId: transfer.info.destinationParachain.toString(),
+        };
+      } else {
+        const tx = transfer as historyV2.ToEthereumTransferResult;
+        return {
+          sourceType: transfer.sourceType,
+          destinationType: "ethereum",
+          sourceId: tx.submitted.sourceParachainId.toString(),
+          destinationId: registry.ethChainId.toString(),
+        };
+      }
     }
   }
   return null;

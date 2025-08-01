@@ -19,20 +19,15 @@ import { LucideLoaderCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { RefreshButton } from "@/components/RefreshButton";
 import { cn } from "@/lib/utils";
-import { historyV2 } from "@snowbridge/api";
+import { historyV2, subsquid } from "@snowbridge/api";
 import useSWR from "swr";
-import {
-  getDappLink,
-  stellasSwapTokenLink,
-  uniswapTokenLink,
-} from "@/lib/explorerLinks";
+import { subscanEventLink, subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
+import { getTransferLocation } from "@snowbridge/api/dist/assets_v2";
 
 const Loading = () => {
   return (
@@ -44,55 +39,43 @@ const Loading = () => {
 };
 
 interface TxCardProps {
-  transfer: Transfer;
+  transfer: historyV2.InterParachainTransfer;
   refresh: () => unknown | Promise<unknown>;
   registry: AssetRegistry;
 }
 function TxCard(props: TxCardProps) {
   const { transfer, refresh, registry } = props;
-  const { destination } = getEnvDetail(transfer, registry);
-  const links: { name: string; link: string }[] = [];
 
-  switch (transfer.sourceType) {
-    // Uniswap
-    case "substrate": {
-      const uniswap = {
-        name: "Uniswap",
-        link: uniswapTokenLink(
-          registry.environment,
-          registry.ethChainId,
-          transfer.info.tokenAddress,
-        ),
-      };
-      if (!uniswap.link.startsWith("#")) {
-        links.push(uniswap);
-      }
-      break;
-    }
-    case "ethereum": {
-      const stellasSwap = {
-        name: "Stella Swap",
-        link: stellasSwapTokenLink(
-          registry.environment,
-          destination.parachain!.parachainId,
-          transfer.info.tokenAddress,
-        ),
-      };
-      if (!stellasSwap.link.startsWith("#")) {
-        links.push(stellasSwap);
-      }
-      const dapp = {
-        name: `${destination.name} Dapp`,
-        link: getDappLink(
-          registry.environment,
-          destination.parachain!.parachainId,
-        ),
-      };
-      if (!dapp.link.startsWith("#")) {
-        links.push(dapp);
-      }
-      break;
-    }
+  const links: { text: string; url: string }[] = [];
+  console.log(transfer);
+  const source = getTransferLocation(
+    registry,
+    transfer.sourceType,
+    transfer.submitted.sourceParachainId.toString(),
+  );
+  links.push({
+    text: `Submitted to ${source.name}`,
+    url: subscanExtrinsicLink(
+      registry.environment,
+      transfer.info.sourceParachain!,
+      transfer.submitted.extrinsic_hash,
+    ),
+  });
+  if (transfer.destinationReceived) {
+    const destination = getTransferLocation(
+      registry,
+      transfer.sourceType,
+      transfer.info.destinationParachain?.toString() ??
+        transfer.destinationReceived.paraId.toString(),
+    );
+    links.push({
+      text: `Message received on ${destination.name}`,
+      url: subscanEventLink(
+        registry.environment,
+        transfer.destinationReceived.paraId,
+        transfer.destinationReceived.event_index,
+      ),
+    });
   }
 
   return (
@@ -122,6 +105,22 @@ function TxCard(props: TxCardProps) {
           >
             Transfer can take up to 5 minutes.
           </div>
+          <div>
+            <ul className="p-2 list-inside list-disc">
+              {links.map((link, i) => (
+                <li key={i}>
+                  {link.text}{" "}
+                  <span
+                    className="text-sm underline cursor-pointer"
+                    onClick={() => window.open(link.url)}
+                    onAuxClick={() => window.open(link.url)}
+                  >
+                    (view)
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
           <div className="flex justify-end">
             <RefreshButton
               onClick={refresh}
@@ -131,9 +130,6 @@ function TxCard(props: TxCardProps) {
                   : "",
               )}
             />
-            <Link href="/history">
-              <Button variant="link">Transaction History</Button>
-            </Link>
           </div>
         </div>
       </CardContent>
@@ -146,18 +142,14 @@ function TxComponent() {
   const registry = useContext(RegistryContext)!;
   const environment = getEnvironment();
 
-  const [messageId, sourceType, transfer] = useMemo(() => {
-    const messageId = searchParams.get("messageId");
-    const sourceType = searchParams.get("sourceType");
+  const [messageId, transfer] = useMemo(() => {
     const transferEncoded = searchParams.get("transfer");
-    if (transferEncoded === null) return [messageId, sourceType];
+    if (transferEncoded === null) return [null, null];
 
-    const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
-    return [
-      decoded?.id ?? messageId,
-      decoded.sourceType ?? sourceType,
-      decoded,
-    ];
+    const decoded = JSON.parse(
+      base64url.decode(transferEncoded),
+    ) as historyV2.InterParachainTransfer;
+    return [decoded.id, decoded];
   }, [searchParams]);
 
   const {
@@ -167,38 +159,26 @@ function TxComponent() {
     isLoading,
     isValidating,
   } = useSWR(
-    [registry.environment, "localcompletedtx", sourceType, messageId],
-    async ([, , sourceType, messageId]) => {
-      if (messageId !== null) {
-        if (sourceType === null) {
-          const [toP, toE] = await Promise.all([
-            historyV2.toPolkadotTransferById(
-              environment.config.GRAPHQL_API_URL,
-              messageId,
-            ),
-            historyV2.toEthereumTransferById(
-              environment.config.GRAPHQL_API_URL,
-              messageId,
-            ),
-          ]);
-          return toP ?? toE ?? transfer;
-        } else {
-          switch (sourceType) {
-            case "ethereum": {
-              const txData = await historyV2.toPolkadotTransferById(
-                environment.config.GRAPHQL_API_URL,
-                messageId,
-              );
-              return txData ?? transfer;
-            }
-            case "substrate": {
-              const txData = await historyV2.toEthereumTransferById(
-                environment.config.GRAPHQL_API_URL,
-                messageId,
-              );
-              return txData ?? transfer;
-            }
-          }
+    [registry.environment, "localcompletedtx", messageId],
+    async ([, , messageId]) => {
+      if (messageId !== null && transfer !== null) {
+        const delivered = await subsquid.fetchInterParachainMessageById(
+          environment.config.GRAPHQL_API_URL,
+          messageId,
+        );
+        if (delivered && delivered.length > 0) {
+          console.log("delivered", delivered[0].success);
+          transfer.status = delivered[0].success
+            ? historyV2.TransferStatus.Complete
+            : historyV2.TransferStatus.Failed;
+          transfer.destinationReceived = {
+            blockNumber: delivered[0].blockNumber,
+            block_timestamp: delivered[0].timestamp,
+            messageId: delivered[0].messageId,
+            paraId: Number(delivered[0].paraId),
+            success: delivered[0].success,
+            event_index: delivered[0].eventId.split("-")[1],
+          };
         }
       }
       return transfer;
@@ -221,7 +201,7 @@ function TxComponent() {
 
   return (
     <TxCard
-      transfer={txData}
+      transfer={txData!}
       registry={registry}
       refresh={async () => await mutate()}
     />

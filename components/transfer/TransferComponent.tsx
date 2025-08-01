@@ -100,7 +100,7 @@ function sendResultToHistory(
     }
     case "forInterParachain": {
       const sendResult = result as forInterParachain.MessageReceipt;
-      return {
+      const transfer: historyV2.InterParachainTransfer = {
         sourceType: "substrate",
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
@@ -110,6 +110,7 @@ function sendResultToHistory(
           beneficiaryAddress: data.formData.beneficiary,
           tokenAddress: data.formData.token,
           when: new Date(),
+          destinationParachain: data.destination.parachain!.parachainId,
         },
         submitted: {
           block_num: sendResult.blockNumber,
@@ -121,8 +122,8 @@ function sendResultToHistory(
           bridgeHubMessageId: "",
           sourceParachainId: data.source.parachain!.parachainId,
         },
-        isWalletTransaction: true,
       };
+      return { ...transfer, isWalletTransaction: true };
     }
   }
 }
