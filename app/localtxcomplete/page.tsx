@@ -47,7 +47,6 @@ function TxCard(props: TxCardProps) {
   const { transfer, refresh, registry } = props;
 
   const links: { text: string; url: string }[] = [];
-  console.log(transfer);
   const source = getTransferLocation(
     registry,
     transfer.sourceType,
@@ -57,7 +56,7 @@ function TxCard(props: TxCardProps) {
     text: `Submitted to ${source.name}`,
     url: subscanExtrinsicLink(
       registry.environment,
-      transfer.info.sourceParachain!,
+      transfer.submitted.sourceParachainId,
       transfer.submitted.extrinsic_hash,
     ),
   });
@@ -73,7 +72,7 @@ function TxCard(props: TxCardProps) {
       url: subscanEventLink(
         registry.environment,
         transfer.destinationReceived.paraId,
-        transfer.destinationReceived.event_index,
+        `${transfer.destinationReceived.blockNumber}-${transfer.destinationReceived.event_index}`,
       ),
     });
   }
@@ -167,7 +166,6 @@ function TxComponent() {
           messageId,
         );
         if (delivered && delivered.length > 0) {
-          console.log("delivered", delivered[0].success);
           transfer.status = delivered[0].success
             ? historyV2.TransferStatus.Complete
             : historyV2.TransferStatus.Failed;
