@@ -13,6 +13,7 @@ import {
   toEthereumV2,
   toEthereumFromEVMV2,
   toPolkadotV2,
+  forInterParachain,
 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
@@ -47,6 +48,27 @@ function validateSubstrateDestination({ source, destination }: ValidationData) {
     throw Error(`Invalid form state: source does not have parachain info.`);
   }
   return source.parachain;
+}
+
+function validateInterParachainTransfer({
+  source,
+  destination,
+}: ValidationData) {
+  if (source.type !== "substrate") {
+    throw Error(`Invalid form state: source type mismatch.`);
+  }
+  if (destination.type !== "substrate") {
+    throw Error(`Invalid form state: destination type mismatch.`);
+  }
+  if (source.parachain === undefined) {
+    throw Error(`Invalid form state: source does not have parachain info.`);
+  }
+  if (destination.parachain === undefined) {
+    throw Error(
+      `Invalid form state: destination does not have parachain info.`,
+    );
+  }
+  return { source: source.parachain, destination: destination.parachain };
 }
 
 function validateEthereumDestination({ source, destination }: ValidationData) {
@@ -96,6 +118,7 @@ async function validateEvmSubstrateSigner(
 function validateSubstrateSigner(
   data: ValidationData,
   { polkadotAccount }: SignerInfo,
+  substrateDestination: boolean,
 ) {
   if (!polkadotAccount) {
     throw Error(`Polkadot Wallet not connected.`);
@@ -104,7 +127,9 @@ function validateSubstrateSigner(
     throw Error(`Source account mismatch.`);
   }
   return {
-    paraInfo: validateSubstrateDestination(data),
+    paraInfo: substrateDestination
+      ? validateInterParachainTransfer(data).source
+      : validateSubstrateDestination(data),
     polkadotAccount,
   };
 }
@@ -139,6 +164,7 @@ async function planSend(
   | toEthereumV2.ValidationResult
   | toPolkadotV2.ValidationResult
   | toEthereumFromEVMV2.ValidationResultEvm
+  | forInterParachain.ValidationResult
 > {
   const {
     source,
@@ -199,6 +225,28 @@ async function planSend(
     );
     console.log(plan);
     return plan;
+  } else if (source.type === "substrate" && destination.type === "substrate") {
+    const { source: s, destination: d } = validateInterParachainTransfer(data);
+    const tx = await forInterParachain.createTransfer(
+      { sourceParaId: s.parachainId, context },
+      assetRegistry,
+      formData.sourceAccount,
+      formData.beneficiary,
+      d.parachainId,
+      formData.token,
+      amountInSmallestUnit,
+      fee.delivery as forInterParachain.DeliveryFee,
+    );
+    const plan = await forInterParachain.validateTransfer(
+      {
+        sourceParaId: s.parachainId,
+        destinationParaId: d.parachainId,
+        context,
+      },
+      tx,
+    );
+    console.log(plan);
+    return plan;
   } else {
     throw Error(`Invalid form state: cannot infer source type.`);
   }
@@ -216,7 +264,25 @@ async function sendToken(
     });
   }
   const { source, destination } = data;
-  if (source.type === "ethereum" && destination.type === "ethereum") {
+  if (source.type === "substrate" && destination.type === "substrate") {
+    const { paraInfo, polkadotAccount } = validateSubstrateSigner(
+      data,
+      signerInfo,
+      true,
+    );
+    const tx = plan.transfer as forInterParachain.Transfer;
+    const result = await forInterParachain.signAndSend(
+      { sourceParaId: paraInfo.parachainId, context },
+      tx,
+      polkadotAccount.address,
+      {
+        signer: polkadotAccount.signer! as Signer,
+        withSignedTransaction: true,
+      },
+    );
+    console.log(result);
+    return result;
+  } else if (source.type === "ethereum" && destination.type === "ethereum") {
     const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
     const transfer = plan.transfer as toEthereumFromEVMV2.TransferEvm;
     const response = await signer.sendTransaction(transfer.tx);
@@ -234,6 +300,7 @@ async function sendToken(
     const { paraInfo, polkadotAccount } = validateSubstrateSigner(
       data,
       signerInfo,
+      false,
     );
     const tx = plan.transfer as toEthereumV2.Transfer;
     const result = await toEthereumV2.signAndSend(

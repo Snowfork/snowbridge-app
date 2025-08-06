@@ -10,7 +10,7 @@ import {
   transferFormSchema,
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
-import { assets, assetsV2, Context, environment } from "@snowbridge/api";
+import { assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
@@ -59,7 +59,7 @@ import {
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
@@ -156,9 +156,7 @@ function initialFormData(
   const destinations = Object.keys(source.destinations).map((destination) =>
     assetsV2.getTransferLocation(
       registry,
-      source.type === "substrate" || source.id.match(/_evm$/)
-        ? "ethereum"
-        : "substrate",
+      source.destinations[destination].type,
       destination,
     ),
   );
@@ -179,7 +177,7 @@ function initialFormData(
     registry.ethereumChains[registry.ethChainId].assets,
   );
 
-  const tokens = source.destinations[destination.key];
+  const tokens = source.destinations[destination.key].assets;
   let token = tokens[0];
   const queryToken = params.get("token");
   if (queryToken) {
@@ -305,10 +303,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
         assetsV2.getTransferLocation(
           assetRegistry,
-          newSource.type === "ethereum" &&
-            newSource.key === assetRegistry.ethChainId.toString()
-            ? "substrate"
-            : "ethereum",
+          newSource.destinations[destination].type,
           destination,
         ),
       );
@@ -320,7 +315,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     setDestination(newDestination);
     form.resetField("destination", { defaultValue: newDestination.id });
 
-    const newTokens = newSource.destinations[newDestination.key];
+    const newTokens = newSource.destinations[newDestination.key].assets;
     const newToken =
       newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
       newTokens[0];
@@ -699,21 +694,23 @@ export const TransferForm: FC<TransferFormProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {source.destinations[destination.key].map((t) => {
-                              const asset =
-                                assetRegistry.ethereumChains[
-                                  assetRegistry.ethChainId
-                                ].assets[t.toLowerCase()];
-                              return (
-                                <SelectItem key={t} value={t}>
-                                  <SelectItemWithIcon
-                                    label={asset.name}
-                                    image={asset.symbol}
-                                    altImage="token_generic"
-                                  />
-                                </SelectItem>
-                              );
-                            })}
+                            {source.destinations[destination.key].assets.map(
+                              (t) => {
+                                const asset =
+                                  assetRegistry.ethereumChains[
+                                    assetRegistry.ethChainId
+                                  ].assets[t.toLowerCase()];
+                                return (
+                                  <SelectItem key={t} value={t}>
+                                    <SelectItemWithIcon
+                                      label={asset.name}
+                                      image={asset.symbol}
+                                      altImage="token_generic"
+                                    />
+                                  </SelectItem>
+                                );
+                              },
+                            )}
                           </SelectGroup>
                         </SelectContent>
                         <FormMessage />
@@ -762,7 +759,7 @@ interface SubmitButtonProps {
   destination: assetsV2.TransferLocation;
   source: assetsV2.Source;
   feeInfo?: FeeInfo;
-  tokenMetadata: assets.ERC20Metadata | null;
+  tokenMetadata: ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
   context: Context | null;

@@ -5,6 +5,7 @@ import { atomWithStorage } from "jotai/utils";
 export type Transfer = (
   | historyV2.ToEthereumTransferResult
   | historyV2.ToPolkadotTransferResult
+  | historyV2.InterParachainTransfer
 ) & { isWalletTransaction?: boolean };
 
 const transfersPendingLocalStorageAtom = atomWithStorage<Transfer[]>(

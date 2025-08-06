@@ -1,4 +1,4 @@
-import { assets, Context, environment, historyV2 } from "@snowbridge/api";
+import { Context, environment, historyV2 } from "@snowbridge/api";
 import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
 import { AbstractProvider } from "ethers";
 
@@ -26,13 +26,6 @@ export interface AccountInfo {
   account: string;
   balance: string;
 }
-
-export type BridgedAssetsMetadata = {
-  relaychainNativeAsset: assets.NativeAsset;
-  erc20Metadata: {
-    [tokenAddress: string]: assets.ERC20Metadata;
-  };
-};
 
 export type ContextOverrides = {
   bridgeHub?: string;

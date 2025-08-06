@@ -1,6 +1,5 @@
 "use client";
 import { isHex } from "@polkadot/util";
-import { assetsV2 } from "@snowbridge/api";
 import { AccountType } from "@snowbridge/base-types";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { z } from "zod";

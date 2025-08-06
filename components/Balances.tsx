@@ -6,7 +6,6 @@ import { ErrorInfo } from "@/utils/types";
 import { ApiPromise } from "@polkadot/api";
 import { Option } from "@polkadot/types";
 import { AccountInfo, AssetBalance } from "@polkadot/types/interfaces";
-import { assets } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import React, { useState, useEffect, useCallback, FC } from "react";
 
@@ -208,8 +207,8 @@ const PolkadotBalance: FC<Props> = ({
         });
         handleBalanceCheck(sourceBalance);
       } else {
-        const { tokenDecimal, tokenSymbol } =
-          await assets.parachainNativeAsset(sourceApi);
+        const { decimals: tokenDecimal, symbol: tokenSymbol } =
+          parachain.nativeTokenMetadata;
         const sourceBalance = await getBalanceData(
           sourceApi,
           sourceAccount,

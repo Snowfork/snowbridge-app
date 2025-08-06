@@ -1,13 +1,11 @@
 import { type useRouter } from "next/navigation";
 import {
-  toPolkadot,
-  toEthereum,
-  assets,
   assetsV2,
   toEthereumV2,
   toEthereumFromEVMV2,
   toPolkadotV2,
   forKusama,
+  forInterParachain,
 } from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
@@ -16,10 +14,10 @@ import { TransferFormData } from "./formSchema";
 import { WalletAccount } from "@talismn/connect-wallets";
 import {
   BrowserProvider,
-  ContractTransactionReceipt,
-  ContractTransactionResponse,
+  TransactionReceipt,
+  TransactionResponse,
 } from "ethers";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
 
 export const DOT_DECIMALS = 10;
 export const KSM_DECIMALS = 12;
@@ -27,11 +25,16 @@ export const KSM_DECIMALS = 12;
 export const DOT_SYMBOL = "DOT";
 export const KSM_SYMBOL = "KSM";
 
+export type TransferType =
+  | "toPolkadotV2"
+  | "toEthereumV2"
+  | "forInterParachain";
+
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
-  | ({ kind: "toPolkadot" } & toPolkadot.SendValidationError)
-  | ({ kind: "toEthereum" } & toEthereum.SendValidationError)
-  | ({ kind: "forKusama" } & forKusama.ValidationLog);
+  | ({ errorKind: "toPolkadotV2" } & toPolkadotV2.ValidationLog)
+  | ({ errorKind: "toEthereumV2" } & toEthereumV2.ValidationLog)
+  | ({ errorKind: "forKusama" } & forKusama.ValidationLog);
 
 export type ErrorInfo = {
   title: string;
@@ -145,7 +148,10 @@ export type FeeInfo = {
   fee: bigint;
   decimals: number;
   symbol: string;
-  delivery: toEthereumV2.DeliveryFee | toPolkadotV2.DeliveryFee;
+  delivery:
+    | toEthereumV2.DeliveryFee
+    | toPolkadotV2.DeliveryFee
+    | forInterParachain.DeliveryFee;
   type: assetsV2.SourceType;
 };
 
@@ -161,7 +167,7 @@ export interface ValidationData {
   assetRegistry: AssetRegistry;
   source: assetsV2.TransferLocation;
   destination: assetsV2.TransferLocation;
-  tokenMetadata: assets.ERC20Metadata;
+  tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
   fee: FeeInfo;
 }
@@ -173,7 +179,7 @@ export interface KusamaValidationData {
   sourceAccount: string;
   beneficiary: string;
   token: string;
-  tokenMetadata: assets.ERC20Metadata;
+  tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
   fee: KusamaFeeInfo;
 }
@@ -182,13 +188,15 @@ export type ValidationResult =
   | toEthereumV2.ValidationResult
   | toEthereumFromEVMV2.ValidationResultEvm
   | toPolkadotV2.ValidationResult
-  | forKusama.ValidationResult;
+  | forKusama.ValidationResult
+  | forInterParachain.ValidationResult;
 
 export type MessageReciept =
   | toEthereumV2.MessageReceipt
   | toEthereumFromEVMV2.MessageReceiptEvm
   | toPolkadotV2.MessageReceipt
-  | forKusama.MessageReceipt;
+  | forKusama.MessageReceipt
+  | forInterParachain.MessageReceipt;
 
 export enum TransferStepKind {
   DepositWETH,
@@ -203,11 +211,15 @@ export interface TransferStep {
 
 export interface TransferPlanSteps {
   steps: TransferStep[];
-  errors: (toEthereumV2.ValidationLog | toPolkadotV2.ValidationLog)[];
+  errors: (
+    | toEthereumV2.ValidationLog
+    | toPolkadotV2.ValidationLog
+    | forInterParachain.ValidationLog
+  )[];
   plan: ValidationResult;
 }
 
 export interface ContractResponse {
-  response: ContractTransactionResponse;
-  receipt: ContractTransactionReceipt | null;
+  response: TransactionResponse;
+  receipt: TransactionReceipt | null;
 }

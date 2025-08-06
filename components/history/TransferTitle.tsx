@@ -1,5 +1,5 @@
 import { Transfer } from "@/store/transferHistory";
-import { assets, assetsV2, historyV2 } from "@snowbridge/api";
+import { assetsV2, historyV2 } from "@snowbridge/api";
 import { LucideGlobe, LucideWallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatBalance } from "@/utils/formatting";
@@ -7,7 +7,7 @@ import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useContext } from "react";
 import { RegistryContext } from "@/app/providers";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
 
 export function getChainIdentifiers(
   transfer: Transfer,
@@ -41,13 +41,23 @@ export function getChainIdentifiers(
       };
     }
     case "substrate": {
-      const tx = transfer as historyV2.ToEthereumTransferResult;
-      return {
-        sourceType: transfer.sourceType,
-        destinationType: "ethereum",
-        sourceId: tx.submitted.sourceParachainId.toString(),
-        destinationId: registry.ethChainId.toString(),
-      };
+      if (transfer.info.destinationParachain) {
+        const tx = transfer as historyV2.InterParachainTransfer;
+        return {
+          sourceType: transfer.sourceType,
+          destinationType: transfer.sourceType,
+          sourceId: tx.submitted.sourceParachainId.toString(),
+          destinationId: transfer.info.destinationParachain.toString(),
+        };
+      } else {
+        const tx = transfer as historyV2.ToEthereumTransferResult;
+        return {
+          sourceType: transfer.sourceType,
+          destinationType: "ethereum",
+          sourceId: tx.submitted.sourceParachainId.toString(),
+          destinationId: registry.ethChainId.toString(),
+        };
+      }
     }
   }
   return null;
@@ -88,7 +98,7 @@ export function getEnvDetail(transfer: Transfer, registry: AssetRegistry) {
 
 export function formatTokenData(
   transfer: Transfer,
-  assetErc20MetaData: { [token: string]: assets.ERC20Metadata },
+  assetErc20MetaData: { [token: string]: ERC20Metadata },
   displayDecimals?: number,
 ) {
   const tokenAddress = transfer.info.tokenAddress.toLowerCase();

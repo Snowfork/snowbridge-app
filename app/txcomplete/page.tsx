@@ -16,21 +16,20 @@ import {
 import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { LucideLoaderCircle } from "lucide-react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { RefreshButton } from "@/components/RefreshButton";
 import { cn } from "@/lib/utils";
-import { assetsV2, historyV2 } from "@snowbridge/api";
+import { historyV2 } from "@snowbridge/api";
 import useSWR from "swr";
 import {
   getDappLink,
   stellasSwapTokenLink,
   uniswapTokenLink,
 } from "@/lib/explorerLinks";
-import { isValid } from "zod";
 import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";

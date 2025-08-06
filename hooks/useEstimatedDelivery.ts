@@ -1,6 +1,7 @@
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { formatTime } from "@/utils/formatting";
-import { environment, subsquid, utils } from "@snowbridge/api";
+import { inferTransferType } from "@/utils/inferTransferType";
+import { assetsV2, environment, subsquid, utils } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
@@ -50,17 +51,22 @@ export const useEstimatedDelivery = () => {
 };
 
 export function estimateDelivery(
-  source: environment.SourceType,
+  source: assetsV2.TransferLocation,
+  destination: assetsV2.TransferLocation,
   latency: BridgeLatency | null,
 ) {
   if (!latency) {
     return "Could not estimate";
   }
-  switch (source) {
-    case "ethereum":
+  switch (inferTransferType(source, destination)) {
+    case "toPolkadotV2":
       return formatTime(latency.toPolkadot, false);
-    case "substrate": {
+    case "toEthereumV2": {
       return formatTime(latency.toEthereum, false);
+    }
+    case "forInterParachain": {
+      // Inter parachain transfers takes 30s-1min. At most 2 minutes.
+      return formatTime(120, false);
     }
     default:
       return "Could not estimate.";

@@ -1,5 +1,5 @@
 "use client";
-import { environment, toPolkadot } from "@snowbridge/api";
+import { environment, toPolkadotV2 } from "@snowbridge/api";
 import { FC } from "react";
 import { ErrorDialog } from "./ErrorDialog";
 import { Button } from "./ui/button";
@@ -30,22 +30,23 @@ export const SendErrorDialog: FC<{
   let errors = info?.errors ?? [];
   const insufficentAsset = errors.find(
     (error) =>
-      error.kind === "toPolkadot" &&
-      error.code === toPolkadot.SendValidationCode.InsufficientToken,
+      error.errorKind === "toPolkadotV2" &&
+      error.reason === toPolkadotV2.ValidationReason.InsufficientTokenBalance,
   );
   errors = errors.filter(
     (error) =>
       !(
-        error.kind === "toPolkadot" &&
-        error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved &&
+        error.errorKind === "toPolkadotV2" &&
+        error.reason ===
+          toPolkadotV2.ValidationReason.GatewaySpenderLimitReached &&
         insufficentAsset !== undefined
       ),
   );
 
   const fixAction = (error: ValidationError): JSX.Element => {
     if (
-      error.kind === "toPolkadot" &&
-      error.code === toPolkadot.SendValidationCode.InsufficientToken &&
+      error.errorKind === "toPolkadotV2" &&
+      error.reason === toPolkadotV2.ValidationReason.InsufficientTokenBalance &&
       token === "WETH"
     ) {
       return (
@@ -55,8 +56,8 @@ export const SendErrorDialog: FC<{
       );
     }
     if (
-      error.kind === "toPolkadot" &&
-      error.code === toPolkadot.SendValidationCode.ERC20SpendNotApproved
+      error.errorKind === "toPolkadotV2" &&
+      error.reason === toPolkadotV2.ValidationReason.GatewaySpenderLimitReached
     ) {
       return (
         <Button className="py-1" size="sm" onClick={onApproveSpend}>
@@ -64,9 +65,7 @@ export const SendErrorDialog: FC<{
         </Button>
       );
     }
-    if (
-      error.code === toPolkadot.SendValidationCode.BeneficiaryAccountMissing
-    ) {
+    if (error.reason === toPolkadotV2.ValidationReason.AccountDoesNotExist) {
       return (
         <Button
           className="text-blue-600 py-1 h-auto"
