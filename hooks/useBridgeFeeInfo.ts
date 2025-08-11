@@ -64,18 +64,18 @@ async function fetchBridgeFeeInfo([
       );
       let executionFeeInWei = 0n;
       if (env in feeEstimateAccounts) {
-        const { src: sourceAccount, dst: destAccount } =
-          feeEstimateAccounts[env];
-        const testTransfer = await toPolkadotV2.createTransfer(
-          registry,
-          sourceAccount,
-          destAccount,
-          assetsV2.ETHER_TOKEN_ADDRESS,
-          para.parachainId,
-          1n,
-          fee,
-        );
         try {
+          const { src: sourceAccount, dst: destAccount } =
+            feeEstimateAccounts[env];
+          const testTransfer = await toPolkadotV2.createTransfer(
+            registry,
+            sourceAccount,
+            destAccount,
+            assetsV2.ETHER_TOKEN_ADDRESS,
+            para.parachainId,
+            1n,
+            fee,
+          );
           const [estimatedGas, feeData] = await Promise.all([
             context.ethereum().estimateGas(testTransfer.tx),
             context.ethereum().getFeeData(),
