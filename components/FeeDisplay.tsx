@@ -31,7 +31,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     return <div className={className}>Fetching...</div>;
   }
   const balance = formatBalance({
-    number: feeInfo.fee,
+    number: feeInfo.totalFee,
     decimals: feeInfo.decimals,
     displayDecimals: displayDecimals,
   });
