@@ -15,10 +15,19 @@ import { AssetRegistry } from "@snowbridge/base-types";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { getEnvironmentName } from "@/lib/snowbridge";
 
-const feeEstimateAccounts: { [env: string]: string } = {
-  polkadot_mainnet: "0xd803472c47a87d7b63e888de53f03b4191b846a8",
-  westend_sepolia: "0x180c269c4a5211aa4bab78abdf6e4d87263febe6",
-  paseo_sepolia: "0x34e67708f073dda5cb3670826ecc2ac667b44994",
+const feeEstimateAccounts: { [env: string]: { src: string; dst: string } } = {
+  polkadot_mainnet: {
+    src: "0xd803472c47a87d7b63e888de53f03b4191b846a8",
+    dst: "5GwwB3hLZP7z5siAtBiF4Eq52nhTfTrDqWLCSjP8G1ZtJqH3",
+  },
+  westend_sepolia: {
+    src: "0x180c269c4a5211aa4bab78abdf6e4d87263febe6",
+    dst: "5CcEcgHEHPbQUX4ad5eT5mMoNrER3ftoKxqjfZRT9Xub9SKb",
+  },
+  paseo_sepolia: {
+    src: "0x34e67708f073dda5cb3670826ecc2ac667b44994",
+    dst: "5DG4oudPJxUpxTkQ7mR5b1pDrX1EeoFpyMyP9PgDR1DmKEPC",
+  },
 };
 
 async function fetchBridgeFeeInfo([
@@ -55,11 +64,12 @@ async function fetchBridgeFeeInfo([
       );
       let executionFeeInWei = 0n;
       if (env in feeEstimateAccounts) {
-        const sourceAccount = feeEstimateAccounts[env];
+        const { src: sourceAccount, dst: destAccount } =
+          feeEstimateAccounts[env];
         const testTransfer = await toPolkadotV2.createTransfer(
           registry,
           sourceAccount,
-          "5DXUu6jrA9Yz5RM1VsUppHAvXgEyVHFYcUjVWYyfVaxc57zs",
+          destAccount,
           assetsV2.ETHER_TOKEN_ADDRESS,
           para.parachainId,
           1n,
