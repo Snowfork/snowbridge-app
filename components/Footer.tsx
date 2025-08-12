@@ -10,7 +10,7 @@ export function Footer() {
   const setAccepted = useSetAtom(acceptedTermsOfUseAtom);
   return (
     <>
-      <div className="text-sm mb-2 flex items-center gap-2">
+      <div className="text-sm mb-4 flex items-center gap-2">
         Powered by{" "}
         <Image
           src="/images/polkadot_logo.png"
