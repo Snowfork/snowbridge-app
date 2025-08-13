@@ -36,6 +36,13 @@ export function Footer() {
         </a>
         <a
           className="footer-item"
+          href="https://docs.snowbridge.network/security/bug-bounty"
+          target="_blank"
+        >
+          Bug bounty
+        </a>
+        <a
+          className="footer-item"
           href="https://dune.com/substrate/snowbridge"
           target="_blank"
         >
