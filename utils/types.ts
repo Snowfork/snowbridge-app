@@ -146,6 +146,7 @@ export interface SignerInfo {
 
 export type FeeInfo = {
   fee: bigint;
+  totalFee: bigint;
   decimals: number;
   symbol: string;
   delivery:

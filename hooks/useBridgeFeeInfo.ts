@@ -11,8 +11,54 @@ import useSWR from "swr";
 import { FeeInfo } from "@/utils/types";
 import { useContext } from "react";
 import { RegistryContext } from "@/app/providers";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, Parachain } from "@snowbridge/base-types";
 import { inferTransferType } from "@/utils/inferTransferType";
+import { getEnvironmentName } from "@/lib/snowbridge";
+
+async function estimateExecutionFee(
+  context: Context,
+  registry: AssetRegistry,
+  para: Parachain,
+  deliveryFee: toPolkadotV2.DeliveryFee,
+) {
+  const feeEstimateAccounts: { [env: string]: { src: string; dst: string } } = {
+    polkadot_mainnet: {
+      src: "0xd803472c47a87d7b63e888de53f03b4191b846a8",
+      dst: "5GwwB3hLZP7z5siAtBiF4Eq52nhTfTrDqWLCSjP8G1ZtJqH3",
+    },
+    westend_sepolia: {
+      src: "0x180c269c4a5211aa4bab78abdf6e4d87263febe6",
+      dst: "5CcEcgHEHPbQUX4ad5eT5mMoNrER3ftoKxqjfZRT9Xub9SKb",
+    },
+    paseo_sepolia: {
+      src: "0x34e67708f073dda5cb3670826ecc2ac667b44994",
+      dst: "5DG4oudPJxUpxTkQ7mR5b1pDrX1EeoFpyMyP9PgDR1DmKEPC",
+    },
+  };
+  const env = getEnvironmentName();
+  if (env in feeEstimateAccounts) {
+    try {
+      const { src: sourceAccount, dst: destAccount } = feeEstimateAccounts[env];
+      const testTransfer = await toPolkadotV2.createTransfer(
+        registry,
+        sourceAccount,
+        destAccount,
+        assetsV2.ETHER_TOKEN_ADDRESS,
+        para.parachainId,
+        1n,
+        deliveryFee,
+      );
+      const [estimatedGas, feeData] = await Promise.all([
+        context.ethereum().estimateGas(testTransfer.tx),
+        context.ethereum().getFeeData(),
+      ]);
+      return (feeData.gasPrice ?? 0n) * estimatedGas;
+    } catch (err) {
+      console.warn("Could not estimate execution fee:", err);
+    }
+  }
+  return 0n;
+}
 
 async function fetchBridgeFeeInfo([
   context,
@@ -33,79 +79,79 @@ async function fetchBridgeFeeInfo([
   }
 
   switch (inferTransferType(source, destination)) {
-    case "toPolkadotV2":
-      {
-        const para = registry.parachains[destination.key];
-        const fee = await toPolkadotV2.getDeliveryFee(
-          {
-            gateway: context.gateway(),
-            assetHub: await context.assetHub(),
-            destination: await context.parachain(para.parachainId),
-          },
-          registry,
-          token,
-          para.parachainId,
-        );
-        return {
-          fee: fee.totalFeeInWei,
-          decimals: 18,
-          symbol: "ETH",
-          delivery: fee,
-          type: source.type,
-        };
+    case "toPolkadotV2": {
+      const para = registry.parachains[destination.key];
+      const fee = await toPolkadotV2.getDeliveryFee(
+        {
+          gateway: context.gateway(),
+          assetHub: await context.assetHub(),
+          destination: await context.parachain(para.parachainId),
+        },
+        registry,
+        token,
+        para.parachainId,
+      );
+
+      return {
+        fee: fee.totalFeeInWei,
+        totalFee:
+          fee.totalFeeInWei +
+          (await estimateExecutionFee(context, registry, para, fee)),
+        decimals: 18,
+        symbol: "ETH",
+        delivery: fee,
+        type: source.type,
+      };
+    }
+    case "toEthereumV2": {
+      const fee = await toEthereumV2.getDeliveryFee(
+        {
+          assetHub: await context.assetHub(),
+          source: await context.parachain(source.parachain!.parachainId),
+        },
+        source.parachain!.parachainId,
+        registry,
+        token,
+      );
+      let feeValue = fee.totalFeeInDot;
+      let decimals = registry.relaychain.tokenDecimals ?? 0;
+      let symbol = registry.relaychain.tokenSymbols ?? "";
+      if (fee.totalFeeInNative) {
+        feeValue = fee.totalFeeInNative;
+        decimals = source.parachain!.info.tokenDecimals;
+        symbol = source.parachain!.info.tokenSymbols;
       }
-      break;
-    case "toEthereumV2":
-      {
-        const fee = await toEthereumV2.getDeliveryFee(
-          {
-            assetHub: await context.assetHub(),
-            source: await context.parachain(source.parachain!.parachainId),
-          },
-          source.parachain!.parachainId,
-          registry,
-          token,
-        );
-        let feeValue = fee.totalFeeInDot;
-        let decimals = registry.relaychain.tokenDecimals ?? 0;
-        let symbol = registry.relaychain.tokenSymbols ?? "";
-        if (fee.totalFeeInNative) {
-          feeValue = fee.totalFeeInNative;
-          decimals = source.parachain!.info.tokenDecimals;
-          symbol = source.parachain!.info.tokenSymbols;
-        }
-        return {
-          fee: feeValue,
-          decimals,
-          symbol,
-          delivery: fee,
-          type: source.type,
-        };
-      }
-      break;
-    case "forInterParachain":
-      {
-        const fee = await forInterParachain.getDeliveryFee(
-          {
-            context,
-            sourceParaId: source.parachain!.parachainId,
-            destinationParaId: destination.parachain!.parachainId,
-          },
-          registry,
-          token,
-        );
-        let feeValue = fee.totalFeeInDot;
-        let decimals = registry.relaychain.tokenDecimals ?? 0;
-        let symbol = registry.relaychain.tokenSymbols ?? "";
-        return {
-          fee: feeValue,
-          decimals,
-          symbol,
-          delivery: fee,
-          type: source.type,
-        };
-      }
-      break;
+      return {
+        fee: feeValue,
+        totalFee: feeValue,
+        decimals,
+        symbol,
+        delivery: fee,
+        type: source.type,
+      };
+    }
+    case "forInterParachain": {
+      const fee = await forInterParachain.getDeliveryFee(
+        {
+          context,
+          sourceParaId: source.parachain!.parachainId,
+          destinationParaId: destination.parachain!.parachainId,
+        },
+        registry,
+        token,
+      );
+      let feeValue = fee.totalFeeInDot;
+      let decimals = registry.relaychain.tokenDecimals ?? 0;
+      let symbol = registry.relaychain.tokenSymbols ?? "";
+      return {
+        fee: feeValue,
+        totalFee: feeValue,
+        decimals,
+        symbol,
+        delivery: fee,
+        type: source.type,
+      };
+    }
   }
 }
 
