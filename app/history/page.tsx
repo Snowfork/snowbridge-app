@@ -1,6 +1,7 @@
 "use client";
 
 import { ErrorDialog } from "@/components/ErrorDialog";
+import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 import {
   formatTokenData,
   getChainIdentifiers,
@@ -405,6 +406,10 @@ const transferDetail = (
           </li>
         ))}
       </ul>
+      
+      <div className="flex justify-end mt-4">
+        <FinalizeBridgingButton transfer={transfer} registry={registry} />
+      </div>
     </div>
   );
 };
