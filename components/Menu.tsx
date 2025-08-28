@@ -11,12 +11,12 @@ import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
 import {
   LucideArrowRightLeft,
+  LucideBarChart,
   LucideBird,
   LucideHistory,
   LucideSend,
   LucideWallet,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { FC, useContext } from "react";
 import { Button } from "./ui/button";
@@ -144,19 +144,6 @@ export const Menu: FC = () => {
             </MenubarTrigger>
           </MenubarMenu>
         ) : null}
-        <MenubarMenu>
-          <MenubarTrigger>
-            <Link href="/wrap" className="flex items-center">
-              <Image
-                src="/images/originaltrailmenu.svg"
-                alt="TRAC"
-                width={24}
-                height={24}
-              />
-              <p className="pl-2 hidden md:flex">TRAC</p>
-            </Link>
-          </MenubarTrigger>
-        </MenubarMenu>
         <MenubarMenu>
           <MenubarTrigger>
             <Link href="/history" className="flex items-center">
