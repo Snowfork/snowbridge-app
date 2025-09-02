@@ -231,10 +231,10 @@ export function InitiateBridgingButton({
     <Button
       onClick={handleInitiateBridging}
       disabled={isDisabled}
-      className={cn("w-full", className)}
-      variant="outline"
+      className={cn("w-1/3 action-button", className)}
+      type="button"
     >
-      {isProcessing ? "Unwrapping..." : "Unwrap TRAC First"}
+      {isProcessing ? "Processing..." : "Initiate Bridging"}
     </Button>
   );
 }

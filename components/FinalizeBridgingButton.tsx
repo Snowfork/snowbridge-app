@@ -11,12 +11,7 @@ import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { toast } from "sonner";
 import { Signer } from "@polkadot/api/types";
-import { useAtomValue } from "jotai";
 import { WalletAccount } from "@talismn/connect-wallets";
-import {
-  snowbridgeEnvironmentAtom,
-  snowbridgeContextAtom,
-} from "@/store/snowbridge";
 
 interface FinalizeBridgingButtonProps {
   transfer: Transfer;
@@ -31,7 +26,7 @@ export function FinalizeBridgingButton({
   className,
   polkadotAccounts,
 }: FinalizeBridgingButtonProps) {
-  const context = useAtomValue(snowbridgeContextAtom);
+  const [context, contextLoading, contextError] = useSnowbridgeContext();
 
   // For TRAC finalization, we need any connected Polkadot account (not necessarily the transfer sender)
   // The transfer source is an Ethereum address, but finalization happens on Polkadot
@@ -51,6 +46,10 @@ export function FinalizeBridgingButton({
         amount: transfer.info.amount,
         sender: transfer.info.sourceAddress,
       });
+
+      if (contextError) {
+        throw new Error(`Snowbridge context error: ${contextError}`);
+      }
 
       if (!context) {
         throw new Error("Snowbridge context not available");
@@ -170,6 +169,7 @@ export function FinalizeBridgingButton({
     transfer.status === historyV2.TransferStatus.Pending ||
     !polkadotAccount ||
     isProcessing ||
+    contextLoading ||
     !context;
 
   return (
@@ -179,7 +179,11 @@ export function FinalizeBridgingButton({
         disabled={isDisabled}
         className={className}
       >
-        {isProcessing ? "Processing..." : "Finalize Bridging"}
+        {isProcessing 
+          ? "Processing..." 
+          : contextLoading 
+            ? "Loading..." 
+            : "Finalize Bridging"}
       </Button>
       <p className="text-sm text-muted-foreground">
         Once your TRAC token has been transferred, click on Finalize Bridging to complete the transfer.
