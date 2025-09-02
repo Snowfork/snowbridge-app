@@ -815,6 +815,7 @@ function SubmitButton({
         <InitiateBridgingButton 
           formData={formData}
           registry={assetRegistry}
+          polkadotAccount={polkadotAccounts?.find(acc => acc.address === formData.sourceAccount) || null}
           className="w-1/3"
         />
       )}
