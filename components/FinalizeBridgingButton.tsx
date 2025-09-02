@@ -5,31 +5,40 @@ import { cn } from "@/lib/utils";
 import { historyV2 } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { Transfer } from "@/store/transferHistory";
-import { Context } from "@snowbridge/api";
 import { useContext, useState } from "react";
-import { RegistryContext } from "@/app/providers";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
-import { Keyring } from "@polkadot/keyring";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
-import { polkadotAccountAtom } from "@/store/polkadot";
-import { useAtomValue } from "jotai";
 import { toast } from "sonner";
 import { Signer } from "@polkadot/api/types";
+import { useAtomValue } from "jotai";
+import { WalletAccount } from "@talismn/connect-wallets";
+import {
+  snowbridgeEnvironmentAtom,
+  snowbridgeContextAtom,
+} from "@/store/snowbridge";
 
 interface FinalizeBridgingButtonProps {
   transfer: Transfer;
   registry: AssetRegistry;
   className?: string;
+  polkadotAccounts?: WalletAccount[] | null;
 }
 
 export function FinalizeBridgingButton({
   transfer,
   registry,
   className,
+  polkadotAccounts,
 }: FinalizeBridgingButtonProps) {
-  const snowbridgeContext = useSnowbridgeContext();
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const context = useAtomValue(snowbridgeContextAtom);
+
+  // For TRAC finalization, we need any connected Polkadot account (not necessarily the transfer sender)
+  // The transfer source is an Ethereum address, but finalization happens on Polkadot
+  const polkadotAccount = polkadotAccounts && polkadotAccounts.length > 0
+    ? polkadotAccounts[0] // Use the first available Polkadot account
+    : null;
+
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFinalizeBridging = async () => {
@@ -43,7 +52,7 @@ export function FinalizeBridgingButton({
         sender: transfer.info.sourceAddress,
       });
 
-      if (!snowbridgeContext) {
+      if (!context) {
         throw new Error("Snowbridge context not available");
       }
 
@@ -58,7 +67,6 @@ export function FinalizeBridgingButton({
 
       await cryptoWaitReady();
 
-      const amount = BigInt(transfer.info.amount);
       const neuroWebParaId = 2043;
 
       // Check if Neuroweb parachain config exists in registry
@@ -71,7 +79,7 @@ export function FinalizeBridgingButton({
       console.log("Wrapping SnowTRAC to TRAC");
 
       // Connect to the Neuroweb parachain
-      const parachain = await snowbridgeContext.parachain(neuroWebParaId);
+      const parachain = await context.parachain(neuroWebParaId);
       const neuroWeb = new NeurowebParachain(
         parachain,
         neuroWebParaId,
@@ -91,7 +99,7 @@ export function FinalizeBridgingButton({
       console.log("SnowTRAC balance:", balance);
 
       // Create the wrap transaction
-      const wrapTx = neuroWeb.createWrapTx(parachain, amount);
+      const wrapTx = neuroWeb.createWrapTx(parachain, balance);
 
       console.log("Waiting for transaction to be confirmed by wallet.");
 
@@ -153,27 +161,29 @@ export function FinalizeBridgingButton({
     }
   };
 
-  const isValidToken = () => {
-    const tokenAddress = transfer.info.tokenAddress.toLowerCase();
-    const tokenMetaData =
-      registry.ethereumChains[registry.ethChainId].assets[tokenAddress];
-    return tokenMetaData?.symbol.toLowerCase().startsWith("trac");
-  };
+  const tokenAddress = transfer.info.tokenAddress.toLowerCase();
+  const tokenMetaData =
+    registry.ethereumChains[registry.ethChainId].assets[tokenAddress];
 
-  const isVisible =
-    transfer.status === historyV2.TransferStatus.Complete && isValidToken();
+  const isVisible = tokenMetaData?.symbol.toLowerCase().startsWith("trac");
   const isDisabled =
     transfer.status === historyV2.TransferStatus.Pending ||
     !polkadotAccount ||
-    isProcessing;
+    isProcessing ||
+    !context;
 
   return (
-    <Button
-      onClick={handleFinalizeBridging}
-      disabled={isDisabled}
-      className={cn(isVisible ? "" : "hidden", className)}
-    >
-      {isProcessing ? "Processing..." : "Finalize Bridging"}
-    </Button>
+    <div className={cn(isVisible ? "flex flex-col gap-2" : "hidden")}>
+      <Button
+        onClick={handleFinalizeBridging}
+        disabled={isDisabled}
+        className={className}
+      >
+        {isProcessing ? "Processing..." : "Finalize Bridging"}
+      </Button>
+      <p className="text-sm text-muted-foreground">
+        Once your TRAC token has been transferred, click on Finalize Bridging to complete the transfer.
+      </p>
+    </div>
   );
 }

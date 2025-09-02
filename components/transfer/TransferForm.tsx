@@ -49,6 +49,7 @@ import {
 } from "@/utils/formatting";
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
+import { InitiateBridgingButton } from "../InitiateBridgingButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
@@ -746,6 +747,8 @@ export const TransferForm: FC<TransferFormProps> = ({
             tokenMetadata={tokenMetadata}
             validating={validating}
             context={context}
+            formData={form.getValues()}
+            assetRegistry={assetRegistry}
           />
         </div>
       </form>
@@ -763,6 +766,8 @@ interface SubmitButtonProps {
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
   context: Context | null;
+  formData?: TransferFormData;
+  assetRegistry: any;
 }
 
 function SubmitButton({
@@ -775,6 +780,8 @@ function SubmitButton({
   tokenMetadata,
   beneficiaries,
   context,
+  formData,
+  assetRegistry,
 }: SubmitButtonProps) {
   if (tokenMetadata !== null && context !== null) {
     if (
@@ -803,7 +810,14 @@ function SubmitButton({
     }
   }
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center gap-3">
+      {formData && (
+        <InitiateBridgingButton 
+          formData={formData}
+          registry={assetRegistry}
+          className="w-1/3"
+        />
+      )}
       <Button
         disabled={
           context === null || tokenMetadata === null || validating || !feeInfo

@@ -1,7 +1,7 @@
 "use client";
 
 import { ErrorDialog } from "@/components/ErrorDialog";
-import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
+import { SnowTRACFinalizeBridgingButton } from "@/components/SnowTRACFinalizeBridgingButton";
 import {
   formatTokenData,
   getChainIdentifiers,
@@ -406,10 +406,7 @@ const transferDetail = (
           </li>
         ))}
       </ul>
-      
-      <div className="flex justify-end mt-4">
-        <FinalizeBridgingButton transfer={transfer} registry={registry} />
-      </div>
+
     </div>
   );
 };
@@ -573,10 +570,18 @@ export default function History() {
     <Suspense fallback={<Loading />}>
       <Card className="w-full md:w-2/3 min-h-[460px]">
         <CardHeader>
-          <CardTitle>History</CardTitle>
-          <CardDescription>
-            {showGlobal ? "Global transfer history." : "My transfer history."}
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>History</CardTitle>
+              <CardDescription>
+                {showGlobal ? "Global transfer history." : "My transfer history."}
+              </CardDescription>
+            </div>
+            <SnowTRACFinalizeBridgingButton
+              polkadotAccounts={polkadotAccounts}
+              registry={assetRegistry}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex w-full pb-4">

@@ -122,7 +122,6 @@ function TxCard(props: TxCardProps) {
             </ul>
           </div>
           <div className="flex justify-end gap-2">
-            <FinalizeBridgingButton transfer={transfer} registry={registry} />
             <RefreshButton
               onClick={refresh}
               className={cn(

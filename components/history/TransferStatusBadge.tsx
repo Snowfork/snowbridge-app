@@ -2,6 +2,7 @@ import { Transfer } from "@/store/transferHistory";
 import { Badge } from "../ui/badge";
 import { historyV2 } from "@snowbridge/api";
 import { cn } from "@/lib/utils";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 interface TransferStatusBadgeProps {
   className?: string;

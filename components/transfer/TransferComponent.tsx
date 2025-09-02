@@ -18,7 +18,7 @@ import {
   toPolkadotV2,
 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
-import { useSetAtom } from "jotai";
+import { useSetAtom, useAtomValue } from "jotai";
 import {
   Dispatch,
   FC,
@@ -39,6 +39,8 @@ import { LucideLoaderCircle } from "lucide-react";
 import { RegistryContext } from "@/app/providers";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
+import { SnowTRACFinalizeBridgingButton } from "@/components/SnowTRACFinalizeBridgingButton";
+import { polkadotAccountsAtom } from "@/store/polkadot";
 
 function sendResultToHistory(
   messageId: string,
@@ -138,6 +140,7 @@ export const TransferComponent: FC = () => {
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
   const registry = useContext(RegistryContext)!;
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
   const { mutate: refreshHistory } = useTransferHistory();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
@@ -330,7 +333,9 @@ export const TransferComponent: FC = () => {
   return (
     <Card className="w-auto md:w-2/3">
       <CardHeader>
-        <CardTitle>Transfer Tokens</CardTitle>
+        <div className="flex justify-between items-start">
+          <CardTitle>Transfer Tokens</CardTitle>
+        </div>
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>
