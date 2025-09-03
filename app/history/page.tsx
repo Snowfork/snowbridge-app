@@ -1,6 +1,7 @@
 "use client";
 
 import { ErrorDialog } from "@/components/ErrorDialog";
+import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 import {
   formatTokenData,
   getChainIdentifiers,
@@ -568,10 +569,24 @@ export default function History() {
     <Suspense fallback={<Loading />}>
       <Card className="w-full md:w-2/3 min-h-[460px]">
         <CardHeader>
-          <CardTitle>History</CardTitle>
-          <CardDescription>
-            {showGlobal ? "Global transfer history." : "My transfer history."}
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>History</CardTitle>
+              <CardDescription>
+                {showGlobal
+                  ? "Global transfer history."
+                  : "My transfer history."}
+              </CardDescription>
+            </div>
+            <FinalizeBridgingButton
+              polkadotAccount={
+                polkadotAccounts && polkadotAccounts.length > 0
+                  ? polkadotAccounts[0]
+                  : null
+              }
+              registry={assetRegistry}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex w-full pb-4">
