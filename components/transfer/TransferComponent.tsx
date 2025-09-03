@@ -333,17 +333,7 @@ export const TransferComponent: FC = () => {
   return (
     <Card className="w-auto md:w-2/3">
       <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle>Transfer Tokens</CardTitle>
-          <FinalizeBridgingButton
-            polkadotAccount={
-              polkadotAccounts && polkadotAccounts.length > 0
-                ? polkadotAccounts[0]
-                : null
-            }
-            registry={registry}
-          />
-        </div>
+        <CardTitle>Transfer Tokens</CardTitle>
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>

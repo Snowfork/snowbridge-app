@@ -36,7 +36,6 @@ export function InitiateBridgingButton({
   const [tracBalance, setTracBalance] = useState<bigint | null>(null);
   const [isCheckingBalance, setIsCheckingBalance] = useState(false);
 
-  console.log("in InitiateBridgingButton");
   const isNeurowebToEthereum = () => {
     return (
       formData.source === "origintrail-parachain" &&
@@ -55,11 +54,6 @@ export function InitiateBridgingButton({
   // Check TRAC balance
   useEffect(() => {
     const checkTRACBalance = async () => {
-      console.log(context);
-      console.log(polkadotAccount);
-      console.log(registry);
-      console.log(isNeurowebToEthereum());
-      console.log(isTRACToken());
       if (
         !context ||
         !polkadotAccount ||
@@ -96,13 +90,6 @@ export function InitiateBridgingButton({
         // Check TRAC balance (native TRAC balance on Neuroweb)
         const balance = await neuroWeb.tracBalance(polkadotAccount.address);
         setTracBalance(balance);
-
-        console.log(
-          "TRAC balance for",
-          polkadotAccount.address,
-          ":",
-          balance.toString(),
-        );
       } catch (error) {
         console.error("Failed to check TRAC balance:", error);
         setTracBalance(null);
@@ -153,8 +140,6 @@ export function InitiateBridgingButton({
 
       const parachainInfo = registry.parachains[neuroWebParaId].info;
 
-      console.log("Checking for unwrap functionality on Neuroweb parachain");
-
       // Connect to the Neuroweb parachain
       const parachain = await context.parachain(neuroWebParaId);
       const neuroWeb = new NeurowebParachain(
@@ -173,11 +158,6 @@ export function InitiateBridgingButton({
         throw new Error("No TRAC balance available to unwrap");
       }
 
-      console.log(
-        "Unwrapping TRAC to SnowTRAC, balance:",
-        currentTracBalance.toString(),
-      );
-
       // Create unwrap transaction - unwrap all TRAC balance
       const unwrapTx = neuroWeb.createUnwrapTx(parachain, currentTracBalance);
 
@@ -188,29 +168,21 @@ export function InitiateBridgingButton({
         polkadotAccount.address,
         { signer: polkadotAccount.signer as Signer },
         (result) => {
-          console.log(`Unwrap transaction status: ${result.status}`);
-
           if (result.status.isInBlock) {
-            console.log(
-              `Unwrap transaction included in block: ${result.status.asInBlock}`,
-            );
-            toast.info("Unwrap Transaction In Block", {
+            toast.info("Initiate Bridging started", {
               position: "bottom-center",
               description: `Transaction included in block: ${result.status.asInBlock}`,
             });
           } else if (result.status.isFinalized) {
-            console.log(
-              `Unwrap transaction finalized: ${result.status.asFinalized}`,
-            );
             setIsProcessing(false);
 
             if (!result.dispatchError) {
-              toast.success("TRAC Unwrapped Successfully!", {
+              toast.success("Initiate Bridging completed!", {
                 position: "bottom-center",
                 closeButton: true,
                 duration: 10000,
                 description:
-                  "TRAC has been successfully unwrapped to SnowTRAC. You can now proceed with the transfer.",
+                  "You can now proceed with the transfer. Click on Submit",
               });
 
               // Reset TRAC balance to trigger re-check
@@ -221,10 +193,6 @@ export function InitiateBridgingButton({
                 onPreTransferComplete();
               }
             } else {
-              console.error(
-                "Unwrap transaction finalized with error:",
-                result.dispatchError.toString(),
-              );
               toast.error("Unwrap Transaction Failed", {
                 position: "bottom-center",
                 description: "Unwrap transaction failed during execution.",
@@ -232,7 +200,6 @@ export function InitiateBridgingButton({
             }
           } else if (result.isError) {
             setIsProcessing(false);
-            console.error("Unwrap transaction error:", result);
             toast.error("Unwrap Transaction Error", {
               position: "bottom-center",
               description:
@@ -243,7 +210,6 @@ export function InitiateBridgingButton({
       );
     } catch (error) {
       setIsProcessing(false);
-      console.error("Failed to initiate bridging:", error);
       toast.error("Failed to Initiate Bridging", {
         position: "bottom-center",
         description:
@@ -252,7 +218,6 @@ export function InitiateBridgingButton({
     }
   };
 
-  console.log("Trac balance: ", tracBalance);
   const hasTRACBalance = tracBalance && tracBalance > 0n;
   const isVisible =
     isNeurowebToEthereum() &&

@@ -36,10 +36,6 @@ export function FinalizeBridgingButton({
   const [isProcessing, setIsProcessing] = useAtom(tracBridgingProcessingAtom);
   const connectedPolkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  console.log("context:", context);
-  console.log("contextError:", contextError);
-  console.log("isProcessing:", isProcessing);
-
   const effectiveAccount = useMemo(() => {
     if (polkadotAccount) {
       return polkadotAccount;
@@ -167,7 +163,6 @@ export function FinalizeBridgingButton({
 
       // Get execution fee
       const fee = await neuroWeb.wrapExecutionFeeInNative(parachain);
-      console.log("Execution fee:", fee);
 
       // Create the wrap transaction with the current balance
       if (!snowTRACBalance) {
@@ -175,25 +170,17 @@ export function FinalizeBridgingButton({
       }
       const wrapTx = neuroWeb.createWrapTx(parachain, snowTRACBalance);
 
-      console.log("Waiting for transaction to be confirmed by wallet.");
-
       // Sign and send the transaction
       await wrapTx.signAndSend(
         address,
         { signer: signer as Signer },
         (result) => {
-          console.log(`Transaction status: ${result.status}`);
-
           if (result.status.isInBlock) {
-            console.log(
-              `Transaction included in block: ${result.status.asInBlock}`,
-            );
-            toast.info("Transaction In Block", {
+            toast.info("Finalize Bridging started", {
               position: "bottom-center",
               description: `Transaction included in block: ${result.status.asInBlock}`,
             });
           } else if (result.status.isFinalized) {
-            console.log(`Transaction finalized: ${result.status.asFinalized}`);
             setIsProcessing(false);
 
             if (!result.dispatchError) {
@@ -208,10 +195,6 @@ export function FinalizeBridgingButton({
               // Clear processing state
               setIsProcessing(false);
             } else {
-              console.error(
-                "Transaction finalized with error:",
-                result.dispatchError.toString(),
-              );
               toast.error("Transaction Failed", {
                 position: "bottom-center",
                 description: "Transaction failed during execution.",
@@ -219,7 +202,6 @@ export function FinalizeBridgingButton({
             }
           } else if (result.isError) {
             setIsProcessing(false);
-            console.error("Transaction error:", result);
             toast.error("Transaction Error", {
               position: "bottom-center",
               description:
@@ -230,7 +212,6 @@ export function FinalizeBridgingButton({
       );
     } catch (error) {
       setIsProcessing(false);
-      console.error("Failed to finalize bridging:", error);
       toast.error("Failed to Finalize Bridging", {
         position: "bottom-center",
         description:
@@ -258,7 +239,8 @@ export function FinalizeBridgingButton({
     (!isCheckingBalance &&
       isTransferSpecific &&
       isTRACTransfer &&
-      transfer?.status !== 1); // Status is complete
+      transfer?.status === 0) ||
+    (transfer?.status === 1 && hasSnowTRACBalance);
 
   const isDisabled =
     !effectiveAccount ||
