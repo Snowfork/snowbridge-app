@@ -112,7 +112,8 @@ function TxCard(props: TxCardProps) {
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>
-            Transfer Status: <TransferStatusBadge transfer={transfer} />
+            Transfer Status:{" "}
+            <TransferStatusBadge transfer={transfer} registry={registry} />
           </div>
           <div
             className={cn(

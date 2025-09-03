@@ -5,61 +5,142 @@ import { cn } from "@/lib/utils";
 import { historyV2 } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { Transfer } from "@/store/transferHistory";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect, useMemo } from "react";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
 import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { toast } from "sonner";
 import { Signer } from "@polkadot/api/types";
 import { WalletAccount } from "@talismn/connect-wallets";
+import { useAtomValue, atom, useAtom } from "jotai";
+import { polkadotAccountsAtom } from "@/store/polkadot";
+
+const tracBridgingProcessingAtom = atom<boolean>(false);
 
 interface FinalizeBridgingButtonProps {
-  transfer: Transfer;
+  transfer?: Transfer;
   registry: AssetRegistry;
+  polkadotAccount?: WalletAccount | null;
   className?: string;
-  polkadotAccounts?: WalletAccount[] | null;
 }
 
 export function FinalizeBridgingButton({
   transfer,
   registry,
+  polkadotAccount,
   className,
-  polkadotAccounts,
 }: FinalizeBridgingButtonProps) {
-  const [context, contextLoading, contextError] = useSnowbridgeContext();
+  const [context, contextError] = useSnowbridgeContext();
+  const [snowTRACBalance, setSnowTRACBalance] = useState<bigint | null>(null);
+  const [isCheckingBalance, setIsCheckingBalance] = useState(false);
+  const [isProcessing, setIsProcessing] = useAtom(tracBridgingProcessingAtom);
+  const connectedPolkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  // For TRAC finalization, we need any connected Polkadot account (not necessarily the transfer sender)
-  // The transfer source is an Ethereum address, but finalization happens on Polkadot
-  const polkadotAccount = polkadotAccounts && polkadotAccounts.length > 0
-    ? polkadotAccounts[0] // Use the first available Polkadot account
-    : null;
+  console.log("context:", context);
+  console.log("contextError:", contextError);
+  console.log("isProcessing:", isProcessing);
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const effectiveAccount = useMemo(() => {
+    if (polkadotAccount) {
+      return polkadotAccount;
+    }
+
+    if (!connectedPolkadotAccounts || connectedPolkadotAccounts.length === 0) {
+      return null;
+    }
+
+    if (transfer) {
+      const matchingAccount = connectedPolkadotAccounts.find(
+        (acc) => acc.address === transfer.info.beneficiaryAddress,
+      );
+      if (matchingAccount) {
+        return matchingAccount;
+      }
+    }
+
+    // Otherwise use the first connected account
+    return connectedPolkadotAccounts[0];
+  }, [
+    polkadotAccount,
+    connectedPolkadotAccounts,
+    transfer?.info.beneficiaryAddress,
+  ]);
+
+  // Check SnowTRAC balance
+  useEffect(() => {
+    const checkSnowTRACBalance = async () => {
+      if (!context || !effectiveAccount || !registry) {
+        return;
+      }
+
+      try {
+        setIsCheckingBalance(true);
+        await cryptoWaitReady();
+
+        const neuroWebParaId = 2043;
+
+        // Check if Neuroweb parachain config exists in registry
+        if (!registry.parachains[neuroWebParaId]) {
+          console.log("Neuroweb parachain config not set in registry");
+          return;
+        }
+
+        const parachainInfo = registry.parachains[neuroWebParaId].info;
+
+        // Connect to the Neuroweb parachain
+        const parachain = await context.parachain(neuroWebParaId);
+        const neuroWeb = new NeurowebParachain(
+          parachain,
+          neuroWebParaId,
+          parachainInfo.specName,
+          parachainInfo.specVersion,
+        );
+
+        // Check SnowTRAC balance
+        const balance = await neuroWeb.snowTRACBalance(
+          effectiveAccount.address,
+          registry.ethChainId,
+        );
+
+        setSnowTRACBalance(balance);
+      } catch (error) {
+        console.error("Failed to check SnowTRAC balance:", error);
+        setSnowTRACBalance(null);
+      } finally {
+        setIsCheckingBalance(false);
+      }
+    };
+
+    checkSnowTRACBalance();
+  }, [context, effectiveAccount, registry]);
 
   const handleFinalizeBridging = async () => {
     if (isProcessing) return;
 
     try {
-      setIsProcessing(true);
-
-      console.log("Finalizing bridging with:", {
-        amount: transfer.info.amount,
-        sender: transfer.info.sourceAddress,
+      console.log("Finalizing SnowTRAC bridging with:", {
+        balance: snowTRACBalance?.toString(),
+        address: effectiveAccount?.address,
       });
-
-      if (contextError) {
-        throw new Error(`Snowbridge context error: ${contextError}`);
-      }
 
       if (!context) {
         throw new Error("Snowbridge context not available");
       }
 
-      if (!polkadotAccount) {
-        throw new Error("No Polkadot account connected");
+      if (!effectiveAccount) {
+        throw new Error("No Polkadot account available");
       }
 
-      const { signer, address } = polkadotAccount;
+      if (!effectiveAccount.signer) {
+        throw new Error(
+          "Account signer not available - wallet connection required",
+        );
+      }
+
+      // Set processing state after validations pass
+      setIsProcessing(true);
+
+      const { signer, address } = effectiveAccount;
       if (!signer) {
         throw new Error("Signer is not available");
       }
@@ -75,8 +156,6 @@ export function FinalizeBridgingButton({
 
       const parachainInfo = registry.parachains[neuroWebParaId].info;
 
-      console.log("Wrapping SnowTRAC to TRAC");
-
       // Connect to the Neuroweb parachain
       const parachain = await context.parachain(neuroWebParaId);
       const neuroWeb = new NeurowebParachain(
@@ -90,15 +169,11 @@ export function FinalizeBridgingButton({
       const fee = await neuroWeb.wrapExecutionFeeInNative(parachain);
       console.log("Execution fee:", fee);
 
-      // Check SnowTRAC balance
-      const balance = await neuroWeb.snowTRACBalance(
-        address,
-        registry.ethChainId,
-      );
-      console.log("SnowTRAC balance:", balance);
-
-      // Create the wrap transaction
-      const wrapTx = neuroWeb.createWrapTx(parachain, balance);
+      // Create the wrap transaction with the current balance
+      if (!snowTRACBalance) {
+        throw new Error("No SnowTRAC balance available");
+      }
+      const wrapTx = neuroWeb.createWrapTx(parachain, snowTRACBalance);
 
       console.log("Waiting for transaction to be confirmed by wallet.");
 
@@ -122,12 +197,16 @@ export function FinalizeBridgingButton({
             setIsProcessing(false);
 
             if (!result.dispatchError) {
-              toast.success("Bridging Finalized Successfully!", {
+              toast.success("TRAC bridging finalized!", {
                 position: "bottom-center",
                 closeButton: true,
                 duration: 10000,
-                description: "SnowTRAC has been successfully wrapped to TRAC.",
+                description: "TRAC has been bridged successfully.",
               });
+
+              setSnowTRACBalance(0n);
+              // Clear processing state
+              setIsProcessing(false);
             } else {
               console.error(
                 "Transaction finalized with error:",
@@ -160,34 +239,72 @@ export function FinalizeBridgingButton({
     }
   };
 
-  const tokenAddress = transfer.info.tokenAddress.toLowerCase();
-  const tokenMetaData =
-    registry.ethereumChains[registry.ethChainId].assets[tokenAddress];
+  // Show button when user has SnowTRAC balance > 0, or when checking specific transfer
+  const hasSnowTRACBalance = snowTRACBalance && snowTRACBalance > 0n;
 
-  const isVisible = tokenMetaData?.symbol.toLowerCase().startsWith("trac");
+  // For transfer-specific context, also check if it's a TRAC transfer
+  const isTransferSpecific = Boolean(transfer);
+  const isTRACTransfer =
+    isTransferSpecific &&
+    (() => {
+      const tokenAddress = transfer!.info.tokenAddress.toLowerCase();
+      const tokenMetaData =
+        registry?.ethereumChains?.[registry.ethChainId]?.assets?.[tokenAddress];
+      return tokenMetaData?.symbol.toLowerCase().startsWith("trac");
+    })();
+
+  const isVisible =
+    (!isCheckingBalance && !isTransferSpecific && hasSnowTRACBalance) ||
+    (!isCheckingBalance &&
+      isTransferSpecific &&
+      isTRACTransfer &&
+      transfer?.status !== 1); // Status is complete
+
   const isDisabled =
-    transfer.status === historyV2.TransferStatus.Pending ||
-    !polkadotAccount ||
+    !effectiveAccount ||
+    !connectedPolkadotAccounts ||
+    connectedPolkadotAccounts.length === 0 ||
     isProcessing ||
-    contextLoading ||
-    !context;
+    isCheckingBalance ||
+    !context ||
+    (isTransferSpecific && !hasSnowTRACBalance); // Disable for transfer-specific context when no balance
+
+  console.log("FinalizeBridgingButton state:", {
+    isVisible,
+    isDisabled,
+    hasSnowTRACBalance,
+    snowTRACBalance: snowTRACBalance?.toString(),
+    isTransferSpecific,
+    isTRACTransfer,
+    isProcessing,
+    isCheckingBalance,
+  });
 
   return (
     <div className={cn(isVisible ? "flex flex-col gap-2" : "hidden")}>
       <Button
         onClick={handleFinalizeBridging}
         disabled={isDisabled}
-        className={className}
+        className={cn(
+          !isTransferSpecific ? "action-button" : "", // Use action-button styling for global context
+          className,
+        )}
+        type="button"
       >
-        {isProcessing 
-          ? "Processing..." 
-          : contextLoading 
-            ? "Loading..." 
-            : "Finalize Bridging"}
+        {isProcessing
+          ? "Processing..."
+          : !connectedPolkadotAccounts || connectedPolkadotAccounts.length === 0
+            ? "Connect Wallet to Finalize"
+            : isTransferSpecific
+              ? "Finalize Bridging"
+              : "Finalize TRAC Bridging"}
       </Button>
-      <p className="text-sm text-muted-foreground">
-        Once your TRAC token has been transferred, click on Finalize Bridging to complete the transfer.
-      </p>
+      {isTransferSpecific && (
+        <p className="text-sm text-muted-foreground">
+          Once your TRAC token has been transferred, click on Finalize Bridging
+          to complete the transfer.
+        </p>
+      )}
     </div>
   );
 }

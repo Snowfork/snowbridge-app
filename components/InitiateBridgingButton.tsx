@@ -36,7 +36,7 @@ export function InitiateBridgingButton({
   const [tracBalance, setTracBalance] = useState<bigint | null>(null);
   const [isCheckingBalance, setIsCheckingBalance] = useState(false);
 
-  console.log("in InitiateBridgingButton")
+  console.log("in InitiateBridgingButton");
   const isNeurowebToEthereum = () => {
     return (
       formData.source === "origintrail-parachain" &&
@@ -55,12 +55,18 @@ export function InitiateBridgingButton({
   // Check TRAC balance
   useEffect(() => {
     const checkTRACBalance = async () => {
-      console.log(context)
-      console.log(polkadotAccount)
-      console.log(registry)
-      console.log(isNeurowebToEthereum())
-      console.log(isTRACToken())
-      if (!context || !polkadotAccount || !registry || !isNeurowebToEthereum() || !isTRACToken()) {
+      console.log(context);
+      console.log(polkadotAccount);
+      console.log(registry);
+      console.log(isNeurowebToEthereum());
+      console.log(isTRACToken());
+      if (
+        !context ||
+        !polkadotAccount ||
+        !registry ||
+        !isNeurowebToEthereum() ||
+        !isTRACToken()
+      ) {
         return;
       }
 
@@ -84,14 +90,19 @@ export function InitiateBridgingButton({
           parachain,
           neuroWebParaId,
           parachainInfo.specName,
-          parachainInfo.specVersion
+          parachainInfo.specVersion,
         );
 
         // Check TRAC balance (native TRAC balance on Neuroweb)
         const balance = await neuroWeb.tracBalance(polkadotAccount.address);
         setTracBalance(balance);
 
-        console.log("TRAC balance for", polkadotAccount.address, ":", balance.toString());
+        console.log(
+          "TRAC balance for",
+          polkadotAccount.address,
+          ":",
+          balance.toString(),
+        );
       } catch (error) {
         console.error("Failed to check TRAC balance:", error);
         setTracBalance(null);
@@ -101,7 +112,14 @@ export function InitiateBridgingButton({
     };
 
     checkTRACBalance();
-  }, [context, polkadotAccount, registry, formData.source, formData.destination, formData.token]);
+  }, [
+    context,
+    polkadotAccount,
+    registry,
+    formData.source,
+    formData.destination,
+    formData.token,
+  ]);
 
   const handleInitiateBridging = async () => {
     if (isProcessing) return;
@@ -143,17 +161,22 @@ export function InitiateBridgingButton({
         parachain,
         neuroWebParaId,
         parachainInfo.specName,
-        parachainInfo.specVersion
+        parachainInfo.specVersion,
       );
 
       // Check current TRAC balance to unwrap
-      const currentTracBalance = await neuroWeb.tracBalance(polkadotAccount.address);
+      const currentTracBalance = await neuroWeb.tracBalance(
+        polkadotAccount.address,
+      );
 
       if (!currentTracBalance || currentTracBalance === 0n) {
         throw new Error("No TRAC balance available to unwrap");
       }
 
-      console.log("Unwrapping TRAC to SnowTRAC, balance:", currentTracBalance.toString());
+      console.log(
+        "Unwrapping TRAC to SnowTRAC, balance:",
+        currentTracBalance.toString(),
+      );
 
       // Create unwrap transaction - unwrap all TRAC balance
       const unwrapTx = neuroWeb.createUnwrapTx(parachain, currentTracBalance);
@@ -168,13 +191,17 @@ export function InitiateBridgingButton({
           console.log(`Unwrap transaction status: ${result.status}`);
 
           if (result.status.isInBlock) {
-            console.log(`Unwrap transaction included in block: ${result.status.asInBlock}`);
+            console.log(
+              `Unwrap transaction included in block: ${result.status.asInBlock}`,
+            );
             toast.info("Unwrap Transaction In Block", {
               position: "bottom-center",
               description: `Transaction included in block: ${result.status.asInBlock}`,
             });
           } else if (result.status.isFinalized) {
-            console.log(`Unwrap transaction finalized: ${result.status.asFinalized}`);
+            console.log(
+              `Unwrap transaction finalized: ${result.status.asFinalized}`,
+            );
             setIsProcessing(false);
 
             if (!result.dispatchError) {
@@ -182,7 +209,8 @@ export function InitiateBridgingButton({
                 position: "bottom-center",
                 closeButton: true,
                 duration: 10000,
-                description: "TRAC has been successfully unwrapped to SnowTRAC. You can now proceed with the transfer.",
+                description:
+                  "TRAC has been successfully unwrapped to SnowTRAC. You can now proceed with the transfer.",
               });
 
               // Reset TRAC balance to trigger re-check
@@ -193,7 +221,10 @@ export function InitiateBridgingButton({
                 onPreTransferComplete();
               }
             } else {
-              console.error("Unwrap transaction finalized with error:", result.dispatchError.toString());
+              console.error(
+                "Unwrap transaction finalized with error:",
+                result.dispatchError.toString(),
+              );
               toast.error("Unwrap Transaction Failed", {
                 position: "bottom-center",
                 description: "Unwrap transaction failed during execution.",
@@ -204,25 +235,30 @@ export function InitiateBridgingButton({
             console.error("Unwrap transaction error:", result);
             toast.error("Unwrap Transaction Error", {
               position: "bottom-center",
-              description: "An error occurred while processing the unwrap transaction.",
+              description:
+                "An error occurred while processing the unwrap transaction.",
             });
           }
-        }
+        },
       );
-
     } catch (error) {
       setIsProcessing(false);
       console.error("Failed to initiate bridging:", error);
       toast.error("Failed to Initiate Bridging", {
         position: "bottom-center",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
       });
     }
   };
 
-  console.log("Trac balance: ", tracBalance)
+  console.log("Trac balance: ", tracBalance);
   const hasTRACBalance = tracBalance && tracBalance > 0n;
-  const isVisible = isNeurowebToEthereum() && isTRACToken() && hasTRACBalance && !isCheckingBalance;
+  const isVisible =
+    isNeurowebToEthereum() &&
+    isTRACToken() &&
+    hasTRACBalance &&
+    !isCheckingBalance;
   const isDisabled = !polkadotAccount || isProcessing || isCheckingBalance;
 
   if (!isVisible) return;

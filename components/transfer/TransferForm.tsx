@@ -790,21 +790,30 @@ function SubmitButton({
   const [forceRefresh, setForceRefresh] = useState(0);
 
   // Get the selected polkadot account
-  const selectedPolkadotAccount = formData && polkadotAccounts
-    ? polkadotAccounts.find(acc => acc.address === formData.sourceAccount)
-    : null;
+  const selectedPolkadotAccount =
+    formData && polkadotAccounts
+      ? polkadotAccounts.find((acc) => acc.address === formData.sourceAccount)
+      : null;
 
   // Check if this is a Neuroweb to Ethereum TRAC transfer
-  const isNeurowebToEthereum = formData && 
-    formData.source === "origintrail-parachain" && 
+  const isNeurowebToEthereum =
+    formData &&
+    formData.source === "origintrail-parachain" &&
     formData.destination === "ethereum";
 
-  const isTRACToken = formData && tokenMetadata?.symbol.toLowerCase().startsWith("trac");
+  const isTRACToken =
+    formData && tokenMetadata?.symbol.toLowerCase().startsWith("trac");
 
   // Check TRAC balance to determine if InitiateBridgingButton should show
   useEffect(() => {
     const checkTRACBalance = async () => {
-      if (!context || !selectedPolkadotAccount || !assetRegistry || !isNeurowebToEthereum || !isTRACToken) {
+      if (
+        !context ||
+        !selectedPolkadotAccount ||
+        !assetRegistry ||
+        !isNeurowebToEthereum ||
+        !isTRACToken
+      ) {
         return;
       }
 
@@ -813,7 +822,7 @@ function SubmitButton({
         await cryptoWaitReady();
 
         const neuroWebParaId = 2043;
-        
+
         if (!assetRegistry.parachains[neuroWebParaId]) {
           console.log("Neuroweb parachain config not set in registry");
           return;
@@ -825,10 +834,12 @@ function SubmitButton({
           parachain,
           neuroWebParaId,
           parachainInfo.specName,
-          parachainInfo.specVersion
+          parachainInfo.specVersion,
         );
 
-        const balance = await neuroWeb.tracBalance(selectedPolkadotAccount.address);
+        const balance = await neuroWeb.tracBalance(
+          selectedPolkadotAccount.address,
+        );
         setTracBalance(balance);
       } catch (error) {
         console.error("Failed to check TRAC balance in SubmitButton:", error);
@@ -839,13 +850,21 @@ function SubmitButton({
     };
 
     checkTRACBalance();
-  }, [context, selectedPolkadotAccount, assetRegistry, isNeurowebToEthereum, isTRACToken, forceRefresh]);
+  }, [
+    context,
+    selectedPolkadotAccount,
+    assetRegistry,
+    isNeurowebToEthereum,
+    isTRACToken,
+    forceRefresh,
+  ]);
 
   // Check if InitiateBridgingButton should be visible
-  const shouldShowInitiateBridging = isNeurowebToEthereum && 
-    isTRACToken && 
-    tracBalance && 
-    tracBalance > 0n && 
+  const shouldShowInitiateBridging =
+    isNeurowebToEthereum &&
+    isTRACToken &&
+    tracBalance &&
+    tracBalance > 0n &&
     !isCheckingBalance;
   if (tokenMetadata !== null && context !== null) {
     if (
@@ -876,11 +895,15 @@ function SubmitButton({
   return (
     <div className="flex flex-col items-center gap-3">
       {formData && (
-        <InitiateBridgingButton 
+        <InitiateBridgingButton
           formData={formData}
           registry={assetRegistry}
-          polkadotAccount={polkadotAccounts?.find(acc => acc.address === formData.sourceAccount) || null}
-          onPreTransferComplete={() => setForceRefresh(prev => prev + 1)}
+          polkadotAccount={
+            polkadotAccounts?.find(
+              (acc) => acc.address === formData.sourceAccount,
+            ) || null
+          }
+          onPreTransferComplete={() => setForceRefresh((prev) => prev + 1)}
         />
       )}
       {!shouldShowInitiateBridging && (

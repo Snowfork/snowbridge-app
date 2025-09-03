@@ -6,7 +6,9 @@ interface SnowbridgeTRACBalanceDisplayProps {
   className?: string;
 }
 
-export const SnowbridgeTRACBalanceDisplay: FC<SnowbridgeTRACBalanceDisplayProps> = ({
+export const SnowbridgeTRACBalanceDisplay: FC<
+  SnowbridgeTRACBalanceDisplayProps
+> = ({
   sourceAccount,
   className = "text-sm text-right text-muted-foreground px-1",
 }) => {
@@ -15,11 +17,11 @@ export const SnowbridgeTRACBalanceDisplay: FC<SnowbridgeTRACBalanceDisplayProps>
   const symbol = "SnowTRAC";
 
   //if (!sourceAccount) {
-   // return (
-   //   <FormLabel className={`${className} hidden`}>
-   //     Balance: Fetching...
-   //   </FormLabel>
-   // );
+  // return (
+  //   <FormLabel className={`${className} hidden`}>
+  //     Balance: Fetching...
+  //   </FormLabel>
+  // );
   //}
 
   return (

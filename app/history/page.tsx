@@ -1,7 +1,7 @@
 "use client";
 
 import { ErrorDialog } from "@/components/ErrorDialog";
-import { SnowTRACFinalizeBridgingButton } from "@/components/SnowTRACFinalizeBridgingButton";
+import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 import {
   formatTokenData,
   getChainIdentifiers,
@@ -406,7 +406,6 @@ const transferDetail = (
           </li>
         ))}
       </ul>
-
     </div>
   );
 };
@@ -574,11 +573,17 @@ export default function History() {
             <div>
               <CardTitle>History</CardTitle>
               <CardDescription>
-                {showGlobal ? "Global transfer history." : "My transfer history."}
+                {showGlobal
+                  ? "Global transfer history."
+                  : "My transfer history."}
               </CardDescription>
             </div>
-            <SnowTRACFinalizeBridgingButton
-              polkadotAccounts={polkadotAccounts}
+            <FinalizeBridgingButton
+              polkadotAccount={
+                polkadotAccounts && polkadotAccounts.length > 0
+                  ? polkadotAccounts[0]
+                  : null
+              }
               registry={assetRegistry}
             />
           </div>

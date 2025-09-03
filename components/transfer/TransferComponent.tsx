@@ -39,7 +39,7 @@ import { LucideLoaderCircle } from "lucide-react";
 import { RegistryContext } from "@/app/providers";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
-import { SnowTRACFinalizeBridgingButton } from "@/components/SnowTRACFinalizeBridgingButton";
+import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 
 function sendResultToHistory(
@@ -335,6 +335,14 @@ export const TransferComponent: FC = () => {
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle>Transfer Tokens</CardTitle>
+          <FinalizeBridgingButton
+            polkadotAccount={
+              polkadotAccounts && polkadotAccounts.length > 0
+                ? polkadotAccounts[0]
+                : null
+            }
+            registry={registry}
+          />
         </div>
       </CardHeader>
       <CardContent>{content}</CardContent>
