@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 **NOTICE**
-The Snowbridge Team will not attempt to contact you outside of this issue. Make sure you are getting advise from a Snowbridge team member or contributor. These issues are publicly viewable so do not post any private information. Please be aware of scammers who claim to be a team member.
+The Snowbridge Team will not attempt to contact you outside of this issue. Make sure you are getting advice from a Snowbridge team member or contributor. These issues are publicly viewable so do not post any private information. Please be aware of scammers who claim to be a team member.
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
