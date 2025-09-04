@@ -7,6 +7,9 @@ assignees: ''
 
 ---
 
+**NOTICE**
+The Snowbridge Team will not attempt to contact you outside of this issue. Make sure you are getting advice from a Snowbridge team member or contributor. These issues are publicly viewable so do not post any private information. Please be aware of scammers who claim to be a team member.
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
