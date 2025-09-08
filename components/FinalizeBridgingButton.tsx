@@ -251,17 +251,6 @@ export function FinalizeBridgingButton({
     !context ||
     (isTransferSpecific && !hasSnowTRACBalance); // Disable for transfer-specific context when no balance
 
-  console.log("FinalizeBridgingButton state:", {
-    isVisible,
-    isDisabled,
-    hasSnowTRACBalance,
-    snowTRACBalance: snowTRACBalance?.toString(),
-    isTransferSpecific,
-    isTRACTransfer,
-    isProcessing,
-    isCheckingBalance,
-  });
-
   return (
     <div className={cn(isVisible ? "flex flex-col gap-2" : "hidden")}>
       <Button

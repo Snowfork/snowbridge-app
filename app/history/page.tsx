@@ -49,37 +49,18 @@ import {
   transferHistoryShowGlobal,
   transfersPendingLocalAtom,
 } from "@/store/transferHistory";
-import { encodeAddress } from "@polkadot/util-crypto";
+import { encodeAddress, decodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
-import { WalletAccount } from "@talismn/connect-wallets";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
+import { walletTxChecker } from "@/utils/addresses";
 
 const ITEMS_PER_PAGE = 5;
-const isWalletTransaction = (
-  polkadotAccounts: WalletAccount[] | null,
-  ethereumAccounts: string[] | null,
-  sourceAddress: string,
-  beneficiaryAddress: string,
-): boolean => {
-  const polkadotAccount = (polkadotAccounts ?? []).find(
-    (acc) =>
-      beneficiaryAddress.trim().toLowerCase() ===
-        acc.address.trim().toLowerCase() ||
-      sourceAddress.trim().toLowerCase() == acc.address.trim().toLowerCase(),
-  );
-  const ethereumAccount = (ethereumAccounts ?? []).find(
-    (acc) =>
-      beneficiaryAddress.trim().toLowerCase() === acc.trim().toLowerCase() ||
-      sourceAddress.trim().toLowerCase() == acc.trim().toLowerCase(),
-  );
-  return polkadotAccount !== undefined || ethereumAccount !== undefined;
-};
 
 const getExplorerLinks = (
   transfer: Transfer,
@@ -482,6 +463,10 @@ export default function History() {
   const router = useRouter();
 
   const pages = useMemo(() => {
+    const isWalletTransaction = walletTxChecker([
+      ...(polkadotAccounts ?? []).map((acc) => acc.address),
+      ...ethereumAccounts,
+    ]);
     const allTransfers: Transfer[] = [];
     for (const pending of transfersPendingLocal) {
       if (transferHistoryCache.find((t) => t.id === pending.id)) {
@@ -501,8 +486,6 @@ export default function History() {
         continue;
 
       transfer.isWalletTransaction = isWalletTransaction(
-        polkadotAccounts,
-        ethereumAccounts,
         transfer.info.sourceAddress,
         transfer.info.beneficiaryAddress,
       );

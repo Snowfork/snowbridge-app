@@ -39,14 +39,23 @@ import { LucideLoaderCircle } from "lucide-react";
 import { RegistryContext } from "@/app/providers";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
-import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 import { polkadotAccountsAtom } from "@/store/polkadot";
+import { isHex, u8aToHex } from "@polkadot/util";
+import { decodeAddress } from "@polkadot/util-crypto";
 
 function sendResultToHistory(
   messageId: string,
   data: ValidationData,
   result: MessageReciept,
 ): Transfer {
+  let sourceAddress = data.formData.sourceAccount;
+  if (!isHex(sourceAddress)) {
+    sourceAddress = u8aToHex(decodeAddress(sourceAddress));
+  }
+  let beneficiaryAddress = data.formData.beneficiary;
+  if (!isHex(beneficiaryAddress)) {
+    beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
+  }
   switch (inferTransferType(data.source, data.destination)) {
     case "toEthereumV2": {
       const sendResult = result as toEthereumV2.MessageReceipt;
@@ -56,8 +65,8 @@ function sendResultToHistory(
         status: historyV2.TransferStatus.Pending,
         info: {
           amount: data.amountInSmallestUnit.toString(),
-          sourceAddress: data.formData.sourceAccount,
-          beneficiaryAddress: data.formData.beneficiary,
+          sourceAddress,
+          beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
         },
@@ -65,7 +74,7 @@ function sendResultToHistory(
           block_num: sendResult.blockNumber,
           block_timestamp: 0,
           messageId: messageId ?? sendResult.messageId,
-          account_id: data.formData.sourceAccount,
+          account_id: sourceAddress,
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
           bridgeHubMessageId: "",
@@ -83,8 +92,8 @@ function sendResultToHistory(
         status: historyV2.TransferStatus.Pending,
         info: {
           amount: data.amountInSmallestUnit.toString(),
-          sourceAddress: data.formData.sourceAccount,
-          beneficiaryAddress: data.formData.beneficiary,
+          sourceAddress,
+          beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
           destinationParachain: data.destination.parachain?.parachainId,
@@ -108,8 +117,8 @@ function sendResultToHistory(
         status: historyV2.TransferStatus.Pending,
         info: {
           amount: data.amountInSmallestUnit.toString(),
-          sourceAddress: data.formData.sourceAccount,
-          beneficiaryAddress: data.formData.beneficiary,
+          sourceAddress,
+          beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
           destinationParachain: data.destination.parachain!.parachainId,
@@ -118,7 +127,7 @@ function sendResultToHistory(
           block_num: sendResult.blockNumber,
           block_timestamp: 0,
           messageId: messageId ?? sendResult.messageId,
-          account_id: data.formData.sourceAccount,
+          account_id: sourceAddress,
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
           bridgeHubMessageId: "",
