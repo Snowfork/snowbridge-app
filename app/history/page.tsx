@@ -1,7 +1,6 @@
 "use client";
 
 import { ErrorDialog } from "@/components/ErrorDialog";
-import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 import {
   formatTokenData,
   getChainIdentifiers,
@@ -49,7 +48,7 @@ import {
   transferHistoryShowGlobal,
   transfersPendingLocalAtom,
 } from "@/store/transferHistory";
-import { encodeAddress, decodeAddress } from "@polkadot/util-crypto";
+import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
@@ -552,24 +551,10 @@ export default function History() {
     <Suspense fallback={<Loading />}>
       <Card className="w-full md:w-2/3 min-h-[460px]">
         <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>History</CardTitle>
-              <CardDescription>
-                {showGlobal
-                  ? "Global transfer history."
-                  : "My transfer history."}
-              </CardDescription>
-            </div>
-            <FinalizeBridgingButton
-              polkadotAccount={
-                polkadotAccounts && polkadotAccounts.length > 0
-                  ? polkadotAccounts[0]
-                  : null
-              }
-              registry={assetRegistry}
-            />
-          </div>
+          <CardTitle>History</CardTitle>
+          <CardDescription>
+            {showGlobal ? "Global transfer history." : "My transfer history."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex w-full pb-4">

@@ -49,9 +49,6 @@ import {
 } from "@/utils/formatting";
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
-import { InitiateBridgingButton } from "../InitiateBridgingButton";
-import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
@@ -749,8 +746,6 @@ export const TransferForm: FC<TransferFormProps> = ({
             tokenMetadata={tokenMetadata}
             validating={validating}
             context={context}
-            formData={form.getValues()}
-            assetRegistry={assetRegistry}
           />
         </div>
       </form>
@@ -768,8 +763,6 @@ interface SubmitButtonProps {
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
   context: Context | null;
-  formData?: TransferFormData;
-  assetRegistry: any;
 }
 
 function SubmitButton({
@@ -782,90 +775,7 @@ function SubmitButton({
   tokenMetadata,
   beneficiaries,
   context,
-  formData,
-  assetRegistry,
 }: SubmitButtonProps) {
-  const [tracBalance, setTracBalance] = useState<bigint | null>(null);
-  const [isCheckingBalance, setIsCheckingBalance] = useState(false);
-  const [forceRefresh, setForceRefresh] = useState(0);
-
-  // Get the selected polkadot account
-  const selectedPolkadotAccount =
-    formData && polkadotAccounts
-      ? polkadotAccounts.find((acc) => acc.address === formData.sourceAccount)
-      : null;
-
-  // Check if this is a Neuroweb to Ethereum TRAC transfer
-  const isNeurowebToEthereum =
-    formData &&
-    formData.source === "origintrail-parachain" &&
-    formData.destination === "ethereum";
-
-  const isTRACToken =
-    formData && tokenMetadata?.symbol.toLowerCase().startsWith("trac");
-
-  // Check TRAC balance to determine if InitiateBridgingButton should show
-  useEffect(() => {
-    const checkTRACBalance = async () => {
-      if (
-        !context ||
-        !selectedPolkadotAccount ||
-        !assetRegistry ||
-        !isNeurowebToEthereum ||
-        !isTRACToken
-      ) {
-        return;
-      }
-
-      try {
-        setIsCheckingBalance(true);
-        await cryptoWaitReady();
-
-        const neuroWebParaId = 2043;
-
-        if (!assetRegistry.parachains[neuroWebParaId]) {
-          console.log("Neuroweb parachain config not set in registry");
-          return;
-        }
-
-        const parachainInfo = assetRegistry.parachains[neuroWebParaId].info;
-        const parachain = await context.parachain(neuroWebParaId);
-        const neuroWeb = new NeurowebParachain(
-          parachain,
-          neuroWebParaId,
-          parachainInfo.specName,
-          parachainInfo.specVersion,
-        );
-
-        const balance = await neuroWeb.tracBalance(
-          selectedPolkadotAccount.address,
-        );
-        setTracBalance(balance);
-      } catch (error) {
-        console.error("Failed to check TRAC balance in SubmitButton:", error);
-        setTracBalance(null);
-      } finally {
-        setIsCheckingBalance(false);
-      }
-    };
-
-    checkTRACBalance();
-  }, [
-    context,
-    selectedPolkadotAccount,
-    assetRegistry,
-    isNeurowebToEthereum,
-    isTRACToken,
-    forceRefresh,
-  ]);
-
-  // Check if InitiateBridgingButton should be visible
-  const shouldShowInitiateBridging =
-    isNeurowebToEthereum &&
-    isTRACToken &&
-    tracBalance &&
-    tracBalance > 0n &&
-    !isCheckingBalance;
   if (tokenMetadata !== null && context !== null) {
     if (
       (ethereumAccounts === null || ethereumAccounts.length === 0) &&
@@ -893,36 +803,22 @@ function SubmitButton({
     }
   }
   return (
-    <div className="flex flex-col items-center gap-3">
-      {formData && (
-        <InitiateBridgingButton
-          formData={formData}
-          registry={assetRegistry}
-          polkadotAccount={
-            polkadotAccounts?.find(
-              (acc) => acc.address === formData.sourceAccount,
-            ) || null
-          }
-          onPreTransferComplete={() => setForceRefresh((prev) => prev + 1)}
-        />
-      )}
-      {!shouldShowInitiateBridging && (
-        <Button
-          disabled={
-            context === null || tokenMetadata === null || validating || !feeInfo
-          }
-          className="w-1/3 action-button"
-          type="submit"
-        >
-          {context === null
-            ? "Connecting..."
-            : validating
-              ? "Validating..."
-              : !feeInfo
-                ? "Fetching Fees..."
-                : "Submit"}
-        </Button>
-      )}
+    <div className="flex flex-col items-center">
+      <Button
+        disabled={
+          context === null || tokenMetadata === null || validating || !feeInfo
+        }
+        className="w-1/3 action-button"
+        type="submit"
+      >
+        {context === null
+          ? "Connecting..."
+          : validating
+            ? "Validating..."
+            : !feeInfo
+              ? "Fetching Fees..."
+              : "Submit"}
+      </Button>
     </div>
   );
 }

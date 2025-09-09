@@ -33,7 +33,6 @@ import {
 import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
-import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 
 const Loading = () => {
   return (
@@ -112,8 +111,7 @@ function TxCard(props: TxCardProps) {
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>
-            Transfer Status:{" "}
-            <TransferStatusBadge transfer={transfer} registry={registry} />
+            Transfer Status: <TransferStatusBadge transfer={transfer} />
           </div>
           <div
             className={cn(
@@ -151,7 +149,6 @@ function TxCard(props: TxCardProps) {
             </ul>
           </div>
           <div>
-            <FinalizeBridgingButton transfer={transfer} registry={registry} />
             <Link
               className={cn("underline text-sm", !inHistory ? "hidden" : "")}
               href={`/history#${transfer.id}`}

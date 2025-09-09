@@ -109,10 +109,6 @@ button[role="combobox"], input, .fake-dropdown  {
     font-size: 15px !important;
 }
 
-input.max-button  {
-    padding-right: 75px !important;
-}
-
 body {
     background-image: url("/images/snow5.jpg");
     background-size:cover;
