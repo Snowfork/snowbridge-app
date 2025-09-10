@@ -33,6 +33,11 @@ import {
 import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
+import { polkadotAccountsAtom } from "@/store/polkadot";
+import { useAtom, useAtomValue } from "jotai";
+import { walletTxChecker } from "@/utils/addresses";
+import { NeuroWebUnwrapStep } from "@/components/transfer/NeuroWebUnwrapStep";
+import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
   return (
@@ -53,6 +58,29 @@ function TxCard(props: TxCardProps) {
   const { transfer, refresh, inHistory, registry } = props;
   const { destination } = getEnvDetail(transfer, registry);
   const links: { name: string; link: string }[] = [];
+
+  const token =
+    registry.ethereumChains[registry.ethChainId].assets[
+      transfer.info.tokenAddress.toLowerCase()
+    ];
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
+
+  const isWalletTransaction = useMemo(() => {
+    const checker = walletTxChecker([
+      ...(polkadotAccounts ?? []).map((acc) => acc.address),
+      ...ethereumAccounts,
+    ]);
+    return checker(
+      transfer.info.sourceAddress,
+      transfer.info.beneficiaryAddress,
+    );
+  }, [
+    ethereumAccounts,
+    polkadotAccounts,
+    transfer.info.beneficiaryAddress,
+    transfer.info.sourceAddress,
+  ]);
 
   switch (transfer.sourceType) {
     // Uniswap
@@ -94,6 +122,28 @@ function TxCard(props: TxCardProps) {
       }
       break;
     }
+  }
+
+  let neuroWeb;
+  if (
+    isWalletTransaction &&
+    transfer.info.destinationParachain === 2043 &&
+    token.symbol === "TRAC"
+  ) {
+    neuroWeb = (
+      <div>
+        <NeuroWebUnwrapStep
+          defaultAmount={transfer.info.amount}
+          beneficiaryAddress={transfer.info.beneficiaryAddress}
+          tokenAddress={transfer.info.tokenAddress}
+          ready={historyV2.TransferStatus.Complete === transfer.status}
+          mode="unwrap"
+          messageId={transfer.id}
+        />
+      </div>
+    );
+  } else {
+    neuroWeb = <div hidden={true} />;
   }
 
   return (
@@ -148,6 +198,7 @@ function TxCard(props: TxCardProps) {
               })}
             </ul>
           </div>
+          {neuroWeb}
           <div>
             <Link
               className={cn("underline text-sm", !inHistory ? "hidden" : "")}
@@ -249,6 +300,7 @@ function TxComponent() {
     {
       refreshInterval: 60 * 1000, // 1 minute
       suspense: true,
+      revalidateOnFocus: false,
       fallbackData: { txData: transfer, inHistory: false },
     },
   );

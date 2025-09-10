@@ -58,6 +58,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -226,6 +227,7 @@ const getExplorerLinks = (
 const transferDetail = (
   transfer: Transfer,
   registry: AssetRegistry,
+  router: AppRouterInstance,
 ): JSX.Element => {
   const { source, destination } = getEnvDetail(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
@@ -386,6 +388,15 @@ const transferDetail = (
           </li>
         ))}
       </ul>
+      <div hidden={!transfer.isWalletTransaction} className="p-2">
+        <Button
+          onClick={() => {
+            router.push(`txcomplete?messageId=${transfer.id}`);
+          }}
+        >
+          Post Transfer Steps
+        </Button>
+      </div>
     </div>
   );
 };
@@ -601,7 +612,7 @@ export default function History() {
                   <TransferTitle transfer={v} />
                 </AccordionTrigger>
                 <AccordionContent>
-                  {transferDetail(v, assetRegistry)}
+                  {transferDetail(v, assetRegistry, router)}
                 </AccordionContent>
               </AccordionItem>
             ))}
