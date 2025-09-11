@@ -56,7 +56,7 @@ async function signAndSend(
           }
           resolve({
             ...result,
-            success: false,
+            success: true,
           });
         }
       });
@@ -78,11 +78,7 @@ async function fetchNeuroWebBalance([context, registry, beneficiary]: [
   AssetRegistry,
   string?,
 ]) {
-  if (!beneficiary)
-    return {
-      bridgedTracBalance: 0n,
-      neuroTracBalance: 0n,
-    };
+  if (!beneficiary || !context) return undefined;
   const provider = await context.parachain(NEURO_WEB_PARACHAIN);
   const info = registry.parachains[NEURO_WEB_PARACHAIN].info;
   const para = new NeurowebParachain(
@@ -143,7 +139,6 @@ export function useNeuroWebBalance(beneficiary?: string) {
     {
       revalidateOnFocus: false,
       errorRetryCount: 10,
-      fallbackData: { neuroTracBalance: 0n, bridgedTracBalance: 0n },
     },
   );
 }

@@ -29,26 +29,30 @@ interface TransferStepData {
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
   defaultAmount: string;
+  messageId?: string;
 }
 
 export function NeuroWebWrapStep({
   id,
   currentStep,
+  messageId,
+  step,
   defaultAmount,
   data,
   nextStep,
 }: TransferStepData) {
-  const title = "Wrap TRAC";
+  const title = "Unwrap TRAC";
   return (
     <div key={id} className="flex flex-col gap-4 justify-between">
       <NeuroWebUnwrapForm
         defaultAmount={defaultAmount}
         beneficiaryAddress={data.formData.sourceAccount}
-        mode="wrap"
+        mode="unwrap"
         ready={true}
         title={`Step ${id}: ${title}`}
         tokenAddress={data.formData.token}
         nextStep={nextStep}
+        messageId={messageId}
       />
     </div>
   );
@@ -80,6 +84,7 @@ interface Message {
 const currentMessageId = atom<string>();
 const successAtom = atom<Message>();
 const errorAtom = atom<Message>();
+const busyAtom = atom<boolean>();
 
 export function NeuroWebUnwrapForm({
   defaultAmount,
@@ -108,22 +113,15 @@ export function NeuroWebUnwrapForm({
       ).toLowerCase() === beneficiaryHex.toLowerCase(),
   );
 
-  const {
-    data: { bridgedTracBalance, neuroTracBalance },
-  } = useNeuroWebBalance(beneficiary?.address);
+  const { data: balanceData } = useNeuroWebBalance(beneficiary?.address);
   const { unwrap, wrap } = useNeuroWebWrapUnwrap();
   const token =
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       tokenAddress.toLowerCase()
     ];
 
-  const txAmount = BigInt(defaultAmount);
-  const balance = mode === "unwrap" ? bridgedTracBalance : neuroTracBalance;
-  const initialAmount = txAmount > balance ? balance : txAmount;
-  const [amount, setAmount] = useState(
-    formatUnits(initialAmount, token.decimals),
-  );
-  const [busy, setBusy] = useState(false);
+  const [amount, setAmount] = useState<string>();
+  const [busy, setBusy] = useAtom(busyAtom);
 
   const [success, setSuccess] = useAtom(successAtom);
   const [currentId, setCurrentId] = useAtom(currentMessageId);
@@ -134,12 +132,33 @@ export function NeuroWebUnwrapForm({
       setCurrentId(messageId);
       setSuccess(undefined);
       setError(undefined);
+      setBusy(undefined);
     }
-  }, [messageId, currentId, setCurrentId, setSuccess, setError]);
+    const txAmount = BigInt(defaultAmount);
+    const balance = balanceData
+      ? mode === "unwrap"
+        ? balanceData.neuroTracBalance
+        : balanceData.bridgedTracBalance
+      : txAmount;
+    const amount = txAmount > balance ? balance : txAmount;
+    setAmount(formatUnits(amount, token.decimals));
+  }, [
+    messageId,
+    currentId,
+    setCurrentId,
+    setSuccess,
+    setError,
+    setBusy,
+    setAmount,
+    balanceData,
+    defaultAmount,
+    mode,
+    token.decimals,
+  ]);
 
   const beneficiaryLabel = (
     <>
-      <div className="flex">
+      <div className="flex place-items-center">
         <Label className="w-1/5">Account</Label>
         <div className="w-4/5">
           {" "}
@@ -167,11 +186,26 @@ export function NeuroWebUnwrapForm({
           </div>
         </div>
       </div>
-      <div className="flex">
-        <Label className="w-1/5">Balance</Label>
+      <div className="flex place-items-center">
+        <Label className="w-1/5">Bridged</Label>
         <pre className="w-4/5">
-          {formatBalance({ number: balance, decimals: token.decimals })}{" "}
-          {token.symbol}
+          {balanceData !== undefined
+            ? formatBalance({
+                number: balanceData.bridgedTracBalance,
+                decimals: token.decimals,
+              }) + ` ${token.symbol}`
+            : "Fetching..."}
+        </pre>
+      </div>
+      <div className="flex place-items-center">
+        <Label className="w-1/5">NueroWeb</Label>
+        <pre className="w-4/5">
+          {balanceData !== undefined
+            ? formatBalance({
+                number: balanceData.neuroTracBalance,
+                decimals: token.decimals,
+              }) + ` ${token.symbol}`
+            : "Fetching..."}
         </pre>
       </div>
     </>
@@ -179,7 +213,12 @@ export function NeuroWebUnwrapForm({
 
   const form = (
     <>
-      <div hidden={success !== undefined}>
+      <div
+        className={
+          "flex flex-col gap-1 " + (success !== undefined ? "hidden" : "")
+        }
+        hidden={success !== undefined}
+      >
         {beneficiaryLabel}
         <div className="flex gap-4 place-items-center">
           <Label className="w-1/5">Amount</Label>
@@ -195,7 +234,13 @@ export function NeuroWebUnwrapForm({
           ) : (
             <Button
               size="sm"
-              disabled={busy || !ready || initialAmount === 0n}
+              disabled={
+                busy ||
+                !ready ||
+                balanceData === undefined ||
+                amount === undefined ||
+                parseUnits(amount ?? "0", token.decimals) <= 0n
+              }
               onClick={async () => {
                 if (!beneficiary) {
                   setError({
@@ -207,15 +252,19 @@ export function NeuroWebUnwrapForm({
                   setError(undefined);
                   setSuccess(undefined);
                   setBusy(true);
+                  const amountInSmallestUnit = parseUnits(
+                    amount ?? "0",
+                    token.decimals,
+                  );
                   const result =
                     mode === "unwrap"
                       ? await unwrap(
                           { polkadotAccount: beneficiary },
-                          parseUnits(amount, token.decimals),
+                          amountInSmallestUnit,
                         )
                       : await wrap(
                           { polkadotAccount: beneficiary },
-                          parseUnits(amount, token.decimals),
+                          amountInSmallestUnit,
                         );
                   setBusy(false);
                   const link = subscanExtrinsicLink(
@@ -225,10 +274,7 @@ export function NeuroWebUnwrapForm({
                   );
 
                   if (!result.success) {
-                    console.log(
-                      result.dispatchError.toHuman(),
-                      result.dispatchError.toString(),
-                    );
+                    console.error(result.dispatchError);
                     setError({ text: "Unwrap failed.", link });
                   } else {
                     if (nextStep) nextStep();
@@ -278,8 +324,8 @@ export function NeuroWebUnwrapForm({
   const displayDescription = description
     ? description
     : mode === "unwrap"
-      ? "Convert bridged TRAC to NeuroWeb TRAC."
-      : "Convert NeuroWeb TRAC to bridged TRAC.";
+      ? "Convert NeuroWeb TRAC to bridged TRAC."
+      : "Convert bridged TRAC to NeuroWeb TRAC.";
   return (
     <div className="flex flex-col gap-4 justify-between">
       <div className="flex justify-between">

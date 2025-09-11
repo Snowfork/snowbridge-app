@@ -133,12 +133,11 @@ function TxCard(props: TxCardProps) {
     neuroWeb = (
       <div>
         <NeuroWebUnwrapForm
-          enabled={true}
           defaultAmount={transfer.info.amount}
           beneficiaryAddress={transfer.info.beneficiaryAddress}
           tokenAddress={transfer.info.tokenAddress}
           ready={historyV2.TransferStatus.Complete === transfer.status}
-          mode="unwrap"
+          mode="wrap"
           messageId={transfer.id}
         />
       </div>
@@ -299,7 +298,7 @@ function TxComponent() {
       return { txData: transfer, inHistory: false };
     },
     {
-      refreshInterval: 60 * 1000, // 1 minute
+      refreshInterval: 2 * 60 * 1000, // 2 minute
       suspense: true,
       revalidateOnFocus: false,
       fallbackData: { txData: transfer, inHistory: false },
