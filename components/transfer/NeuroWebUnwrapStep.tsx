@@ -2,7 +2,7 @@ import { polkadotAccountsAtom } from "@/store/polkadot";
 import { atom, useAtom, useAtomValue } from "jotai";
 import { useContext, useEffect, useState } from "react";
 import { Label } from "../ui/label";
-import { trimAccount } from "@/utils/formatting";
+import { formatBalance, trimAccount } from "@/utils/formatting";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { LucideLoaderCircle } from "lucide-react";
@@ -57,13 +57,16 @@ export function NeuroWebUnwrapStep({
       ).toLowerCase() === beneficiaryAddress.toLowerCase(),
   );
 
-  const { unwrap } = useNeuroWebWrapUnwrap();
+  const { unwrap, wrap, balance } = useNeuroWebWrapUnwrap();
   const token =
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       tokenAddress.toLowerCase()
     ];
+
+  const txAmount = BigInt(defaultAmount);
+  const initialAmount = txAmount > balance.data ? balance.data : txAmount;
   const [amount, setAmount] = useState(
-    formatUnits(defaultAmount, token.decimals),
+    formatUnits(initialAmount, token.decimals),
   );
   const [busy, setBusy] = useState(false);
 
@@ -78,6 +81,124 @@ export function NeuroWebUnwrapStep({
     }
   }, [messageId, currentId, setCurrentId, setSuccess]);
 
+  const beneficiaryLabel = (
+    <div className="flex">
+      <Label className="w-1/5">Account</Label>
+      <div className="w-4/5">
+        {" "}
+        <div>
+          {beneficiary?.name ?? ""}{" "}
+          <pre className="inline lg:hidden w-full">
+            (
+            {trimAccount(
+              reEncodeAddress(
+                beneficiary?.address ?? beneficiaryAddress,
+                assetRegistry,
+              ),
+              30,
+            )}
+            )
+          </pre>
+          <pre className="hidden lg:inline">
+            (
+            {reEncodeAddress(
+              beneficiary?.address ?? beneficiaryAddress,
+              assetRegistry,
+            )}
+            )
+          </pre>
+        </div>
+      </div>
+    </div>
+  );
+
+  const form = (
+    <div hidden={success !== undefined}>
+      {beneficiaryLabel}
+      <div className="flex">
+        <Label className="w-1/5">Balance</Label>
+        <pre className="w-4/5">
+          {formatBalance({ number: balance.data, decimals: token.decimals })}{" "}
+          {token.symbol}
+        </pre>
+      </div>
+      <div className="flex gap-4 place-items-center">
+        <Label className="w-1/5">Amount</Label>
+        <Input
+          className="w-full"
+          type="string"
+          defaultValue={amount}
+          disabled={busy || !ready}
+          onChange={(v) => setAmount(v.target.value)}
+        />
+        {busy ? (
+          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+        ) : (
+          <Button
+            size="sm"
+            disabled={busy || !ready}
+            onClick={async () => {
+              if (!beneficiary) {
+                setError({
+                  text: "Beneficiary Wallet is not connected.",
+                });
+                return;
+              }
+              try {
+                setError(undefined);
+                setSuccess(undefined);
+                setBusy(true);
+                const result = await unwrap(
+                  beneficiary.address,
+                  parseUnits(amount, token.decimals),
+                );
+                setBusy(false);
+                const link = subscanExtrinsicLink(
+                  assetRegistry.environment,
+                  NEURO_WEB_PARACHAIN,
+                  `${result.blockNumber}-${result.txIndex}`,
+                );
+
+                if (result.error) {
+                  console.log(result.error.toHuman(), result.error.toString());
+                  setError({ text: "Unwrap failed.", link });
+                } else {
+                  setSuccess({
+                    text: "Success",
+                    link,
+                  });
+                }
+              } catch (err) {
+                console.error(err);
+                setBusy(false);
+                setError({ text: "Error submitting unwrap." });
+              }
+            }}
+          >
+            {mode == "unwrap" ? "Unwrap" : "Wrap"}
+          </Button>
+        )}
+      </div>
+      <div className="text-sm" hidden={!error}>
+        <span className="text-red-500 ">{error?.text}</span>
+        {error?.link ? (
+          <a href={error?.link} target="_blank" rel="noopener noreferrer">
+            {" "}
+            (view explorer)
+          </a>
+        ) : (
+          <span />
+        )}
+      </div>
+    </div>
+  );
+
+  const connectWalletMsg = (
+    <div className="flex flex-col gap-2">
+      <div>Connect beneficiary account wallet in order to {mode}.</div>
+      {beneficiaryLabel}
+    </div>
+  );
   return (
     <div className="flex flex-col gap-4 justify-between">
       <div className="flex justify-between">
@@ -107,100 +228,7 @@ export function NeuroWebUnwrapStep({
       >
         Convert Bridged TRAC to NeuroWeb TRAC.
       </div>
-      <div hidden={success !== undefined}>
-        <div className="flex gap-2 place-items-center">
-          <Label className="w-1/5">Account</Label>
-          <div className="w-4/5">
-            {" "}
-            <div>
-              {beneficiary?.name ?? ""}{" "}
-              <pre className="inline lg:hidden">
-                (
-                {trimAccount(
-                  reEncodeAddress(beneficiary?.address, assetRegistry) ??
-                    beneficiaryAddress,
-                  20,
-                )}
-                )
-              </pre>
-              <pre className="hidden lg:inline">
-                ({beneficiary?.address ?? beneficiaryAddress})
-              </pre>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-4 place-items-center">
-          <Label className="w-1/5">Amount</Label>
-          <Input
-            className="w-full"
-            type="string"
-            defaultValue={amount}
-            disabled={busy || !ready}
-            onChange={(v) => setAmount(v.target.value)}
-          />
-          {busy ? (
-            <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-          ) : (
-            <Button
-              size="sm"
-              disabled={busy || !ready}
-              onClick={async () => {
-                if (!beneficiary) {
-                  setError({
-                    text: "Beneficiary Wallet is not connected.",
-                  });
-                  return;
-                }
-                try {
-                  setError(undefined);
-                  setSuccess(undefined);
-                  setBusy(true);
-                  const result = await unwrap(
-                    beneficiary.address,
-                    parseUnits(amount, token.decimals),
-                  );
-                  setBusy(false);
-                  const link = subscanExtrinsicLink(
-                    assetRegistry.environment,
-                    NEURO_WEB_PARACHAIN,
-                    `${result.blockNumber}-${result.txIndex}`,
-                  );
-
-                  if (result.error) {
-                    console.log(
-                      result.error.toHuman(),
-                      result.error.toString(),
-                    );
-                    setError({ text: "Unwrap failed.", link });
-                  } else {
-                    setSuccess({
-                      text: "Success",
-                      link,
-                    });
-                  }
-                } catch (err) {
-                  console.error(err);
-                  setBusy(false);
-                  setError({ text: "Error submitting unwrap." });
-                }
-              }}
-            >
-              {mode == "unwrap" ? "Unwrap" : "Wrap"}
-            </Button>
-          )}
-        </div>
-        <div className="text-sm" hidden={!error}>
-          <span className="text-red-500 ">{error?.text}</span>
-          {error?.link ? (
-            <a href={error?.link} target="_blank" rel="noopener noreferrer">
-              {" "}
-              (view explorer)
-            </a>
-          ) : (
-            <span />
-          )}
-        </div>
-      </div>
+      {beneficiary !== undefined ? form : connectWalletMsg}
     </div>
   );
 }
