@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
 import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { LucideLoaderCircle } from "lucide-react";
@@ -93,8 +92,7 @@ function TxCard(props: TxCardProps) {
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>
-            Transfer Status:{" "}
-            <TransferStatusBadge transfer={transfer} registry={registry} />
+            Transfer Status: <TransferStatusBadge transfer={transfer} />
           </div>
           <div
             className={cn(
@@ -122,7 +120,7 @@ function TxCard(props: TxCardProps) {
               ))}
             </ul>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end">
             <RefreshButton
               onClick={refresh}
               className={cn(
