@@ -34,6 +34,7 @@ interface StepData {
   step: TransferStep;
   data: ValidationData;
   currentStep: number;
+  plan: ValidationResult;
   nextStep: () => Promise<unknown> | unknown;
 }
 
@@ -80,11 +81,7 @@ function TransferFeeStep(step: StepData) {
   );
 }
 
-function TransferStepView(
-  step: StepData,
-  plan: ValidationResult,
-  registry: AssetRegistry,
-) {
+function TransferStepView(step: StepData) {
   const { depositWeth, approveSpend } = useERC20DepositAndApprove();
   switch (step.step.kind) {
     case TransferStepKind.ApproveERC20:
@@ -126,7 +123,7 @@ function TransferStepView(
           {...step}
           defaultAmount={step.data.amountInSmallestUnit.toString()}
           messageId={
-            (plan as toEthereumV2.ValidationResult).transfer?.computed
+            (step.plan as toEthereumV2.ValidationResult).transfer?.computed
               ?.messageId
           }
         />
