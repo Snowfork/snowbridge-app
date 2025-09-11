@@ -82,39 +82,35 @@ export function NeuroWebUnwrapStep({
   }, [messageId, currentId, setCurrentId, setSuccess]);
 
   const beneficiaryLabel = (
-    <div className="flex">
-      <Label className="w-1/5">Account</Label>
-      <div className="w-4/5">
-        {" "}
-        <div>
-          {beneficiary?.name ?? ""}{" "}
-          <pre className="inline lg:hidden w-full">
-            (
-            {trimAccount(
-              reEncodeAddress(
+    <>
+      <div className="flex">
+        <Label className="w-1/5">Account</Label>
+        <div className="w-4/5">
+          {" "}
+          <div>
+            {beneficiary?.name ?? ""}{" "}
+            <pre className="inline lg:hidden w-full">
+              (
+              {trimAccount(
+                reEncodeAddress(
+                  beneficiary?.address ?? beneficiaryAddress,
+                  assetRegistry,
+                ),
+                30,
+              )}
+              )
+            </pre>
+            <pre className="hidden lg:inline">
+              (
+              {reEncodeAddress(
                 beneficiary?.address ?? beneficiaryAddress,
                 assetRegistry,
-              ),
-              30,
-            )}
-            )
-          </pre>
-          <pre className="hidden lg:inline">
-            (
-            {reEncodeAddress(
-              beneficiary?.address ?? beneficiaryAddress,
-              assetRegistry,
-            )}
-            )
-          </pre>
+              )}
+              )
+            </pre>
+          </div>
         </div>
       </div>
-    </div>
-  );
-
-  const form = (
-    <div hidden={success !== undefined}>
-      {beneficiaryLabel}
       <div className="flex">
         <Label className="w-1/5">Balance</Label>
         <pre className="w-4/5">
@@ -122,6 +118,12 @@ export function NeuroWebUnwrapStep({
           {token.symbol}
         </pre>
       </div>
+    </>
+  );
+
+  const form = (
+    <div hidden={success !== undefined}>
+      {beneficiaryLabel}
       <div className="flex gap-4 place-items-center">
         <Label className="w-1/5">Amount</Label>
         <Input
@@ -195,8 +197,10 @@ export function NeuroWebUnwrapStep({
 
   const connectWalletMsg = (
     <div className="flex flex-col gap-2">
-      <div>Connect beneficiary account wallet in order to {mode}.</div>
       {beneficiaryLabel}
+      <div className="text-red-500">
+        Connect beneficiary account wallet in order to {mode}.
+      </div>
     </div>
   );
   return (
