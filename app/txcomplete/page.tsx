@@ -36,7 +36,7 @@ import { getEnvironment } from "@/lib/snowbridge";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { useAtom, useAtomValue } from "jotai";
 import { walletTxChecker } from "@/utils/addresses";
-import { NeuroWebUnwrapStep } from "@/components/transfer/NeuroWebUnwrapStep";
+import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
@@ -132,7 +132,8 @@ function TxCard(props: TxCardProps) {
   ) {
     neuroWeb = (
       <div>
-        <NeuroWebUnwrapStep
+        <NeuroWebUnwrapForm
+          enabled={true}
           defaultAmount={transfer.info.amount}
           beneficiaryAddress={transfer.info.beneficiaryAddress}
           tokenAddress={transfer.info.tokenAddress}

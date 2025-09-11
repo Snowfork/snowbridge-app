@@ -1,5 +1,6 @@
 import { forInterParachain, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
 import {
+  NEURO_WEB_PARACHAIN,
   TransferPlanSteps,
   TransferStep,
   TransferStepKind,
@@ -49,9 +50,19 @@ export function createStepsFromPlan(
           kind: TransferStepKind.SubstrateTransferFee,
           displayOrder: 10,
         });
-      } else {
-        errors.push(log);
+        continue;
       }
+      if (
+        log.reason === toEthereumV2.ValidationReason.InsufficientTokenBalance &&
+        p.transfer.computed.sourceParaId === NEURO_WEB_PARACHAIN // NeureWeb
+      ) {
+        steps.push({
+          kind: TransferStepKind.WrapNeuroWeb,
+          displayOrder: 10,
+        });
+        continue;
+      }
+      errors.push(log);
     }
     if (errors.length === 0 && steps.length == 0 && dryRunFailedLog !== null) {
       errors.push(dryRunFailedLog);

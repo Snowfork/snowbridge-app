@@ -15,6 +15,7 @@ import { RefreshButton } from "../RefreshButton";
 import { assetsV2 } from "@snowbridge/api";
 import { RegistryContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
+import { NeuroWebWrapStep } from "./NeuroWebUnwrapStep";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -114,6 +115,13 @@ function TransferStepView(step: StepData, registry: AssetRegistry) {
       );
     case TransferStepKind.SubstrateTransferFee:
       return <TransferFeeStep {...step} />;
+    case TransferStepKind.WrapNeuroWeb:
+      return (
+        <NeuroWebWrapStep
+          {...step}
+          defaultAmount={step.data.amountInSmallestUnit.toString()}
+        />
+      );
   }
 }
 

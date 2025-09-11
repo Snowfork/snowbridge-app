@@ -4,7 +4,8 @@ export function useNeuroWebWrapUnwrap() {
     return {
       blockNumber: 0,
       txIndex: 0,
-      error: { toHuman: () => "Bad Thing", toString: () => "Bad Thing" },
+      //error: { toHuman: () => "Bad Thing", toString: () => "Bad Thing" },
+      error: undefined as any,
     };
   };
   const wrap = async function (beneficiary: string, amount: bigint) {

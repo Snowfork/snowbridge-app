@@ -11,10 +11,45 @@ import { subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { RegistryContext } from "@/app/providers";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { AssetRegistry } from "@snowbridge/base-types";
-import { u8aToHex } from "@polkadot/util";
+import { isHex, u8aToHex } from "@polkadot/util";
 import { useNeuroWebWrapUnwrap } from "@/hooks/useNeuroWebWrapUnwrap";
+import {
+  NEURO_WEB_PARACHAIN,
+  TransferStep,
+  ValidationData,
+} from "@/utils/types";
 
-const NEURO_WEB_PARACHAIN = 2043;
+interface TransferStepData {
+  id: number;
+  step: TransferStep;
+  data: ValidationData;
+  currentStep: number;
+  nextStep: () => Promise<unknown> | unknown;
+  defaultAmount: string;
+}
+
+export function NeuroWebWrapStep({
+  id,
+  currentStep,
+  defaultAmount,
+  data,
+  nextStep,
+}: TransferStepData) {
+  const title = "Wrap TRAC";
+  return (
+    <div key={id} className="flex flex-col gap-4 justify-between">
+      <NeuroWebUnwrapForm
+        defaultAmount={defaultAmount}
+        beneficiaryAddress={data.formData.sourceAccount}
+        mode="wrap"
+        ready={true}
+        title={`Step ${id}: ${title}`}
+        tokenAddress={data.formData.token}
+        nextStep={nextStep}
+      />
+    </div>
+  );
+}
 
 function reEncodeAddress(address: string | undefined, registry: AssetRegistry) {
   return encodeAddress(
@@ -26,10 +61,13 @@ function reEncodeAddress(address: string | undefined, registry: AssetRegistry) {
 interface NeurowebUnwrap {
   defaultAmount: string;
   beneficiaryAddress: string;
+  title?: string;
+  description?: string;
   tokenAddress: string;
   ready: boolean;
   mode: "wrap" | "unwrap";
-  messageId: string;
+  nextStep?: () => Promise<unknown> | unknown;
+  messageId?: string;
 }
 interface Message {
   text: string;
@@ -40,22 +78,31 @@ const currentMessageId = atom<string>();
 const successAtom = atom<Message>();
 const errorAtom = atom<Message>();
 
-export function NeuroWebUnwrapStep({
+export function NeuroWebUnwrapForm({
   defaultAmount,
   beneficiaryAddress,
   tokenAddress,
   ready,
   mode,
   messageId,
+  title,
+  description,
+  nextStep,
 }: NeurowebUnwrap) {
   const assetRegistry = useContext(RegistryContext)!;
 
+  let beneficiaryHex;
+  if (!isHex(beneficiaryAddress)) {
+    beneficiaryHex = u8aToHex(decodeAddress(beneficiaryAddress));
+  } else {
+    beneficiaryHex = beneficiaryAddress;
+  }
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const beneficiary = polkadotAccounts?.find(
     (acc) =>
       u8aToHex(
         decodeAddress(acc.address, false, assetRegistry.relaychain.ss58Format),
-      ).toLowerCase() === beneficiaryAddress.toLowerCase(),
+      ).toLowerCase() === beneficiaryHex.toLowerCase(),
   );
 
   const { unwrap, wrap, balance } = useNeuroWebWrapUnwrap();
@@ -76,7 +123,7 @@ export function NeuroWebUnwrapStep({
   const [error, setError] = useAtom(errorAtom);
 
   useEffect(() => {
-    if (currentId !== messageId) {
+    if (currentId !== messageId || messageId === undefined) {
       setCurrentId(messageId);
       setSuccess(undefined);
       setError(undefined);
@@ -141,7 +188,7 @@ export function NeuroWebUnwrapStep({
           ) : (
             <Button
               size="sm"
-              disabled={busy || !ready}
+              disabled={busy || !ready || initialAmount === 0n}
               onClick={async () => {
                 if (!beneficiary) {
                   setError({
@@ -171,6 +218,7 @@ export function NeuroWebUnwrapStep({
                     );
                     setError({ text: "Unwrap failed.", link });
                   } else {
+                    if (nextStep) nextStep();
                     setSuccess({
                       text: "Success",
                       link,
@@ -209,14 +257,20 @@ export function NeuroWebUnwrapStep({
       </div>
     </div>
   );
+  const displayTitle = title
+    ? title
+    : (mode === "unwrap" ? "Unwrap" : "Wrap") +
+      " TRAC " +
+      (!ready ? " (Pending Transfer Complete)" : "");
+  const displayDescription = description
+    ? description
+    : mode === "unwrap"
+      ? "Convert bridged TRAC to NeuroWeb TRAC."
+      : "Convert NeuroWeb TRAC to bridged TRAC.";
   return (
     <div className="flex flex-col gap-4 justify-between">
       <div className="flex justify-between">
-        <div>
-          {mode === "unwrap" ? "Unwrap" : "Wrap"} TRAC{" "}
-          {!ready ? " (Pending Transfer Complete)" : ""}
-          {success !== undefined ? " (Complete)" : ""}
-        </div>
+        <div className={success ? "text-zinc-400" : ""}>{displayTitle}</div>
         <div className="text-sm" hidden={!success}>
           <span className="text-green-500">{success?.text}</span>
           {success?.link ? (
@@ -236,7 +290,7 @@ export function NeuroWebUnwrapStep({
             : "text-sm text-muted-foreground flex"
         }
       >
-        Convert Bridged TRAC to NeuroWeb TRAC.
+        {displayDescription}
       </div>
       {beneficiary !== undefined ? form : connectWalletMsg}
     </div>
