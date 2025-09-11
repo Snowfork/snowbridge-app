@@ -12,7 +12,10 @@ import { RegistryContext } from "@/app/providers";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { isHex, u8aToHex } from "@polkadot/util";
-import { useNeuroWebWrapUnwrap } from "@/hooks/useNeuroWebWrapUnwrap";
+import {
+  useNeuroWebBalance,
+  useNeuroWebWrapUnwrap,
+} from "@/hooks/useNeuroWebWrapUnwrap";
 import {
   NEURO_WEB_PARACHAIN,
   TransferStep,
@@ -105,7 +108,8 @@ export function NeuroWebUnwrapForm({
       ).toLowerCase() === beneficiaryHex.toLowerCase(),
   );
 
-  const { unwrap, wrap, balance } = useNeuroWebWrapUnwrap();
+  const balance = useNeuroWebBalance(beneficiary?.address);
+  const { unwrap, wrap } = useNeuroWebWrapUnwrap();
   const token =
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       tokenAddress.toLowerCase()
