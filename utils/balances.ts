@@ -9,11 +9,13 @@ import {
   DOT_SYMBOL,
   KSM_DECIMALS,
   KSM_SYMBOL,
+  NEURO_WEB_PARACHAIN,
   RemoteAssetId,
 } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
 import { AssetRegistry } from "@snowbridge/base-types";
+import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
 
 interface TokenBalanceProps {
   context: Context;
@@ -83,6 +85,9 @@ export async function getTokenBalance({
         token,
         sourceAssetMetadata,
       );
+      if (paraImp instanceof NeurowebParachain) {
+        balance += await paraImp.tracBalance(sourceAccount);
+      }
     }
     let dotBalance;
     if (sourceParachain.features.hasDotBalance) {

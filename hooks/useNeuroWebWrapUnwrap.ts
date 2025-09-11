@@ -73,7 +73,7 @@ async function signAndSend(
   return result;
 }
 
-async function fetchNeuroWebBalance([context, registry, beneficiary]: [
+export async function fetchNeuroWebBalance([context, registry, beneficiary]: [
   Context,
   AssetRegistry,
   string?,
