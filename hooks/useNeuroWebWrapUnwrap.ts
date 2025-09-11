@@ -78,7 +78,11 @@ async function fetchNeuroWebBalance([context, registry, beneficiary]: [
   AssetRegistry,
   string?,
 ]) {
-  if (!beneficiary) return 0n;
+  if (!beneficiary)
+    return {
+      bridgedTracBalance: 0n,
+      neuroTracBalance: 0n,
+    };
   const provider = await context.parachain(NEURO_WEB_PARACHAIN);
   const info = registry.parachains[NEURO_WEB_PARACHAIN].info;
   const para = new NeurowebParachain(
@@ -87,25 +91,26 @@ async function fetchNeuroWebBalance([context, registry, beneficiary]: [
     info.specName,
     info.specVersion,
   );
-  return await para.snowTRACBalance(beneficiary, registry.ethChainId);
+  return {
+    bridgedTracBalance: await para.snowTRACBalance(
+      beneficiary,
+      registry.ethChainId,
+    ),
+    neuroTracBalance: await para.tracBalance(beneficiary),
+  };
 }
 
 async function doWrap(
   context: Context,
-  registry: AssetRegistry,
   { polkadotAccount }: SignerInfo,
-  beneficiary: string,
   amount: bigint,
 ) {
   if (!polkadotAccount) {
     throw Error(`Polkadot Wallet not connected.`);
   }
-  if (polkadotAccount.address !== beneficiary) {
-    throw Error(`Source account mismatch.`);
-  }
   const provider = await context.parachain(NEURO_WEB_PARACHAIN);
   const tx = provider.tx.wrapper.tracWrap(amount);
-  const result = await signAndSend(provider, tx, beneficiary, {
+  const result = await signAndSend(provider, tx, polkadotAccount.address, {
     signer: polkadotAccount.signer! as Signer,
     withSignedTransaction: true,
   });
@@ -114,20 +119,15 @@ async function doWrap(
 
 async function doUnwrap(
   context: Context,
-  registry: AssetRegistry,
   { polkadotAccount }: SignerInfo,
-  beneficiary: string,
   amount: bigint,
 ) {
   if (!polkadotAccount) {
     throw Error(`Polkadot Wallet not connected.`);
   }
-  if (polkadotAccount.address !== beneficiary) {
-    throw Error(`Source account mismatch.`);
-  }
   const provider = await context.parachain(NEURO_WEB_PARACHAIN);
   const tx = provider.tx.wrapper.tracUnwrap(amount);
-  const result = await signAndSend(provider, tx, beneficiary, {
+  const result = await signAndSend(provider, tx, polkadotAccount.address, {
     signer: polkadotAccount.signer! as Signer,
     withSignedTransaction: true,
   });
@@ -143,24 +143,23 @@ export function useNeuroWebBalance(beneficiary?: string) {
     {
       revalidateOnFocus: false,
       errorRetryCount: 10,
-      fallbackData: 0n,
+      fallbackData: { neuroTracBalance: 0n, bridgedTracBalance: 0n },
     },
   );
 }
 
 export function useNeuroWebWrapUnwrap() {
   const context = useAtomValue(snowbridgeContextAtom)!;
-  const registry = useContext(RegistryContext)!;
   const unwrap = useCallback(
-    async (signerInfo: SignerInfo, beneficiary: string, amount: bigint) =>
-      doUnwrap(context, registry, signerInfo, beneficiary, amount),
-    [context, registry],
+    async (signerInfo: SignerInfo, amount: bigint) =>
+      doUnwrap(context, signerInfo, amount),
+    [context],
   );
 
   const wrap = useCallback(
-    (signerInfo: SignerInfo, beneficiary: string, amount: bigint) =>
-      doWrap(context, registry, signerInfo, beneficiary, amount),
-    [context, registry],
+    (signerInfo: SignerInfo, amount: bigint) =>
+      doWrap(context, signerInfo, amount),
+    [context],
   );
 
   return {

@@ -108,7 +108,9 @@ export function NeuroWebUnwrapForm({
       ).toLowerCase() === beneficiaryHex.toLowerCase(),
   );
 
-  const balance = useNeuroWebBalance(beneficiary?.address);
+  const {
+    data: { bridgedTracBalance, neuroTracBalance },
+  } = useNeuroWebBalance(beneficiary?.address);
   const { unwrap, wrap } = useNeuroWebWrapUnwrap();
   const token =
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
@@ -116,7 +118,8 @@ export function NeuroWebUnwrapForm({
     ];
 
   const txAmount = BigInt(defaultAmount);
-  const initialAmount = txAmount > balance.data ? balance.data : txAmount;
+  const balance = mode === "unwrap" ? bridgedTracBalance : neuroTracBalance;
+  const initialAmount = txAmount > balance ? balance : txAmount;
   const [amount, setAmount] = useState(
     formatUnits(initialAmount, token.decimals),
   );
@@ -167,7 +170,7 @@ export function NeuroWebUnwrapForm({
       <div className="flex">
         <Label className="w-1/5">Balance</Label>
         <pre className="w-4/5">
-          {formatBalance({ number: balance.data, decimals: token.decimals })}{" "}
+          {formatBalance({ number: balance, decimals: token.decimals })}{" "}
           {token.symbol}
         </pre>
       </div>
@@ -204,10 +207,16 @@ export function NeuroWebUnwrapForm({
                   setError(undefined);
                   setSuccess(undefined);
                   setBusy(true);
-                  const result = await unwrap(
-                    beneficiary.address,
-                    parseUnits(amount, token.decimals),
-                  );
+                  const result =
+                    mode === "unwrap"
+                      ? await unwrap(
+                          { polkadotAccount: beneficiary },
+                          parseUnits(amount, token.decimals),
+                        )
+                      : await wrap(
+                          { polkadotAccount: beneficiary },
+                          parseUnits(amount, token.decimals),
+                        );
                   setBusy(false);
                   const link = subscanExtrinsicLink(
                     assetRegistry.environment,
@@ -215,10 +224,10 @@ export function NeuroWebUnwrapForm({
                     `${result.blockNumber}-${result.txIndex}`,
                   );
 
-                  if (result.error) {
+                  if (!result.success) {
                     console.log(
-                      result.error.toHuman(),
-                      result.error.toString(),
+                      result.dispatchError.toHuman(),
+                      result.dispatchError.toString(),
                     );
                     setError({ text: "Unwrap failed.", link });
                   } else {
