@@ -198,7 +198,7 @@ export function NeuroWebUnwrapForm({
         </pre>
       </div>
       <div className="flex place-items-center">
-        <Label className="w-1/5">NueroWeb</Label>
+        <Label className="w-1/5">NeuroWeb</Label>
         <pre className="w-4/5">
           {balanceData !== undefined
             ? formatBalance({
@@ -221,14 +221,16 @@ export function NeuroWebUnwrapForm({
       >
         {beneficiaryLabel}
         <div className="flex gap-4 place-items-center">
-          <Label className="w-1/5">Amount</Label>
+          <Label className="w-2/5">Amount</Label>
           <Input
-            className="w-full"
+            className="w-4/5"
             type="string"
             defaultValue={amount}
             disabled={busy || !ready}
             onChange={(v) => setAmount(v.target.value)}
           />
+        </div>
+        <div className="flex gap-4 place-items-center">
           {busy ? (
             <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
           ) : (
@@ -290,7 +292,7 @@ export function NeuroWebUnwrapForm({
                 }
               }}
             >
-              {mode == "unwrap" ? "Unwrap" : "Wrap"}
+              {mode == "unwrap" ? "Initialize Bridging" : "Finalize Bridging"}
             </Button>
           )}
         </div>
@@ -318,7 +320,7 @@ export function NeuroWebUnwrapForm({
   );
   const displayTitle = title
     ? title
-    : (mode === "unwrap" ? "Unwrap" : "Wrap") +
+    : (mode === "unwrap" ? "Initialize Bridging" : "Finalize Bridging") +
       " TRAC " +
       (!ready ? " (Pending Transfer Complete)" : "");
   const displayDescription = description
