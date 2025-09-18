@@ -18,7 +18,7 @@ import {
   toPolkadotV2,
 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
-import { useSetAtom, useAtomValue } from "jotai";
+import { useSetAtom } from "jotai";
 import {
   Dispatch,
   FC,
@@ -39,7 +39,6 @@ import { LucideLoaderCircle } from "lucide-react";
 import { RegistryContext } from "@/app/providers";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
-import { polkadotAccountsAtom } from "@/store/polkadot";
 import { isHex, u8aToHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 
@@ -149,7 +148,6 @@ export const TransferComponent: FC = () => {
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
   const registry = useContext(RegistryContext)!;
-  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
   const { mutate: refreshHistory } = useTransferHistory();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);

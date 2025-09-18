@@ -24,6 +24,7 @@ export const KSM_DECIMALS = 12;
 
 export const DOT_SYMBOL = "DOT";
 export const KSM_SYMBOL = "KSM";
+export const NEURO_WEB_PARACHAIN = 2043;
 
 export type TransferType =
   | "toPolkadotV2"
@@ -204,6 +205,7 @@ export enum TransferStepKind {
   ApproveERC20,
   SubstrateTransferFee,
   SubstrateTransferED,
+  WrapNeuroWeb,
 }
 export interface TransferStep {
   displayOrder: number;

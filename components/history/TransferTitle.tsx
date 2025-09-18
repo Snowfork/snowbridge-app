@@ -160,7 +160,6 @@ export function TransferTitle({
       <TransferStatusBadge
         className={!(showBagde ?? true) ? "hidden" : "ml-8"}
         transfer={transfer}
-        registry={assetRegistry}
       />
       <div
         className={cn(

@@ -6,8 +6,8 @@ export const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     etherscan_11155111: "https://sepolia.etherscan.io/",
     subscan_1000: "https://assethub-paseo.subscan.io/",
     subscan_1002: "https://bridgehub-paseo.subscan.io/",
-    subscan_relaychain: "https://paseo.subscan.io/",
     subscan_2043: "https://neuroweb-testnet.subscan.io/",
+    subscan_relaychain: "https://paseo.subscan.io/",
     polkadot_js_2086:
       "https://polkadot.js.org/apps/?rpc=wss://peregrine.kilt.io/parachain-public-ws/",
   },

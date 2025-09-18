@@ -33,7 +33,11 @@ import {
 import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
-import { FinalizeBridgingButton } from "@/components/FinalizeBridgingButton";
+import { polkadotAccountsAtom } from "@/store/polkadot";
+import { useAtom, useAtomValue } from "jotai";
+import { walletTxChecker } from "@/utils/addresses";
+import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
+import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
   return (
@@ -54,6 +58,29 @@ function TxCard(props: TxCardProps) {
   const { transfer, refresh, inHistory, registry } = props;
   const { destination } = getEnvDetail(transfer, registry);
   const links: { name: string; link: string }[] = [];
+
+  const token =
+    registry.ethereumChains[registry.ethChainId].assets[
+      transfer.info.tokenAddress.toLowerCase()
+    ];
+  const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
+
+  const isWalletTransaction = useMemo(() => {
+    const checker = walletTxChecker([
+      ...(polkadotAccounts ?? []).map((acc) => acc.address),
+      ...ethereumAccounts,
+    ]);
+    return checker(
+      transfer.info.sourceAddress,
+      transfer.info.beneficiaryAddress,
+    );
+  }, [
+    ethereumAccounts,
+    polkadotAccounts,
+    transfer.info.beneficiaryAddress,
+    transfer.info.sourceAddress,
+  ]);
 
   switch (transfer.sourceType) {
     // Uniswap
@@ -97,6 +124,28 @@ function TxCard(props: TxCardProps) {
     }
   }
 
+  let neuroWeb;
+  if (
+    isWalletTransaction &&
+    transfer.info.destinationParachain === 2043 &&
+    token.symbol === "TRAC"
+  ) {
+    neuroWeb = (
+      <div>
+        <NeuroWebUnwrapForm
+          defaultAmount={transfer.info.amount}
+          beneficiaryAddress={transfer.info.beneficiaryAddress}
+          tokenAddress={transfer.info.tokenAddress}
+          ready={historyV2.TransferStatus.Complete === transfer.status}
+          mode="wrap"
+          messageId={transfer.id}
+        />
+      </div>
+    );
+  } else {
+    neuroWeb = <div hidden={true} />;
+  }
+
   return (
     <Card className="w-[360px] md:w-2/3">
       <CardHeader>
@@ -112,8 +161,7 @@ function TxCard(props: TxCardProps) {
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>
-            Transfer Status:{" "}
-            <TransferStatusBadge transfer={transfer} registry={registry} />
+            Transfer Status: <TransferStatusBadge transfer={transfer} />
           </div>
           <div
             className={cn(
@@ -150,8 +198,8 @@ function TxCard(props: TxCardProps) {
               })}
             </ul>
           </div>
+          {neuroWeb}
           <div>
-            <FinalizeBridgingButton transfer={transfer} registry={registry} />
             <Link
               className={cn("underline text-sm", !inHistory ? "hidden" : "")}
               href={`/history#${transfer.id}`}
@@ -250,8 +298,9 @@ function TxComponent() {
       return { txData: transfer, inHistory: false };
     },
     {
-      refreshInterval: 60 * 1000, // 1 minute
+      refreshInterval: 2 * 60 * 1000, // 2 minute
       suspense: true,
+      revalidateOnFocus: false,
       fallbackData: { txData: transfer, inHistory: false },
     },
   );

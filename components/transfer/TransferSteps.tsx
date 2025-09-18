@@ -3,6 +3,7 @@ import {
   TransferStep,
   TransferStepKind,
   ValidationData,
+  ValidationResult,
 } from "@/utils/types";
 import { FC, MouseEventHandler, useContext, useState } from "react";
 import { Button } from "../ui/button";
@@ -12,9 +13,10 @@ import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
-import { assetsV2 } from "@snowbridge/api";
+import { assetsV2, toEthereumV2 } from "@snowbridge/api";
 import { RegistryContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
+import { NeuroWebWrapStep } from "./NeuroWebUnwrapStep";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -32,6 +34,7 @@ interface StepData {
   step: TransferStep;
   data: ValidationData;
   currentStep: number;
+  plan: ValidationResult;
   nextStep: () => Promise<unknown> | unknown;
 }
 
@@ -78,7 +81,7 @@ function TransferFeeStep(step: StepData) {
   );
 }
 
-function TransferStepView(step: StepData, registry: AssetRegistry) {
+function TransferStepView(step: StepData) {
   const { depositWeth, approveSpend } = useERC20DepositAndApprove();
   switch (step.step.kind) {
     case TransferStepKind.ApproveERC20:
@@ -114,6 +117,17 @@ function TransferStepView(step: StepData, registry: AssetRegistry) {
       );
     case TransferStepKind.SubstrateTransferFee:
       return <TransferFeeStep {...step} />;
+    case TransferStepKind.WrapNeuroWeb:
+      return (
+        <NeuroWebWrapStep
+          {...step}
+          defaultAmount={step.data.amountInSmallestUnit.toString()}
+          messageId={
+            (step.plan as toEthereumV2.ValidationResult).transfer?.computed
+              ?.messageId
+          }
+        />
+      );
   }
 }
 
@@ -138,6 +152,7 @@ export const TransferSteps: FC<TransferStepsProps> = ({
             id={i + 1}
             step={step}
             data={data}
+            plan={plan.plan}
             currentStep={currentStep}
             nextStep={nextStep}
           />
