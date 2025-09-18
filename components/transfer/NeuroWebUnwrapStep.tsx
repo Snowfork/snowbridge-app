@@ -220,8 +220,8 @@ export function NeuroWebUnwrapForm({
         hidden={success !== undefined}
       >
         {beneficiaryLabel}
-        <div className="flex gap-4 place-items-center">
-          <Label className="w-2/5">Amount</Label>
+        <div className="flex place-items-center">
+          <Label className="w-1/5">Amount</Label>
           <Input
             className="w-4/5"
             type="string"
@@ -230,12 +230,15 @@ export function NeuroWebUnwrapForm({
             onChange={(v) => setAmount(v.target.value)}
           />
         </div>
-        <div className="flex gap-4 place-items-center">
+        <div className="flex gap-4 place-items-center mt-2">
           {busy ? (
-            <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+            <div className="flex items-center justify-center w-full gap-2">
+              <LucideLoaderCircle className="animate-spin text-secondary-foreground" />
+              <span>Processing...</span>
+            </div>
           ) : (
             <Button
-              size="sm"
+              className="w-full"
               disabled={
                 busy ||
                 !ready ||
@@ -326,12 +329,12 @@ export function NeuroWebUnwrapForm({
   const displayDescription = description
     ? description
     : mode === "unwrap"
-      ? "Convert NeuroWeb TRAC to bridged TRAC."
-      : "Convert bridged TRAC to NeuroWeb TRAC.";
+      ? 'Start your transaction by converting NeuroWeb TRAC to bridged TRAC. Click on "Initiate Bridging"'
+      : 'Complete your transaction by converting bridged TRAC to NeuroWeb TRAC. Click on "Finalize Bridging".';
   return (
     <div className="flex flex-col gap-4 justify-between">
       <div className="flex justify-between">
-        <div className={success ? "text-zinc-400" : ""}>{displayTitle}</div>
+        <div className={success ? "" : "text-2xl"}>{displayTitle}</div>
         <div className="text-sm" hidden={!success}>
           <span className="text-green-500">{success?.text}</span>
           {success?.link ? (
