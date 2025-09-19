@@ -35,6 +35,7 @@ async function signAndSend(
         if (c.isError) {
           console.error(c);
           reject(c.internalError || c.dispatchError || c);
+          return;
         }
         if (c.isFinalized) {
           const result = {
@@ -52,6 +53,7 @@ async function signAndSend(
                 dispatchError: (e.event.data.toHuman(true) as any)
                   ?.dispatchError,
               });
+              return;
             }
           }
           resolve({
@@ -59,6 +61,9 @@ async function signAndSend(
             success: true,
           });
         }
+      }).catch((error) => {
+        console.error(error);
+        reject(error);
       });
     } catch (e) {
       console.error(e);
@@ -93,6 +98,7 @@ export async function fetchNeuroWebBalance([context, registry, beneficiary]: [
       registry.ethChainId,
     ),
     neuroTracBalance: await para.tracBalance(beneficiary),
+    nativeBalance: await para.getNativeBalance(beneficiary),
   };
 }
 

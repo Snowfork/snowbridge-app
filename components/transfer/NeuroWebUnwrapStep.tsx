@@ -9,6 +9,7 @@ import { LucideLoaderCircle } from "lucide-react";
 import { formatUnits, parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { RegistryContext } from "@/app/providers";
+import { toast } from "sonner";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { isHex, u8aToHex } from "@polkadot/util";
@@ -83,7 +84,6 @@ interface Message {
 
 const currentMessageId = atom<string>();
 const successAtom = atom<Message>();
-const errorAtom = atom<Message>();
 const busyAtom = atom<boolean>();
 
 export function NeuroWebUnwrapForm({
@@ -125,13 +125,11 @@ export function NeuroWebUnwrapForm({
 
   const [success, setSuccess] = useAtom(successAtom);
   const [currentId, setCurrentId] = useAtom(currentMessageId);
-  const [error, setError] = useAtom(errorAtom);
 
   useEffect(() => {
     if (currentId !== messageId || messageId === undefined) {
       setCurrentId(messageId);
       setSuccess(undefined);
-      setError(undefined);
       setBusy(undefined);
     }
     const txAmount = BigInt(defaultAmount);
@@ -147,7 +145,6 @@ export function NeuroWebUnwrapForm({
     currentId,
     setCurrentId,
     setSuccess,
-    setError,
     setBusy,
     setAmount,
     balanceData,
@@ -198,7 +195,7 @@ export function NeuroWebUnwrapForm({
         </pre>
       </div>
       <div className="flex place-items-center">
-        <Label className="w-1/5">NueroWeb</Label>
+        <Label className="w-1/5">NeuroWeb</Label>
         <pre className="w-4/5">
           {balanceData !== undefined
             ? formatBalance({
@@ -220,20 +217,31 @@ export function NeuroWebUnwrapForm({
         hidden={success !== undefined}
       >
         {beneficiaryLabel}
-        <div className="flex gap-4 place-items-center">
+        <div className="flex place-items-center">
           <Label className="w-1/5">Amount</Label>
           <Input
-            className="w-full"
+            className="w-4/5"
             type="string"
             defaultValue={amount}
             disabled={busy || !ready}
             onChange={(v) => setAmount(v.target.value)}
           />
+        </div>
+        {balanceData?.nativeBalance === 0n && (
+          <div className="text-red-500 text-sm mt-2">
+            Insufficient NEURO balance to pay transaction fees. Please acquire
+            NEURO on Neuroweb parachain.
+          </div>
+        )}
+        <div className="flex gap-4 place-items-center mt-2">
           {busy ? (
-            <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+            <div className="flex items-center justify-center w-full gap-2">
+              <LucideLoaderCircle className="animate-spin text-secondary-foreground" />
+              <span>Processing...</span>
+            </div>
           ) : (
             <Button
-              size="sm"
+              className="w-full"
               disabled={
                 busy ||
                 !ready ||
@@ -243,13 +251,14 @@ export function NeuroWebUnwrapForm({
               }
               onClick={async () => {
                 if (!beneficiary) {
-                  setError({
-                    text: "Beneficiary Wallet is not connected.",
+                  toast.error("Beneficiary Wallet is not connected.", {
+                    position: "bottom-center",
+                    closeButton: true,
+                    duration: 5000,
                   });
                   return;
                 }
                 try {
-                  setError(undefined);
                   setSuccess(undefined);
                   setBusy(true);
                   const amountInSmallestUnit = parseUnits(
@@ -275,7 +284,15 @@ export function NeuroWebUnwrapForm({
 
                   if (!result.success) {
                     console.error(result.dispatchError);
-                    setError({ text: "Unwrap failed.", link });
+                    toast.error("Unwrap failed.", {
+                      position: "bottom-center",
+                      closeButton: true,
+                      duration: 10000,
+                      action: {
+                        label: "View Explorer",
+                        onClick: () => window.open(link, "_blank"),
+                      },
+                    });
                   } else {
                     if (nextStep) nextStep();
                     setSuccess({
@@ -286,24 +303,37 @@ export function NeuroWebUnwrapForm({
                 } catch (err) {
                   console.error(err);
                   setBusy(false);
-                  setError({ text: "Error submitting unwrap." });
+
+                  // Parse specific error messages for better UX
+                  let errorMessage = "Error submitting unwrap.";
+                  if (err && typeof err === "object" && "message" in err) {
+                    const errMsg = String(err.message);
+                    if (
+                      errMsg
+                        .toLowerCase()
+                        .includes("inability to pay some fees") ||
+                      errMsg.toLowerCase().includes("account balance too low")
+                    ) {
+                      errorMessage =
+                        "Insufficient NEURO balance to pay transaction fees.";
+                    } else if (errMsg.includes("Invalid Transaction")) {
+                      errorMessage =
+                        "Transaction failed. Please check your balance and try again.";
+                    }
+                  }
+
+                  toast.error(errorMessage, {
+                    position: "bottom-center",
+                    closeButton: true,
+                    duration: 5000,
+                  });
                 }
               }}
             >
-              {mode == "unwrap" ? "Unwrap" : "Wrap"}
+              {mode == "unwrap" ? "Initialize Bridging" : "Finalize Bridging"}
             </Button>
           )}
         </div>
-      </div>
-      <div className="flex text-sm place-content-end" hidden={!error}>
-        <div className="text-red-500 pr-2">{error?.text}</div>
-        {error?.link ? (
-          <a href={error?.link} target="_blank" rel="noopener noreferrer">
-            (view explorer)
-          </a>
-        ) : (
-          <div />
-        )}
       </div>
     </>
   );
@@ -318,18 +348,18 @@ export function NeuroWebUnwrapForm({
   );
   const displayTitle = title
     ? title
-    : (mode === "unwrap" ? "Unwrap" : "Wrap") +
+    : (mode === "unwrap" ? "Initialize Bridging" : "Finalize Bridging") +
       " TRAC " +
       (!ready ? " (Pending Transfer Complete)" : "");
   const displayDescription = description
     ? description
     : mode === "unwrap"
-      ? "Convert NeuroWeb TRAC to bridged TRAC."
-      : "Convert bridged TRAC to NeuroWeb TRAC.";
+      ? 'Start your transaction by converting NeuroWeb TRAC to bridged TRAC. Click on "Initiate Bridging"'
+      : 'Complete your transaction by converting bridged TRAC to NeuroWeb TRAC. Click on "Finalize Bridging".';
   return (
     <div className="flex flex-col gap-4 justify-between">
       <div className="flex justify-between">
-        <div className={success ? "text-zinc-400" : ""}>{displayTitle}</div>
+        <div className={success ? "" : "text-2xl"}>{displayTitle}</div>
         <div className="text-sm" hidden={!success}>
           <span className="text-green-500">{success?.text}</span>
           {success?.link ? (

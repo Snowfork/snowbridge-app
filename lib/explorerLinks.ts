@@ -24,6 +24,7 @@ export const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     subscan_2004: "https://moonbeam.subscan.io/",
     subscan_2030: "https://bifrost.subscan.io/",
     subscan_3369: "https://mythos.subscan.io/",
+    subscan_2043: "https://neuroweb.subscan.io/",
     subscan_relaychain: "https://polkadot.subscan.io/",
     subscan_2086: "https://spiritnet.subscan.io/",
     subscan_kusama_1000: "https://assethub-kusama.subscan.io/",
