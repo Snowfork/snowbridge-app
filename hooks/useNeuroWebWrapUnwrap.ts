@@ -98,6 +98,7 @@ export async function fetchNeuroWebBalance([context, registry, beneficiary]: [
       registry.ethChainId,
     ),
     neuroTracBalance: await para.tracBalance(beneficiary),
+    nativeBalance: await para.getNativeBalance(beneficiary),
   };
 }
 

@@ -227,6 +227,12 @@ export function NeuroWebUnwrapForm({
             onChange={(v) => setAmount(v.target.value)}
           />
         </div>
+        {balanceData?.nativeBalance === 0n && (
+          <div className="text-red-500 text-sm mt-2">
+            Insufficient NEURO balance to pay transaction fees. Please acquire
+            NEURO on Neuroweb parachain.
+          </div>
+        )}
         <div className="flex gap-4 place-items-center mt-2">
           {busy ? (
             <div className="flex items-center justify-center w-full gap-2">
