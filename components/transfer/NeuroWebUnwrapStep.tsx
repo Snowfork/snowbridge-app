@@ -9,6 +9,7 @@ import { LucideLoaderCircle } from "lucide-react";
 import { formatUnits, parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { RegistryContext } from "@/app/providers";
+import { toast } from "sonner";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { isHex, u8aToHex } from "@polkadot/util";
@@ -83,7 +84,6 @@ interface Message {
 
 const currentMessageId = atom<string>();
 const successAtom = atom<Message>();
-const errorAtom = atom<Message>();
 const busyAtom = atom<boolean>();
 
 export function NeuroWebUnwrapForm({
@@ -125,13 +125,11 @@ export function NeuroWebUnwrapForm({
 
   const [success, setSuccess] = useAtom(successAtom);
   const [currentId, setCurrentId] = useAtom(currentMessageId);
-  const [error, setError] = useAtom(errorAtom);
 
   useEffect(() => {
     if (currentId !== messageId || messageId === undefined) {
       setCurrentId(messageId);
       setSuccess(undefined);
-      setError(undefined);
       setBusy(undefined);
     }
     const txAmount = BigInt(defaultAmount);
@@ -147,7 +145,6 @@ export function NeuroWebUnwrapForm({
     currentId,
     setCurrentId,
     setSuccess,
-    setError,
     setBusy,
     setAmount,
     balanceData,
@@ -248,13 +245,14 @@ export function NeuroWebUnwrapForm({
               }
               onClick={async () => {
                 if (!beneficiary) {
-                  setError({
-                    text: "Beneficiary Wallet is not connected.",
+                  toast.error("Beneficiary Wallet is not connected.", {
+                    position: "bottom-center",
+                    closeButton: true,
+                    duration: 5000,
                   });
                   return;
                 }
                 try {
-                  setError(undefined);
                   setSuccess(undefined);
                   setBusy(true);
                   const amountInSmallestUnit = parseUnits(
@@ -280,7 +278,15 @@ export function NeuroWebUnwrapForm({
 
                   if (!result.success) {
                     console.error(result.dispatchError);
-                    setError({ text: "Unwrap failed.", link });
+                    toast.error("Unwrap failed.", {
+                      position: "bottom-center",
+                      closeButton: true,
+                      duration: 10000,
+                      action: {
+                        label: "View Explorer",
+                        onClick: () => window.open(link, "_blank"),
+                      },
+                    });
                   } else {
                     if (nextStep) nextStep();
                     setSuccess({
@@ -291,7 +297,30 @@ export function NeuroWebUnwrapForm({
                 } catch (err) {
                   console.error(err);
                   setBusy(false);
-                  setError({ text: "Error submitting unwrap." });
+
+                  // Parse specific error messages for better UX
+                  let errorMessage = "Error submitting unwrap.";
+                  if (err && typeof err === "object" && "message" in err) {
+                    const errMsg = String(err.message);
+                    if (
+                      errMsg
+                        .toLowerCase()
+                        .includes("inability to pay some fees") ||
+                      errMsg.toLowerCase().includes("account balance too low")
+                    ) {
+                      errorMessage =
+                        "Insufficient NEURO balance to pay transaction fees.";
+                    } else if (errMsg.includes("Invalid Transaction")) {
+                      errorMessage =
+                        "Transaction failed. Please check your balance and try again.";
+                    }
+                  }
+
+                  toast.error(errorMessage, {
+                    position: "bottom-center",
+                    closeButton: true,
+                    duration: 5000,
+                  });
                 }
               }}
             >
@@ -299,16 +328,6 @@ export function NeuroWebUnwrapForm({
             </Button>
           )}
         </div>
-      </div>
-      <div className="flex text-sm place-content-end" hidden={!error}>
-        <div className="text-red-500 pr-2">{error?.text}</div>
-        {error?.link ? (
-          <a href={error?.link} target="_blank" rel="noopener noreferrer">
-            (view explorer)
-          </a>
-        ) : (
-          <div />
-        )}
       </div>
     </>
   );
