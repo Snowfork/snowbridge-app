@@ -161,7 +161,7 @@ async function sendToken(
     polkadotAccount.address,
     {
       signer: polkadotAccount.signer! as Signer,
-      withSignedTransaction: true,
+      withSignedTransaction: false, // should be true, but there is a bug with Talisman: https://github.com/TalismanSociety/talisman/issues/2180
     },
   );
   return result;
