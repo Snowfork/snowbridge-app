@@ -11,8 +11,16 @@ export const checkOFAC = async (
       },
     },
   );
+  if (!request.ok) {
+    console.error(request.status, request.statusText, await request.text());
+    throw Error(`Failed to execute OFAC check.`);
+  }
   const result = await request.json();
-  if (result.data?.identifications?.length) {
+  if (!("identifications" in result)) {
+    console.error(request.status, request.statusText, result);
+    throw Error(`Failed to execute OFAC check.`);
+  }
+  if (result.identifications.length !== 0) {
     return true;
   }
   return false;
