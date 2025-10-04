@@ -114,10 +114,11 @@ export async function getTokenBalance({
     };
     let isNativeTransfer = true;
     if (token !== assetsV2.ETHER_TOKEN_ADDRESS) {
-      erc20Asset = await assetsV2.assetErc20Balance(
-        context,
+      erc20Asset = await assetsV2.erc20Balance(
+        context.ethereum(),
         token,
         sourceAccount,
+        context.config.appContracts.gateway,
       );
       isNativeTransfer = false;
     }
