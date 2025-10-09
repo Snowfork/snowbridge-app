@@ -63,17 +63,17 @@ importers:
         specifier: 1.7.7
         version: 1.7.7(@ethersproject/sha2@5.7.0)(@types/react@18.3.12)(bufferutil@4.0.8)(ethers@6.15.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
       '@snowbridge/api':
-        specifier: 0.2.7
-        version: 0.2.7(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 0.2.10
+        version: 0.2.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@snowbridge/base-types':
-        specifier: 0.2.9
-        version: 0.2.9
+        specifier: 0.2.10
+        version: 0.2.10
       '@snowbridge/contract-types':
-        specifier: 0.2.9
-        version: 0.2.9(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 0.2.10
+        version: 0.2.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@snowbridge/registry':
-        specifier: 0.2.9
-        version: 0.2.9
+        specifier: 0.2.10
+        version: 0.2.10
       '@talismn/connect-components':
         specifier: 1.1.9
         version: 1.1.9(@polkadot/api@16.4.8(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.62.1(@polkadot/api@16.4.8(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@13.5.6)(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1336,29 +1336,20 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@snowbridge/api@0.2.7':
-    resolution: {integrity: sha512-0nIHDeZxxm6rnZ19rcFOor3vciGNKwBD0mq4ZO0QTQaMHonUQZeB9tWTq5H2KbqjVqdsvXFN1WJneH1gT/q+9Q==}
+  '@snowbridge/api@0.2.10':
+    resolution: {integrity: sha512-A6RcPH3EUlBHeKZSTYTiiVTsRjjN+FNyXMXRMN3+IiRlHsFjzhbrXQDSoXNU4xBfjZABErzjMnLPg7Q5kZwv3Q==}
 
-  '@snowbridge/base-types@0.2.7':
-    resolution: {integrity: sha512-88d/qhZnesPYCLSczSBaFnmAix5N6aD+3v6R6WeQpgjaduvmDGZ8U30bFYfQglWLpplxs/Dr0v/nAcOfGjvOYQ==}
+  '@snowbridge/base-types@0.2.10':
+    resolution: {integrity: sha512-x/8y5G4skKmyVf30A380mJ2Karwf86Z+x4dOAjwnpmw9y8j1lLG9JTzR3nE2JbBISKhI+9cVvrOgAqFVhDM86A==}
 
-  '@snowbridge/base-types@0.2.9':
-    resolution: {integrity: sha512-nnlzlZY40QnocI+GY5kgOZB0XlC2ElB1a51+BD02O7RdghOB6VpHSL8h+Dk3obDgPN+e8pcAyZ7stsePrLpheA==}
+  '@snowbridge/contract-types@0.2.10':
+    resolution: {integrity: sha512-SsC4V17l2Hqp5J3T7QOqnnMosHlWKZ4QT80JmM3vH45JJRXQkNuXnn0NCuZ3ciDy4eX2yN4fvznx250HJBFtOw==}
 
-  '@snowbridge/contract-types@0.2.7':
-    resolution: {integrity: sha512-ShG+ptY0iIqR4SI7rgRPnPIQZYff9ECRwYfZiY7lWRxMOfvQgCs8CRgcTU9XvcFO0k2avIpxrtNlBCjZFfdt/g==}
+  '@snowbridge/contracts@0.2.10':
+    resolution: {integrity: sha512-8cSuTndFpr9UDdADlnKIjzzyNnsVPMZTSjDp64Sp3a2UDc5NJQqfGhP10N8Q+Zg5CJKTFxhHFtFnuuX3vH7PIw==}
 
-  '@snowbridge/contract-types@0.2.9':
-    resolution: {integrity: sha512-Z5ybPZgEP9OrUY82stjpDfvtNczDFSvhwO4Wbre3AtPXDVbVr9D4YE3WJTogam603phHWSyIG6EtxFrlTuBrFw==}
-
-  '@snowbridge/contracts@0.2.7':
-    resolution: {integrity: sha512-/KfzDgshVCuRejmBIwqN+qCzpyy7nqmgBdZeKgGuWkbYUnp1WKgeGHG1I1l4kdb3SNfwD2BplDIl3JRDDBJ5cg==}
-
-  '@snowbridge/contracts@0.2.9':
-    resolution: {integrity: sha512-BZTTQdvfhbK+21kgr/+QAHK9mwCMWPdg2mWn9x6pocXAAVvqxmZGmLygaokhPB3ZcON3s2mkK8r6tjLtY3l8qA==}
-
-  '@snowbridge/registry@0.2.9':
-    resolution: {integrity: sha512-c7xr8vrPp3LfFYLXrob20vlinukWXiw7e1209X277LIccuxUndQRYhMDZOZ3sK09sHpGBnGKlD/Y3ZrVDSY1AQ==}
+  '@snowbridge/registry@0.2.10':
+    resolution: {integrity: sha512-Ixr43ZWi8jF2VYj0xYgGTwwqSbJ+Ji+JQaiy+xC8wnL15hItzLfMK0Y06bdgvSHy+b2VpbVPRWXsA3mMQvYosg==}
 
   '@substrate/connect-extension-protocol@2.2.1':
     resolution: {integrity: sha512-GoafTgm/Jey9E4Xlj4Z5ZBt/H4drH2CNq8VrAro80rtoznrXnFDNVivLQzZN0Xaj2g8YXSn9pC9Oc9IovYZJXw==}
@@ -6107,48 +6098,36 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@snowbridge/api@0.2.7(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/api@0.2.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@polkadot/api': 16.4.8(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring': 13.5.6(@polkadot/util-crypto@13.5.6(@polkadot/util@13.5.6))(@polkadot/util@13.5.6)
       '@polkadot/types': 16.4.8
       '@polkadot/util': 13.5.6
       '@polkadot/util-crypto': 13.5.6(@polkadot/util@13.5.6)
-      '@snowbridge/base-types': 0.2.7
-      '@snowbridge/contract-types': 0.2.7(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      '@snowbridge/base-types': 0.2.10
+      '@snowbridge/contract-types': 0.2.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       ethers: 6.15.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
       - utf-8-validate
 
-  '@snowbridge/base-types@0.2.7': {}
+  '@snowbridge/base-types@0.2.10': {}
 
-  '@snowbridge/base-types@0.2.9': {}
-
-  '@snowbridge/contract-types@0.2.7(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/contract-types@0.2.10(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@snowbridge/contracts': 0.2.7
+      '@snowbridge/contracts': 0.2.10
       ethers: 6.15.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@snowbridge/contract-types@0.2.9(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/contracts@0.2.10': {}
+
+  '@snowbridge/registry@0.2.10':
     dependencies:
-      '@snowbridge/contracts': 0.2.9
-      ethers: 6.15.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@snowbridge/contracts@0.2.7': {}
-
-  '@snowbridge/contracts@0.2.9': {}
-
-  '@snowbridge/registry@0.2.9':
-    dependencies:
-      '@snowbridge/base-types': 0.2.9
+      '@snowbridge/base-types': 0.2.10
 
   '@substrate/connect-extension-protocol@2.2.1':
     optional: true
@@ -7377,7 +7356,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.2(eslint@8.57.1)
       eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.57.1)
@@ -7406,20 +7385,20 @@ snapshots:
       debug: 4.3.7
       enhanced-resolve: 5.17.1
       eslint: 8.57.1
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
       fast-glob: 3.3.2
       get-tsconfig: 4.8.1
       is-bun-module: 1.2.1
       is-glob: 4.0.3
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
     transitivePeerDependencies:
       - '@typescript-eslint/parser'
       - eslint-import-resolver-node
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -7430,7 +7409,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -7441,7 +7420,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.2.0(eslint@8.57.1)(typescript@5.6.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.3)(eslint@8.57.1)
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
