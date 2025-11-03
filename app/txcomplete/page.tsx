@@ -5,7 +5,7 @@ import {
   getEnvDetail,
   TransferTitle,
 } from "@/components/history/TransferTitle";
-import { MaintenanceBanner } from "@/components/MainenanceBanner";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import {
   Card,
   CardContent,
