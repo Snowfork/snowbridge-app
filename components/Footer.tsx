@@ -11,7 +11,7 @@ export function Footer() {
   return (
     <>
       <div className="text-sm mb-4 flex items-center gap-2">
-        Powered by{" "}
+        Powered and Funded by{" "}
         <Image
           src="/images/polkadot_logo.png"
           width={80}
