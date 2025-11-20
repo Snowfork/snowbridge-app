@@ -14,6 +14,8 @@ import {
   toEthereumFromEVMV2,
   toPolkadotV2,
   forInterParachain,
+  toEthereumSnowbridgeV2,
+  toPolkadotSnowbridgeV2,
 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
@@ -163,6 +165,7 @@ async function planSend(
 ): Promise<
   | toEthereumV2.ValidationResult
   | toPolkadotV2.ValidationResult
+  | toPolkadotSnowbridgeV2.ValidationResult
   | toEthereumFromEVMV2.ValidationResultEvm
   | forInterParachain.ValidationResult
 > {
@@ -190,41 +193,94 @@ async function planSend(
     return plan;
   } else if (source.type === "substrate" && destination.type === "ethereum") {
     const parachain = validateSubstrateDestination(data);
-    const tx = await toEthereumV2.createTransfer(
-      { sourceParaId: parachain.parachainId, context },
-      assetRegistry,
-      formData.sourceAccount,
-      formData.beneficiary,
-      formData.token,
-      amountInSmallestUnit,
-      fee.delivery as toEthereumV2.DeliveryFee,
-    );
-    const plan = await toEthereumV2.validateTransfer(context, tx);
-    console.log(plan);
-    return plan;
+
+    // Check if the source parachain supports SnowbridgeV2
+    const supportsSnowbridgeV2 = parachain.features.supportsSnowbridgeV2;
+
+    if (supportsSnowbridgeV2) {
+      // Use SnowbridgeV2 API
+      const transferImpl = toEthereumSnowbridgeV2.createTransferImplementation(
+        parachain.parachainId,
+        assetRegistry,
+        formData.token,
+      );
+      const tx = await transferImpl.createTransfer(
+        { sourceParaId: parachain.parachainId, context },
+        assetRegistry,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toEthereumV2.DeliveryFee,
+      );
+      const plan = await transferImpl.validateTransfer(context, tx);
+      console.log(plan);
+      return plan;
+    } else {
+      // Use legacy API
+      const tx = await toEthereumV2.createTransfer(
+        { sourceParaId: parachain.parachainId, context },
+        assetRegistry,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toEthereumV2.DeliveryFee,
+      );
+      const plan = await toEthereumV2.validateTransfer(context, tx);
+      console.log(plan);
+      return plan;
+    }
   } else if (source.type === "ethereum" && destination.type === "substrate") {
     const paraInfo = validateEthereumDestination(data);
-    const tx = await toPolkadotV2.createTransfer(
-      assetRegistry,
-      formData.sourceAccount,
-      formData.beneficiary,
-      formData.token,
-      paraInfo.parachainId,
-      amountInSmallestUnit,
-      fee.delivery as toPolkadotV2.DeliveryFee,
-    );
-    const plan = await toPolkadotV2.validateTransfer(
-      {
-        assetHub: await context.assetHub(),
-        bridgeHub: await context.bridgeHub(),
-        ethereum: context.ethereum(),
-        gateway: context.gateway(),
-        destParachain: await context.parachain(paraInfo.parachainId),
-      },
-      tx,
-    );
-    console.log(plan);
-    return plan;
+
+    // Check if the destination parachain supports SnowbridgeV2
+    const supportsSnowbridgeV2 = paraInfo.features.supportsSnowbridgeV2;
+
+    if (supportsSnowbridgeV2) {
+      // Use SnowbridgeV2 API
+      const transferImpl = toPolkadotSnowbridgeV2.createTransferImplementation(
+        paraInfo.parachainId,
+        assetRegistry,
+        formData.token,
+      );
+      const tx = await transferImpl.createTransfer(
+        context,
+        assetRegistry,
+        paraInfo.parachainId,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
+      );
+      const plan = await transferImpl.validateTransfer(context, tx);
+      console.log(plan);
+      return plan;
+    } else {
+      // Use legacy API
+      const tx = await toPolkadotV2.createTransfer(
+        assetRegistry,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        paraInfo.parachainId,
+        amountInSmallestUnit,
+        fee.delivery as toPolkadotV2.DeliveryFee,
+      );
+      const plan = await toPolkadotV2.validateTransfer(
+        {
+          assetHub: await context.assetHub(),
+          bridgeHub: await context.bridgeHub(),
+          ethereum: context.ethereum(),
+          gateway: context.gateway(),
+          destParachain: await context.parachain(paraInfo.parachainId),
+        },
+        tx,
+      );
+      console.log(plan);
+      return plan;
+    }
   } else if (source.type === "substrate" && destination.type === "substrate") {
     const { source: s, destination: d } = validateInterParachainTransfer(data);
     const tx = await forInterParachain.createTransfer(
