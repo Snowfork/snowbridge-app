@@ -13,7 +13,12 @@ import useSWR from "swr";
 import { FeeInfo } from "@/utils/types";
 import { useContext } from "react";
 import { RegistryContext } from "@/app/providers";
-import { AssetRegistry, Parachain } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  Parachain,
+  supportsEthereumToPolkadotV2,
+  supportsPolkadotToEthereumV2,
+} from "@snowbridge/base-types";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { getEnvironmentName } from "@/lib/snowbridge";
 
@@ -42,11 +47,11 @@ async function estimateExecutionFee(
     try {
       const { src: sourceAccount, dst: destAccount } = feeEstimateAccounts[env];
 
-      // Check if parachain supports SnowbridgeV2
-      const supportsSnowbridgeV2 = para.features.supportsSnowbridgeV2;
+      const useV2 = supportsEthereumToPolkadotV2(para);
+      console.log(`[estimateExecutionFee] Parachain ${para.parachainId} supportsEthereumToPolkadotV2: ${useV2}`);
 
       let testTransfer;
-      if (supportsSnowbridgeV2) {
+      if (useV2) {
         const transferImpl =
           toPolkadotSnowbridgeV2.createTransferImplementation(
             para.parachainId,
@@ -109,11 +114,11 @@ async function fetchBridgeFeeInfo([
     case "toPolkadotV2": {
       const para = registry.parachains[destination.key];
 
-      // Check if destination parachain supports SnowbridgeV2
-      const supportsSnowbridgeV2 = para.features.supportsSnowbridgeV2;
+      const useV2 = supportsEthereumToPolkadotV2(para);
+      console.log(`[fetchBridgeFeeInfo:toPolkadotV2] Destination parachain ${para.parachainId} supportsEthereumToPolkadotV2: ${useV2}`);
 
       let fee;
-      if (supportsSnowbridgeV2) {
+      if (useV2) {
         const transferImpl =
           toPolkadotSnowbridgeV2.createTransferImplementation(
             para.parachainId,
@@ -152,12 +157,11 @@ async function fetchBridgeFeeInfo([
       };
     }
     case "toEthereumV2": {
-      // Check if source parachain supports SnowbridgeV2
-      const supportsSnowbridgeV2 =
-        source.parachain!.features.supportsSnowbridgeV2;
+      const useV2 = supportsPolkadotToEthereumV2(source.parachain!);
+      console.log(`[fetchBridgeFeeInfo:toEthereumV2] Source parachain ${source.parachain!.parachainId} supportsPolkadotToEthereumV2: ${useV2}`);
 
       let fee;
-      if (supportsSnowbridgeV2) {
+      if (useV2) {
         const transferImpl =
           toEthereumSnowbridgeV2.createTransferImplementation(
             source.parachain!.parachainId,

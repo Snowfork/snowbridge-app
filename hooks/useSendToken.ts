@@ -17,6 +17,10 @@ import {
   toEthereumSnowbridgeV2,
   toPolkadotSnowbridgeV2,
 } from "@snowbridge/api";
+import {
+  supportsEthereumToPolkadotV2,
+  supportsPolkadotToEthereumV2,
+} from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
@@ -194,10 +198,10 @@ async function planSend(
   } else if (source.type === "substrate" && destination.type === "ethereum") {
     const parachain = validateSubstrateDestination(data);
 
-    // Check if the source parachain supports SnowbridgeV2
-    const supportsSnowbridgeV2 = parachain.features.supportsSnowbridgeV2;
+    const useV2 = supportsPolkadotToEthereumV2(parachain);
+    console.log(`[planSend:substrate->ethereum] Source parachain ${parachain.parachainId} supportsPolkadotToEthereumV2: ${useV2}`);
 
-    if (supportsSnowbridgeV2) {
+    if (useV2) {
       // Use SnowbridgeV2 API
       const transferImpl = toEthereumSnowbridgeV2.createTransferImplementation(
         parachain.parachainId,
@@ -234,10 +238,10 @@ async function planSend(
   } else if (source.type === "ethereum" && destination.type === "substrate") {
     const paraInfo = validateEthereumDestination(data);
 
-    // Check if the destination parachain supports SnowbridgeV2
-    const supportsSnowbridgeV2 = paraInfo.features.supportsSnowbridgeV2;
+    const useV2 = supportsEthereumToPolkadotV2(paraInfo);
+    console.log(`[planSend:ethereum->substrate] Destination parachain ${paraInfo.parachainId} supportsEthereumToPolkadotV2: ${useV2}`);
 
-    if (supportsSnowbridgeV2) {
+    if (useV2) {
       // Use SnowbridgeV2 API
       const transferImpl = toPolkadotSnowbridgeV2.createTransferImplementation(
         paraInfo.parachainId,
