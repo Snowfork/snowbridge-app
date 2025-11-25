@@ -2,7 +2,7 @@ import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
-  MessageReciept,
+  MessageReceipt,
   SignerInfo,
   ValidationData,
   ValidationResult,
@@ -199,7 +199,9 @@ async function planSend(
     const parachain = validateSubstrateDestination(data);
 
     const useV2 = supportsPolkadotToEthereumV2(parachain);
-    console.log(`[planSend:substrate->ethereum] Source parachain ${parachain.parachainId} supportsPolkadotToEthereumV2: ${useV2}`);
+    console.log(
+      `[planSend:substrate->ethereum] Source parachain ${parachain.parachainId} supportsPolkadotToEthereumV2: ${useV2}`,
+    );
 
     if (useV2) {
       // Use SnowbridgeV2 API
@@ -239,7 +241,9 @@ async function planSend(
     const paraInfo = validateEthereumDestination(data);
 
     const useV2 = supportsEthereumToPolkadotV2(paraInfo);
-    console.log(`[planSend:ethereum->substrate] Destination parachain ${paraInfo.parachainId} supportsEthereumToPolkadotV2: ${useV2}`);
+    console.log(
+      `[planSend:ethereum->substrate] Destination parachain ${paraInfo.parachainId} supportsEthereumToPolkadotV2: ${useV2}`,
+    );
 
     if (useV2) {
       // Use SnowbridgeV2 API
@@ -317,7 +321,7 @@ async function sendToken(
   data: ValidationData,
   plan: ValidationResult,
   signerInfo: SignerInfo,
-): Promise<MessageReciept> {
+): Promise<MessageReceipt> {
   if (!plan.success) {
     throw Error(`Cannot execute a failed plan.`, {
       cause: plan,
@@ -362,32 +366,87 @@ async function sendToken(
       signerInfo,
       false,
     );
-    const tx = plan.transfer as toEthereumV2.Transfer;
-    const result = await toEthereumV2.signAndSend(
-      context,
-      tx,
-      polkadotAccount.address,
-      {
-        signer: polkadotAccount.signer! as Signer,
-        withSignedTransaction: true,
-      },
+
+    const useV2 = supportsPolkadotToEthereumV2(paraInfo);
+    console.log(
+      `[sendToken:substrate->ethereum] Source parachain ${paraInfo.parachainId} supportsPolkadotToEthereumV2: ${useV2}`,
     );
-    console.log(result);
-    return result;
+
+    if (useV2) {
+      // Use SnowbridgeV2 API
+      const tx = plan.transfer as toEthereumV2.Transfer;
+      const result = await toEthereumSnowbridgeV2.signAndSend(
+        context,
+        tx,
+        polkadotAccount.address,
+        {
+          signer: polkadotAccount.signer! as Signer,
+          withSignedTransaction: true,
+        },
+      );
+      console.log(result);
+      return result;
+    } else {
+      // Use legacy API
+      const tx = plan.transfer as toEthereumV2.Transfer;
+      const result = await toEthereumV2.signAndSend(
+        context,
+        tx,
+        polkadotAccount.address,
+        {
+          signer: polkadotAccount.signer! as Signer,
+          withSignedTransaction: true,
+        },
+      );
+      console.log(result);
+      return result;
+    }
   } else if (source.type === "ethereum" && destination.type === "substrate") {
-    const { signer } = await validateEthereumSigner(data, signerInfo);
-    const transfer = plan.transfer as toPolkadotV2.Transfer;
-    const response = await signer.sendTransaction(transfer.tx);
-    const receipt = await response.wait();
-    if (!receipt) {
-      throw Error(`Could not fetch transaction receipt.`);
+    const { signer, paraInfo } = await validateEthereumSigner(data, signerInfo);
+
+    const useV2 = supportsEthereumToPolkadotV2(paraInfo);
+    console.log(
+      `[sendToken:ethereum->substrate] Destination parachain ${paraInfo.parachainId} supportsEthereumToPolkadotV2: ${useV2}`,
+    );
+
+    if (useV2) {
+      // Use SnowbridgeV2 API
+      const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
+      const response = await signer.sendTransaction(transfer.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const result = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
+      if (!result) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      // Compute messageId for V2 transfers
+      const messageId = toPolkadotSnowbridgeV2.buildMessageId(
+        paraInfo.parachainId,
+        data.formData.sourceAccount.toLowerCase(),
+        data.formData.token,
+        data.formData.beneficiary.toLowerCase(),
+        data.amountInSmallestUnit,
+        Number(result.nonce),
+      );
+      console.log(result);
+      return { ...result, messageId, channelId: "" };
+    } else {
+      // Use legacy API
+      const transfer = plan.transfer as toPolkadotV2.Transfer;
+      const response = await signer.sendTransaction(transfer.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const result = await toPolkadotV2.getMessageReceipt(receipt);
+      if (!result) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      console.log(result);
+      return result;
     }
-    const result = await toPolkadotV2.getMessageReceipt(receipt);
-    if (!result) {
-      throw Error(`Could not fetch message receipt.`);
-    }
-    console.log(result);
-    return result;
   } else {
     throw Error(`Invalid form state: cannot infer source type.`);
   }
@@ -395,7 +454,7 @@ async function sendToken(
 
 export function useSendToken(): [
   (data: ValidationData) => Promise<ValidationResult>,
-  (data: ValidationData, plan: ValidationResult) => Promise<MessageReciept>,
+  (data: ValidationData, plan: ValidationResult) => Promise<MessageReceipt>,
 ] {
   const context = useAtomValue(snowbridgeContextAtom);
   const plan = useCallback(

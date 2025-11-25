@@ -130,7 +130,6 @@ async function fetchBridgeFeeInfo([
           registry,
           token,
           para.parachainId,
-          0n, // TODO relayerFee
         );
       } else {
         fee = await toPolkadotV2.getDeliveryFee(
