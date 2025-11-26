@@ -115,10 +115,10 @@ async function fetchBridgeFeeInfo([
       const para = registry.parachains[destination.key];
 
       const useV2 = supportsEthereumToPolkadotV2(para);
-      console.log(`[fetchBridgeFeeInfo:toPolkadotV2] Destination parachain ${para.parachainId} supportsEthereumToPolkadotV2: ${useV2}`);
 
       let fee;
       if (useV2) {
+        console.log(`[fetchBridgeFeeInfo] Snowbridge V2: Destination parachain ${para.parachainId}`);
         const transferImpl =
           toPolkadotSnowbridgeV2.createTransferImplementation(
             para.parachainId,
@@ -143,6 +143,8 @@ async function fetchBridgeFeeInfo([
           para.parachainId,
         );
       }
+
+      console.log("DELIVERY FEEEE:", fee);
 
       return {
         fee: fee.totalFeeInWei,
