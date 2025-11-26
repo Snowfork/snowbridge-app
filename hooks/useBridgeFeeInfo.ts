@@ -48,7 +48,6 @@ async function estimateExecutionFee(
       const { src: sourceAccount, dst: destAccount } = feeEstimateAccounts[env];
 
       const useV2 = supportsEthereumToPolkadotV2(para);
-      console.log(`[estimateExecutionFee] Parachain ${para.parachainId} supportsEthereumToPolkadotV2: ${useV2}`);
 
       let testTransfer;
       if (useV2) {
@@ -118,7 +117,6 @@ async function fetchBridgeFeeInfo([
 
       let fee;
       if (useV2) {
-        console.log(`[fetchBridgeFeeInfo] Snowbridge V2: Destination parachain ${para.parachainId}`);
         const transferImpl =
           toPolkadotSnowbridgeV2.createTransferImplementation(
             para.parachainId,
@@ -144,8 +142,6 @@ async function fetchBridgeFeeInfo([
         );
       }
 
-      console.log("DELIVERY FEEEE:", fee);
-
       return {
         fee: fee.totalFeeInWei,
         totalFee:
@@ -159,7 +155,6 @@ async function fetchBridgeFeeInfo([
     }
     case "toEthereumV2": {
       const useV2 = supportsPolkadotToEthereumV2(source.parachain!);
-      console.log(`[fetchBridgeFeeInfo:toEthereumV2] Source parachain ${source.parachain!.parachainId} supportsPolkadotToEthereumV2: ${useV2}`);
 
       let fee;
       if (useV2) {
