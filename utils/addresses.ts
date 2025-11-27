@@ -27,6 +27,6 @@ export function walletTxChecker(
     }
   });
   return (sourceAddress: string, beneficiaryAddress: string) =>
-    accounts.has(sourceAddress.trim().toLowerCase()) ||
-    accounts.has(beneficiaryAddress.trim().toLowerCase());
+    accounts.has(sourceAddress?.trim().toLowerCase()) ||
+    accounts.has(beneficiaryAddress?.trim().toLowerCase());
 }
