@@ -4,7 +4,7 @@ import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   AssetHub,
   KusamaValidationData,
-  MessageReciept,
+  MessageReceipt,
   SignerInfo,
 } from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
