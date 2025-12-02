@@ -21,6 +21,7 @@ import { SelectAccount } from "../SelectAccount";
 import { SelectedEthereumWallet } from "../SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "../SelectedPolkadotAccount";
 import { Button } from "../ui/button";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 import {
   Form,
   FormControl,
@@ -271,6 +272,14 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
+    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    destination,
+    token,
+  );
+
+  // Get balance for MAX button
+  const { data: balanceInfo } = useTokenBalance(
+    watchSourceAccount ?? "",
     assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
@@ -656,70 +665,100 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           )}
-          <div className="flex space-x-2">
-            <div className="w-3/5">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="text-right"
-                        type="string"
-                        placeholder="0.0"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div>
+            <div className="flex items-end joined-inputs-wrapper">
+              <div className="w-3/5">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            className="text-left joined-input-left pr-16"
+                            type="string"
+                            placeholder="0.0"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2 text-xs font-medium border border-gray-300"
+                            onClick={() => {
+                              if (balanceInfo && tokenMetadata) {
+                                const maxBalance = formatBalance({
+                                  number: balanceInfo.balance,
+                                  decimals: Number(tokenMetadata.decimals),
+                                  displayDecimals: Number(tokenMetadata.decimals),
+                                });
+                                form.setValue("amount", maxBalance);
+                              }
+                            }}
+                            disabled={!balanceInfo || !tokenMetadata}
+                          >
+                            MAX
+                          </Button>
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="w-2/5">
+                <FormField
+                  control={form.control}
+                  name="token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="joined-input-right">
+                            <SelectValue placeholder="Select a token" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {source.destinations[destination.key].assets.map(
+                                (t) => {
+                                  const asset =
+                                    assetRegistry.ethereumChains[
+                                      assetRegistry.ethChainId
+                                    ].assets[t.toLowerCase()];
+                                  return (
+                                    <SelectItem key={t} value={t}>
+                                      <SelectItemWithIcon
+                                        label={asset.name}
+                                        image={asset.symbol}
+                                        altImage="token_generic"
+                                      />
+                                    </SelectItem>
+                                  );
+                                },
+                              )}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-            <div className="w-2/5">
-              <FormField
-                control={form.control}
-                name="token"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="invisible">Token</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a token" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {source.destinations[destination.key].assets.map(
-                              (t) => {
-                                const asset =
-                                  assetRegistry.ethereumChains[
-                                    assetRegistry.ethChainId
-                                  ].assets[t.toLowerCase()];
-                                return (
-                                  <SelectItem key={t} value={t}>
-                                    <SelectItemWithIcon
-                                      label={asset.name}
-                                      image={asset.symbol}
-                                      altImage="token_generic"
-                                    />
-                                  </SelectItem>
-                                );
-                              },
-                            )}
-                          </SelectGroup>
-                        </SelectContent>
-                        <FormMessage />
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
+            {form.formState.errors.amount && (
+              <p className="text-sm font-medium text-destructive mt-2">
+                {form.formState.errors.amount.message}
+              </p>
+            )}
+            {form.formState.errors.token && (
+              <p className="text-sm font-medium text-destructive mt-2">
+                {form.formState.errors.token.message}
+              </p>
+            )}
           </div>
           <div className="text-sm text-center text-muted-foreground px-1 mt-1">
             Delivery Fee:{" "}
