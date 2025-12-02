@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
+import { SelectItemWithIcon } from "./SelectItemWithIcon";
 import { useAtom, useAtomValue } from "jotai";
 import {
   polkadotAccountAtom,
@@ -166,7 +167,7 @@ export const AddTipDialog: FC<AddTipDialogProps> = ({
         api,
         tipResult,
         accountToUse.address,
-        accountToUse.signer,
+        { signer: accountToUse.signer },
       );
 
       setSuccess(response);
@@ -187,17 +188,17 @@ export const AddTipDialog: FC<AddTipDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] text-card-foreground !p-8">
         <DialogHeader>
-          <DialogTitle>Add Tip to Transfer</DialogTitle>
+          <DialogTitle>Add Tip</DialogTitle>
           <DialogDescription>
-            Add a tip to prioritize this {direction.toLowerCase()} transfer
-            (nonce: {nonce})
+            Add a tip to make this message profitable for relayers to relay this
+            message (nonce: {nonce}).
           </DialogDescription>
         </DialogHeader>
 
         {!success ? (
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4">
             {hasWallet && polkadotAccounts && polkadotAccounts.length > 0 && (
               <div className="grid gap-2">
                 <Label htmlFor="account">Polkadot Account</Label>
@@ -245,8 +246,20 @@ export const AddTipDialog: FC<AddTipDialogProps> = ({
                       <SelectValue placeholder="Select asset" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DOT">DOT</SelectItem>
-                      <SelectItem value="ETH">ETH</SelectItem>
+                      <SelectItem value="DOT">
+                        <SelectItemWithIcon
+                          label="DOT"
+                          image="DOT"
+                          altImage="token_generic"
+                        />
+                      </SelectItem>
+                      <SelectItem value="ETH">
+                        <SelectItemWithIcon
+                          label="ETH"
+                          image="ETH"
+                          altImage="token_generic"
+                        />
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -268,7 +281,7 @@ export const AddTipDialog: FC<AddTipDialogProps> = ({
             {error && <div className="text-sm text-destructive">{error}</div>}
           </div>
         ) : (
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4">
             <div className="text-sm">
               <p className="font-semibold text-green-600 mb-2">
                 Tip added successfully!
@@ -296,7 +309,7 @@ export const AddTipDialog: FC<AddTipDialogProps> = ({
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="pt-4">
           {!success ? (
             <>
               <Button variant="outline" onClick={handleClose} disabled={busy}>
