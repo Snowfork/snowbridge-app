@@ -411,3 +411,21 @@ button[role="combobox"]:focus-visible,
 .glass-sub button[type="button"].rounded-full:hover {
     transform: rotate(180deg);
 }
+
+/* Select dropdown menu - no top border radius */
+.select-box[data-state="open"] {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-left-radius: 20px !important;
+    border-bottom-right-radius: 20px !important;
+    border-top: 0 !important;
+    transform: translateY(0) !important;
+    margin-top: 0 !important;
+}
+
+/* Select trigger button - no bottom border radius when open */
+button[role="combobox"][data-state="open"] {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-bottom: 0 !important;
+}
