@@ -200,6 +200,19 @@ body > * {
     z-index: 1;
 }
 
+/* Ensure Web3Modal/AppKit appears above everything */
+w3m-modal {
+    z-index: 9999 !important;
+}
+
+w3m-modal.open {
+    position: fixed !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
 .text-card-foreground {
    /* background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);*/
     border: none;
