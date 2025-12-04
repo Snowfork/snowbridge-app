@@ -338,9 +338,15 @@ export const TransferComponent: FC = () => {
   }
 
   return (
-    <Card className="w-auto md:w-2/3">
-      <CardHeader>
-        <CardTitle>Transfer Tokens</CardTitle>
+    <Card className="w-auto md:w-2/3 glass border-white/22">
+      <CardHeader className="space-y-2">
+        <CardTitle className="text-2xl font-semibold text-slate-900">
+          Transfer Tokens
+        </CardTitle>
+        <p className="text-sm text-slate-700/70">
+          Bridge assets between Ethereum and Polkadot Asset Hub with trustless
+          security.
+        </p>
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>

@@ -21,6 +21,7 @@ import { SelectAccount } from "../SelectAccount";
 import { SelectedEthereumWallet } from "../SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "../SelectedPolkadotAccount";
 import { Button } from "../ui/button";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 import {
   Form,
   FormControl,
@@ -50,6 +51,7 @@ import {
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
+import { ArrowRight } from "lucide-react";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
   getChainId,
@@ -271,6 +273,14 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
+    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    destination,
+    token,
+  );
+
+  // Get balance for MAX button
+  const { data: balanceInfo } = useTokenBalance(
+    watchSourceAccount ?? "",
     assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
@@ -503,18 +513,20 @@ export const TransferForm: FC<TransferFormProps> = ({
   );
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(submit)} className="space-y-2">
+      <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
         <div className="grid grid-cols-2 space-x-2">
+          <FormLabel>Route</FormLabel>
+        </div>
+        <div className="glass-sub px-4 py-3 flex items-center justify-between gap-3">
           <FormField
             control={form.control}
             name="source"
             render={({ field }) => (
-              <FormItem {...field}>
-                <FormLabel>From</FormLabel>
+              <FormItem className="flex-1">
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a source" />
+                    <SelectTrigger className="border-0 bg-transparent shadow-none hover:bg-white/20 transition-colors">
+                      <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -550,16 +562,31 @@ export const TransferForm: FC<TransferFormProps> = ({
               </FormItem>
             )}
           />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="rounded-full bg-white/20 hover:bg-white/30 p-2 h-auto"
+            onClick={() => {
+              const currentSource = form.getValues("source");
+              const currentDest = form.getValues("destination");
+              form.setValue("source", currentDest);
+              form.setValue("destination", currentSource);
+            }}
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+
           <FormField
             control={form.control}
             name="destination"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>To</FormLabel>
+              <FormItem className="flex-1">
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a destination" />
+                    <SelectTrigger className="border-0 bg-transparent shadow-none hover:bg-white/20 transition-colors">
+                      <SelectValue placeholder="Select destination" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -589,6 +616,21 @@ export const TransferForm: FC<TransferFormProps> = ({
               <FormItem {...field}>
                 <div className="grid grid-cols-2 space-x-2">
                   <FormLabel>From account</FormLabel>
+                  <div>
+                    <BalanceDisplay
+                      source={assetsV2.getTransferLocation(
+                        assetRegistry,
+                        source.type,
+                        source.key,
+                      )}
+                      destination={destination}
+                      sourceAccount={watchSourceAccount}
+                      registry={assetRegistry}
+                      token={token}
+                      tokenMetadata={tokenMetadata}
+                      displayDecimals={8}
+                    />
+                  </div>
                 </div>
                 <FormControl>
                   <div>
@@ -615,21 +657,6 @@ export const TransferForm: FC<TransferFormProps> = ({
                         }
                       />
                     )}
-                    <div className="flex flex-row-reverse pt-1">
-                      <BalanceDisplay
-                        source={assetsV2.getTransferLocation(
-                          assetRegistry,
-                          source.type,
-                          source.key,
-                        )}
-                        destination={destination}
-                        sourceAccount={watchSourceAccount}
-                        registry={assetRegistry}
-                        token={token}
-                        tokenMetadata={tokenMetadata}
-                        displayDecimals={8}
-                      />
-                    </div>
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -656,86 +683,117 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           )}
-          <div className="flex space-x-2">
-            <div className="w-3/5">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="text-right"
-                        type="string"
-                        placeholder="0.0"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="w-2/5">
-              <FormField
-                control={form.control}
-                name="token"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="invisible">Token</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a token" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {source.destinations[destination.key].assets.map(
-                              (t) => {
-                                const asset =
-                                  assetRegistry.ethereumChains[
-                                    assetRegistry.ethChainId
-                                  ].assets[t.toLowerCase()];
-                                return (
-                                  <SelectItem key={t} value={t}>
-                                    <SelectItemWithIcon
-                                      label={asset.name}
-                                      image={asset.symbol}
-                                      altImage="token_generic"
-                                    />
-                                  </SelectItem>
-                                );
-                              },
-                            )}
-                          </SelectGroup>
-                        </SelectContent>
-                        <FormMessage />
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+          <div>
+            <div className="flex items-end joined-inputs-wrapper">
+              <div className="w-3/5">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            className="text-left joined-input-left pr-16 text-2xl font-semibold"
+                            type="string"
+                            placeholder="0.0"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2 text-xs font-medium border border-gray-300"
+                            onClick={() => {
+                              if (balanceInfo && tokenMetadata) {
+                                const maxBalance = formatBalance({
+                                  number: balanceInfo.balance,
+                                  decimals: Number(tokenMetadata.decimals),
+                                  displayDecimals: Number(tokenMetadata.decimals),
+                                });
+                                form.setValue("amount", maxBalance);
+                              }
+                            }}
+                            disabled={!balanceInfo || !tokenMetadata}
+                          >
+                            MAX
+                          </Button>
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="w-2/5">
+                <FormField
+                  control={form.control}
+                  name="token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="joined-input-right">
+                            <SelectValue placeholder="Select a token" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {source.destinations[destination.key].assets.map(
+                                (t) => {
+                                  const asset =
+                                    assetRegistry.ethereumChains[
+                                      assetRegistry.ethChainId
+                                    ].assets[t.toLowerCase()];
+                                  return (
+                                    <SelectItem key={t} value={t}>
+                                      <SelectItemWithIcon
+                                        label={asset.name}
+                                        image={asset.symbol}
+                                        altImage="token_generic"
+                                      />
+                                    </SelectItem>
+                                  );
+                                },
+                              )}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           </div>
-          <div className="text-sm text-center text-muted-foreground px-1 mt-1">
-            Delivery Fee:{" "}
-            <FeeDisplay
-              className="inline"
-              source={assetsV2.getTransferLocation(
-                assetRegistry,
-                source.type,
-                source.key,
-              )}
-              destination={destination}
-              token={token}
-              displayDecimals={8}
-            />
+          <div className="glass-sub p-4 mt-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <dt className="text-muted-glass">Delivery fee</dt>
+              <dd className="font-medium text-slate-900">
+                <FeeDisplay
+                  className="inline"
+                  source={assetsV2.getTransferLocation(
+                    assetRegistry,
+                    source.type,
+                    source.key,
+                  )}
+                  destination={destination}
+                  token={token}
+                  displayDecimals={8}
+                />
+              </dd>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <dt className="text-muted-glass">Estimated delivery time</dt>
+              <dd className="font-medium text-slate-900">~ 2–5 minutes</dd>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <dt className="text-muted-glass">Security</dt>
+              <dd className="font-medium text-slate-900">BEEFY · Fiat–Shamir</dd>
+            </div>
           </div>
-          <br />
           <SubmitButton
             ethereumAccounts={ethereumAccounts}
             polkadotAccounts={polkadotAccounts}
@@ -803,12 +861,12 @@ function SubmitButton({
     }
   }
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center mt-4">
       <Button
         disabled={
           context === null || tokenMetadata === null || validating || !feeInfo
         }
-        className="w-1/3 action-button"
+        className="w-full action-button"
         type="submit"
       >
         {context === null
@@ -817,7 +875,7 @@ function SubmitButton({
             ? "Validating..."
             : !feeInfo
               ? "Fetching Fees..."
-              : "Submit"}
+              : "Review transfer"}
       </Button>
     </div>
   );

@@ -12,31 +12,67 @@ body {
 
 /* Menubar */
 div[role="menubar"] {
-    border: none;
-    padding: 0.50rem;
-    background-color: #91c0e2;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 0;
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2), 0 2px 8px rgba(6, 28, 61, 0.1);
+    display: flex;
+    align-items: stretch;
+    min-height: 48px;
+    position: relative;
+}
+
+/* Sliding indicator */
+.menubar-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 24px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 0;
+    box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3), 0 2px 8px rgba(6, 28, 61, 0.15);
 }
 
 div[role="menubar"] button {
-    border-radius: 0;
-    padding-top: 0.2rem;
-    padding-bottom: 0.2rem;
+    border-radius: 14px;
+    padding: 0.5rem 0.875rem;
+    transition: all 0.3s ease;
+    position: relative;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    z-index: 1;
+}
+
+div[role="menubar"] button:hover {
+    transform: translateX(4px);
 }
 
 div[role="menubar"] button p {
-    color: #1d2a3b;
+    color: rgba(15, 23, 42, 0.85);
     font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+div[role="menubar"] button:hover p {
+    color: #0F172A;
+    font-weight: 600;
 }
 
 div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
-    background: none !important;
-    font-weight: 400;
-    color: #0d1826;
+    background: rgba(255, 255, 255, 0.25) !important;
+    font-weight: 600;
+    color: #0F172A;
 }
 
 /* Icons */
 .lucide {
-    color: #57677e;
+    color: rgba(15, 23, 42, 0.75);
     width: 20px;
     height: 20px;
     stroke-width: 1.5;
@@ -46,11 +82,16 @@ div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-h
     color: #1d2a3b;
 }
 
+div[role="menubar"] button:hover .lucide {
+    color: #0F172A;
+    stroke-width: 2;
+}
+
 div[role="menubar"] button[data-state="open"] .lucide,
 div[role="menubar"] button[data-hightlighted] .lucide,
 div[role="menubar"] .focus\:bg-accent:focus .lucide
 {
-    color: #0d1826;
+    color: #0F172A;
     stroke-width: 2;
 }
 
@@ -70,22 +111,31 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide
 
 button.action-button {
     color: #ffffff;
-    background: linear-gradient(to bottom, #2c5f88, #538399);
-    box-shadow: #0a3563 0 2px 2px 0;
-    padding: 22px;
-    border: 1px solid transparent; /* Keep box shadow from making the form bigger */
+    background: linear-gradient(to right, #e8927b, #cdcdf5);
+    box-shadow: 0 12px 30px rgb(245, 168, 157);
+    padding: 12px 24px;
+    border: none;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
 }
 
 button.action-button:hover, button.action-button:focus {
     color: #ffffff;
-    background: linear-gradient(to bottom, #396f9f, #6496ad);
-    box-shadow: #0a3563 0 2px 2px 0;
-    border-width: 1px;
-    border-color: #71a5c2;
+    background: linear-gradient(to right, #e8927b, #F472B6);
+    box-shadow: 0 14px 40px rgb(244, 114, 182);
+    transform: translateY(-1px);
 }
 
 button.action-button:active {
     transform: translateY(1px);
+    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.50);
+}
+
+button.action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .font-highlight {
@@ -95,42 +145,78 @@ button.action-button:active {
     color: #ffffff;
 }
 
-button[role="combobox"], input, .data-radix-popper-content-wrapper button, .select-box[data-state="open"], .select-box[data-state="open"] .select-item, .fake-dropdown {
-    border-color: #ffffff !important;
-    background-color: #dde6f5 !important;
-    color: #1d2a3b;
+button[role="combobox"], input, .fake-dropdown {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    color: #0F172A;
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
 }
 
 button[role="combobox"], input, .fake-dropdown  {
-    padding: 20px 10px !important;
-    border-width: 1px !important;
-    margin-top: 5px !important;
-    box-shadow: #86b1de 0 2px 2px 0;
+    padding: 12px 16px !important;
+    border-width: 0px !important;
     font-size: 15px !important;
 }
 
+button[role="combobox"]  {
+    padding: 12px 16px !important;
+    border-width: 0px !important;
+    font-size: 15px !important;
+    border-radius: 15px;
+}
+
 body {
-    background-image: url("/images/snow5.jpg");
-    background-size:cover;
+    position: relative;
+    background-image: url("/images/background_new.jpg");
+    background-size: cover;
     background-attachment: fixed;
     background-position: center;
     background-repeat: no-repeat;
 }
 
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #a8d5f7 0%, #c0f9fd 25%, #c5f4fb 50%, #a8fce9 75%, #7ff5fe 100%);
+    background-size: 400% 400%;
+    opacity: 0.5;
+    animation: gradient 30s ease infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+body > * {
+    position: relative;
+    z-index: 1;
+}
+
 .text-card-foreground {
-    background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);
+   /* background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);*/
     border: none;
     padding: 10px;
     color: #0d2b48 !important;
 }
 
 label:not(.text-muted-foreground) {
-    color: #071831;
+    color: rgba(15, 23, 42, 0.75);
     text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    font-weight: 500;
 }
 
 .text-muted-foreground {
-    color: #2e4575;
+    color: rgba(15, 23, 42, 0.65);
 }
 
 label {
@@ -140,7 +226,6 @@ label {
 
 .focus\:ring-ring:focus {
     --tw-ring-color: hsl(0deg 0% 100%);
-    border-radius: 1px;
 }
 
 .shadow-sm {
@@ -156,9 +241,7 @@ label {
 }
 
 button.action-button,
-button[role="combobox"],
 input,
-.data-radix-popper-content-wrapper button,
 .select-box[data-state="open"],
 .select-box[data-state="open"] .select-item,
 .text-card-foreground,
@@ -167,7 +250,7 @@ div[role="menubar"],
 .font-highlight,
 .outline-button[data-state="off"],
 .outline-button[data-state="on"]{
-   border-radius: 30px !important;
+   border-radius: 20px !important;
 }
 
 .text-card-foreground h3 {
@@ -223,4 +306,108 @@ div[role="menubar"],
 
 button.bg-primary:hover {
     background-color: hsl(208, 56%, 20%, 0.9) !important;
+}
+
+/* Joined input styling for amount + token */
+input.joined-input-left {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-right: 0 !important;
+}
+
+button[role="combobox"].joined-input-right {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Remove all focus styles for cleaner appearance */
+input:focus,
+input:focus-visible,
+button[role="combobox"]:focus,
+button[role="combobox"]:focus-visible,
+button:focus,
+button:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+    outline: none !important;
+}
+
+/* Keep the original shadow on inputs and comboboxes */
+input:focus,
+input:focus-visible {
+    box-shadow: #86b1de 0 2px 2px 0 !important;
+}
+
+button[role="combobox"]:focus,
+button[role="combobox"]:focus-visible,
+.focus\:ring-ring:focus {
+    box-shadow: #86b1de 0 2px 2px 0 !important;
+    border-radius: 15px;
+}
+
+/* Remove focus ring styles but keep other styles */
+.focus\:ring-ring:focus {
+    --tw-ring-color: transparent !important;
+}
+
+/* Glassmorphism utilities */
+.glass {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 18px 45px rgba(6, 28, 61, 0.35);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+}
+
+.glass-sub {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+}
+
+.glass-pill {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+}
+
+.label-glass {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(15, 23, 42, 0.75);
+    font-weight: 500;
+}
+
+.text-muted-glass {
+    color: rgba(15, 23, 42, 0.65);
+}
+
+.route-chip {
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+.route-chip:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* Route selector swap button */
+.glass-sub button[type="button"].rounded-full {
+    transition: all 0.2s ease;
+}
+
+.glass-sub button[type="button"].rounded-full:hover {
+    transform: rotate(180deg);
 }
