@@ -619,9 +619,9 @@ export const TransferForm: FC<TransferFormProps> = ({
             name="sourceAccount"
             render={({ field }) => (
               <FormItem {...field}>
-                <div className="grid grid-cols-2 space-x-2">
+                <div className="flex items-center justify-between">
                   <FormLabel>From account</FormLabel>
-                  <div>
+                  <div className="text-right">
                     <BalanceDisplay
                       source={assetsV2.getTransferLocation(
                         assetRegistry,
