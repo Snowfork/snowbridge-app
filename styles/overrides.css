@@ -428,4 +428,5 @@ button[role="combobox"][data-state="open"] {
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
     border-bottom: 0 !important;
+    background-color: #ffffff !important;
 }
