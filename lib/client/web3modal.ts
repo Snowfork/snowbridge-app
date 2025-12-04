@@ -89,3 +89,11 @@ export function getModalError() {
   }
   return modal.getError();
 }
+
+export async function openWalletModal(view: "Connect" | "Account" = "Connect") {
+  if (!initialized || !modal) {
+    console.warn("openWalletModal: modal not initialized.");
+    return;
+  }
+  await modal.open({ view });
+}
