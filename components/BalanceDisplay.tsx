@@ -103,7 +103,7 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     return (
       <FormLabel
         className={
-          "text-sm text-right text-muted-foreground px-1 " +
+          "text-xs text-right text-muted-foreground px-1 " +
           (sourceAccount ? " visible" : " hidden")
         }
       >
@@ -115,11 +115,11 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   return (
     <FormLabel
       className={
-        "text-sm text-right text-muted-foreground px-1 " +
+        "text-xs text-right text-muted-foreground px-1 " +
         (sourceAccount ? " visible" : " hidden")
       }
     >
-      Balances: {nativeBalance} {dotBalance} {!isNativeTransfer ? ";" : ""}{" "}
+      Balances: {nativeBalance} {dotBalance} {!isNativeTransfer ? " " : ""}{" "}
       {tokenBalance} {allowance}
     </FormLabel>
   );
