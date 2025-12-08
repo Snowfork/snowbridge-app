@@ -35,7 +35,7 @@ import {
   assetHubToParachainTransfer,
   parachainToAssetHubTransfer,
 } from "@/utils/onSwitch";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
+import { polkadotAccountAtom, polkadotAccountsAtom, walletAtom } from "@/store/polkadot";
 import {
   snowbridgeEnvironmentAtom,
   snowbridgeContextAtom,
@@ -72,6 +72,7 @@ export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const polkadotWallet = useAtomValue(walletAtom);
   const assetRegistry = useContext(RegistryContext)!;
 
   const [feeDisplay, setFeeDisplay] = useState("");
@@ -502,6 +503,7 @@ export const SwitchComponent: FC = () => {
                           }
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
+                          walletName={polkadotWallet?.title}
                         />
                         <PolkadotBalance
                           sourceAccount={watchSourceAccount}
@@ -536,6 +538,7 @@ export const SwitchComponent: FC = () => {
                         allowManualInput={false}
                         disabled={true}
                         destination="kilt"
+                        polkadotWalletName={polkadotWallet?.title}
                       />
                     </FormControl>
                     <FormMessage />

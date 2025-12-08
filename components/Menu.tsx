@@ -31,8 +31,7 @@ import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
 import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
-import { windowEthereumTypeAtom } from "@/store/ethereum";
-import { useAppKit } from "@reown/appkit/react";
+import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import { RegistryContext } from "@/app/providers";
 
 export const Menu: FC = () => {
@@ -82,13 +81,14 @@ export const Menu: FC = () => {
           polkadotAccount={polkadotAccount?.address}
           polkadotAccounts={polkadotAccounts}
           onValueChange={setPolkadotAccount}
+          walletName={wallet?.title}
         />
       </>
     );
   };
 
   const EthereumWallet = () => {
-    const walletType = useAtomValue(windowEthereumTypeAtom);
+    const { walletInfo } = useWalletInfo();
     const { open } = useAppKit();
     return (
       <>
@@ -97,13 +97,13 @@ export const Menu: FC = () => {
           <p className="text-xs">Wallet: </p>{" "}
           <div className="flex">
             <div className="p-2">
-              {walletType ? `WalletConnect: ${walletType}` : "Disconnected"}
+              {walletInfo?.name ?? "Disconnected"}
             </div>
             <Button
               variant="link"
               onClick={async () => await open({ view: "Connect" })}
             >
-              {walletType ? "(change)" : "(connect)"}
+              {walletInfo?.name ? "(change)" : "(connect)"}
             </Button>{" "}
           </div>
           <p className="text-xs">Account:</p>

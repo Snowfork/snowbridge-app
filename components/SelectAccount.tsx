@@ -13,6 +13,7 @@ import {
 import { Toggle } from "./ui/toggle";
 import { AccountInfo } from "@/utils/types";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
+import Image from "next/image";
 
 type SelectAccountProps = {
   field: any;
@@ -20,6 +21,8 @@ type SelectAccountProps = {
   accounts: AccountInfo[];
   disabled?: boolean;
   destination?: string;
+  polkadotWalletName?: string;
+  ethereumWalletName?: string;
 };
 
 export const SelectAccount: FC<SelectAccountProps> = ({
@@ -28,8 +31,11 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   accounts,
   disabled = false,
   destination,
+  polkadotWalletName,
+  ethereumWalletName,
 }) => {
   const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   const selectedAccount = useMemo(
     () =>
@@ -64,8 +70,37 @@ export const SelectAccount: FC<SelectAccountProps> = ({
         value={selectedAccount?.key}
         disabled={disabled}
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Select account" />
+        <SelectTrigger className="h-auto items-start">
+          {selectedAccount ? (
+            <div className="flex items-start w-full gap-2 py-0.5">
+              {destination && !imageError && (
+                <Image
+                  className="selectIcon mt-0.5"
+                  src={`/images/${destination.toLowerCase()}.png`}
+                  width={20}
+                  height={20}
+                  alt={destination}
+                  onError={() => setImageError(true)}
+                />
+              )}
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="font-medium truncate">
+                  {selectedAccount.type === "substrate"
+                    ? `${selectedAccount.name} (${trimAccount(selectedAccount.key, 20)})`
+                    : selectedAccount.name
+                  }
+                </div>
+                {((selectedAccount.type === "substrate" && polkadotWalletName) ||
+                  (selectedAccount.type === "ethereum" && ethereumWalletName)) && (
+                  <div className="text-xs text-muted-foreground">
+                    {selectedAccount.type === "substrate" ? polkadotWalletName : ethereumWalletName}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <SelectValue placeholder="Select account" />
+          )}
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>

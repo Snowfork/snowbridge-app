@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { polkadotAccountsAtom } from "@/store/polkadot";
+import { polkadotAccountsAtom, walletAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import {
@@ -74,6 +74,7 @@ export const KusamaComponent: FC = () => {
   const router = useRouter();
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const polkadotWallet = useAtomValue(walletAtom);
   const assetRegistry = useContext(RegistryContext)!;
 
   const [error, setError] = useState<ErrorInfo | null>(null);
@@ -479,6 +480,7 @@ export const KusamaComponent: FC = () => {
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
                           placeholder={"Connect wallet to select an account"}
+                          walletName={polkadotWallet?.title}
                         />
                         <div className={"flex flex-row-reverse"}>
                           <KusamaBalanceDisplay
@@ -510,6 +512,7 @@ export const KusamaComponent: FC = () => {
                         field={field}
                         allowManualInput={false}
                         destination={destinationId}
+                        polkadotWalletName={polkadotWallet?.title}
                       />
                     </FormControl>
                     <FormMessage />

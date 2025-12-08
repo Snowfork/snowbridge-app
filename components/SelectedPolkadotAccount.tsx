@@ -6,11 +6,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { FC } from "react";
+import { FC, useState } from "react";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { transformSs58Format, trimAccount } from "@/utils/formatting";
 import { isHex } from "@polkadot/util";
 import { WalletAccount } from "@talismn/connect-wallets";
+import Image from "next/image";
 
 type SelectedPolkadotAccountProps = {
   source?: string;
@@ -19,6 +20,7 @@ type SelectedPolkadotAccountProps = {
   polkadotAccount?: string;
   onValueChange?: (address: string) => void;
   placeholder?: string;
+  walletName?: string;
 };
 
 export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
@@ -28,14 +30,48 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
   polkadotAccounts,
   polkadotAccount,
   placeholder,
+  walletName,
 }) => {
+  const [imageError, setImageError] = useState(false);
+  const selectedAccount = polkadotAccounts.find(
+    (acc) => acc.address === (polkadotAccount ?? polkadotAccounts[0]?.address)
+  );
+
+  let selectedAddress = selectedAccount?.address ?? "";
+  if (selectedAddress && !isHex(selectedAddress)) {
+    selectedAddress = transformSs58Format(selectedAddress, ss58Format);
+  }
+
   return (
     <Select
       onValueChange={onValueChange}
       value={polkadotAccount ?? polkadotAccounts[0]?.address}
     >
-      <SelectTrigger>
-        <SelectValue placeholder={placeholder ?? "Select an account"} />
+      <SelectTrigger className="h-auto items-start">
+        {selectedAccount ? (
+          <div className="flex items-start w-full py-0.5">
+            {source && !imageError && (
+              <Image
+                className="selectIcon mt-0.5"
+                src={`/images/${source.toLowerCase()}.png`}
+                width={20}
+                height={20}
+                alt={source}
+                onError={() => setImageError(true)}
+              />
+            )}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="font-medium truncate">
+                {selectedAccount.name ?? trimAccount(selectedAddress, 22)} ({trimAccount(selectedAddress, 22)})
+              </div>
+              {walletName && (
+                <div className="text-xs text-muted-foreground">{walletName}</div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <SelectValue placeholder={placeholder ?? "Select an account"} />
+        )}
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>

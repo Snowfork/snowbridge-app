@@ -150,6 +150,7 @@ button[role="combobox"], input, .fake-dropdown {
     color: #0F172A;
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
+    text-align: left;
 }
 
 button[role="combobox"], input, .fake-dropdown  {

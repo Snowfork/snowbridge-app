@@ -1,5 +1,5 @@
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
-import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom } from "@/store/polkadot";
+import { polkadotAccountAtom, polkadotAccountsAtom, polkadotWalletModalOpenAtom, walletAtom } from "@/store/polkadot";
 import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
@@ -62,7 +62,7 @@ import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
-import { useAppKit } from "@reown/appkit/react";
+import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
@@ -227,9 +227,11 @@ export const TransferForm: FC<TransferFormProps> = ({
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
+  const polkadotWallet = useAtomValue(walletAtom);
 
   // Wallet connection hooks
   const { open: openEthereumWallet } = useAppKit();
+  const { walletInfo: ethereumWalletInfo } = useWalletInfo();
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const locations = useMemo(
@@ -693,6 +695,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                             assetRegistry.relaychain.ss58Format ??
                             0
                           }
+                          walletName={polkadotWallet?.title}
                         />
                       )
                     )}
@@ -715,6 +718,8 @@ export const TransferForm: FC<TransferFormProps> = ({
                       field={field}
                       allowManualInput={true}
                       destination={destination.id}
+                      polkadotWalletName={polkadotWallet?.title}
+                      ethereumWalletName={ethereumWalletInfo?.name}
                     />
                   </FormControl>
                   <FormMessage />
