@@ -47,9 +47,9 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
       onValueChange={onValueChange}
       value={polkadotAccount ?? polkadotAccounts[0]?.address}
     >
-      <SelectTrigger className="h-auto items-start">
+      <SelectTrigger className="h-auto">
         {selectedAccount ? (
-          <div className="flex items-start w-full py-0.5">
+          <div className="flex items-start w-full py-0.5 self-start">
             {source && !imageError && (
               <Image
                 className="selectIcon mt-0.5"

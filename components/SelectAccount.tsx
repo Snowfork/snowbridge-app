@@ -70,9 +70,9 @@ export const SelectAccount: FC<SelectAccountProps> = ({
         value={selectedAccount?.key}
         disabled={disabled}
       >
-        <SelectTrigger className="h-auto items-start">
+        <SelectTrigger className="h-auto">
           {selectedAccount ? (
-            <div className="flex items-start w-full gap-2 py-0.5">
+            <div className="flex items-start w-full gap-2 py-0.5 self-start">
               {destination && !imageError && (
                 <Image
                   className="selectIcon mt-0.5"
