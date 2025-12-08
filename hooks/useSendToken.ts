@@ -408,7 +408,7 @@ async function sendToken(
       if (!result) {
         throw Error(`Could not fetch message receipt.`);
       }
-      result = { ...result, messageId: "", channelId: "" };
+      result = { ...result, messageId: receipt.hash, channelId: "" };
     } else {
       const transfer = plan.transfer as toPolkadotV2.Transfer;
       const response = await signer.sendTransaction(transfer.tx);

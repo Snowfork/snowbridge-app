@@ -426,15 +426,6 @@ const transferDetail = (
           </li>
         ))}
       </ul>
-      <div hidden={!transfer.isWalletTransaction} className="p-2">
-        <Button
-          onClick={() => {
-            router.push(`txcomplete?messageId=${transfer.id}`);
-          }}
-        >
-          Post Transfer Steps
-        </Button>
-      </div>
     </div>
   );
 };
