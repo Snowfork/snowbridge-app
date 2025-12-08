@@ -17,7 +17,7 @@ import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { LucideLoaderCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useContext, useMemo, useState } from "react";
+import { Suspense, useContext, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -34,11 +34,10 @@ import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { polkadotAccountsAtom } from "@/store/polkadot";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import { walletTxChecker } from "@/utils/addresses";
 import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
-import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
-import { AddTipDialog } from "@/components/AddTipDialog";
+import { ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
   return (
@@ -59,11 +58,6 @@ function TxCard(props: TxCardProps) {
   const { transfer, refresh, inHistory, registry } = props;
   const { destination } = getEnvDetail(transfer, registry);
   const links: { name: string; link: string }[] = [];
-  const [tipDialogOpen, setTipDialogOpen] = useState(false);
-  const [tipParams, setTipParams] = useState<{
-    direction: "Inbound" | "Outbound";
-    nonce: number;
-  } | null>(null);
 
   const token =
     registry.ethereumChains[registry.ethChainId].assets[
@@ -205,51 +199,6 @@ function TxCard(props: TxCardProps) {
             </ul>
           </div>
           {neuroWeb}
-          <div
-            className={cn(
-              transfer.status !== historyV2.TransferStatus.Complete
-                ? ""
-                : "hidden",
-            )}
-          >
-            <Button
-              variant="outline"
-              onClick={() => {
-                // Get nonce and direction based on transfer type
-                let nonce: number | undefined;
-                let direction: "Inbound" | "Outbound" | undefined;
-
-                if (transfer.sourceType === "ethereum") {
-                  const t = transfer as historyV2.ToPolkadotTransferResult;
-                  nonce = t.submitted.nonce;
-                  direction = "Inbound";
-                } else if (transfer.sourceType === "substrate") {
-                  const t = transfer as historyV2.ToEthereumTransferResult;
-                  nonce = t.bridgeHubMessageAccepted?.nonce;
-                  direction = "Outbound";
-                }
-
-                if (nonce !== undefined && direction) {
-                  setTipParams({ direction, nonce });
-                  setTipDialogOpen(true);
-                } else {
-                  alert(
-                    "Tip cannot be added yet. The transfer must reach the bridge hub first.",
-                  );
-                }
-              }}
-            >
-              Add Tip
-            </Button>
-            {tipParams && (
-              <AddTipDialog
-                open={tipDialogOpen}
-                onOpenChange={setTipDialogOpen}
-                direction={tipParams.direction}
-                nonce={tipParams.nonce}
-              />
-            )}
-          </div>
           <div className="flex justify-between items-center">
             <Link
               className={cn("underline text-sm", !inHistory ? "hidden" : "")}
