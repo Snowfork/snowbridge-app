@@ -343,10 +343,6 @@ export const TransferComponent: FC = () => {
         <CardTitle className="text-2xl font-semibold text-slate-900">
           Transfer Tokens
         </CardTitle>
-        <p className="text-sm text-slate-700/70">
-          Bridge assets between Ethereum and Polkadot Asset Hub with trustless
-          security.
-        </p>
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>

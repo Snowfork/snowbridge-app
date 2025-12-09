@@ -728,89 +728,82 @@ export const TransferForm: FC<TransferFormProps> = ({
             />
           )}
           <div>
-            <div className="flex items-end joined-inputs-wrapper">
-              <div className="w-3/5">
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Amount</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            className="text-left joined-input-left pr-16 text-2xl font-semibold"
-                            type="string"
-                            placeholder="0.0"
-                            {...field}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2 text-xs font-medium border border-gray-300"
-                            onClick={() => {
-                              if (balanceInfo && tokenMetadata) {
-                                const maxBalance = formatBalance({
-                                  number: balanceInfo.balance,
-                                  decimals: Number(tokenMetadata.decimals),
-                                  displayDecimals: Number(tokenMetadata.decimals),
-                                });
-                                form.setValue("amount", maxBalance);
-                              }
-                            }}
-                            disabled={!balanceInfo || !tokenMetadata}
-                          >
-                            MAX
-                          </Button>
-                        </div>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="w-2/5">
-                <FormField
-                  control={form.control}
-                  name="token"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="joined-input-right">
-                            <SelectValue placeholder="Select a token" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              {source.destinations[destination.key].assets.map(
-                                (t) => {
-                                  const asset =
-                                    assetRegistry.ethereumChains[
-                                      assetRegistry.ethChainId
-                                    ].assets[t.toLowerCase()];
-                                  return (
-                                    <SelectItem key={t} value={t}>
-                                      <SelectItemWithIcon
-                                        label={asset.name}
-                                        image={asset.symbol}
-                                        altImage="token_generic"
-                                      />
-                                    </SelectItem>
-                                  );
-                                },
-                              )}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <div className="amountContainer flex items-center gap-2 h-14 w-full rounded-md border border-input bg-background px-3 ring-offset-background">
+                      <input
+                        className="amountInput text-left text-3xl font-normal flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                        type="string"
+                        placeholder="0.0"
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-10 px-4 font-medium bg-black text-white hover:bg-black/90 flex-shrink-0"
+                        onClick={() => {
+                          if (balanceInfo && tokenMetadata) {
+                            const maxBalance = formatBalance({
+                              number: balanceInfo.balance,
+                              decimals: Number(tokenMetadata.decimals),
+                              displayDecimals: Number(tokenMetadata.decimals),
+                            });
+                            form.setValue("amount", maxBalance);
+                          }
+                        }}
+                        disabled={!balanceInfo || !tokenMetadata}
+                      >
+                        Max
+                      </Button>
+                      <FormField
+                        control={form.control}
+                        name="token"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <SelectTrigger className="w-32 h-10 border-0 bg-transparent shadow-none focus:ring-0">
+                                  <SelectValue placeholder="Token" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    {source.destinations[destination.key].assets.map(
+                                      (t) => {
+                                        const asset =
+                                          assetRegistry.ethereumChains[
+                                            assetRegistry.ethChainId
+                                          ].assets[t.toLowerCase()];
+                                        return (
+                                          <SelectItem key={t} value={t}>
+                                            <SelectItemWithIcon
+                                              label={asset.name}
+                                              image={asset.symbol}
+                                              altImage="token_generic"
+                                            />
+                                          </SelectItem>
+                                        );
+                                      },
+                                    )}
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
           </div>
           <div className="glass-sub p-4 mt-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
