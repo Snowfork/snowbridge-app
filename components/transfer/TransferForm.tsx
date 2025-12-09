@@ -735,9 +735,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <div className="amountContainer flex items-center gap-2 h-14 w-full rounded-md border border-input bg-background px-3 ring-offset-background">
+                    <div className="amountContainer flex items-center gap-2 h-18 w-full rounded-md border border-input bg-background px-3 py-3 ring-offset-background">
                       <input
-                        className="amountInput text-left text-3xl font-normal flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                        className="amountInput p2 text-left text-3xl font-normal flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground text-gray-700"
                         type="string"
                         placeholder="0.0"
                         {...field}
