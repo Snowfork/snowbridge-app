@@ -62,21 +62,21 @@ div[role="menubar"] button:hover {
 }
 
 div[role="menubar"] button p {
-    color: rgba(15, 23, 42, 0.85);
+    color: #212d41;
     font-size: 15px;
     font-weight: 500;
     transition: all 0.3s ease;
 }
 
 div[role="menubar"] button:hover p {
-    color: #0F172A;
+    color: #212d41;
     font-weight: 600;
 }
 
 div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
     background: rgba(255, 255, 255, 0.25) !important;
     font-weight: 600;
-    color: #0F172A;
+    color: #212d41;
 }
 
 /* Icons */
@@ -92,7 +92,7 @@ div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-h
 }
 
 div[role="menubar"] button:hover .lucide {
-    color: #0F172A;
+    color: #212d41;
     stroke-width: 2;
 }
 
@@ -100,7 +100,7 @@ div[role="menubar"] button[data-state="open"] .lucide,
 div[role="menubar"] button[data-hightlighted] .lucide,
 div[role="menubar"] .focus\:bg-accent:focus .lucide
 {
-    color: #0F172A;
+    color: #212d41;
     stroke-width: 2;
 }
 
@@ -156,7 +156,7 @@ button.action-button:disabled {
 
 button[role="combobox"], input:not(.amountInput), .fake-dropdown {
     background-color: rgba(255, 255, 255, 0.3) !important;
-    color: #0F172A;
+    color: #212d41;
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
     text-align: left;
@@ -465,4 +465,14 @@ button[role="combobox"][data-state="open"] {
     background-color: rgba(255, 255, 255, 0.3) !important;
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
+}
+
+/* Soft dropdown shadow */
+.dropdown-shadow {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Soft card shadow */
+.card-shadow {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }

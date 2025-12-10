@@ -542,7 +542,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               <FormItem className="flex-1">
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="border-0 bg-transparent shadow-none hover:bg-white/20 transition-colors">
+                    <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
@@ -602,7 +602,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               <FormItem className="flex-1">
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="border-0 bg-transparent shadow-none hover:bg-white/20 transition-colors">
+                    <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
                       <SelectValue placeholder="Select destination" />
                     </SelectTrigger>
                     <SelectContent>
@@ -744,7 +744,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                   <FormControl>
                     <div className="amountContainer flex items-center gap-2 h-18 w-full px-3 py-3">
                       <input
-                        className="amountInput p2 text-left text-3xl font-normal flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground text-gray-700"
+                        className="amountInput p2 text-left text-3xl font-bold flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground"
                         type="string"
                         placeholder="0.0"
                         {...field}
@@ -798,10 +798,10 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           </div>
-          <div className="glass-sub p-4 space-y-2">
+          <div className="glass-sub p-4 space-y-2 card-shadow">
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Delivery fee</dt>
-              <dd className="font-medium text-slate-900">
+              <dd className="font-medium text-primary">
                 <FeeDisplay
                   className="inline"
                   source={assetsV2.getTransferLocation(
@@ -817,7 +817,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             </div>
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
-              <dd className="font-medium text-slate-900">~ 2–5 minutes</dd>
+              <dd className="font-medium text-primary">~ 2–5 minutes</dd>
             </div>
           </div>
           <SubmitButton
