@@ -11,6 +11,7 @@ import { Metadata } from "next";
 import { metadata as meta } from "@/lib/metadata";
 import { assetRegistryFor } from "@snowbridge/registry";
 import { getEnvironmentName } from "@/lib/snowbridge";
+import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
 
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
@@ -43,8 +44,9 @@ export default async function RootLayout({
         <title>Snowbridge</title>
       </head>
       <body>
+        <BackgroundSnowfall />
         <Providers registry={registry}>
-          <main className="flex min-h-screen flex-col">
+          <main className="flex min-h-screen flex-col relative z-10">
             <header className="w-full px-6 py-4 flex items-center justify-between">
               <div className="flex items-center">
                 <Image

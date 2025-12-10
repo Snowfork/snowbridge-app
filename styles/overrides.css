@@ -43,6 +43,20 @@ div[role="menubar"] button {
     border: none;
 }
 
+/* Slow snowfall animation for background */
+@keyframes slowSnowfall {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+    }
+    100% {
+        transform: translateY(100vh) translateX(var(--drift)) rotate(360deg);
+    }
+}
+
+.animate-slowSnowfall {
+    animation: slowSnowfall linear infinite;
+}
+
 div[role="menubar"] button:hover {
     opacity: 0.8;
 }
