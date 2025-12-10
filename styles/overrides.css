@@ -21,62 +21,46 @@ body {
 
 /* Menubar */
 div[role="menubar"] {
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: none;
     padding: 0;
-    background: rgba(255, 255, 255, 0.35);
-    backdrop-filter: blur(32px);
-    -webkit-backdrop-filter: blur(32px);
-    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2), 0 2px 8px rgba(6, 28, 61, 0.1);
+    background: transparent;
     display: flex;
-    align-items: stretch;
-    min-height: 48px;
-    position: relative;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 /* Sliding indicator */
 .menubar-indicator {
-    position: absolute;
-    top: 0;
-    left: 0;
-    background: rgba(255, 255, 255, 0.45);
-    border-radius: 24px;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none;
-    z-index: 0;
-    box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3), 0 2px 8px rgba(6, 28, 61, 0.15);
+    display: none;
 }
 
 div[role="menubar"] button {
-    border-radius: 14px;
-    padding: 0.5rem 0.875rem;
+    padding: 2px;
     transition: all 0.3s ease;
-    position: relative;
-    margin: 0 !important;
     display: flex;
     align-items: center;
-    z-index: 1;
+    background: transparent;
+    border: none;
 }
 
 div[role="menubar"] button:hover {
-    transform: translateX(4px);
+    opacity: 0.8;
 }
 
 div[role="menubar"] button p {
     color: #212d41;
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 400;
     transition: all 0.3s ease;
 }
 
 div[role="menubar"] button:hover p {
-    color: #212d41;
-    font-weight: 600;
+    color: #192533;
 }
 
 div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
-    background: rgba(255, 255, 255, 0.25) !important;
-    font-weight: 600;
-    color: #212d41;
+    background: transparent !important;
+    color: white;
 }
 
 /* Icons */
@@ -91,17 +75,22 @@ div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-h
     color: #1d2a3b;
 }
 
-div[role="menubar"] button:hover .lucide {
+div[role="menubar"] .lucide {
     color: #212d41;
-    stroke-width: 2;
+    stroke-width: 1.5;
+}
+
+div[role="menubar"] button:hover .lucide {
+    color: #192533;
+    stroke-width: 1.5;
 }
 
 div[role="menubar"] button[data-state="open"] .lucide,
 div[role="menubar"] button[data-hightlighted] .lucide,
 div[role="menubar"] .focus\:bg-accent:focus .lucide
 {
-    color: #212d41;
-    stroke-width: 2;
+    color: white;
+    stroke-width: 1.5;
 }
 
 /* Footer */
