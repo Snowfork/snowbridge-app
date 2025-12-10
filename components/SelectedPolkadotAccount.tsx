@@ -34,7 +34,7 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const selectedAccount = polkadotAccounts.find(
-    (acc) => acc.address === (polkadotAccount ?? polkadotAccounts[0]?.address)
+    (acc) => acc.address === (polkadotAccount ?? polkadotAccounts[0]?.address),
   );
 
   let selectedAddress = selectedAccount?.address ?? "";
@@ -62,10 +62,13 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
             )}
             <div className="flex flex-col flex-1 min-w-0">
               <div className="font-medium truncate">
-                {selectedAccount.name ?? trimAccount(selectedAddress, 22)} ({trimAccount(selectedAddress, 22)})
+                {selectedAccount.name ?? trimAccount(selectedAddress, 22)} (
+                {trimAccount(selectedAddress, 22)})
               </div>
               {walletName && (
-                <div className="text-xs text-muted-foreground">{walletName}</div>
+                <div className="text-xs text-muted-foreground">
+                  {walletName}
+                </div>
               )}
             </div>
           </div>

@@ -35,7 +35,11 @@ import {
   assetHubToParachainTransfer,
   parachainToAssetHubTransfer,
 } from "@/utils/onSwitch";
-import { polkadotAccountAtom, polkadotAccountsAtom, walletAtom } from "@/store/polkadot";
+import {
+  polkadotAccountAtom,
+  polkadotAccountsAtom,
+  walletAtom,
+} from "@/store/polkadot";
 import {
   snowbridgeEnvironmentAtom,
   snowbridgeContextAtom,

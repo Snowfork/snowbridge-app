@@ -88,13 +88,16 @@ export const SelectAccount: FC<SelectAccountProps> = ({
                   <div className="font-medium truncate">
                     {selectedAccount.type === "substrate"
                       ? `${selectedAccount.name} (${trimAccount(selectedAccount.key, 20)})`
-                      : selectedAccount.name
-                    }
+                      : selectedAccount.name}
                   </div>
-                  {((selectedAccount.type === "substrate" && polkadotWalletName) ||
-                    (selectedAccount.type === "ethereum" && ethereumWalletName)) && (
+                  {((selectedAccount.type === "substrate" &&
+                    polkadotWalletName) ||
+                    (selectedAccount.type === "ethereum" &&
+                      ethereumWalletName)) && (
                     <div className="text-xs text-muted-foreground">
-                      {selectedAccount.type === "substrate" ? polkadotWalletName : ethereumWalletName}
+                      {selectedAccount.type === "substrate"
+                        ? polkadotWalletName
+                        : ethereumWalletName}
                     </div>
                   )}
                 </div>

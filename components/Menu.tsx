@@ -96,9 +96,7 @@ export const Menu: FC = () => {
           <h1 className="font-semibold py-2">Ethereum</h1>
           <p className="text-xs">Wallet: </p>{" "}
           <div className="flex">
-            <div className="p-2">
-              {walletInfo?.name ?? "Disconnected"}
-            </div>
+            <div className="p-2">{walletInfo?.name ?? "Disconnected"}</div>
             <Button
               variant="link"
               onClick={async () => await open({ view: "Connect" })}

@@ -185,7 +185,7 @@ body::before {
     background: linear-gradient(135deg, #a8d5f7 0%, #c0f9fd 25%, #c5f4fb 50%, #a8fce9 75%, #7ff5fe 100%);
     background-size: 400% 400%;
     opacity: 0.5;
-    animation: gradient 30s ease infinite;
+    animation: gradient 10s ease infinite;
     pointer-events: none;
     z-index: 0;
 }
@@ -444,4 +444,8 @@ button[role="combobox"][data-state="open"] {
     border-bottom-right-radius: 0 !important;
     border-bottom: 0 !important;
     background-color: #ffffff !important;
+}
+
+.amountInput {
+    padding-left: 10px;
 }
