@@ -4,6 +4,15 @@ body {
     font-optical-sizing: auto;
     font-weight: 300;
     font-style: normal;
+    color: #212d41;
+}
+
+.text-primary {
+    color: #212d41;
+}
+
+.bg-dark-blue {
+    background-color: #212d41;
 }
 
 .font-semibold {
@@ -145,7 +154,7 @@ button.action-button:disabled {
     color: #ffffff;
 }
 
-button[role="combobox"], input, .fake-dropdown {
+button[role="combobox"], input:not(.amountInput), .fake-dropdown {
     background-color: rgba(255, 255, 255, 0.3) !important;
     color: #0F172A;
     backdrop-filter: blur(28px);
@@ -448,4 +457,12 @@ button[role="combobox"][data-state="open"] {
 
 .amountInput {
     padding-left: 10px;
+    background: none;
+    color: #646f82;
+}
+
+.amountContainer {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
 }

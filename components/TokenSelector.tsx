@@ -1,6 +1,7 @@
 "use client";
 
 import { FC, useState, useMemo, useEffect } from "react";
+import Image from "next/image";
 import { SelectItemWithIcon } from "./SelectItemWithIcon";
 import {
   Dialog,
@@ -179,18 +180,28 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="w-32 h-10 flex items-center justify-between border-0 bg-transparent hover:bg-accent/50 rounded px-2"
+          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs font-medium bg-white hover:bg-white/90 rounded-full flex-shrink-0 transition-colors"
         >
           {selectedAsset ? (
-            <SelectItemWithIcon
-              label={selectedAsset.name}
-              image={selectedAsset.symbol}
-              altImage="token_generic"
-            />
+            <>
+              <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                <Image
+                  src={`/images/${selectedAsset.symbol.toLowerCase()}.png`}
+                  width={16}
+                  height={16}
+                  alt={selectedAsset.symbol}
+                  className="rounded-full"
+                  onError={(e: any) => {
+                    e.currentTarget.src = "/images/token_generic.png";
+                  }}
+                />
+              </div>
+              <span className="text-xs font-medium">{selectedAsset.symbol}</span>
+            </>
           ) : (
-            <span className="text-muted-foreground">Token</span>
+            <span className="text-muted-foreground text-xs">Token</span>
           )}
-          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          <ChevronsUpDown className="h-3 w-3 opacity-50" />
         </button>
       </DialogTrigger>
       <DialogContent>
