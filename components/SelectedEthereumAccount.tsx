@@ -38,7 +38,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
           alt="ethereum"
         />
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="font-medium truncate">{account}</div>
+          <div className="truncate">{account}</div>
           {walletInfo?.name && (
             <div className="text-xs text-muted-foreground">
               {walletInfo.name}

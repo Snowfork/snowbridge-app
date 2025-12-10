@@ -2,7 +2,6 @@
 body {
     font-family: 'Funnel Display', sans-serif !important;
     font-optical-sizing: auto;
-    font-weight: 300;
     font-style: normal;
     color: #212d41;
 }
@@ -13,10 +12,6 @@ body {
 
 .bg-dark-blue {
     background-color: #212d41;
-}
-
-.font-semibold {
-    font-weight: 300;
 }
 
 /* Menubar */
@@ -58,18 +53,27 @@ div[role="menubar"] button {
 }
 
 div[role="menubar"] button:hover {
-    opacity: 0.8;
+    /* Glimmer effect on text instead of opacity */
 }
 
 div[role="menubar"] button p {
     color: #212d41;
     font-size: 15px;
     font-weight: 400;
-    transition: all 0.3s ease;
 }
 
-div[role="menubar"] button:hover p {
-    color: #192533;
+/* Glimmer effect */
+.glimmer-text {
+    background: linear-gradient(to right, #212d41 0%, #212d41 30%, #ecb38d 50%, #212d41 70%, #212d41 100%);
+    background-size: 250px;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glimmer-text:hover {
+    background-position: 250px 0;
+    transition: background-position 1.5s ease-in-out;
 }
 
 div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
@@ -123,7 +127,7 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide
 
 button.action-button {
     color: #ffffff;
-    background: linear-gradient(to right, #e8927b, #cdcdf5);
+    background: linear-gradient(to right, #e8927b, #8888b8);
     box-shadow: 0 12px 30px rgb(245, 168, 157);
     padding: 12px 24px;
     border: none;
@@ -381,18 +385,18 @@ button[role="combobox"]:focus-visible,
 
 /* Glassmorphism utilities */
 .glass {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 12px 40px rgba(30, 40, 80, 0.12);
-    backdrop-filter: blur(32px);
+    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(32px);
 }
 
 .glass-sub {
     background: rgba(255, 255, 255, 0.28);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
 }
@@ -400,7 +404,7 @@ button[role="combobox"]:focus-visible,
 .glass-pill {
     background: rgba(255, 255, 255, 0.18);
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
 }

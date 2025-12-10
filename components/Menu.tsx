@@ -118,7 +118,7 @@ export const Menu: FC = () => {
           <MenubarTrigger>
             <Link href="/" className="flex items-center">
               <LucideSend />
-              <p className="pl-2 hidden md:flex">Transfer</p>
+              <p className="pl-2 hidden md:flex glimmer-text">Transfer</p>
             </Link>
           </MenubarTrigger>
         </MenubarMenu>
@@ -127,7 +127,7 @@ export const Menu: FC = () => {
             <MenubarTrigger>
               <Link href="/switch" className="flex items-center">
                 <LucideArrowRightLeft />
-                <p className="pl-2 hidden md:flex">Polar Path</p>
+                <p className="pl-2 hidden md:flex glimmer-text">Polar Path</p>
               </Link>
             </MenubarTrigger>
           </MenubarMenu>
@@ -137,7 +137,7 @@ export const Menu: FC = () => {
             <MenubarTrigger>
               <Link href="/kusama" className="flex items-center">
                 <LucideBird />
-                <p className="pl-2 hidden md:flex">To Kusama</p>
+                <p className="pl-2 hidden md:flex glimmer-text">To Kusama</p>
               </Link>
             </MenubarTrigger>
           </MenubarMenu>
@@ -146,14 +146,14 @@ export const Menu: FC = () => {
           <MenubarTrigger>
             <Link href="/history" className="flex items-center">
               <LucideHistory />
-              <p className="pl-2 hidden md:flex">History</p>
+              <p className="pl-2 hidden md:flex glimmer-text">History</p>
             </Link>
           </MenubarTrigger>
         </MenubarMenu>
         <MenubarMenu>
           <MenubarTrigger>
             <LucideWallet />
-            <p className="pl-2 hidden md:flex">Wallets</p>
+            <p className="pl-2 hidden md:flex glimmer-text">Wallets</p>
           </MenubarTrigger>
           <MenubarContent align="center" className="walletModal shadow-sm p-5">
             <div className="w-90">

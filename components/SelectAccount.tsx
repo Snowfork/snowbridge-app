@@ -85,7 +85,7 @@ export const SelectAccount: FC<SelectAccountProps> = ({
                   />
                 )}
                 <div className="flex flex-col flex-1 min-w-0">
-                  <div className="font-medium truncate">
+                  <div className="truncate">
                     {selectedAccount.type === "substrate"
                       ? `${selectedAccount.name} (${trimAccount(selectedAccount.key, 20)})`
                       : selectedAccount.name}

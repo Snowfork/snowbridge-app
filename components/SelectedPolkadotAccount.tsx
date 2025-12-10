@@ -61,7 +61,7 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
               />
             )}
             <div className="flex flex-col flex-1 min-w-0">
-              <div className="font-medium truncate">
+              <div className="truncate">
                 {selectedAccount.name ?? trimAccount(selectedAddress, 22)} (
                 {trimAccount(selectedAddress, 22)})
               </div>

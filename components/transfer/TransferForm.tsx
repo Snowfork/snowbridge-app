@@ -529,7 +529,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   );
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(submit)} className="space-y-2">
         <div className="space-y-3">
           <div className="grid grid-cols-2 space-x-2">
             <FormLabel>Route</FormLabel>
@@ -584,7 +584,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             type="button"
             variant="ghost"
             size="sm"
-            className="rounded-full bg-white/20 hover:bg-white/30 p-2 h-auto"
+            className="rounded-full bg-white/[0.28] hover:bg-white/40 p-2 h-auto"
             onClick={() => {
               const currentSource = form.getValues("source");
               const currentDest = form.getValues("destination");
@@ -626,7 +626,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
           </div>
         </div>
-        <div className="transfer-details space-y-4">
+        <div className="transfer-details space-y-2">
           <FormField
             control={form.control}
             name="sourceAccount"
@@ -744,14 +744,14 @@ export const TransferForm: FC<TransferFormProps> = ({
                   <FormControl>
                     <div className="amountContainer flex items-center gap-2 h-18 w-full px-3 py-3">
                       <input
-                        className="amountInput p2 text-left text-3xl font-bold flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                        className="amountInput p2 text-left text-3xl font-medium flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground"
                         type="string"
                         placeholder="0.0"
                         {...field}
                       />
                       <Button
                         type="button"
-                        className="h-7 bg-dark-blue px-3 py-1 text-xs font-medium text-white hover:bg-black/90 flex-shrink-0 rounded-full border-0"
+                        className="h-7 bg-dark-blue px-3 py-1 text-xs text-white hover:bg-black/90 flex-shrink-0 rounded-full border-0"
                         onClick={() => {
                           if (balanceInfo && tokenMetadata) {
                             const maxBalance = formatBalance({
@@ -801,7 +801,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           <div className="glass-sub p-4 space-y-2 card-shadow">
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Delivery fee</dt>
-              <dd className="font-medium text-primary">
+              <dd className="text-primary">
                 <FeeDisplay
                   className="inline"
                   source={assetsV2.getTransferLocation(
@@ -817,7 +817,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             </div>
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
-              <dd className="font-medium text-primary">~ 2–5 minutes</dd>
+              <dd className="text-primary">~ 2–5 minutes</dd>
             </div>
           </div>
           <SubmitButton

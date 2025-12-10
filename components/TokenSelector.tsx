@@ -180,7 +180,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs font-medium bg-white hover:bg-white/90 rounded-full flex-shrink-0 transition-colors"
+          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs bg-white hover:bg-white/90 rounded-full flex-shrink-0 transition-colors"
         >
           {selectedAsset ? (
             <>
