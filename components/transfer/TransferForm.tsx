@@ -535,95 +535,95 @@ export const TransferForm: FC<TransferFormProps> = ({
             <FormLabel>Route</FormLabel>
           </div>
           <div className="glass-sub px-4 py-3 flex items-center justify-between gap-3">
-          <FormField
-            control={form.control}
-            name="source"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
-                      <SelectValue placeholder="Select source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {locations.map((s) => {
-                          let name: string;
-                          if (s.type === "ethereum") {
-                            const eth = assetRegistry.ethereumChains[s.key];
-                            if (!eth.evmParachainId) {
-                              name = "Ethereum";
+            <FormField
+              control={form.control}
+              name="source"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                        <SelectValue placeholder="Select source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {locations.map((s) => {
+                            let name: string;
+                            if (s.type === "ethereum") {
+                              const eth = assetRegistry.ethereumChains[s.key];
+                              if (!eth.evmParachainId) {
+                                name = "Ethereum";
+                              } else {
+                                const evmChain =
+                                  assetRegistry.parachains[eth.evmParachainId];
+                                name = `${evmChain.info.name} (EVM)`;
+                              }
                             } else {
-                              const evmChain =
-                                assetRegistry.parachains[eth.evmParachainId];
-                              name = `${evmChain.info.name} (EVM)`;
+                              name = assetRegistry.parachains[s.key].info.name;
                             }
-                          } else {
-                            name = assetRegistry.parachains[s.key].info.name;
-                          }
-                          return (
+                            return (
+                              <SelectItem key={s.id} value={s.id}>
+                                <SelectItemWithIcon
+                                  label={name}
+                                  image={s.id}
+                                  altImage="parachain_generic"
+                                />
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-full bg-white/[0.28] hover:bg-white/40 p-2 h-auto"
+              onClick={() => {
+                const currentSource = form.getValues("source");
+                const currentDest = form.getValues("destination");
+                form.setValue("source", currentDest);
+                form.setValue("destination", currentSource);
+              }}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+
+            <FormField
+              control={form.control}
+              name="destination"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                        <SelectValue placeholder="Select destination" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {destinations.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               <SelectItemWithIcon
-                                label={name}
+                                label={s.name}
                                 image={s.id}
                                 altImage="parachain_generic"
                               />
                             </SelectItem>
-                          );
-                        })}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="rounded-full bg-white/[0.28] hover:bg-white/40 p-2 h-auto"
-            onClick={() => {
-              const currentSource = form.getValues("source");
-              const currentDest = form.getValues("destination");
-              form.setValue("source", currentDest);
-              form.setValue("destination", currentSource);
-            }}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-
-          <FormField
-            control={form.control}
-            name="destination"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
-                      <SelectValue placeholder="Select destination" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {destinations.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            <SelectItemWithIcon
-                              label={s.name}
-                              image={s.id}
-                              altImage="parachain_generic"
-                            />
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </div>
         <div className="transfer-details space-y-2">
@@ -712,14 +712,14 @@ export const TransferForm: FC<TransferFormProps> = ({
               </FormItem>
             )}
           />
-          {beneficiaries && beneficiaries.length > 0 && (
-            <FormField
-              control={form.control}
-              name="beneficiary"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>To account</FormLabel>
-                  <FormControl>
+          <FormField
+            control={form.control}
+            name="beneficiary"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormLabel>To account</FormLabel>
+                <FormControl>
+                  {beneficiaries && beneficiaries.length > 0 ? (
                     <SelectAccount
                       accounts={beneficiaries}
                       field={field}
@@ -728,12 +728,18 @@ export const TransferForm: FC<TransferFormProps> = ({
                       polkadotWalletName={polkadotWallet?.title}
                       ethereumWalletName={ethereumWalletInfo?.name}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+                  ) : (
+                    <div className="glass-sub flex items-center justify-between h-12 w-full px-3 py-3 rounded-lg border border-input">
+                      <span className="text-sm text-muted-foreground">
+                        Please Connect Polkadot Account
+                      </span>
+                    </div>
+                  )}
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <div>
             <FormField
               control={form.control}

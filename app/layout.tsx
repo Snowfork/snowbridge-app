@@ -61,9 +61,7 @@ export default async function RootLayout({
               </div>
               <Menu />
             </header>
-            <div className="flex-1 w-full px-6 py-1">
-              {children}
-            </div>
+            <div className="flex-1 w-full px-6 py-1">{children}</div>
             <footer className="w-full px-6 py-6 flex flex-col items-center text-sm">
               <Footer />
             </footer>

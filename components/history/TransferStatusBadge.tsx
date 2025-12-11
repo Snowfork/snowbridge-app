@@ -21,7 +21,7 @@ export function TransferStatusBadge({
     <Badge
       variant="outline"
       className={cn(
-        "px-4 mr-2 col-span-1 place-self-center badge",
+        "px-4 mr-2 col-span-1 place-self-center badge font-light",
         badgeStyle,
         className,
       )}

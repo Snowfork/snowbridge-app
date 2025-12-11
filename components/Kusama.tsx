@@ -354,7 +354,7 @@ export const KusamaComponent: FC = () => {
 
   return (
     <>
-      <Card className="w-auto md:w-2/3">
+      <Card className="w-auto md:w-2/3 glass">
         <CardHeader>
           <CardTitle>Transfer to Kusama</CardTitle>
           <CardDescription className="hidden md:flex">

@@ -397,7 +397,7 @@ export const SwitchComponent: FC = () => {
 
   return (
     <>
-      <Card className="w-auto md:w-2/3">
+      <Card className="w-auto md:w-2/3 glass">
         <CardHeader>
           <CardTitle>Polar Path</CardTitle>
           <CardDescription className="hidden md:flex">

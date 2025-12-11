@@ -560,130 +560,132 @@ export default function History() {
 
   return (
     <Suspense fallback={<Loading />}>
-      <Card className="w-full md:w-2/3 min-h-[460px]">
-        <CardHeader>
-          <CardTitle>History</CardTitle>
-          <CardDescription>
-            {showGlobal ? "Global transfer history." : "My transfer history."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex w-full pb-4">
-            <Button
-              variant="link"
-              size="sm"
-              disabled={isRefreshing}
-              onClick={() => mutate()}
-            >
-              <div className="flex gap-2 place-items-center">
-                <LucideRefreshCw />
-                <p>{isRefreshing ? "Refreshing" : "Refresh"}</p>
-              </div>
-            </Button>
-            <Toggle
-              className="flex gap-2 outline-button"
-              defaultPressed={false}
-              pressed={showGlobal}
-              onPressedChange={(p) => setShowGlobal(p)}
-              size="sm"
-            >
-              <div className="flex gap-2 place-items-center">
-                <LucideGlobe />
-                <p>Show global Transfers</p>
-              </div>
-            </Toggle>
-          </div>
-          <hr />
-          <Accordion
-            type="single"
-            className="w-full accordian"
-            value={selectedItem ?? undefined}
-            onValueChange={(v) => {
-              setSelectedItem(v);
-              router.push("#" + v);
-            }}
-          >
-            {pages[page]?.map((v, i) => (
-              <AccordionItem
-                key={v.id}
-                value={v.id?.toString() ?? i.toString()}
+      <div className="flex justify-center">
+        <Card className="w-full md:w-2/3 min-h-[460px] glass">
+          <CardHeader>
+            <CardTitle>History</CardTitle>
+            <CardDescription>
+              {showGlobal ? "Global transfer history." : "My transfer history."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex w-full pb-4">
+              <Button
+                variant="link"
+                size="sm"
+                disabled={isRefreshing}
+                onClick={() => mutate()}
               >
-                <AccordionTrigger>
-                  <TransferTitle transfer={v} />
-                </AccordionTrigger>
-                <AccordionContent>
-                  {transferDetail(v, assetRegistry, router)}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-          <br></br>
-          <div
-            className={
-              "justify-self-center align-middle " +
-              (pages.length > 0 ? "hidden" : "")
-            }
-          >
-            <p className="text-muted-foreground text-center">No history.</p>
-          </div>
-          <Pagination className={pages.length == 0 ? "hidden" : ""}>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => {
-                    const p = Math.max(0, page - 1);
-                    setPage(p);
-                    setSelectedItem(null);
-                  }}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink
-                  onClick={() => {
-                    setPage(0);
-                    setSelectedItem(null);
-                  }}
+                <div className="flex gap-2 place-items-center">
+                  <LucideRefreshCw />
+                  <p>{isRefreshing ? "Refreshing" : "Refresh"}</p>
+                </div>
+              </Button>
+              <Toggle
+                className="flex gap-2 outline-button"
+                defaultPressed={false}
+                pressed={showGlobal}
+                onPressedChange={(p) => setShowGlobal(p)}
+                size="sm"
+              >
+                <div className="flex gap-2 place-items-center">
+                  <LucideGlobe />
+                  <p>Show global Transfers</p>
+                </div>
+              </Toggle>
+            </div>
+            <hr />
+            <Accordion
+              type="single"
+              className="w-full accordian"
+              value={selectedItem ?? undefined}
+              onValueChange={(v) => {
+                setSelectedItem(v);
+                router.push("#" + v);
+              }}
+            >
+              {pages[page]?.map((v, i) => (
+                <AccordionItem
+                  key={v.id}
+                  value={v.id?.toString() ?? i.toString()}
                 >
-                  First
-                </PaginationLink>
-              </PaginationItem>
-              {renderPages.map(({ index }) => (
-                <PaginationItem key={index + 1}>
-                  <PaginationLink
-                    isActive={page == index}
+                  <AccordionTrigger>
+                    <TransferTitle transfer={v} />
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {transferDetail(v, assetRegistry, router)}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <br></br>
+            <div
+              className={
+                "justify-self-center align-middle " +
+                (pages.length > 0 ? "hidden" : "")
+              }
+            >
+              <p className="text-muted-foreground text-center">No history.</p>
+            </div>
+            <Pagination className={pages.length == 0 ? "hidden" : ""}>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
                     onClick={() => {
-                      setPage(index);
+                      const p = Math.max(0, page - 1);
+                      setPage(p);
+                      setSelectedItem(null);
+                    }}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink
+                    onClick={() => {
+                      setPage(0);
                       setSelectedItem(null);
                     }}
                   >
-                    {index + 1}
+                    First
                   </PaginationLink>
                 </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationLink
-                  onClick={() => {
-                    const p = pages.length - 1;
-                    setPage(p);
-                    setSelectedItem(null);
-                  }}
-                >
-                  Last
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => {
-                    const p = Math.min(pages.length - 1, page + 1);
-                    setPage(p);
-                    setSelectedItem(null);
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </CardContent>
-      </Card>
+                {renderPages.map(({ index }) => (
+                  <PaginationItem key={index + 1}>
+                    <PaginationLink
+                      isActive={page == index}
+                      onClick={() => {
+                        setPage(index);
+                        setSelectedItem(null);
+                      }}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationLink
+                    onClick={() => {
+                      const p = pages.length - 1;
+                      setPage(p);
+                      setSelectedItem(null);
+                    }}
+                  >
+                    Last
+                  </PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => {
+                      const p = Math.min(pages.length - 1, page + 1);
+                      setPage(p);
+                      setSelectedItem(null);
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </CardContent>
+        </Card>
+      </div>
       <ErrorDialog
         open={!isRefreshing && transfersErrorMessage !== null}
         title="Error Fetching History"

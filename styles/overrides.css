@@ -322,11 +322,6 @@ div[role="menubar"],
     color: #88232f !important;
 }
 
-.walletModal {
-    background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);
-    color: #173651;
-}
-
 /* Blur backdrop when wallet modal is open */
 div[role="menubar"] button[data-state="open"]::before {
     content: '';
@@ -513,4 +508,9 @@ button[role="combobox"][data-state="open"] {
 /* Soft card shadow */
 .card-shadow {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.walletModal .lucide {
+    width: 15px;
+    height: 15px;
 }

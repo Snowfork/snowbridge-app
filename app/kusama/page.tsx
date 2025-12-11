@@ -6,7 +6,9 @@ export default function Kusama() {
   return (
     <MaintenanceBanner>
       <ContextComponent>
-        <KusamaComponent />
+        <div className="flex justify-center">
+          <KusamaComponent />
+        </div>
       </ContextComponent>
     </MaintenanceBanner>
   );
