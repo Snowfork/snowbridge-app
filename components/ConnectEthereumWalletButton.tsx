@@ -55,7 +55,7 @@ export function ConnectEthereumWalletButton({
   return (
     <div className="flex flex-col items-center">
       <Button
-        className="w-1/3 action-button"
+        className="w-full action-button"
         type="button"
         variant={variant ?? "link"}
         onClick={async (e) => {

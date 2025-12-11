@@ -21,7 +21,7 @@ div[role="menubar"] {
     background: transparent;
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 /* Sliding indicator */
@@ -513,4 +513,8 @@ button[role="combobox"][data-state="open"] {
 .walletModal .lucide {
     width: 15px;
     height: 15px;
+}
+
+.transfer-spacing {
+    margin-top: 20px !important;
 }

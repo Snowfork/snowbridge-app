@@ -308,6 +308,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         ? (ethereumAccount ?? undefined)
         : polkadotAccount?.address;
     setSourceAccount(newSourceAccount);
+    form.setValue("sourceAccount", newSourceAccount);
 
     let newDestinations = destinations;
     let newSource = source;
@@ -664,7 +665,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                             await openEthereumWallet({ view: "Connect" });
                           }}
                         >
-                          <span>Please connect Ethereum wallet</span>
+                          <span>Connect Ethereum wallet</span>
                           <ChevronsUpDown className="h-4 w-4 opacity-50" />
                         </button>
                       ) : (
@@ -681,7 +682,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           setPolkadotWalletModalOpen(true);
                         }}
                       >
-                        <span>Please connect Polkadot wallet</span>
+                        <span>Connect Polkadot wallet</span>
                         <ChevronsUpDown className="h-4 w-4 opacity-50" />
                       </button>
                     ) : (
@@ -728,12 +729,28 @@ export const TransferForm: FC<TransferFormProps> = ({
                       polkadotWalletName={polkadotWallet?.title}
                       ethereumWalletName={ethereumWalletInfo?.name}
                     />
+                  ) : destination.type === "ethereum" ? (
+                    <button
+                      type="button"
+                      className="fake-dropdown flex items-center justify-between px-4 py-3 text-muted-glass cursor-pointer hover:bg-white/40 transition-colors w-full text-left"
+                      onClick={async (e) => {
+                        await openEthereumWallet({ view: "Connect" });
+                      }}
+                    >
+                      <span>Connect Ethereum wallet</span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                    </button>
                   ) : (
-                    <div className="glass-sub flex items-center justify-between h-12 w-full px-3 py-3 rounded-lg border border-input">
-                      <span className="text-sm text-muted-foreground">
-                        Please Connect Polkadot Account
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      className="fake-dropdown flex items-center justify-between px-4 py-3 text-muted-glass cursor-pointer hover:bg-white/40 transition-colors w-full text-left"
+                      onClick={(e) => {
+                        setPolkadotWalletModalOpen(true);
+                      }}
+                    >
+                      <span>Connect Polkadot wallet</span>
+                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                    </button>
                   )}
                 </FormControl>
                 <FormMessage />
@@ -804,7 +821,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           </div>
-          <div className="glass-sub p-4 space-y-2 card-shadow">
+          <div className="glass-sub p-4 space-y-2 card-shadow transfer-spacing">
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Delivery fee</dt>
               <dd className="text-primary">
@@ -826,6 +843,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               <dd className="text-primary">~ 2–5 minutes</dd>
             </div>
           </div>
+          <div className="transfer-spacing"></div>
           <SubmitButton
             ethereumAccounts={ethereumAccounts}
             polkadotAccounts={polkadotAccounts}
