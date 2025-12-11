@@ -204,9 +204,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           <ChevronsUpDown className="h-3 w-3 opacity-50" />
         </button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="bg-gradient-to-br from-blue-50 to-white border-none shadow-xl">
         <DialogHeader>
-          <DialogTitle>Select Token</DialogTitle>
+          <DialogTitle className="text-center text-gray-900 font-medium">Select Token</DialogTitle>
         </DialogHeader>
         <div className="mb-4">
           <Input
@@ -214,12 +214,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
             placeholder="Search by name or symbol..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
+            className="w-full bg-white/80 border-gray-200"
           />
         </div>
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 rounded-lg">
           {filteredAssets.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-gray-500">
               No tokens found
             </div>
           ) : (
@@ -265,7 +265,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                     setSearchQuery("");
                     setTokenModalOpen(false);
                   }}
-                  className="w-full flex items-center justify-between gap-3 p-3 hover:bg-accent rounded-md transition-colors"
+                  className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 rounded-md transition-colors border-b border-gray-100 last:border-b-0"
                 >
                   <div className="flex items-center gap-3">
                     <SelectItemWithIcon
@@ -274,22 +274,16 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                       altImage="token_generic"
                     />
                     <div className="flex flex-col items-start">
-                      <span className="font-medium">{asset.name}</span>
-                      <a
-                        href={`${process.env.NEXT_PUBLIC_ETHEREUM_EXPLORER}${t}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-xs text-muted-foreground hover:underline"
-                      >
-                        {truncatedAddress}
-                      </a>
+                      <span className="font-medium text-gray-900">{asset.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {asset.symbol}
+                      </span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-sm">{formattedBalance}</span>
+                    <span className="text-sm font-medium text-gray-900">{formattedBalance}</span>
                     {usdValue && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-gray-500">
                         {usdValue}
                       </span>
                     )}

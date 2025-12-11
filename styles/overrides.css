@@ -64,7 +64,7 @@ div[role="menubar"] button p {
 
 /* Glimmer effect */
 .glimmer-text {
-    background: linear-gradient(to right, #212d41 0%, #212d41 30%, #ecb38d 50%, #212d41 70%, #212d41 100%);
+    background: linear-gradient(to right, #212d41 0%, #212d41 30%, #a7d4f8 50%, #212d41 70%, #212d41 100%);
     background-size: 250px;
     -webkit-background-clip: text;
     background-clip: text;
@@ -74,6 +74,29 @@ div[role="menubar"] button p {
 .glimmer-text:hover {
     background-position: 250px 0;
     transition: background-position 1.5s ease-in-out;
+}
+
+/* Slim scrollbar */
+.ui-slimscroll {
+    overflow: auto;
+}
+
+.ui-slimscroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.ui-slimscroll::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.4);
+    border-radius: 3px;
+}
+
+.ui-slimscroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.6);
+}
+
+.ui-slimscroll::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-hightlighted], div[role="menubar"] .focus\:bg-accent:focus {
