@@ -147,7 +147,7 @@ function TxCard(props: TxCardProps) {
   }
 
   return (
-    <Card className="w-[360px] md:w-2/3">
+    <Card className="w-[360px] md:w-2/3 glass">
       <CardHeader>
         <CardTitle>Nice! You did it.</CardTitle>
         <CardDescription className="hidden md:flex">
@@ -328,9 +328,11 @@ export default function TxComplete() {
   return (
     <MaintenanceBanner>
       <ContextComponent>
-        <Suspense fallback={<Loading />}>
-          <TxComponent />
-        </Suspense>
+        <div className="flex justify-center">
+          <Suspense fallback={<Loading />}>
+            <TxComponent />
+          </Suspense>
+        </div>
       </ContextComponent>
     </MaintenanceBanner>
   );
