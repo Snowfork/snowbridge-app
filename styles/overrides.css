@@ -419,6 +419,10 @@ button[role="combobox"]:focus-visible,
     -webkit-backdrop-filter: blur(32px);
 }
 
+.glass.more-blur {
+    backdrop-filter: blur(35px);
+}
+
 .glass-sub {
     background: rgba(255, 255, 255, 0.28);
     border-radius: 16px;
@@ -517,4 +521,12 @@ button[role="combobox"][data-state="open"] {
 
 .transfer-spacing {
     margin-top: 20px !important;
+}
+
+.show {
+    visibility: visible;
+}
+
+.hide {
+    visibility: hidden;
 }

@@ -206,7 +206,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           <ChevronsUpDown className="h-3 w-3 opacity-50" />
         </button>
       </DialogTrigger>
-      <DialogContent className="glass">
+      <DialogContent className="glass more-blur">
         <DialogHeader>
           <DialogTitle className="text-center font-medium text-primary">
             Select Token

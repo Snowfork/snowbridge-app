@@ -22,6 +22,7 @@ export const SelectedEthereumWallet: FC<SelectedEthereumWalletProps> = ({
     if (field && account) {
       field.onChange(account);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account]);
 
   if (account !== null && chainId !== null) {

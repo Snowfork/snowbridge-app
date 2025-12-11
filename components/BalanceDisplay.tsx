@@ -34,26 +34,27 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
       console.error(error);
     }
   }, [error]);
-
-  // Show 0 balance when no account is connected
-  if (!sourceAccount) {
-    return (
-      <FormLabel className="text-xs text-right text-muted-foreground px-1">
-        Balances: 0 {tokenMetadata?.symbol ?? ""}
-      </FormLabel>
-    );
-  }
-
   if (error && !balanceInfo) {
     return (
-      <FormLabel className="text-xs text-right text-muted-foreground px-1">
+      <FormLabel
+        className={
+          "text-xs text-right text-muted-foreground px-1 " +
+          (sourceAccount ? " visible" : " hidden")
+        }
+      >
         Balances: Error...
       </FormLabel>
     );
   }
+
   if (balanceInfo === undefined || tokenMetadata === null) {
     return (
-      <FormLabel className="text-xs text-right text-muted-foreground px-1">
+      <FormLabel
+        className={
+          "text-xs text-right text-muted-foreground px-1 " +
+          (sourceAccount ? " show" : " hide")
+        }
+      >
         Balances: Fetching...
       </FormLabel>
     );
@@ -101,14 +102,24 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
     tokenMetadata.symbol == "DOT"
   ) {
     return (
-      <FormLabel className="text-xs text-right text-muted-foreground px-1">
+      <FormLabel
+        className={
+          "text-xs text-right text-muted-foreground px-1 " +
+          (sourceAccount ? " visible" : " hidden")
+        }
+      >
         Balances: {nativeBalance}
       </FormLabel>
     );
   }
 
   return (
-    <FormLabel className="text-xs text-right text-muted-foreground px-1">
+    <FormLabel
+      className={
+        "text-xs text-right text-muted-foreground px-1 " +
+        (sourceAccount ? " visible" : " hidden")
+      }
+    >
       Balances: {nativeBalance} {dotBalance} {!isNativeTransfer ? " " : ""}{" "}
       {tokenBalance} {allowance}
     </FormLabel>

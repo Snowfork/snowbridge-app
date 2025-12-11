@@ -303,13 +303,6 @@ export const TransferForm: FC<TransferFormProps> = ({
   const availableTokens = source.destinations[destination.key].assets;
 
   useEffect(() => {
-    const newSourceAccount =
-      source.type == "ethereum"
-        ? (ethereumAccount ?? undefined)
-        : polkadotAccount?.address;
-    setSourceAccount(newSourceAccount);
-    form.setValue("sourceAccount", newSourceAccount);
-
     let newDestinations = destinations;
     let newSource = source;
     if (source.id !== watchSource) {
@@ -643,7 +636,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                         source.key,
                       )}
                       destination={destination}
-                      sourceAccount={watchSourceAccount}
+                      sourceAccount={watchSourceAccount ?? ""}
                       registry={assetRegistry}
                       token={token}
                       tokenMetadata={tokenMetadata}
@@ -840,7 +833,9 @@ export const TransferForm: FC<TransferFormProps> = ({
             </div>
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
-              <dd className="text-primary">~ 2–5 minutes</dd>
+              <dd className="text-primary">
+                {source.type === "ethereum" ? "~20 minutes" : "~35 minutes"}
+              </dd>
             </div>
           </div>
           <div className="transfer-spacing"></div>
