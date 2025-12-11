@@ -1,12 +1,10 @@
 import { FC } from "react";
 import { ValidationData } from "@/utils/types";
 import { etherscanAddressLink, subscanAccountLink } from "@/lib/explorerLinks";
-import { FeeDisplay } from "../FeeDisplay";
 import {
   estimateDelivery,
   useEstimatedDelivery,
 } from "@/hooks/useEstimatedDelivery";
-import { Table, TableBody, TableRow, TableCell } from "../ui/table";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { formatBalance } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
@@ -77,8 +75,9 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       break;
   }
   const transferType = inferTransferType(data.source, data.destination);
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-3">
       <p className="text-l my-2 glass-pill p-2 flex items-center justify-center gap-1 flex-wrap">
         Send {data.formData.amount} {data.tokenMetadata.symbol} from{" "}
         <Image
@@ -98,109 +97,117 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
         />
         {data.destination.name}
       </p>
-      <div className="flex flex-col">
-        <Table>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-bold">From</TableCell>
-              <TableCell>
-                <span
-                  onClick={() => window.open(sourceAccountLink)}
-                  className="hover:underline cursor-pointer"
-                >
-                  {data.formData.sourceAccount}
-                </span>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">To</TableCell>
-              <TableCell>
-                <span
-                  onClick={() => window.open(beneficiaryLink)}
-                  className="hover:underline cursor-pointer"
-                >
-                  {data.formData.beneficiary}
-                </span>
-              </TableCell>
-            </TableRow>
-            <TableRow
-              hidden={
-                !(
-                  data.tokenMetadata.symbol === data.fee.symbol &&
-                  data.fee.symbol === sourceTokenSymbol
-                )
-              }
-            >
-              <TableCell className="font-bold">Total Amount</TableCell>
-              <TableCell>
-                {formatBalance({
-                  number:
-                    data.amountInSmallestUnit +
-                    data.fee.fee +
-                    (executionFee ?? 0n),
-                  decimals: data.tokenMetadata.decimals,
-                })}{" "}
-                {data.tokenMetadata.symbol}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">Transfer Amount</TableCell>
-              <TableCell>
-                {data.formData.amount} {data.tokenMetadata.symbol}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">Execution Fee</TableCell>
-              <TableCell>
-                {executionFee && sourceTokenSymbol && sourceTokenDecimals
-                  ? formatBalance({
-                      number: executionFee,
-                      decimals: sourceTokenDecimals,
-                    }) + ` ${sourceTokenSymbol}`
-                  : "Calculating..."}{" "}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">Delivery Fee</TableCell>
-              <TableCell>
-                {formatBalance({
-                  number: data.fee.fee,
-                  decimals: data.fee.decimals,
-                })}{" "}
-                {data.fee.symbol}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-bold">Estimated Delivery</TableCell>
-              <TableCell>
-                {" "}
-                <span className="">
-                  {deliveryLatency === null
-                    ? "Calculating..."
-                    : latencyError
-                      ? "Could not estimate delivery"
-                      : estimateDelivery(
-                          data.source,
-                          data.destination,
-                          deliveryLatency,
-                        )}
-                </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  (up to{" "}
-                  {transferType === "toPolkadotV2"
-                    ? "25 minutes"
-                    : transferType === "toEthereumV2"
-                      ? "1 hour 30 minutes"
-                      : transferType === "forInterParachain"
-                        ? "5 minutes"
-                        : "unknown upper bound"}
-                  )
-                </span>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+
+      {/* Sender & Recipient Card */}
+      <div className="glass-sub p-4 space-y-3">
+        <h3 className="text-muted-foreground font-medium">Sender & Recipient</h3>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">From</span>
+          <span
+            onClick={() => window.open(sourceAccountLink)}
+            className="hover:underline cursor-pointer flex items-center gap-2"
+          >
+            <Image
+              src={`/images/${data.source.id.toLowerCase()}.png`}
+              width={16}
+              height={16}
+              alt={data.source.name}
+              className="rounded-full"
+            />
+            {sourceAccountDisplay}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">To</span>
+          <span
+            onClick={() => window.open(beneficiaryLink)}
+            className="hover:underline cursor-pointer flex items-center gap-2"
+          >
+            <Image
+              src={`/images/${data.destination.id.toLowerCase()}.png`}
+              width={16}
+              height={16}
+              alt={data.destination.name}
+              className="rounded-full"
+            />
+            {beneficiaryDisplay}
+          </span>
+        </div>
+      </div>
+
+      {/* Amounts & Fees Card */}
+      <div className="glass-sub p-4 space-y-3">
+        <h3 className="text-muted-foreground font-medium">Fees</h3>
+        {data.tokenMetadata.symbol === data.fee.symbol &&
+          data.fee.symbol === sourceTokenSymbol && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">Total Amount</span>
+            <span>
+              {formatBalance({
+                number:
+                  data.amountInSmallestUnit +
+                  data.fee.fee +
+                  (executionFee ?? 0n),
+                decimals: data.tokenMetadata.decimals,
+              })}{" "}
+              {data.tokenMetadata.symbol}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">Transfer Amount</span>
+          <span>{data.formData.amount} {data.tokenMetadata.symbol}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">Execution Fee</span>
+          <span>
+            {executionFee && sourceTokenSymbol && sourceTokenDecimals
+              ? formatBalance({
+                  number: executionFee,
+                  decimals: sourceTokenDecimals,
+                }) + ` ${sourceTokenSymbol}`
+              : "Calculating..."}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">Delivery Fee</span>
+          <span>
+            {formatBalance({
+              number: data.fee.fee,
+              decimals: data.fee.decimals,
+            })}{" "}
+            {data.fee.symbol}
+          </span>
+        </div>
+      </div>
+
+      <div className="glass-sub p-4 space-y-3">
+        <h3 className="text-muted-foreground font-medium">Delivery</h3>
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">Estimated Delivery</span>
+          <span>
+            {deliveryLatency === null
+              ? "Calculating..."
+              : latencyError
+                ? "Could not estimate"
+                : estimateDelivery(
+                    data.source,
+                    data.destination,
+                    deliveryLatency,
+                  )}
+            <span className="text-muted-foreground">
+              {" "}(up to{" "}
+              {transferType === "toPolkadotV2"
+                ? "25 min"
+                : transferType === "toEthereumV2"
+                  ? "1h 30min"
+                  : transferType === "forInterParachain"
+                    ? "5 min"
+                    : "unknown"}
+              )
+            </span>
+          </span>
+        </div>
       </div>
     </div>
   );
