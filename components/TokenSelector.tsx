@@ -204,9 +204,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           <ChevronsUpDown className="h-3 w-3 opacity-50" />
         </button>
       </DialogTrigger>
-      <DialogContent className="bg-gradient-to-br from-blue-50 to-white border-none shadow-xl">
+      <DialogContent className="glass">
         <DialogHeader>
-          <DialogTitle className="text-center text-gray-900 font-medium">Select Token</DialogTitle>
+          <DialogTitle className="text-center font-medium text-primary">Select Token</DialogTitle>
         </DialogHeader>
         <div className="mb-4">
           <Input
@@ -274,14 +274,14 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                       altImage="token_generic"
                     />
                     <div className="flex flex-col items-start">
-                      <span className="font-medium text-gray-900">{asset.name}</span>
+                      <span className="font-medium" style={{ color: '#212d41' }}>{asset.name}</span>
                       <span className="text-xs text-gray-500">
                         {asset.symbol}
                       </span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-sm font-medium text-gray-900">{formattedBalance}</span>
+                    <span className="text-sm font-medium" style={{ color: '#212d41' }}>{formattedBalance}</span>
                     {usdValue && (
                       <span className="text-xs text-gray-500">
                         {usdValue}

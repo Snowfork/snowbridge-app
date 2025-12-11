@@ -60,7 +60,7 @@ export function Footer() {
         </a>
       </div>
       <div className="text-xs py-2">
-        Copyright © Snowfork 2024
+        Copyright © Snowfork {new Date().getFullYear()}
         {envName !== "polkadot_mainnet" && ` (env: ${envName})`}
       </div>
     </>

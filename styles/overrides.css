@@ -235,22 +235,9 @@ body::before {
     100% { background-position: 0% 50%; }
 }
 
-body > * {
-    position: relative;
-    z-index: 1;
-}
-
-/* Ensure Web3Modal/AppKit appears above everything */
-w3m-modal {
-    z-index: 9999 !important;
-}
-
-w3m-modal.open {
-    position: fixed !important;
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
+#react-portal-modal-container,
+#react-portal-modal-container * {
+    z-index: 10000 !important;
 }
 
 .text-card-foreground {
@@ -338,6 +325,27 @@ div[role="menubar"],
 .walletModal {
     background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);
     color: #173651;
+}
+
+/* Blur backdrop when wallet modal is open */
+div[role="menubar"] button[data-state="open"]::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.1);
+    z-index: 30;
+    pointer-events: none;
+}
+
+/* Ensure Polkadot wallet dialog appears above blur */
+[data-talisman-connect-root] {
+    z-index: 9999 !important;
+}
+
+[data-talisman-connect-root] * {
+    position: relative;
+    z-index: 1;
 }
 
 .outline-button, .outline-button .lucide {
