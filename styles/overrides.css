@@ -177,13 +177,6 @@ button.action-button:disabled {
     transform: none;
 }
 
-.font-highlight {
-    padding: 5px;
-    text-align: center;
-    background: linear-gradient(to bottom, #396f9f, #6496ad);
-    color: #ffffff;
-}
-
 button[role="combobox"], input:not(.amountInput), .fake-dropdown {
     background-color: rgba(255, 255, 255, 0.3) !important;
     color: #212d41;
@@ -437,6 +430,7 @@ button[role="combobox"]:focus-visible,
     border: 1px solid rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
+    text-align: center;
 }
 
 .label-glass {
@@ -529,4 +523,62 @@ button[role="combobox"][data-state="open"] {
 
 .hide {
     visibility: hidden;
+}
+
+
+
+.glass-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 28px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 24px;
+
+    background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.35) 0%,
+            rgba(255, 255, 255, 0.20) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    box-shadow: 0 12px 32px rgba(30, 40, 80, 0.12);
+    cursor: pointer;
+    transition: all 160ms ease;
+}
+
+/* ⚡ More dramatic, still elegant hover */
+.glass-button:hover {
+    background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.55) 0%,
+            rgba(255, 255, 255, 0.32) 100%
+    );
+
+    /* Stronger border highlight */
+    border-color: rgba(255, 255, 255, 0.9);
+
+    /* Noticeably stronger shadow */
+    box-shadow:
+            0 20px 48px rgba(30, 40, 80, 0.18),
+            inset 0 0 8px rgba(255, 255, 255, 0.35);
+
+    transform: translateY(-1px);
+}
+
+/* Pressed */
+.glass-button:active {
+    transform: translateY(0) scale(0.97);
+    background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.28) 0%,
+            rgba(255, 255, 255, 0.15) 100%
+    );
+    box-shadow:
+            0 8px 20px rgba(30, 40, 80, 0.12),
+            inset 0 0 10px rgba(255, 255, 255, 0.45);
+    border-color: rgba(255, 255, 255, 0.55);
 }

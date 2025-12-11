@@ -11,7 +11,7 @@ interface TransferBusyProps {
 export const TransferBusy: FC<TransferBusyProps> = ({ message, onBack }) => {
   return (
     <div className="flex flex-col">
-      <div className="items-center flex flex-col mt-20">
+      <div className="items-center flex flex-col mt-5">
         <Image
           className="animate-bounce mb-2"
           src="/icon.svg"
@@ -20,7 +20,7 @@ export const TransferBusy: FC<TransferBusyProps> = ({ message, onBack }) => {
           alt="Smiling bridge"
         />
         <div>{message}</div>
-        <Button className="mt-5" variant="secondary" onClick={onBack}>
+        <Button className="mt-5 glass-button" variant="secondary" onClick={onBack}>
           Cancel
         </Button>
       </div>

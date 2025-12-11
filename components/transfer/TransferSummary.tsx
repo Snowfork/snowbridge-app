@@ -10,6 +10,7 @@ import { Table, TableBody, TableRow, TableCell } from "../ui/table";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { formatBalance } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
+import Image from "next/image";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -78,9 +79,24 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   const transferType = inferTransferType(data.source, data.destination);
   return (
     <div className="flex flex-col">
-      <p className="text-l my-2 font-semibold font-highlight">
+      <p className="text-l my-2 glass-pill p-2 flex items-center justify-center gap-1 flex-wrap">
         Send {data.formData.amount} {data.tokenMetadata.symbol} from{" "}
-        {data.source.name} to {data.destination.name}
+        <Image
+          src={`/images/${data.source.id.toLowerCase()}.png`}
+          width={20}
+          height={20}
+          alt={data.source.name}
+          className="inline-block rounded-full"
+        />
+        {data.source.name} to{" "}
+        <Image
+          src={`/images/${data.destination.id.toLowerCase()}.png`}
+          width={20}
+          height={20}
+          alt={data.destination.name}
+          className="inline-block rounded-full"
+        />
+        {data.destination.name}
       </p>
       <div className="flex flex-col">
         <Table>

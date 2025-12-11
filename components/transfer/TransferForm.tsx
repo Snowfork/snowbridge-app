@@ -810,6 +810,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                       />
                     </div>
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />

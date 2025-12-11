@@ -10,8 +10,48 @@ export function Footer() {
   const setAccepted = useSetAtom(acceptedTermsOfUseAtom);
   return (
     <>
-      <div className="text-sm mb-4 flex items-center gap-2">
-        Powered and Funded by{" "}
+      <div className="text-xs mb-2">
+        <a className="footer-item glass-pill" onClick={() => setAccepted(false)}>
+          Terms of Use
+        </a>
+        <a
+          className="footer-item glass-pill"
+          href="https://github.com/Snowfork/snowbridge"
+          target="_blank"
+        >
+          GitHub
+        </a>
+        <a
+          className="footer-item glass-pill"
+          href="https://github.com/Snowfork/snowbridge-app/issues/new/choose"
+          target="_blank"
+        >
+          Report an issue
+        </a>
+        <a
+          className="footer-item glass-pill"
+          href="https://docs.snowbridge.network/"
+          target="_blank"
+        >
+          Docs
+        </a>
+        <a
+          className="footer-item glass-pill"
+          href="https://docs.snowbridge.network/security/bug-bounty"
+          target="_blank"
+        >
+          Bug bounty
+        </a>
+        <a
+          className="footer-item glass-pill"
+          href="https://dune.com/substrate/snowbridge"
+          target="_blank"
+        >
+          Dune Dashboard
+        </a>
+      </div>
+      <div className="text-xs mt-4 flex items-center gap-2">
+        Copyright © Snowfork {new Date().getFullYear()} / Powered and Funded by{" "}
         <Image
           src="/images/polkadot_logo.png"
           width={80}
@@ -19,48 +59,7 @@ export function Footer() {
           alt="Polkadot"
         />
       </div>
-      <div className="text-xs mb-2">
-        <a className="footer-item" onClick={() => setAccepted(false)}>
-          Terms of Use
-        </a>
-        <a
-          className="footer-item"
-          href="https://github.com/Snowfork/snowbridge"
-          target="_blank"
-        >
-          GitHub
-        </a>
-        <a
-          className="footer-item"
-          href="https://github.com/Snowfork/snowbridge-app/issues/new/choose"
-          target="_blank"
-        >
-          Report an issue
-        </a>
-        <a
-          className="footer-item"
-          href="https://docs.snowbridge.network/"
-          target="_blank"
-        >
-          Docs
-        </a>
-        <a
-          className="footer-item"
-          href="https://docs.snowbridge.network/security/bug-bounty"
-          target="_blank"
-        >
-          Bug bounty
-        </a>
-        <a
-          className="footer-item"
-          href="https://dune.com/substrate/snowbridge"
-          target="_blank"
-        >
-          Dune Dashboard
-        </a>
-      </div>
       <div className="text-xs py-2">
-        Copyright © Snowfork {new Date().getFullYear()}
         {envName !== "polkadot_mainnet" && ` (env: ${envName})`}
       </div>
     </>
