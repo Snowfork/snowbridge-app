@@ -17,11 +17,9 @@ body {
 /* Menubar */
 div[role="menubar"] {
     border: none;
-    padding: 0;
     background: transparent;
     display: flex;
     align-items: center;
-    gap: 1rem;
 }
 
 /* Sliding indicator */
@@ -154,7 +152,6 @@ button.action-button {
     box-shadow: 0 12px 30px rgb(245, 168, 157);
     padding: 12px 24px;
     border: none;
-    font-weight: 600;
     letter-spacing: 0.02em;
     transition: all 0.2s ease;
 }
@@ -526,10 +523,10 @@ button[role="combobox"][data-state="open"] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 28px;
-    font-size: 16px;
+    padding: 12px 24px;
+    font-size: 14px;
     font-weight: 500;
-    border-radius: 24px;
+    border-radius: 15px;
 
     background: linear-gradient(
             135deg,
@@ -545,7 +542,6 @@ button[role="combobox"][data-state="open"] {
     transition: all 160ms ease;
 }
 
-/* ⚡ More dramatic, still elegant hover */
 .glass-button:hover {
     background: linear-gradient(
             135deg,
@@ -562,9 +558,9 @@ button[role="combobox"][data-state="open"] {
             inset 0 0 8px rgba(255, 255, 255, 0.35);
 
     transform: translateY(-1px);
+    text-decoration: none;
 }
 
-/* Pressed */
 .glass-button:active {
     transform: translateY(0) scale(0.97);
     background: linear-gradient(
@@ -576,4 +572,18 @@ button[role="combobox"][data-state="open"] {
             0 8px 20px rgba(30, 40, 80, 0.12),
             inset 0 0 10px rgba(255, 255, 255, 0.45);
     border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Snowflake loader animation */
+@keyframes spin-slow {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
 }

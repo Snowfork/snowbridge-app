@@ -35,8 +35,8 @@ import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
-import { LucideLoaderCircle } from "lucide-react";
 import { RegistryContext } from "@/app/providers";
+import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { isHex, u8aToHex } from "@polkadot/util";
@@ -350,10 +350,5 @@ export const TransferComponent: FC = () => {
 };
 
 const Loading = () => {
-  return (
-    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
-      Loading Transfer Form{" "}
-      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-    </div>
-  );
+  return <SnowflakeLoader size="md" />;
 };

@@ -192,7 +192,7 @@ export const Menu: FC = () => {
         )}
         {envName === "polkadot_mainnet" ? (
           <Link href="/kusama" className="flex items-center px-3 py-1.5">
-            <p className="hidden md:flex glimmer-text">To Kusama</p>
+            <p className="hidden md:flex glimmer-text">Kusama</p>
           </Link>
         ) : null}
         <Link href="/history" className="flex items-center px-3 py-1.5">

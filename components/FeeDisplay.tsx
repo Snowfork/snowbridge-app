@@ -1,7 +1,8 @@
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatBalance } from "@/utils/formatting";
+import { fetchTokenPrices } from "@/utils/coindesk";
 import { assetsV2 } from "@snowbridge/api";
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 
 interface FeeDisplayProps {
   source: assetsV2.TransferLocation;
@@ -19,11 +20,40 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   className,
 }) => {
   const { data: feeInfo, error } = useBridgeFeeInfo(source, destination, token);
+  const [usdValue, setUsdValue] = useState<string | null>(null);
+
   useEffect(() => {
     if (error) {
       console.error(error);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (!feeInfo) {
+      setUsdValue(null);
+      return;
+    }
+
+    const fetchPrice = async () => {
+      try {
+        const prices = await fetchTokenPrices([feeInfo.symbol]);
+        const price = prices[feeInfo.symbol.toUpperCase()];
+        if (price) {
+          const feeInTokens =
+            Number(feeInfo.totalFee) / Math.pow(10, feeInfo.decimals);
+          const usdAmount = feeInTokens * price;
+          setUsdValue(`$${usdAmount.toFixed(2)}`);
+        } else {
+          setUsdValue(null);
+        }
+      } catch {
+        setUsdValue(null);
+      }
+    };
+
+    fetchPrice();
+  }, [feeInfo]);
+
   if (error && !feeInfo) {
     return <div className={className}>Error...</div>;
   }
@@ -39,6 +69,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   return (
     <div className={className}>
       {balance} {feeInfo.symbol}
+      {usdValue && <span className="text-muted-foreground ml-1">({usdValue})</span>}
     </div>
   );
 };

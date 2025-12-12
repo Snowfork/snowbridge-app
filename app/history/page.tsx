@@ -1,6 +1,7 @@
 "use client";
 
 import { ErrorDialog } from "@/components/ErrorDialog";
+import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
   formatTokenData,
   getChainIdentifiers,
@@ -388,13 +389,13 @@ const transferDetail = (
           </li>
         ))}
       </ul>
-      <div hidden={!transfer.isWalletTransaction} className="p-2">
-        <Button
+      <div hidden={!transfer.isWalletTransaction} className="p-2 flex justify-center">
+        <Button className={"action-button"}
           onClick={() => {
             router.push(`txcomplete?messageId=${transfer.id}`);
           }}
         >
-          Post Transfer Steps
+          See more
         </Button>
       </div>
     </div>
@@ -697,10 +698,5 @@ export default function History() {
 }
 
 const Loading = () => {
-  return (
-    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
-      Fetching Transfer History{" "}
-      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-    </div>
-  );
+  return <SnowflakeLoader size="md" />;
 };

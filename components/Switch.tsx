@@ -397,7 +397,7 @@ export const SwitchComponent: FC = () => {
 
   return (
     <>
-      <Card className="w-auto md:w-2/3 glass">
+      <Card className="w-full max-w-2xl glass border-white/60">
         <CardHeader>
           <CardTitle>Polar Path</CardTitle>
           <CardDescription className="hidden md:flex">
@@ -491,10 +491,7 @@ export const SwitchComponent: FC = () => {
                 name="sourceAccount"
                 render={({ field }) => (
                   <FormItem {...field}>
-                    <FormLabel>Source Account</FormLabel>
-                    <FormDescription className="hidden md:flex">
-                      Account on the source.
-                    </FormDescription>
+                    <FormLabel>From Account</FormLabel>
                     <FormControl>
                       <>
                         <SelectedPolkadotAccount
@@ -531,10 +528,7 @@ export const SwitchComponent: FC = () => {
                 name="beneficiary"
                 render={({ field }) => (
                   <FormItem {...field}>
-                    <FormLabel>Beneficiary</FormLabel>
-                    <FormDescription className="hidden md:flex">
-                      Receiver account on the destination.
-                    </FormDescription>
+                    <FormLabel>To Account</FormLabel>
                     <FormControl>
                       <SelectAccount
                         accounts={beneficiaries}

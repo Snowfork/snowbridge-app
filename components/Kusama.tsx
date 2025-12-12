@@ -61,7 +61,6 @@ import { toast } from "sonner";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { KusamaFeeDisplay } from "@/components/ui/KusamaFeeDisplay";
 import { SendErrorDialog } from "@/components/SendErrorDialog";
-import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { SelectAccount } from "@/components/SelectAccount";
 import { BusyDialog } from "./BusyDialog";
@@ -69,6 +68,10 @@ import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
 import { formatBalance } from "@/utils/formatting";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 import { RegistryContext } from "@/app/providers";
+import { ArrowRight } from "lucide-react";
+import { KusamaTokenSelector } from "./KusamaTokenSelector";
+import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
+import { fetchTokenPrices } from "@/utils/coindesk";
 
 export const KusamaComponent: FC = () => {
   const router = useRouter();
@@ -103,6 +106,45 @@ export const KusamaComponent: FC = () => {
     assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId]
       .assets;
   const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId, watchToken);
+  const { data: balanceInfo } = useKusamaTokenBalance(
+    watchSourceAccount,
+    sourceId,
+    watchToken,
+  );
+
+  // USD value for amount
+  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
+
+  // Get token metadata for USD calculation
+  const tokenMetadata = watchToken
+    ? assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
+        watchToken.toLowerCase()
+      ]
+    : null;
+
+  useEffect(() => {
+    if (!amount || !tokenMetadata || Number(amount) === 0) {
+      setAmountUsdValue(null);
+      return;
+    }
+
+    const calculateUsd = async () => {
+      try {
+        const prices = await fetchTokenPrices([tokenMetadata.symbol]);
+        const price = prices[tokenMetadata.symbol.toUpperCase()];
+        if (price) {
+          const usdAmount = Number(amount) * price;
+          setAmountUsdValue(`≈ $${usdAmount.toFixed(2)}`);
+        } else {
+          setAmountUsdValue(null);
+        }
+      } catch {
+        setAmountUsdValue(null);
+      }
+    };
+
+    calculateUsd();
+  }, [amount, tokenMetadata]);
 
   useEffect(() => {
     const sourceAccounts =
@@ -354,7 +396,7 @@ export const KusamaComponent: FC = () => {
 
   return (
     <>
-      <Card className="w-auto md:w-2/3 glass">
+      <Card className="w-full max-w-[700px] glass border-white/60">
         <CardHeader>
           <CardTitle>Transfer to Kusama</CardTitle>
           <CardDescription className="hidden md:flex">
@@ -368,66 +410,26 @@ export const KusamaComponent: FC = () => {
               onSubmit={form.handleSubmit(() => onSubmit())}
               className="space-y-2"
             >
-              <div className="grid grid-cols-2 space-x-2">
-                <FormField
-                  control={form.control}
-                  name="source"
-                  render={({ field }) => (
-                    <FormItem {...field}>
-                      <FormLabel>From</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a source" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectItem
-                                key={AssetHub.Polkadot}
-                                value={AssetHub.Polkadot}
-                              >
-                                <SelectItemWithIcon
-                                  label="Polkadot Asset Hub"
-                                  image={AssetHub.Polkadot}
-                                />
-                              </SelectItem>
-                              <SelectItem
-                                key={AssetHub.Kusama}
-                                value={AssetHub.Kusama}
-                              >
-                                <SelectItemWithIcon
-                                  label="Kusama Asset Hub"
-                                  image={AssetHub.Kusama}
-                                />
-                              </SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="destination"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>To</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a destination" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              {sourceId !== AssetHub.Polkadot ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 space-x-2">
+                  <FormLabel>Route</FormLabel>
+                </div>
+                <div className="glass-sub px-4 py-3 flex items-center justify-between gap-3">
+                  <FormField
+                    control={form.control}
+                    name="source"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                              <SelectValue placeholder="Select source" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
                                 <SelectItem
                                   key={AssetHub.Polkadot}
                                   value={AssetHub.Polkadot}
@@ -437,7 +439,6 @@ export const KusamaComponent: FC = () => {
                                     image={AssetHub.Polkadot}
                                   />
                                 </SelectItem>
-                              ) : (
                                 <SelectItem
                                   key={AssetHub.Kusama}
                                   value={AssetHub.Kusama}
@@ -447,50 +448,107 @@ export const KusamaComponent: FC = () => {
                                     image={AssetHub.Kusama}
                                   />
                                 </SelectItem>
-                              )}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-full bg-white/[0.28] hover:bg-white/40 p-2 h-auto"
+                    onClick={() => {
+                      const currentSource = form.getValues("source");
+                      const currentDest = form.getValues("destination");
+                      form.setValue("source", currentDest);
+                      form.setValue("destination", currentSource);
+                    }}
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+
+                  <FormField
+                    control={form.control}
+                    name="destination"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                              <SelectValue placeholder="Select destination" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                {sourceId !== AssetHub.Polkadot ? (
+                                  <SelectItem
+                                    key={AssetHub.Polkadot}
+                                    value={AssetHub.Polkadot}
+                                  >
+                                    <SelectItemWithIcon
+                                      label="Polkadot Asset Hub"
+                                      image={AssetHub.Polkadot}
+                                    />
+                                  </SelectItem>
+                                ) : (
+                                  <SelectItem
+                                    key={AssetHub.Kusama}
+                                    value={AssetHub.Kusama}
+                                  >
+                                    <SelectItemWithIcon
+                                      label="Kusama Asset Hub"
+                                      image={AssetHub.Kusama}
+                                    />
+                                  </SelectItem>
+                                )}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <FormField
                 control={form.control}
                 name="sourceAccount"
                 render={({ field }) => (
-                  <FormItem {...field}>
-                    <FormLabel>From Account</FormLabel>
-                    <FormDescription className="hidden md:flex">
-                      Account on the source.
-                    </FormDescription>
-                    <FormControl>
-                      <>
-                        <SelectedPolkadotAccount
+                  <FormItem {...field} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>From Account</FormLabel>
+                      <div className="text-right">
+                        <KusamaBalanceDisplay
                           source={sourceId}
-                          ss58Format={assetRegistry.relaychain.ss58Format}
-                          polkadotAccounts={
-                            polkadotAccounts?.filter(
-                              filterByAccountType("AccountId32"),
-                            ) ?? []
-                          }
-                          polkadotAccount={watchSourceAccount}
-                          onValueChange={field.onChange}
-                          placeholder={"Connect wallet to select an account"}
-                          walletName={polkadotWallet?.title}
+                          sourceAccount={watchSourceAccount}
+                          token={watchToken}
+                          displayDecimals={8}
                         />
-                        <div className={"flex flex-row-reverse"}>
-                          <KusamaBalanceDisplay
-                            source={sourceId}
-                            sourceAccount={watchSourceAccount}
-                            token={watchToken}
-                            displayDecimals={8}
-                          />
-                        </div>
-                      </>
+                      </div>
+                    </div>
+                    <FormControl>
+                      <SelectedPolkadotAccount
+                        source={sourceId}
+                        ss58Format={assetRegistry.relaychain.ss58Format}
+                        polkadotAccounts={
+                          polkadotAccounts?.filter(
+                            filterByAccountType("AccountId32"),
+                          ) ?? []
+                        }
+                        polkadotAccount={watchSourceAccount}
+                        onValueChange={field.onChange}
+                        placeholder={"Connect wallet to select an account"}
+                        walletName={polkadotWallet?.title}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -503,9 +561,6 @@ export const KusamaComponent: FC = () => {
                 render={({ field }) => (
                   <FormItem {...field}>
                     <FormLabel>To Account</FormLabel>
-                    <FormDescription className="hidden md:flex">
-                      Receiver account on the destination.
-                    </FormDescription>
                     <FormControl>
                       <SelectAccount
                         accounts={beneficiaries}
@@ -520,86 +575,89 @@ export const KusamaComponent: FC = () => {
                 )}
               />
 
-              <div className="flex space-x-2">
-                <div className="w-2/3">
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="string"
-                            placeholder="0.0"
-                            className="text-right"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="w-1/3">
-                  <FormField
-                    control={form.control}
-                    name="token"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="invisible">Token</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
+              <div>
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <div className="amountContainer flex items-center gap-2 w-full px-3 py-3">
+                          <div className="flex-1 flex flex-col">
+                            <input
+                              className="amountInput p2 text-left text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                              type="string"
+                              placeholder="0.0"
+                              {...field}
+                            />
+                            {amountUsdValue && (
+                              <div className="text-sm text-muted-foreground pl-2">
+                                {amountUsdValue}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            className="h-7 bg-dark-blue px-3 py-1 text-xs text-white hover:bg-black/90 flex-shrink-0 rounded-full border-0"
+                            onClick={() => {
+                              if (balanceInfo && balanceInfo.tokenBalance) {
+                                const maxBalance = formatBalance({
+                                  number: balanceInfo.tokenBalance,
+                                  decimals: Number(balanceInfo.tokenDecimals),
+                                  displayDecimals: Number(balanceInfo.tokenDecimals),
+                                });
+                                form.setValue("amount", maxBalance);
+                              }
+                            }}
+                            disabled={!balanceInfo || !balanceInfo.tokenBalance}
                           >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a token" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                {Object.values(tokens ?? {}).map((t) => {
-                                  const assetId = t.token?.toLowerCase();
-                                  const asset =
-                                    assetId &&
-                                    assetRegistry.ethereumChains?.[
-                                      assetRegistry.ethChainId
-                                    ]?.assets?.[assetId];
-                                  // Skip rendering if asset or assetId is missing
-                                  if (!assetId || !asset) return null;
-
-                                  return (
-                                    <SelectItem key={assetId} value={assetId}>
-                                      <SelectItemWithIcon
-                                        label={asset.name}
-                                        image={asset.symbol}
-                                        altImage="token_generic"
-                                      />
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectGroup>
-                            </SelectContent>
-                            <FormMessage />
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              <div className="text-sm text-center text-muted-foreground px-1 mt-1">
-                Delivery Fee:{" "}
-                <KusamaFeeDisplay
-                  className="inline"
-                  source={sourceId}
-                  destination={destinationId}
-                  token={watchToken}
-                  displayDecimals={8}
+                            Max
+                          </Button>
+                          <FormField
+                            control={form.control}
+                            name="token"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <KusamaTokenSelector
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    tokens={tokens}
+                                    assetRegistry={assetRegistry}
+                                    sourceAccount={watchSourceAccount}
+                                    source={sourceId}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-              <br />
-
+              <div className="glass-sub p-4 space-y-2 card-shadow transfer-spacing">
+                <div className="flex items-center justify-between text-sm">
+                  <dt className="text-muted-glass">Delivery fee</dt>
+                  <dd className="text-primary">
+                    <KusamaFeeDisplay
+                      className="inline"
+                      source={sourceId}
+                      destination={destinationId}
+                      token={watchToken}
+                      displayDecimals={8}
+                    />
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <dt className="text-muted-glass">Estimated delivery time</dt>
+                  <dd className="text-primary">~1-2 minutes</dd>
+                </div>
+              </div>
+              <div className="transfer-spacing"></div>
               {!polkadotAccounts || polkadotAccounts.length === 0 ? (
                 <ConnectPolkadotWalletButton variant="default" />
               ) : (

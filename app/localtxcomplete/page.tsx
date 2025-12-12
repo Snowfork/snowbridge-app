@@ -6,6 +6,7 @@ import {
   TransferTitle,
 } from "@/components/history/TransferTitle";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
   Card,
   CardContent,
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
-import { LucideLoaderCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
@@ -32,12 +32,7 @@ import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/api/dist/assets_v2";
 
 const Loading = () => {
-  return (
-    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
-      Fetching Transfer Status{" "}
-      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-    </div>
-  );
+  return <SnowflakeLoader size="md" />;
 };
 
 interface TxCardProps {
@@ -80,7 +75,7 @@ function TxCard(props: TxCardProps) {
   }
 
   return (
-    <Card className="glass w-[360px] md:w-2/3">
+    <Card className="w-full max-w-2xl glass border-white/60">
       <CardHeader>
         <CardTitle>Nice! You did it.</CardTitle>
         <CardDescription className="hidden md:flex">
@@ -122,7 +117,7 @@ function TxCard(props: TxCardProps) {
               ))}
             </ul>
           </div>
-          <div className="flex justify-end items-center">
+          <div className="flex justify-center items-center gap-3 mt-4">
             <RefreshButton
               onClick={refresh}
               className={cn(
@@ -131,8 +126,8 @@ function TxCard(props: TxCardProps) {
                   : "glass-button",
               )}
             />
-            <Link href="/history" className={"glass-button"}>
-              <Button variant="link">Transaction History</Button>
+            <Link href="/history">
+              <Button className="action-button">Transaction History</Button>
             </Link>
           </div>
         </div>

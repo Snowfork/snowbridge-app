@@ -46,6 +46,7 @@ import {
 } from "../ui/select";
 import { track } from "@vercel/analytics";
 import { validateOFAC } from "@/utils/validateOFAC";
+import { fetchTokenPrices } from "@/utils/coindesk";
 import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -285,6 +286,9 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
+  const watchAmount = form.watch("amount");
+  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
+
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
     destination,
@@ -386,6 +390,31 @@ export const TransferForm: FC<TransferFormProps> = ({
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       token.toLowerCase()
     ];
+
+  // Calculate USD value for amount
+  useEffect(() => {
+    if (!watchAmount || !tokenMetadata || Number(watchAmount) === 0) {
+      setAmountUsdValue(null);
+      return;
+    }
+
+    const calculateUsd = async () => {
+      try {
+        const prices = await fetchTokenPrices([tokenMetadata.symbol]);
+        const price = prices[tokenMetadata.symbol.toUpperCase()];
+        if (price) {
+          const usdAmount = Number(watchAmount) * price;
+          setAmountUsdValue(`≈ $${usdAmount.toFixed(2)}`);
+        } else {
+          setAmountUsdValue(null);
+        }
+      } catch {
+        setAmountUsdValue(null);
+      }
+    };
+
+    calculateUsd();
+  }, [watchAmount, tokenMetadata]);
 
   const submit = useCallback(
     async (formData: TransferFormData) => {
@@ -758,13 +787,20 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormItem className="space-y-2">
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <div className="amountContainer flex items-center gap-2 h-18 w-full px-3 py-3">
-                      <input
-                        className="amountInput p2 text-left text-3xl font-medium flex-1 bg-transparent border-0 outline-none placeholder:text-muted-foreground"
-                        type="string"
-                        placeholder="0.0"
-                        {...field}
-                      />
+                    <div className="amountContainer flex items-center gap-2 w-full px-3 py-3">
+                      <div className="flex-1 flex flex-col">
+                        <input
+                          className="amountInput p2 text-left text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                          type="string"
+                          placeholder="0.0"
+                          {...field}
+                        />
+                        {amountUsdValue && (
+                          <div className="text-sm text-muted-foreground pl-2">
+                            {amountUsdValue}
+                          </div>
+                        )}
+                      </div>
                       <Button
                         type="button"
                         className="h-7 bg-dark-blue px-3 py-1 text-xs text-white hover:bg-black/90 flex-shrink-0 rounded-full border-0"
