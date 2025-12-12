@@ -562,7 +562,7 @@ export default function History() {
   return (
     <Suspense fallback={<Loading />}>
       <div className="flex justify-center">
-        <Card className="w-full md:w-2/3 min-h-[460px] glass">
+        <Card className="w-full max-w-3xl min-h-[460px] glass">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>History</CardTitle>
@@ -607,7 +607,7 @@ export default function History() {
                   value={v.id?.toString() ?? i.toString()}
                 >
                   <AccordionTrigger>
-                    <TransferTitle transfer={v} />
+                    <TransferTitle transfer={v} showGlobeForGlobal={!v.isWalletTransaction} />
                   </AccordionTrigger>
                   <AccordionContent>
                     {transferDetail(v, assetRegistry, router)}

@@ -1,7 +1,7 @@
 import { Transfer } from "@/store/transferHistory";
-import { Badge } from "../ui/badge";
 import { historyV2 } from "@snowbridge/api";
 import { cn } from "@/lib/utils";
+import { Check, Loader2, AlertCircle } from "lucide-react";
 
 interface TransferStatusBadgeProps {
   className?: string;
@@ -11,22 +11,34 @@ export function TransferStatusBadge({
   className,
   transfer,
 }: TransferStatusBadgeProps) {
-  const badgeStyle =
-    historyV2.TransferStatus.Failed == transfer.status
-      ? " bg-destructive"
-      : historyV2.TransferStatus.Pending == transfer.status
-        ? ""
-        : "bg-secondary";
+  const statusConfig = {
+    [historyV2.TransferStatus.Complete]: {
+      icon: <Check size={16} />,
+      style: "bg-emerald-500/20 border-white/40 text-emerald-200",
+    },
+    [historyV2.TransferStatus.Pending]: {
+      icon: <Loader2 size={16} className="animate-spin" />,
+      style: "bg-amber-500/20 border-white/40 text-amber-200",
+    },
+    [historyV2.TransferStatus.Failed]: {
+      icon: <AlertCircle size={16} />,
+      style: "bg-red-500/20 border-white/40 text-red-200",
+    },
+  };
+
+  const config = statusConfig[transfer.status];
+
   return (
-    <Badge
-      variant="outline"
+    <span
       className={cn(
-        "px-4 mr-2 col-span-1 place-self-center fancy-glass-pill badge font-light",
-        badgeStyle,
+        "inline-flex items-center justify-center w-7 h-7 rounded-full",
+        "backdrop-blur-sm border",
+        config.style,
         className,
       )}
+      title={historyV2.TransferStatus[transfer.status]}
     >
-      {historyV2.TransferStatus[transfer.status]}
-    </Badge>
+      {config.icon}
+    </span>
   );
 }
