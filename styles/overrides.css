@@ -345,11 +345,6 @@ div[role="menubar"] button[data-state="open"]::before {
     color: #173651;
 }
 
-.main-heading{
-    color: #051821;
-    padding: 10px;
-}
-
 .border-b, .w-full.accordian {
     border-color: #d6f2ff;
 }

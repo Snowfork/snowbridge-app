@@ -51,13 +51,11 @@ export default async function RootLayout({
               <div className="flex items-center">
                 <Image
                   src="/images/logo-blue.png"
-                  width={58}
-                  height={58}
+                  width={40}
+                  height={40}
                   alt="Snowbridge"
                 />
-                <h1 className="text-3xl font-semibold lg:text-4xl px-2 main-heading ml-2">
-                  Snowbridge
-                </h1>
+                <h1 className="text-2xl px-2 ml-2 mt-1">Snowbridge</h1>
               </div>
               <Menu />
             </header>

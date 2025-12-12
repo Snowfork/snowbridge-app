@@ -175,9 +175,9 @@ export const TransferComponent: FC = () => {
   ) => {
     const req = requestId.current;
     const transferType = inferTransferType(data.source, data.destination);
-    let error = "Some preflight checks failed...";
+    let error = "Pre-transfer check failed.";
     try {
-      setBusy("Doing some preflight checks...");
+      setBusy("Doing some pre-transfer checks...");
       track("Validate Send", { ...data?.formData });
 
       setValidationData(data);
