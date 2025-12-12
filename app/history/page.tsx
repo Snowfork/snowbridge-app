@@ -563,39 +563,35 @@ export default function History() {
     <Suspense fallback={<Loading />}>
       <div className="flex justify-center">
         <Card className="w-full md:w-2/3 min-h-[460px] glass">
-          <CardHeader>
-            <CardTitle>History</CardTitle>
-            <CardDescription>
-              {showGlobal ? "Global transfer history." : "My transfer history."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex w-full pb-4">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>History</CardTitle>
+              <CardDescription>
+                {showGlobal ? "Global transfer history." : "My transfer history."}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
               <Button
-                variant="link"
-                size="sm"
+                variant="ghost"
+                size="icon"
                 disabled={isRefreshing}
                 onClick={() => mutate()}
+                className="h-8 w-8"
+                title="Refresh"
               >
-                <div className="flex gap-2 place-items-center">
-                  <LucideRefreshCw />
-                  <p>{isRefreshing ? "Refreshing" : "Refresh"}</p>
-                </div>
+                <LucideRefreshCw className={isRefreshing ? "animate-spin" : ""} size={18} />
               </Button>
               <Toggle
-                className="flex gap-2 outline-button"
-                defaultPressed={false}
                 pressed={showGlobal}
                 onPressedChange={(p) => setShowGlobal(p)}
-                size="sm"
+                className="h-8 w-8 p-0"
+                title={showGlobal ? "Show my transfers" : "Show global transfers"}
               >
-                <div className="flex gap-2 place-items-center">
-                  <LucideGlobe />
-                  <p>Show global Transfers</p>
-                </div>
+                <LucideGlobe size={18} />
               </Toggle>
             </div>
-            <hr />
+          </CardHeader>
+          <CardContent>
             <Accordion
               type="single"
               className="w-full accordian"
