@@ -301,7 +301,7 @@ div[role="menubar"],
     background-color: #f87e7e !important;
 }
 .badge.bg-secondary {
-    background-color: #a9f87e !important;
+    background-color: #54fed4 !important;
 }
 
 .text-green-700 {
@@ -586,4 +586,29 @@ button[role="combobox"][data-state="open"] {
 
 .animate-spin-slow {
     animation: spin-slow 3s linear infinite;
+}
+
+.fancy-glass-pill {
+    background:
+            linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.30),
+                    rgba(255, 255, 255, 0.4)
+            );
+    background-color: rgba(255, 255, 255, 0.18);
+
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+
+    backdrop-filter: blur(28px) saturate(1.15);
+    -webkit-backdrop-filter: blur(28px) saturate(1.15);
+
+    box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.55),   /* top edge highlight */
+            inset 0 -1px 0 rgba(255, 255, 255, 0.18), /* bottom edge falloff */
+            0 10px 10px rgba(111, 122, 181, 0.12);        /* lift from background */
+
+    text-align: center;
+
+    color: rgba(12, 24, 40, 0.9);
 }
