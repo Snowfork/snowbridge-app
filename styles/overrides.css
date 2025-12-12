@@ -416,7 +416,7 @@ button[role="combobox"]:focus-visible,
     -webkit-backdrop-filter: blur(28px);
 }
 
-.glass-pill {
+.glass-pill, .glass-pill-hover:hover {
     background: rgba(255, 255, 255, 0.18);
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.6);
