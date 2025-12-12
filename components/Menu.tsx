@@ -44,6 +44,62 @@ export const Menu: FC = () => {
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
+  const { walletInfo } = useWalletInfo();
+  const [ethIconError, setEthIconError] = useState(false);
+  const [polkadotIconError, setPolkadotIconError] = useState(false);
+
+  const isEthConnected = !!walletInfo?.name;
+  const isPolkadotConnected = polkadotAccounts && polkadotAccounts.length > 0;
+
+  const getEthWalletIcon = () => {
+    if (!walletInfo?.name) return "/images/ethereum.png";
+    const walletName = walletInfo.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return `/images/wallets/${walletName}.png`;
+  };
+
+  const getPolkadotWalletIcon = () => {
+    if (!wallet?.title) return "/images/polkadot.png";
+    const walletName = wallet.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return `/images/wallets/${walletName}.png`;
+  };
+
+  const WalletIcons = () => {
+    if (!isEthConnected && !isPolkadotConnected) {
+      return (
+        <span className="glimmer-text px-3 py-1 rounded-full border border-white/60">
+          Connect
+        </span>
+      );
+    }
+
+    return (
+      <div className="flex items-center px-1 py-1 rounded-full border border-white/60">
+        {isEthConnected && (
+          <div className="w-7 h-7 rounded-full border-2 border-white bg-white/70 flex items-center justify-center">
+            <Image
+              src={ethIconError ? "/images/ethereum.png" : getEthWalletIcon()}
+              width={18}
+              height={18}
+              alt="Ethereum wallet"
+              onError={() => setEthIconError(true)}
+            />
+          </div>
+        )}
+        {isPolkadotConnected && (
+          <div className={`w-7 h-7 rounded-full border-2 border-white bg-white/70 flex items-center justify-center ${isEthConnected ? "-ml-2" : ""}`}>
+            <Image
+              src={polkadotIconError ? "/images/polkadot.png" : getPolkadotWalletIcon()}
+              width={18}
+              height={18}
+              alt="Polkadot wallet"
+              onError={() => setPolkadotIconError(true)}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const PolkadotWallet = () => {
     const [showPolkadotIcon, setShowPolkadotIcon] = useState(true);
 
@@ -200,7 +256,7 @@ export const Menu: FC = () => {
         </Link>
         <MenubarMenu>
           <MenubarTrigger>
-            <p className="hidden md:flex glimmer-text">Wallets</p>
+            <WalletIcons />
           </MenubarTrigger>
           <MenubarContent
             align="center"
