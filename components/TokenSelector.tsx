@@ -1,7 +1,6 @@
 "use client";
 
 import { FC, useState, useMemo, useEffect } from "react";
-import Image from "next/image";
 import { SelectItemWithIcon } from "./SelectItemWithIcon";
 import {
   Dialog,
@@ -43,6 +42,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [tokenModalOpen, setTokenModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [imageError, setImageError] = useState(false);
+
+  // Reset image error when token changes
+  useEffect(() => {
+    setImageError(false);
+  }, [value]);
+
   const [balances, setBalances] = useState<
     Record<string, { balance: bigint; decimals: number }>
   >({});
@@ -185,15 +191,14 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           {selectedAsset ? (
             <>
               <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
-                <Image
-                  src={`/images/${selectedAsset.symbol.toLowerCase()}.png`}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageError ? "/images/token_generic.png" : `/images/${selectedAsset.symbol.toLowerCase()}.png`}
                   width={16}
                   height={16}
                   alt={selectedAsset.symbol}
                   className="rounded-full"
-                  onError={(e: any) => {
-                    e.currentTarget.src = "/images/token_generic.png";
-                  }}
+                  onError={() => setImageError(true)}
                 />
               </div>
               <span className="text-xs font-medium">

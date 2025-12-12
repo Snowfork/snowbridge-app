@@ -199,26 +199,21 @@ function TxCard(props: TxCardProps) {
             </ul>
           </div>
           {neuroWeb}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-end items-center">
+            <RefreshButton
+              onClick={refresh}
+              className={cn(
+                transfer.status !== historyV2.TransferStatus.Pending
+                  ? "hidden"
+                  : "glass-button",
+              )}
+            />
             <Link
-              className={cn("underline text-sm", !inHistory ? "hidden" : "")}
-              href={`/history#${transfer.id}`}
+              className={"glass-button"}
+              href={inHistory ? `/history#${transfer.id}` : "/history"}
             >
-              See in History
+              <Button variant="link">Transaction History</Button>
             </Link>
-            <div className="flex items-center">
-              <RefreshButton
-                onClick={refresh}
-                className={cn(
-                  transfer.status !== historyV2.TransferStatus.Pending
-                    ? "hidden"
-                    : "",
-                )}
-              />
-              <Link href="/history">
-                <Button variant="link">Transaction History</Button>
-              </Link>
-            </div>
           </div>
         </div>
       </CardContent>

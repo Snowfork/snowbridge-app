@@ -20,6 +20,8 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
 import { RefreshButton } from "@/components/RefreshButton";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { historyV2, subsquid } from "@snowbridge/api";
 import useSWR from "swr";
@@ -120,15 +122,18 @@ function TxCard(props: TxCardProps) {
               ))}
             </ul>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end items-center">
             <RefreshButton
               onClick={refresh}
               className={cn(
                 transfer.status !== historyV2.TransferStatus.Pending
                   ? "hidden"
-                  : "",
+                  : "glass-button",
               )}
             />
+            <Link href="/history" className={"glass-button"}>
+              <Button variant="link">Transaction History</Button>
+            </Link>
           </div>
         </div>
       </CardContent>

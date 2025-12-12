@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { useState } from "react";
 
 interface SelectItemWithIconProps {
@@ -15,7 +14,8 @@ export function SelectItemWithIcon({
   return (
     <div className="flex items-center">
       {image && error === 0 && (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           className="selectIcon"
           src={`/images/${image.toLowerCase()}.png`}
           width={20}
@@ -27,7 +27,8 @@ export function SelectItemWithIcon({
         />
       )}
       {altImage && error === 1 && (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           className="selectIcon"
           src={`/images/${altImage.toLowerCase()}.png`}
           width={20}
