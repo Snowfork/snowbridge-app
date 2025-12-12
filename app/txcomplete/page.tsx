@@ -146,11 +146,7 @@ function TxCard(props: TxCardProps) {
       <CardHeader>
         <CardTitle>Nice! You did it.</CardTitle>
         <CardDescription className="hidden md:flex">
-          <TransferTitle
-            transfer={transfer}
-            showBagde={false}
-            showWallet={false}
-          />
+          <TransferTitle transfer={transfer} showBagde={false} />
         </CardDescription>
       </CardHeader>
       <CardContent>

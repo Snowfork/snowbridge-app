@@ -69,7 +69,9 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   return (
     <div className={className}>
       {balance} {feeInfo.symbol}
-      {usdValue && <span className="text-muted-foreground ml-1">({usdValue})</span>}
+      {usdValue && (
+        <span className="text-muted-foreground ml-1">({usdValue})</span>
+      )}
     </div>
   );
 };

@@ -606,7 +606,9 @@ export const KusamaComponent: FC = () => {
                                 const maxBalance = formatBalance({
                                   number: balanceInfo.tokenBalance,
                                   decimals: Number(balanceInfo.tokenDecimals),
-                                  displayDecimals: Number(balanceInfo.tokenDecimals),
+                                  displayDecimals: Number(
+                                    balanceInfo.tokenDecimals,
+                                  ),
                                 });
                                 form.setValue("amount", maxBalance);
                               }

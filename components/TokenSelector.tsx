@@ -193,7 +193,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={imageError ? "/images/token_generic.png" : `/images/${selectedAsset.symbol.toLowerCase()}.png`}
+                  src={
+                    imageError
+                      ? "/images/token_generic.png"
+                      : `/images/${selectedAsset.symbol.toLowerCase()}.png`
+                  }
                   width={16}
                   height={16}
                   alt={selectedAsset.symbol}

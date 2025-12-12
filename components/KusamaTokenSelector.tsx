@@ -104,7 +104,9 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
       const tokenSymbols = tokenList
         .map((t) => {
           const asset =
-            assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[t];
+            assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
+              t
+            ];
           return asset?.symbol;
         })
         .filter((s): s is string => !!s);
@@ -199,7 +201,9 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
                   onError={() => setImageError(true)}
                 />
               </div>
-              <span className="text-xs font-medium">{selectedAsset.symbol}</span>
+              <span className="text-xs font-medium">
+                {selectedAsset.symbol}
+              </span>
             </>
           ) : (
             <span className="text-muted-foreground text-xs">Token</span>
@@ -224,7 +228,9 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
         </div>
         <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 rounded-lg">
           {filteredTokens.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No tokens found</div>
+            <div className="text-center py-8 text-gray-500">
+              No tokens found
+            </div>
           ) : (
             filteredTokens.map((t) => {
               const asset =

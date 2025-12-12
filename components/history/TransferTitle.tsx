@@ -138,7 +138,14 @@ export function TransferTitle({
 
   const { destination } = getEnvDetail(transfer, assetRegistry);
   const when = new Date(transfer.info.when);
-  const shortDate = when.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' }) + ' ' + when.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  const shortDate =
+    when.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "2-digit",
+    }) +
+    " " +
+    when.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
   const { tokenName, amount: rawAmount } = formatTokenData(
     transfer,
@@ -147,9 +154,9 @@ export function TransferTitle({
 
   // Truncate amount if more than 10 characters after decimal
   const truncateAmount = (amt: string): string => {
-    const parts = amt.split('.');
+    const parts = amt.split(".");
     if (parts.length === 2 && parts[1].length > 10) {
-      return parts[0] + '.' + parts[1].slice(0, 10) + '…';
+      return parts[0] + "." + parts[1].slice(0, 10) + "…";
     }
     return amt;
   };
@@ -157,7 +164,11 @@ export function TransferTitle({
 
   const tokenIcon = (
     <Image
-      src={tokenImageError ? "/images/token_generic.png" : `/images/${(tokenName ?? "token_generic").toLowerCase()}.png`}
+      src={
+        tokenImageError
+          ? "/images/token_generic.png"
+          : `/images/${(tokenName ?? "token_generic").toLowerCase()}.png`
+      }
       width={18}
       height={18}
       alt={tokenName ?? "token"}
@@ -168,7 +179,11 @@ export function TransferTitle({
 
   const destIcon = (
     <Image
-      src={destImageError ? "/images/parachain_generic.png" : `/images/${(destination?.id ?? "parachain_generic").toLowerCase()}.png`}
+      src={
+        destImageError
+          ? "/images/parachain_generic.png"
+          : `/images/${(destination?.id ?? "parachain_generic").toLowerCase()}.png`
+      }
       width={18}
       height={18}
       alt={destination?.name ?? "destination"}
@@ -180,9 +195,13 @@ export function TransferTitle({
   if (!(showBagde ?? true)) {
     return (
       <span className="flex items-center gap-1 col-span-6 place-self-start text-left text-sm">
-        {showGlobeForGlobal && <LucideGlobe size={14} className="text-muted-foreground mr-1" />}
+        {showGlobeForGlobal && (
+          <LucideGlobe size={14} className="text-muted-foreground mr-1" />
+        )}
         {tokenIcon}
-        <span className="truncate">{amount} {tokenName ?? "unknown"}</span>
+        <span className="truncate">
+          {amount} {tokenName ?? "unknown"}
+        </span>
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{destination?.name ?? "unknown"}</span>
@@ -201,7 +220,9 @@ export function TransferTitle({
       )}
       <p className="flex-1 text-left flex items-center gap-1 text-sm">
         {tokenIcon}
-        <span className="truncate">{amount} {tokenName ?? "unknown"}</span>
+        <span className="truncate">
+          {amount} {tokenName ?? "unknown"}
+        </span>
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{destination?.name ?? "unknown"}</span>

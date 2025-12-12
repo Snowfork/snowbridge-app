@@ -20,7 +20,11 @@ export const TransferBusy: FC<TransferBusyProps> = ({ message, onBack }) => {
           alt="Smiling bridge"
         />
         <div>{message}</div>
-        <Button className="mt-5 glass-button" variant="secondary" onClick={onBack}>
+        <Button
+          className="mt-5 glass-button"
+          variant="secondary"
+          onClick={onBack}
+        >
           Cancel
         </Button>
       </div>

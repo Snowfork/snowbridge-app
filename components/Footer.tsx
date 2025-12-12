@@ -11,7 +11,10 @@ export function Footer() {
   return (
     <>
       <div className="text-xs mb-2">
-        <a className="footer-item glass-pill" onClick={() => setAccepted(false)}>
+        <a
+          className="footer-item glass-pill"
+          onClick={() => setAccepted(false)}
+        >
           Terms of Use
         </a>
         <a

@@ -125,8 +125,9 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     data.tokenMetadata.symbol === data.fee.symbol &&
     data.fee.symbol === sourceTokenSymbol
       ? getUsdValue(
-          Number(data.amountInSmallestUnit + data.fee.fee + (executionFee ?? 0n)) /
-            Math.pow(10, data.tokenMetadata.decimals),
+          Number(
+            data.amountInSmallestUnit + data.fee.fee + (executionFee ?? 0n),
+          ) / Math.pow(10, data.tokenMetadata.decimals),
           data.tokenMetadata.symbol,
         )
       : null;
@@ -155,7 +156,9 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
 
       {/* Sender & Recipient Card */}
       <div className="glass-sub p-4 space-y-3">
-        <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">Sender & Recipient</h3>
+        <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">
+          Sender & Recipient
+        </h3>
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">From</span>
           <span
@@ -261,7 +264,9 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       </div>
 
       <div className="glass-sub p-4 space-y-3">
-        <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">Delivery</h3>
+        <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">
+          Delivery
+        </h3>
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">Estimated Delivery</span>
           <span>
@@ -275,7 +280,8 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
                     deliveryLatency,
                   )}
             <span className="text-muted-foreground">
-              {" "}(up to{" "}
+              {" "}
+              (up to{" "}
               {transferType === "toPolkadotV2"
                 ? "25 min"
                 : transferType === "toEthereumV2"

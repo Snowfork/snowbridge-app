@@ -28,13 +28,18 @@ export const SnowflakeLoader: FC<SnowflakeLoaderProps> = ({
       <div className="relative">
         <span
           className={`${sizeClasses[size]} animate-spin-slow inline-block`}
-          style={{ color: "white", textShadow: "0 0 20px rgba(255,255,255,0.5)" }}
+          style={{
+            color: "white",
+            textShadow: "0 0 20px rgba(255,255,255,0.5)",
+          }}
         >
           ❄
         </span>
       </div>
       {message && (
-        <p className={`${textClasses[size]} text-white font-medium animate-pulse`}>
+        <p
+          className={`${textClasses[size]} text-white font-medium animate-pulse`}
+        >
           {message}
         </p>
       )}

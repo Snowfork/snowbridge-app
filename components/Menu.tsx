@@ -86,9 +86,15 @@ export const Menu: FC = () => {
           </div>
         )}
         {isPolkadotConnected && (
-          <div className={`w-7 h-7 rounded-full border-2 border-white bg-white/70 flex items-center justify-center ${isEthConnected ? "-ml-2" : ""}`}>
+          <div
+            className={`w-7 h-7 rounded-full border-2 border-white bg-white/70 flex items-center justify-center ${isEthConnected ? "-ml-2" : ""}`}
+          >
             <Image
-              src={polkadotIconError ? "/images/polkadot.png" : getPolkadotWalletIcon()}
+              src={
+                polkadotIconError
+                  ? "/images/polkadot.png"
+                  : getPolkadotWalletIcon()
+              }
               width={18}
               height={18}
               alt="Polkadot wallet"

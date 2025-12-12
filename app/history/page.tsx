@@ -389,8 +389,12 @@ const transferDetail = (
           </li>
         ))}
       </ul>
-      <div hidden={!transfer.isWalletTransaction} className="p-2 flex justify-center">
-        <Button className={"action-button"}
+      <div
+        hidden={!transfer.isWalletTransaction}
+        className="p-2 flex justify-center"
+      >
+        <Button
+          className={"action-button"}
           onClick={() => {
             router.push(`txcomplete?messageId=${transfer.id}`);
           }}
@@ -567,7 +571,9 @@ export default function History() {
             <div>
               <CardTitle>History</CardTitle>
               <CardDescription>
-                {showGlobal ? "Global transfer history." : "My transfer history."}
+                {showGlobal
+                  ? "Global transfer history."
+                  : "My transfer history."}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -579,13 +585,18 @@ export default function History() {
                 className="h-8 w-8"
                 title="Refresh"
               >
-                <LucideRefreshCw className={isRefreshing ? "animate-spin" : ""} size={18} />
+                <LucideRefreshCw
+                  className={isRefreshing ? "animate-spin" : ""}
+                  size={18}
+                />
               </Button>
               <Toggle
                 pressed={showGlobal}
                 onPressedChange={(p) => setShowGlobal(p)}
                 className="h-8 w-8 p-0"
-                title={showGlobal ? "Show my transfers" : "Show global transfers"}
+                title={
+                  showGlobal ? "Show my transfers" : "Show global transfers"
+                }
               >
                 <LucideGlobe size={18} />
               </Toggle>
@@ -607,7 +618,10 @@ export default function History() {
                   value={v.id?.toString() ?? i.toString()}
                 >
                   <AccordionTrigger>
-                    <TransferTitle transfer={v} showGlobeForGlobal={!v.isWalletTransaction} />
+                    <TransferTitle
+                      transfer={v}
+                      showGlobeForGlobal={!v.isWalletTransaction}
+                    />
                   </AccordionTrigger>
                   <AccordionContent>
                     {transferDetail(v, assetRegistry, router)}

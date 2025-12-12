@@ -55,11 +55,15 @@ export default async function RootLayout({
                   height={40}
                   alt="Snowbridge"
                 />
-                <h1 className="text-2xl px-2 ml-2 mt-1">Snowbridge</h1>
+                <h1 className="text-2xl px-2 ml-2 mt-1 text-white">
+                  Snowbridge
+                </h1>
               </div>
               <Menu />
             </header>
-            <div className="flex-1 w-full px-6 py-1 flex items-center justify-center">{children}</div>
+            <div className="flex-1 w-full px-6 py-1 flex items-center justify-center">
+              {children}
+            </div>
             <footer className="w-full px-6 py-6 flex flex-col items-center text-sm">
               <Footer />
             </footer>
