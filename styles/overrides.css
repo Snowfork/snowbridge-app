@@ -416,13 +416,14 @@ button[role="combobox"]:focus-visible,
     -webkit-backdrop-filter: blur(28px);
 }
 
-.glass-pill, .glass-pill-hover:hover {
-    background: rgba(255, 255, 255, 0.18);
+.glass-pill, .glass-pill-hover:hover, button.glass-button, button.glass-button:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
     text-align: center;
+    color: #163653;
 }
 
 .label-glass {

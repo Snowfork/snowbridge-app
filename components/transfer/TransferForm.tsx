@@ -803,7 +803,8 @@ export const TransferForm: FC<TransferFormProps> = ({
                       </div>
                       <Button
                         type="button"
-                        className="h-7 bg-dark-blue px-3 py-1 text-xs text-white hover:bg-black/90 flex-shrink-0 rounded-full border-0"
+                        variant={"clean"}
+                        className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
                         onClick={() => {
                           if (balanceInfo && tokenMetadata) {
                             const maxBalance = formatBalance({
