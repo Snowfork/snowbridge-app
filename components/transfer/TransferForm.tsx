@@ -788,7 +788,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
                     <div className="amountContainer flex items-center gap-2 w-full px-3 py-3">
-                      <div className="flex-1 flex flex-col">
+                      <div className="flex-1 flex flex-col min-w-0">
                         <input
                           className="amountInput p2 text-left text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
                           type="string"
@@ -823,7 +823,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                         control={form.control}
                         name="token"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="flex-shrink-0">
                             <FormControl>
                               <TokenSelector
                                 value={field.value}
