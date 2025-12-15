@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/menubar";
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { Pencil, Unplug } from "lucide-react";
+import { Pencil, LogOut } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { FC, useContext, useState } from "react";
@@ -52,15 +52,13 @@ export const Menu: FC = () => {
   const isPolkadotConnected = polkadotAccounts && polkadotAccounts.length > 0;
 
   const getEthWalletIcon = () => {
-    if (!walletInfo?.name) return "/images/ethereum.png";
-    const walletName = walletInfo.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-    return `/images/wallets/${walletName}.png`;
+    if (walletInfo?.icon) return walletInfo.icon;
+    return "/images/ethereum.png";
   };
 
   const getPolkadotWalletIcon = () => {
-    if (!wallet?.title) return "/images/polkadot.png";
-    const walletName = wallet.title.toLowerCase().replace(/[^a-z0-9]/g, "");
-    return `/images/wallets/${walletName}.png`;
+    if (wallet?.logo?.src) return wallet.logo.src;
+    return "/images/polkadot.png";
   };
 
   const WalletIcons = () => {
@@ -133,9 +131,9 @@ export const Menu: FC = () => {
         <div className="flex items-center justify-between py-2 mt-2">
           <h1>Polkadot</h1>
           <div className="flex items-center gap-2">
-            {showPolkadotIcon && (
-              <Image
-                src={`/images/wallets/${wallet?.title?.toLowerCase().replace(/[^a-z0-9]/g, "")}.png`}
+            {showPolkadotIcon && wallet?.logo?.src && (
+              <img
+                src={wallet.logo.src}
                 width={20}
                 height={20}
                 alt={wallet?.title || "Wallet"}
@@ -158,7 +156,7 @@ export const Menu: FC = () => {
               }}
               className="text-gray-500 hover:text-red-600 transition-colors"
             >
-              <Unplug />
+              <LogOut />
             </button>
           </div>
         </div>
@@ -180,11 +178,8 @@ export const Menu: FC = () => {
     const [showEthereumIcon, setShowEthereumIcon] = useState(true);
 
     const getWalletIcon = () => {
-      if (!walletInfo?.name) return "/images/ethereum.png";
-      const walletName = walletInfo.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "");
-      return `/images/wallets/${walletName}.png`;
+      if (walletInfo?.icon) return walletInfo.icon;
+      return "/images/ethereum.png";
     };
 
     const handleDisconnect = async (e: React.MouseEvent) => {
@@ -244,7 +239,7 @@ export const Menu: FC = () => {
               onClick={handleDisconnect}
               className="text-gray-500 hover:text-red-600 transition-colors"
             >
-              <Unplug />
+              <LogOut />
             </button>
           </div>
         </div>

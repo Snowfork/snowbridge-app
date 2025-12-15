@@ -644,7 +644,7 @@ export default function History() {
               <CardTitle>History</CardTitle>
               <CardDescription>
                 {showGlobal
-                  ? "Global transfer history."
+                  ? "All Snowbridge transfers."
                   : "My transfer history."}
               </CardDescription>
             </div>
@@ -709,7 +709,7 @@ export default function History() {
               }
             >
               <p className="text-muted-foreground text-center">
-                Your transactions will appear here. Click on the globe icon to
+                Your transactions will appear here. Click on the  <LucideGlobe size={18} /> icon to
                 see all Snowbridge transactions.
               </p>
             </div>
