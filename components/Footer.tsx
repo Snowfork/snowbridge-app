@@ -53,14 +53,17 @@ export function Footer() {
           Dune Dashboard
         </a>
       </div>
-      <div className="text-xs mt-4 flex items-center gap-2">
-        Copyright © Snowfork {new Date().getFullYear()} / Powered and Funded by{" "}
+      <div className="text-xs mt-2 flex items-center gap-2">
+        Powered and Funded by{" "}
         <Image
           src="/images/polkadot_logo.png"
           width={80}
           height={20}
           alt="Polkadot"
         />
+      </div>
+      <div className="text-xs mt-2 flex items-center gap-2">
+        Copyright © Snowfork {new Date().getFullYear()}
       </div>
       <div className="text-xs py-2">
         {envName !== "polkadot_mainnet" && ` (env: ${envName})`}

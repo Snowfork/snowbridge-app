@@ -17,7 +17,8 @@ import { getTokenBalance } from "@/utils/balances";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { fetchTokenPrices } from "@/utils/coindesk";
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown, ArrowUpRight } from "lucide-react";
+import { etherscanERC20TokenLink } from "@/lib/explorerLinks";
 
 type TokenSelectorProps = {
   value: string | undefined;
@@ -255,9 +256,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               }
 
               const truncatedAddress =
-                t.length > 10
-                  ? `${t.substring(0, 6)}...${t.substring(t.length - 4)}`
-                  : t;
+                t.length > 10 ? `${t.substring(0, 10)}...` : t;
 
               const tokenPrice = prices[asset.symbol.toUpperCase()];
               let usdValue: string | null = null;
@@ -293,8 +292,27 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                       >
                         {asset.name}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 inline-flex items-center gap-1">
                         {asset.symbol}
+                        {t.toLowerCase() !==
+                          assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
+                          <span
+                            className="hover:underline cursor-pointer inline-flex items-center"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(
+                                etherscanERC20TokenLink(
+                                  assetRegistry.environment,
+                                  ethChainId,
+                                  t,
+                                ),
+                              );
+                            }}
+                          >
+                            ({truncatedAddress}
+                            <ArrowUpRight className="w-3 h-3" />)
+                          </span>
+                        )}
                       </span>
                     </div>
                   </div>

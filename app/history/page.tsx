@@ -708,7 +708,10 @@ export default function History() {
                 (pages.length > 0 ? "hidden" : "")
               }
             >
-              <p className="text-muted-foreground text-center">No history.</p>
+              <p className="text-muted-foreground text-center">
+                Your transactions will appear here. Click on the globe icon to
+                see all Snowbridge transactions.
+              </p>
             </div>
             <Pagination className={pages.length == 0 ? "hidden" : ""}>
               <PaginationContent>

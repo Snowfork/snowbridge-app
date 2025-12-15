@@ -1,6 +1,6 @@
 /* Fonts */
 body {
-    font-family: 'Funnel Display', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
     font-optical-sizing: auto;
     font-style: normal;
     color: #212d41;
@@ -209,7 +209,6 @@ body::before {
 }
 
 .text-card-foreground {
-   /* background: linear-gradient(to bottom, #7ab5e0, #ccf0ff);*/
     border: none;
     padding: 10px;
     color: #0d2b48 !important;

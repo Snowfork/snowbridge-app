@@ -58,7 +58,7 @@ import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
-import { ArrowRight, ChevronsUpDown } from "lucide-react";
+import { ArrowRight, ChevronsUpDown, LucideAlertCircle } from "lucide-react";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
   getChainId,
@@ -847,7 +847,16 @@ export const TransferForm: FC<TransferFormProps> = ({
                       />
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  {form.formState.errors.amount && (
+                    <div className="w-full rounded-xl bg-red-50 border border-red-200 p-3 mt-2">
+                      <div className="flex items-start gap-2">
+                        <LucideAlertCircle className="text-red-800 flex-shrink-0 mt-0.5 w-4 h-4" />
+                        <span className="text-sm text-red-800">
+                          {form.formState.errors.amount.message}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
