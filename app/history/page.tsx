@@ -709,8 +709,9 @@ export default function History() {
               }
             >
               <p className="text-muted-foreground text-center">
-                Your transactions will appear here. Click on the  <LucideGlobe size={18} /> icon to
-                see all Snowbridge transactions.
+                Your transactions will appear here. Click on the{" "}
+                <LucideGlobe size={16} className="inline align-middle mx-1" />{" "}
+                icon to see all Snowbridge transactions.
               </p>
             </div>
             <Pagination className={pages.length == 0 ? "hidden" : ""}>
