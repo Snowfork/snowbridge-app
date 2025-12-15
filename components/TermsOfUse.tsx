@@ -30,7 +30,8 @@ export function TermsOfUse() {
           value={DISCLAIMER}
         ></Textarea>
         <DialogFooter>
-          <Button className={"glass-button"}
+          <Button
+            className={"glass-button"}
             onClick={() => {
               setAccepted(true);
             }}

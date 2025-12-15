@@ -144,7 +144,13 @@ export const TransferComponent: FC = () => {
   const [validationData, setValidationData] = useState<ValidationData>();
   const [plan, setPlanData] = useState<TransferPlanSteps>();
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busyState, setBusyState] = useState<{
+    message: string;
+    isSuccess: boolean;
+  } | null>(null);
+  const setBusy = (message: string | null, isSuccess = false) => {
+    setBusyState(message ? { message, isSuccess } : null);
+  };
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
   const registry = useContext(RegistryContext)!;
@@ -175,9 +181,9 @@ export const TransferComponent: FC = () => {
   ) => {
     const req = requestId.current;
     const transferType = inferTransferType(data.source, data.destination);
-    let error = "Pre-transfer check failed.";
+    let error = "Transaction cannot be sent, because:";
     try {
-      setBusy("Doing some pre-transfer checks...");
+      setBusy("Checking transfer details.");
       track("Validate Send", { ...data?.formData });
 
       setValidationData(data);
@@ -216,7 +222,7 @@ export const TransferComponent: FC = () => {
         setBusy(null);
         return;
       }
-      setBusy("Preflight checks successful. Submitting transfer...");
+      setBusy("Please approve transaction in wallet.", true);
 
       error = "Error submitting transfer.";
       track("Sending Token", { ...data?.formData });
@@ -235,7 +241,7 @@ export const TransferComponent: FC = () => {
       }
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);
-      setBusy("Transfer successful...");
+      setBusy("Transfer successful...", true);
       const transferData = base64url.encode(JSON.stringify(historyItem));
       if (transferType !== "forInterParachain") {
         router.push(`/txcomplete?transfer=${transferData}`);
@@ -283,14 +289,15 @@ export const TransferComponent: FC = () => {
         />
       </>
     );
-  } else if (busy !== null) {
+  } else if (busyState !== null) {
     if (validationData)
       content = (
         <>
           {summary}
           <TransferBusy
             data={validationData}
-            message={busy}
+            message={busyState.message}
+            isSuccess={busyState.isSuccess}
             onBack={() => {
               backToForm(formData);
               setSourceExecutionFee(null);

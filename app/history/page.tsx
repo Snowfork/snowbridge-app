@@ -54,7 +54,7 @@ import { assetsV2, historyV2 } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
+import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
@@ -225,6 +225,15 @@ const getExplorerLinks = (
   return links;
 };
 
+const truncateAddress = (
+  address: string,
+  startChars = 10,
+  endChars = 4,
+): string => {
+  if (address.length <= startChars + endChars) return address;
+  return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
+};
+
 const transferDetail = (
   transfer: Transfer,
   registry: AssetRegistry,
@@ -325,82 +334,145 @@ const transferDetail = (
   );
   return (
     <div className="flex-col">
-      <div className="p-2">
-        <p>
-          Source{" "}
-          <span className="inline whitespace-pre font-mono">{source.name}</span>{" "}
-        </p>
-        <p>
-          Value{" "}
-          <span className="inline whitespace-pre font-mono">
-            {amount} {tokenName}
-          </span>{" "}
-        </p>
-        <p hidden={transfer.info.tokenAddress === assetsV2.ETHER_TOKEN_ADDRESS}>
-          Token Address{" "}
-          <span className="inline whitespace-pre font-mono">
-            {transfer.info.tokenAddress}
-          </span>{" "}
-          <span
-            className="text-sm underline cursor-pointer"
-            onClick={() => window.open(tokenUrl)}
-            onAuxClick={() => window.open(tokenUrl)}
-          >
-            (view)
-          </span>
-        </p>
-        <p>
-          From Account{" "}
-          <span className="inline whitespace-pre font-mono">
-            {sourceAddress}
-          </span>{" "}
-          <span
-            className="text-sm underline cursor-pointer"
-            onClick={() => window.open(sourceAccountUrl)}
-            onAuxClick={() => window.open(sourceAccountUrl)}
-          >
-            (view)
-          </span>
-        </p>
-        <p>
-          To Beneficiary{" "}
-          <span className="inline whitespace-pre font-mono">{beneficiary}</span>
-        </p>{" "}
-        <span
-          className="text-sm underline cursor-pointer"
-          onClick={() => window.open(beneficiaryAccountUrl)}
-          onAuxClick={() => window.open(beneficiaryAccountUrl)}
-        >
-          (view)
-        </span>
-      </div>
+      <div className="glass-sub p-4 pt-2 overflow-x-auto">
+        <table className="w-full text-sm">
+          <tbody>
+            <tr className="border-b border-white/10">
+              <td className="py-1 font-medium">Source</td>
+              <td className="py-1 text-right">
+                <span className="inline-flex items-center gap-1">
+                  <img
+                    src={`/images/${source.id.toLowerCase().replace(/_/g, "")}.png`}
+                    width={16}
+                    height={16}
+                    alt={source.name}
+                    className="rounded-full"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (!img.src.endsWith("parachain_generic.png")) {
+                        img.src = "/images/parachain_generic.png";
+                      }
+                    }}
+                  />
+                  {source.name}
+                </span>
+              </td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-1 font-medium">Value</td>
+              <td className="py-1 text-right">
+                <span className="inline-flex items-center gap-1">
+                  <img
+                    src={`/images/${(tokenName ?? "token_generic").toLowerCase()}.png`}
+                    width={16}
+                    height={16}
+                    alt={tokenName ?? "token"}
+                    className="rounded-full"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (!img.src.endsWith("token_generic.png")) {
+                        img.src = "/images/token_generic.png";
+                      }
+                    }}
+                  />
+                  {amount}{" "}
+                  {transfer.info.tokenAddress !==
+                  assetsV2.ETHER_TOKEN_ADDRESS ? (
+                    <span
+                      className="hover:underline cursor-pointer inline-flex items-center"
+                      onClick={() => window.open(tokenUrl)}
+                      onAuxClick={() => window.open(tokenUrl)}
+                    >
+                      {tokenName}
+                      <ArrowUpRight className="w-4 h-4" />
+                    </span>
+                  ) : (
+                    tokenName
+                  )}
+                </span>
+              </td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-1 font-medium">From</td>
+              <td className="py-1 text-right">
+                <span
+                  className="hover:underline cursor-pointer inline-flex items-center"
+                  onClick={() => window.open(sourceAccountUrl)}
+                  onAuxClick={() => window.open(sourceAccountUrl)}
+                >
+                  {truncateAddress(sourceAddress)}
+                  <ArrowUpRight className="w-4 h-4" />
+                </span>
+              </td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-1 font-medium">To</td>
+              <td className="py-1 text-right">
+                <span
+                  className="hover:underline cursor-pointer inline-flex items-center"
+                  onClick={() => window.open(beneficiaryAccountUrl)}
+                  onAuxClick={() => window.open(beneficiaryAccountUrl)}
+                >
+                  {truncateAddress(beneficiary)}
+                  <ArrowUpRight className="w-4 h-4" />
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-      <ul className="p-2 list-inside list-disc">
-        {links.map((link, i) => (
-          <li key={i}>
-            {link.text}{" "}
-            <span
-              className="text-sm underline cursor-pointer"
-              onClick={() => window.open(link.url)}
-              onAuxClick={() => window.open(link.url)}
-            >
-              (view)
-            </span>
-          </li>
-        ))}
-      </ul>
-      <div
-        hidden={!transfer.isWalletTransaction}
-        className="p-2 flex justify-center"
-      >
-        <Button
-          className={"action-button"}
-          onClick={() => {
-            router.push(`txcomplete?messageId=${transfer.id}`);
-          }}
+        <div className="p-1"></div>
+        {links.length > 0 && (
+          <div className="relative">
+            {links.map((link, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 relative pb-2 last:pb-0"
+              >
+                {/* Vertical line */}
+                {i < links.length - 1 && (
+                  <div className="absolute left-[7px] top-[16px] w-0.5 h-[calc(100%-8px)] bg-slate-700/30" />
+                )}
+                {/* Checkmark circle */}
+                <div className="w-4 h-4 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0 z-10">
+                  <svg
+                    className="w-2.5 h-2.5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div
+                  className="text-sm hover:underline cursor-pointer"
+                  onClick={() => window.open(link.url)}
+                  onAuxClick={() => window.open(link.url)}
+                >
+                  {link.text}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div
+          hidden={!transfer.isWalletTransaction}
+          className="p-4 flex justify-center"
         >
-          See more
-        </Button>
+          <Button
+            className={"glass-button"}
+            onClick={() => {
+              router.push(`txcomplete?messageId=${transfer.id}`);
+            }}
+          >
+            View
+          </Button>
+        </div>
       </div>
     </div>
   );

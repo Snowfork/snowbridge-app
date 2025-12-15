@@ -102,28 +102,6 @@ div[role="menubar"] button[data-state="open"], div[role="menubar"] button[data-h
     color: white;
 }
 
-/* Icons */
-.lucide {
-    color: rgba(15, 23, 42, 0.75);
-    width: 20px;
-    height: 20px;
-    stroke-width: 1.5;
-}
-
-.text-card-foreground .lucide {
-    color: #1d2a3b;
-}
-
-div[role="menubar"] .lucide {
-    color: #212d41;
-    stroke-width: 1.5;
-}
-
-div[role="menubar"] button:hover .lucide {
-    color: #192533;
-    stroke-width: 1.5;
-}
-
 div[role="menubar"] button[data-state="open"] .lucide,
 div[role="menubar"] button[data-hightlighted] .lucide,
 div[role="menubar"] .focus\:bg-accent:focus .lucide
@@ -197,7 +175,7 @@ button[role="combobox"]  {
 
 body {
     position: relative;
-    background-image: url("/images/background_new.jpg");
+    background-image: url("/images/background_new_cropped.jpg");
     background-size: cover;
     background-attachment: fixed;
     background-position: center;
