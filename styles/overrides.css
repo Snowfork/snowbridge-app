@@ -405,7 +405,7 @@ button[role="combobox"]:focus-visible,
 }
 
 .glass.more-blur {
-    backdrop-filter: blur(35px);
+    backdrop-filter: blur(45px);
 }
 
 .glass-sub {
@@ -518,6 +518,9 @@ button[role="combobox"][data-state="open"] {
     visibility: hidden;
 }
 
+.glass-button-small.glass-button {
+    padding: 6px 12px;
+}
 
 
 .glass-button {

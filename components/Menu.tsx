@@ -73,7 +73,7 @@ export const Menu: FC = () => {
     }
 
     return (
-      <div className="flex items-center px-1 py-1 rounded-full border border-white/60">
+      <div className="flex items-center px-1 py-1 rounded-full border border-white/60 cursor-pointer">
         {isEthConnected && (
           <div className="w-7 h-7 rounded-full border-2 border-white bg-white/70 flex items-center justify-center">
             <Image
@@ -115,9 +115,15 @@ export const Menu: FC = () => {
           <h1>Polkadot</h1>
           <button
             onClick={() => setPolkadotWalletModalOpen(true)}
-            className="text-gray-500 hover:text-gray-700 transition-colors font-medium"
+            className="glass-button glass-button-small flex items-center ml-2"
           >
-            Connect
+            <Image
+              src="/images/polkadot.png"
+              width={16}
+              height={16}
+              alt="Polkadot"
+            />
+            <span className={"ml-1"}>Connect</span>
           </button>
         </div>
       );
@@ -197,9 +203,15 @@ export const Menu: FC = () => {
           <h1>Ethereum</h1>
           <button
             onClick={async () => await open({ view: "Connect" })}
-            className="text-gray-500 hover:text-gray-700 transition-colors font-medium"
+            className="glass-button glass-button-small flex items-center ml-2"
           >
-            Connect
+            <Image
+              src="/images/ethereum.png"
+              width={16}
+              height={16}
+              alt="Ethereum"
+            />
+            <span className={"ml-1"}>Connect</span>
           </button>
         </div>
       );
