@@ -807,8 +807,42 @@ export const TransferForm: FC<TransferFormProps> = ({
                         className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
                         onClick={() => {
                           if (balanceInfo && tokenMetadata) {
+                            let maxAmount = balanceInfo.balance;
+
+                            // If transferring ETH from Ethereum, subtract the fee
+                            const isEther =
+                              token.toLowerCase() ===
+                              assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
+                            if (
+                              isEther &&
+                              source.type === "ethereum" &&
+                              feeInfo
+                            ) {
+                              const feeBuffer =
+                                (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for gas fluctuations
+                              maxAmount =
+                                maxAmount > feeBuffer
+                                  ? maxAmount - feeBuffer
+                                  : 0n;
+                            }
+
+                            // If transferring native token from substrate (e.g., DOT), subtract the fee
+                            if (
+                              source.type === "substrate" &&
+                              feeInfo &&
+                              tokenMetadata.symbol.toUpperCase() ===
+                                feeInfo.symbol.toUpperCase()
+                            ) {
+                              const feeBuffer =
+                                (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer
+                              maxAmount =
+                                maxAmount > feeBuffer
+                                  ? maxAmount - feeBuffer
+                                  : 0n;
+                            }
+
                             const maxBalance = formatBalance({
-                              number: balanceInfo.balance,
+                              number: maxAmount,
                               decimals: Number(tokenMetadata.decimals),
                               displayDecimals: Number(tokenMetadata.decimals),
                             });

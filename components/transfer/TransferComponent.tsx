@@ -256,7 +256,7 @@ export const TransferComponent: FC = () => {
         ...data?.formData,
         message,
       });
-      showError(error, data.formData);
+      showError(message, data.formData);
     }
   };
 
