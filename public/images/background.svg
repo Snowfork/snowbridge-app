@@ -159,7 +159,7 @@
         <!-- right big group -->
         <path d="M1430 560 L1600 470 L1760 560 Z" fill="#ffffff" opacity="0.92"/>
         <path d="M1630 560 L1765 505 L1870 560 Z" fill="#ffffff" opacity="0.88"/>
-        <path d="M1820 560 L1950 520 L2048 560 L2048 708 L1820 708 Z" fill="#ffffff" opacity="0.86"/>
+        <path d="M1820 560 L1950 520 L2048 560 Z" fill="#ffffff" opacity="0.86"/>
     </g>
 
     <!-- Small foreground ice shards -->
