@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="708" viewBox="0 0 2048 708" role="img"
+     aria-label="Snowy sky background">
+    <defs>
+        <!-- Sky gradient -->
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2f7ab9"/>
+            <stop offset="55%" stop-color="#5fb0df"/>
+            <stop offset="100%" stop-color="#cfefff"/>
+        </linearGradient>
+
+        <!-- Haze near horizon -->
+        <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+            <!-- invisible at very top -->
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.0"/>
+
+            <!-- slow, soft fade-in -->
+            <stop offset="20%" stop-color="#ffffff" stop-opacity="0.18"/>
+            <stop offset="40%" stop-color="#ffffff" stop-opacity="0.35"/>
+
+            <!-- main haze body -->
+            <stop offset="60%" stop-color="#ffffff" stop-opacity="0.45"/>
+
+            <!-- fade out toward ground -->
+            <stop offset="85%" stop-color="#ffffff" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+        </linearGradient>
+
+        <!-- Ice gradient -->
+        <linearGradient id="ice" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+            <stop offset="55%" stop-color="#e9f7ff" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#d6efff" stop-opacity="1"/>
+        </linearGradient>
+
+        <!-- Soft cloud blur -->
+        <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="6"/>
+        </filter>
+
+        <!-- Slight glow -->
+        <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" result="b"/>
+            <feMerge>
+                <feMergeNode in="b"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+
+        <!-- Wind streak style -->
+        <linearGradient id="streak" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+            <stop offset="35%" stop-color="#ffffff" stop-opacity="0.30"/>
+            <stop offset="70%" stop-color="#ffffff" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Background -->
+    <rect width="2048" height="708" fill="url(#sky)"/>
+
+    <!-- Soft clouds (very subtle) -->
+    <g opacity="0.20" filter="url(#soft)">
+        <path fill="#ffffff"
+              d="M120 160c80-50 180-40 250 10 40 30 80 40 140 35 70-5 140 15 170 55 35 50-10 95-110 100H140c-140-5-190-95-20-200z"/>
+        <path fill="#ffffff"
+              d="M1690 90c60-40 140-30 190 8 28 22 60 30 105 26 55-4 110 12 135 44 28 40-8 76-88 80h-378c-110-4-150-76-64-158z"/>
+        <path fill="#ffffff"
+              d="M1480 260c70-35 150-20 205 14 25 16 55 22 94 19 50-4 105 12 128 38 26 30-10 65-75 70h-410c-95-4-135-62 58-141z"/>
+    </g>
+
+    <!-- Wind streaks -->
+    <g opacity="0.9" filter="url(#glow)">
+        <path d="M260 240 C520 200, 820 210, 1100 245" fill="none" stroke="url(#streak)" stroke-width="6"
+              stroke-linecap="round"/>
+        <path d="M980 300 C1210 255, 1500 265, 1760 320" fill="none" stroke="url(#streak)" stroke-width="5"
+              stroke-linecap="round" opacity="0.75"/>
+        <path d="M1210 350 C1420 320, 1650 330, 1880 380" fill="none" stroke="url(#streak)" stroke-width="4"
+              stroke-linecap="round" opacity="0.65"/>
+        <path d="M1560 170 C1680 145, 1850 150, 1960 180" fill="none" stroke="url(#streak)" stroke-width="4"
+              stroke-linecap="round" opacity="0.6"/>
+        <!-- little comet-ish streak -->
+        <path d="M1750 165 C1795 150, 1860 150, 1910 170" fill="none" stroke="url(#streak)" stroke-width="5"
+              stroke-linecap="round" opacity="0.8"/>
+        <circle cx="1856" cy="160" r="8" fill="#ffffff" opacity="0.75"/>
+    </g>
+
+    <!-- Snow dots -->
+    <g fill="#ffffff" opacity="0.85">
+        <!-- big / medium -->
+        <circle cx="184" cy="102" r="4"/>
+        <circle cx="420" cy="155" r="3"/>
+        <circle cx="602" cy="210" r="5"/>
+        <circle cx="880" cy="265" r="4"/>
+        <circle cx="1040" cy="315" r="6"/>
+        <circle cx="1210" cy="280" r="3"/>
+        <circle cx="1430" cy="310" r="4"/>
+        <circle cx="1620" cy="360" r="5"/>
+        <circle cx="1755" cy="260" r="3"/>
+        <circle cx="1888" cy="240" r="4"/>
+        <circle cx="1986" cy="140" r="3"/>
+        <!-- sprinkled small -->
+        <g opacity="0.8">
+            <circle cx="90" cy="220" r="2"/>
+            <circle cx="130" cy="250" r="2"/>
+            <circle cx="210" cy="280" r="2"/>
+            <circle cx="310" cy="235" r="2"/>
+            <circle cx="360" cy="300" r="2"/>
+            <circle cx="520" cy="270" r="2"/>
+            <circle cx="700" cy="330" r="2"/>
+            <circle cx="760" cy="290" r="2"/>
+            <circle cx="820" cy="340" r="2"/>
+            <circle cx="930" cy="360" r="2"/>
+            <circle cx="990" cy="335" r="2"/>
+            <circle cx="1110" cy="360" r="2"/>
+            <circle cx="1180" cy="340" r="2"/>
+            <circle cx="1260" cy="365" r="2"/>
+            <circle cx="1340" cy="345" r="2"/>
+            <circle cx="1500" cy="380" r="2"/>
+            <circle cx="1560" cy="340" r="2"/>
+            <circle cx="1680" cy="400" r="2"/>
+            <circle cx="1740" cy="410" r="2"/>
+            <circle cx="1800" cy="380" r="2"/>
+            <circle cx="1920" cy="410" r="2"/>
+        </g>
+    </g>
+
+    <!-- Horizon haze -->
+    <rect x="0" y="350" width="2048" height="220" fill="url(#haze)"/>
+
+    <!-- Icy ground / sea -->
+    <path d="M0 510 C420 540, 780 535, 1120 520 C1450 505, 1760 520, 2048 545 L2048 708 L0 708 Z"
+          fill="url(#ice)"/>
+
+    <!-- Distant ice shelf line -->
+    <path d="M0 500 C420 525, 760 520, 1120 505 C1480 490, 1760 500, 2048 520"
+          fill="none" stroke="#ffffff" stroke-opacity="0.65" stroke-width="3"/>
+
+    <!-- Ice shards / mountains -->
+    <g fill="#eaf6ff" opacity="0.6">
+        <path d="M180 570 Q215 555 250 570 Z"/>
+        <path d="M560 575 Q600 560 640 575 Z"/>
+        <path d="M940 570 Q980 555 1020 570 Z"/>
+        <path d="M1320 575 Q1360 560 1400 575 Z"/>
+        <path d="M1680 570 Q1720 555 1760 570 Z"/>
+    </g>
+
+    <g filter="url(#glow)">
+        <!-- left group -->
+        <path d="M0 560 L130 470 L250 560 Z" fill="#ffffff" opacity="0.92"/>
+        <path d="M170 560 L320 505 L410 560 Z" fill="#ffffff" opacity="0.88"/>
+        <path d="M260 560 L460 485 L620 560 Z" fill="#ffffff" opacity="0.86"/>
+        <path d="M520 560 L640 520 L720 560 Z" fill="#ffffff" opacity="0.84"/>
+
+        <!-- middle shards -->
+        <path d="M780 560 L880 520 L960 560 Z" fill="#ffffff" opacity="0.86"/>
+        <path d="M910 560 L1040 485 L1170 560 Z" fill="#ffffff" opacity="0.90"/>
+        <path d="M1120 560 L1240 520 L1330 560 Z" fill="#ffffff" opacity="0.84"/>
+
+        <!-- right big group -->
+        <path d="M1430 560 L1600 470 L1760 560 Z" fill="#ffffff" opacity="0.92"/>
+        <path d="M1630 560 L1765 505 L1870 560 Z" fill="#ffffff" opacity="0.88"/>
+        <path d="M1820 560 L1950 520 L2048 560 L2048 708 L1820 708 Z" fill="#ffffff" opacity="0.86"/>
+    </g>
+
+    <!-- Small foreground ice shards -->
+    <g fill="#ffffff" filter="url(#glow)">
+        <path d="M30 580 L70 545 L110 580 Z" />
+        <path d="M150 578 L190 548 L230 578 Z" />
+        <path d="M550 578 L590 545 L630 578 Z" opacity="0.85"/>
+        <path d="M680 582 L725 548 L770 582 Z" opacity="0.8"/>
+        <path d="M820 600 L860 545 L900 600 Z" />
+        <path d="M1220 580 L1260 548 L1300 580 Z" opacity="0.8"/>
+        <path d="M1350 578 L1390 545 L1430 578 Z" />
+        <path d="M1620 580 L1660 545 L1700 580 Z" opacity="0.85"/>
+        <path d="M1750 578 L1790 548 L1830 578 Z" opacity="0.8"/>
+        <path d="M2000 580 L2025 555 L2048 580 Z" opacity="0.8"/>
+    </g>
+
+    <!-- Gentle ground sheen -->
+    <path d="M120 600 C520 560, 980 575, 1340 610 C1560 630, 1780 630, 1960 615"
+          fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="10" stroke-linecap="round"/>
+
+</svg>
