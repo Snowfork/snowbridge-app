@@ -206,6 +206,7 @@ body::before {
 #react-portal-modal-container,
 #react-portal-modal-container * {
     z-index: 10000 !important;
+    pointer-events: auto !important;
 }
 
 .text-card-foreground {
@@ -289,25 +290,38 @@ div[role="menubar"],
     color: #88232f !important;
 }
 
-/* Blur backdrop when wallet modal is open */
-div[role="menubar"] button[data-state="open"]::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    backdrop-filter: blur(8px);
-    background: rgba(255, 255, 255, 0.1);
-    z-index: 30;
-    pointer-events: none;
+/* Wallet side panel */
+.wallet-panel {
+    border-left: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: -12px 0 40px rgba(30, 40, 80, 0.15);
 }
 
-/* Ensure Polkadot wallet dialog appears above blur */
+.wallet-panel h1 {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(15, 23, 42, 0.75);
+}
+
+/* Ensure Polkadot wallet dialog appears above sheet and can receive clicks */
 [data-talisman-connect-root] {
-    z-index: 9999 !important;
+    z-index: 10000 !important;
+    position: relative;
+    pointer-events: auto !important;
 }
 
 [data-talisman-connect-root] * {
-    position: relative;
-    z-index: 1;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+}
+
+/* Disable pointer events on sheet when Polkadot modal is open */
+/* Use high specificity to override inline styles set by Radix */
+body.polkadot-modal-open .wallet-panel[role="dialog"] {
+    pointer-events: none !important;
+}
+
+body.polkadot-modal-open [data-radix-dialog-overlay] {
+    pointer-events: none !important;
 }
 
 .outline-button, .outline-button .lucide {
@@ -370,11 +384,14 @@ button[role="combobox"]:focus-visible,
 /* Glassmorphism utilities */
 .glass {
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 12px 40px rgba(30, 40, 80, 0.12);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(32px);
+}
+
+.glass:not(.wallet-panel) {
+    border-radius: 24px;
 }
 
 .glass.more-blur {
@@ -474,7 +491,7 @@ button[role="combobox"][data-state="open"] {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.walletModal .lucide {
+.wallet-panel .lucide {
     width: 15px;
     height: 15px;
 }

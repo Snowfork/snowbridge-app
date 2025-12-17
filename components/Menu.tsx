@@ -1,25 +1,27 @@
 "use client";
 
+import { Menubar } from "@/components/ui/menubar";
 import {
-  Menubar,
-  MenubarContent,
-  MenubarMenu,
-  MenubarTrigger,
-  MenubarSeparator,
-} from "@/components/ui/menubar";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { Pencil, LogOut } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { ImageWithFallback } from "./ui/image-with-fallback";
-import { FC, useContext, useState } from "react";
+import { FC, useContext, useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   polkadotAccountAtom,
   polkadotAccountsAtom,
   polkadotWalletModalOpenAtom,
   walletAtom,
+  walletSheetOpenAtom,
 } from "@/store/polkadot";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
@@ -43,7 +45,20 @@ export const Menu: FC = () => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const setPolkadotAccounts = useSetAtom(polkadotAccountsAtom);
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
-  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const [polkadotWalletModalOpen, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const [walletSheetOpen, setWalletSheetOpen] = useAtom(walletSheetOpenAtom);
+
+  // Disable pointer events on sheet overlay when Polkadot modal is open
+  useEffect(() => {
+    if (polkadotWalletModalOpen) {
+      document.body.classList.add("polkadot-modal-open");
+    } else {
+      document.body.classList.remove("polkadot-modal-open");
+    }
+    return () => {
+      document.body.classList.remove("polkadot-modal-open");
+    };
+  }, [polkadotWalletModalOpen]);
 
   const { walletInfo } = useWalletInfo();
   const [ethIconError, setEthIconError] = useState(false);
@@ -266,25 +281,28 @@ export const Menu: FC = () => {
         <Link href="/history" className="flex items-center px-3 py-1.5">
           <p className="hidden md:flex glimmer-text">History</p>
         </Link>
-        <MenubarMenu>
-          <MenubarTrigger>
+      </Menubar>
+      <Sheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen}>
+        <SheetTrigger asChild>
+          <button type="button" className="ml-2 mt-2">
             <WalletIcons />
-          </MenubarTrigger>
-          <MenubarContent
-            align="center"
-            className="glass walletModal shadow-sm p-5 text-primary"
-          >
-            <h2
-              className="text-center font-semibold text-lg mb-4"
+          </button>
+        </SheetTrigger>
+        <SheetContent className="wallet-panel glass p-6 text-primary overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle
+              className="text-center font-semibold text-lg"
               style={{ color: "#212d41" }}
             >
               Wallets
-            </h2>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4">
             <EthereumWallet />
             <PolkadotWallet />
-          </MenubarContent>
-        </MenubarMenu>
-      </Menubar>
+          </div>
+        </SheetContent>
+      </Sheet>
       <PolkadotWalletDialog />
     </div>
   );

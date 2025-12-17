@@ -22,6 +22,7 @@ export const polkadotAccountAtom = atom(
   },
 );
 export const polkadotWalletModalOpenAtom = atom<boolean>(false);
+export const walletSheetOpenAtom = atom<boolean>(false);
 
 export const walletNameAtom = atomWithStorage<string | null>(
   "wallet_name",

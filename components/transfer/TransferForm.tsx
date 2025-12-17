@@ -58,7 +58,7 @@ import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
-import { ArrowRight, ChevronsUpDown, LucideAlertCircle } from "lucide-react";
+import { ArrowRight, LucideAlertCircle } from "lucide-react";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
   getChainId,
@@ -650,99 +650,78 @@ export const TransferForm: FC<TransferFormProps> = ({
           </div>
         </div>
         <div className="transfer-details space-y-2">
-          <FormField
-            control={form.control}
-            name="sourceAccount"
-            render={({ field }) => (
-              <FormItem {...field} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <FormLabel>From account</FormLabel>
-                  <div className="text-right">
-                    <BalanceDisplay
-                      source={assetsV2.getTransferLocation(
-                        assetRegistry,
-                        source.type,
-                        source.key,
-                      )}
-                      destination={destination}
-                      sourceAccount={watchSourceAccount ?? ""}
-                      registry={assetRegistry}
-                      token={token}
-                      tokenMetadata={tokenMetadata}
-                      displayDecimals={8}
-                    />
-                  </div>
-                </div>
-                <FormControl>
-                  <div>
-                    {source.type == "ethereum" ? (
-                      ethereumAccounts === null ||
-                      ethereumAccounts.length === 0 ? (
-                        <button
-                          type="button"
-                          className="fake-dropdown flex items-center justify-between px-4 py-3 text-muted-glass cursor-pointer hover:bg-white/40 transition-colors w-full text-left"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            await openEthereumWallet({ view: "Connect" });
-                          }}
-                        >
-                          <span>Connect Ethereum wallet</span>
-                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                        </button>
-                      ) : (
-                        <SelectedEthereumWallet field={field} />
-                      )
-                    ) : polkadotAccounts === null ||
-                      polkadotAccounts.length === 0 ? (
-                      <button
-                        type="button"
-                        className="fake-dropdown flex items-center justify-between px-4 py-3 text-muted-glass cursor-pointer hover:bg-white/40 transition-colors w-full text-left"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setPolkadotWalletModalOpen(true);
-                        }}
-                      >
-                        <span>Connect Polkadot wallet</span>
-                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                      </button>
-                    ) : (
-                      <SelectedPolkadotAccount
-                        source={source.id}
-                        polkadotAccounts={
-                          polkadotAccounts?.filter(
-                            filterByAccountType(
-                              assetRegistry.parachains[source.key].info
-                                .accountType,
-                            ),
-                          ) ?? []
-                        }
-                        polkadotAccount={watchSourceAccount}
-                        onValueChange={field.onChange}
-                        ss58Format={
-                          assetRegistry.parachains[source.key]?.info
-                            .ss58Format ??
-                          assetRegistry.relaychain.ss58Format ??
-                          0
-                        }
-                        walletName={polkadotWallet?.title}
+          {/* Only show From account when the corresponding wallet is connected */}
+          {((source.type === "ethereum" &&
+            ethereumAccounts &&
+            ethereumAccounts.length > 0) ||
+            (source.type === "substrate" &&
+              polkadotAccounts &&
+              polkadotAccounts.length > 0)) && (
+            <FormField
+              control={form.control}
+              name="sourceAccount"
+              render={({ field }) => (
+                <FormItem {...field} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <FormLabel>From account</FormLabel>
+                    <div className="text-right">
+                      <BalanceDisplay
+                        source={assetsV2.getTransferLocation(
+                          assetRegistry,
+                          source.type,
+                          source.key,
+                        )}
+                        destination={destination}
+                        sourceAccount={watchSourceAccount ?? ""}
+                        registry={assetRegistry}
+                        token={token}
+                        tokenMetadata={tokenMetadata}
+                        displayDecimals={8}
                       />
-                    )}
+                    </div>
                   </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="beneficiary"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel>To account</FormLabel>
-                <FormControl>
-                  {beneficiaries && beneficiaries.length > 0 ? (
+                  <FormControl>
+                    <div>
+                      {source.type == "ethereum" ? (
+                        <SelectedEthereumWallet field={field} />
+                      ) : (
+                        <SelectedPolkadotAccount
+                          source={source.id}
+                          polkadotAccounts={
+                            polkadotAccounts?.filter(
+                              filterByAccountType(
+                                assetRegistry.parachains[source.key].info
+                                  .accountType,
+                              ),
+                            ) ?? []
+                          }
+                          polkadotAccount={watchSourceAccount}
+                          onValueChange={field.onChange}
+                          ss58Format={
+                            assetRegistry.parachains[source.key]?.info
+                              .ss58Format ??
+                            assetRegistry.relaychain.ss58Format ??
+                            0
+                          }
+                          walletName={polkadotWallet?.title}
+                        />
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          {/* Only show To account when beneficiaries are available */}
+          {beneficiaries && beneficiaries.length > 0 && (
+            <FormField
+              control={form.control}
+              name="beneficiary"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>To account</FormLabel>
+                  <FormControl>
                     <SelectAccount
                       accounts={beneficiaries}
                       field={field}
@@ -751,34 +730,12 @@ export const TransferForm: FC<TransferFormProps> = ({
                       polkadotWalletName={polkadotWallet?.title}
                       ethereumWalletName={ethereumWalletInfo?.name}
                     />
-                  ) : destination.type === "ethereum" ? (
-                    <button
-                      type="button"
-                      className="fake-dropdown flex items-center justify-between px-4 py-3 text-muted-glass cursor-pointer hover:bg-white/40 transition-colors w-full text-left"
-                      onClick={async (e) => {
-                        await openEthereumWallet({ view: "Connect" });
-                      }}
-                    >
-                      <span>Connect Ethereum wallet</span>
-                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="fake-dropdown flex items-center justify-between px-4 py-3 text-muted-glass cursor-pointer hover:bg-white/40 transition-colors w-full text-left"
-                      onClick={(e) => {
-                        setPolkadotWalletModalOpen(true);
-                      }}
-                    >
-                      <span>Connect Polkadot wallet</span>
-                      <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                    </button>
-                  )}
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           <div>
             <FormField
               control={form.control}
