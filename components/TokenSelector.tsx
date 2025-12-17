@@ -290,10 +290,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                         className="font-medium"
                         style={{ color: "#212d41" }}
                       >
-                        {asset.name}
+                        {asset.symbol}
                       </span>
                       <span className="text-xs text-gray-500 inline-flex items-center gap-1">
-                        {asset.symbol}
+                        {asset.name}
                         {t.toLowerCase() !==
                           assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
                           <span
