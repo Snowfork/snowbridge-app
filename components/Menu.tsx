@@ -8,12 +8,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { Pencil, LogOut, Menu as MenuIcon, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { ImageWithFallback } from "./ui/image-with-fallback";
+import { trimAccount } from "@/utils/formatting";
 import { FC, useContext, useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
@@ -23,6 +30,7 @@ import {
   walletAtom,
   walletSheetOpenAtom,
 } from "@/store/polkadot";
+import { ethereumAccountAtom } from "@/store/ethereum";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
@@ -31,6 +39,7 @@ import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import { disconnectWallet } from "@/lib/client/web3modal";
 import { RegistryContext } from "@/app/providers";
+import { EthereumTokenList, PolkadotTokenList } from "./WalletTokenList";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
@@ -45,7 +54,9 @@ export const Menu: FC = () => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const setPolkadotAccounts = useSetAtom(polkadotAccountsAtom);
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
-  const [polkadotWalletModalOpen, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const [polkadotWalletModalOpen, setPolkadotWalletModalOpen] = useAtom(
+    polkadotWalletModalOpenAtom,
+  );
   const [walletSheetOpen, setWalletSheetOpen] = useAtom(walletSheetOpenAtom);
 
   // Disable pointer events on sheet overlay when Polkadot modal is open
@@ -59,6 +70,13 @@ export const Menu: FC = () => {
       document.body.classList.remove("polkadot-modal-open");
     };
   }, [polkadotWalletModalOpen]);
+
+  // Auto-select first Polkadot account if none is selected
+  useEffect(() => {
+    if (polkadotAccounts && polkadotAccounts.length > 0 && !polkadotAccount) {
+      setPolkadotAccount(polkadotAccounts[0].address);
+    }
+  }, [polkadotAccounts, polkadotAccount, setPolkadotAccount]);
 
   const { walletInfo } = useWalletInfo();
   const [ethIconError, setEthIconError] = useState(false);
@@ -120,60 +138,89 @@ export const Menu: FC = () => {
     );
   };
 
-  const PolkadotWallet = () => {
+  const PolkadotWalletHeader = () => {
     if (!polkadotAccounts || polkadotAccounts.length == 0) {
       return (
-        <div className="flex items-center justify-between py-2 mt-2">
-          <h1>Polkadot</h1>
-          <button
-            onClick={() => setPolkadotWalletModalOpen(true)}
-            className="glass-button glass-button-small flex items-center ml-2"
-          >
+        <div className="flex items-center justify-between w-full pr-2">
+          <div className="flex items-center gap-2">
             <Image
               src="/images/polkadot.png"
-              width={16}
-              height={16}
+              width={20}
+              height={20}
               alt="Polkadot"
+              className="rounded-full"
             />
-            <span className={"ml-1"}>Connect</span>
-          </button>
+            <span className="font-medium">Polkadot</span>
+          </div>
+          <div
+            role="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPolkadotWalletModalOpen(true);
+            }}
+            className="glass-button glass-button-small flex items-center cursor-pointer"
+          >
+            <span>Connect</span>
+          </div>
         </div>
       );
     }
     return (
-      <>
-        <div className="flex items-center justify-between py-2 mt-2">
-          <h1>Polkadot</h1>
-          <div className="flex items-center gap-2">
-            {wallet?.logo?.src && (
-              <ImageWithFallback
-                src={wallet.logo.src}
-                fallbackSrc="/images/polkadot.png"
-                width={20}
-                height={20}
-                alt={wallet?.title || "Wallet"}
-                className="rounded-full"
-              />
-            )}
-            <span>{wallet?.title}</span>
-            <button
-              onClick={() => setPolkadotWalletModalOpen(true)}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <Pencil />
-            </button>
-            <button
-              onClick={() => {
-                setPolkadotAccount(null);
-                setPolkadotAccounts([]);
-                setWallet(null);
-              }}
-              className="text-gray-500 hover:text-red-600 transition-colors"
-            >
-              <LogOut />
-            </button>
+      <div className="flex items-center justify-between w-full pr-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <ImageWithFallback
+            src={wallet?.logo?.src || "/images/polkadot.png"}
+            fallbackSrc="/images/polkadot.png"
+            width={20}
+            height={20}
+            alt={wallet?.title || "Wallet"}
+            className="rounded-full flex-shrink-0"
+          />
+          <span className="font-medium">Polkadot</span>
+          {polkadotAccount?.address && (
+            <span className="text-xs text-muted-foreground truncate mt-2px">
+              {trimAccount(polkadotAccount.address, 10)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <div
+            role="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPolkadotWalletModalOpen(true);
+            }}
+            className="text-gray-500 hover:text-gray-700 transition-colors p-1 cursor-pointer"
+          >
+            <Pencil className="w-4 h-4" />
+          </div>
+          <div
+            role="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPolkadotAccount(null);
+              setPolkadotAccounts([]);
+              setWallet(null);
+            }}
+            className="text-gray-500 hover:text-red-600 transition-colors p-1 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
           </div>
         </div>
+      </div>
+    );
+  };
+
+  const PolkadotWalletContent = () => {
+    if (!polkadotAccounts || polkadotAccounts.length == 0) {
+      return (
+        <div className="text-sm text-muted-foreground text-center py-2">
+          Connect your Polkadot wallet to view accounts
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-3">
         <SelectedPolkadotAccount
           source="polkadot"
           ss58Format={registry.relaychain.ss58Format}
@@ -182,14 +229,16 @@ export const Menu: FC = () => {
           onValueChange={setPolkadotAccount}
           walletName={wallet?.title}
         />
-      </>
+        <PolkadotTokenList account={polkadotAccount?.address} />
+      </div>
     );
   };
 
-  const EthereumWallet = () => {
+  const EthereumWalletHeader = () => {
     const { walletInfo } = useWalletInfo();
     const { open } = useAppKit();
     const [showEthereumIcon, setShowEthereumIcon] = useState(true);
+    const ethereumAccount = useAtomValue(ethereumAccountAtom);
 
     const getWalletIcon = () => {
       if (walletInfo?.icon) return walletInfo.icon;
@@ -208,61 +257,95 @@ export const Menu: FC = () => {
 
     if (!walletInfo?.name) {
       return (
-        <div className="flex items-center justify-between py-2">
-          <h1>Ethereum</h1>
-          <button
-            onClick={async () => await open({ view: "Connect" })}
-            className="glass-button glass-button-small flex items-center ml-2"
-          >
+        <div className="flex items-center justify-between w-full pr-2">
+          <div className="flex items-center gap-2">
             <Image
               src="/images/ethereum.png"
-              width={16}
-              height={16}
+              width={20}
+              height={20}
               alt="Ethereum"
+              className="rounded-full"
             />
-            <span className={"ml-1"}>Connect</span>
-          </button>
+            <span className="font-medium">Ethereum</span>
+          </div>
+          <div
+            role="button"
+            onClick={async (e) => {
+              e.stopPropagation();
+              await open({ view: "Connect" });
+            }}
+            className="glass-button glass-button-small flex items-center cursor-pointer"
+          >
+            <span>Connect</span>
+          </div>
         </div>
       );
     }
 
     return (
-      <>
-        <div className="flex items-center justify-between py-2">
-          <h1>Ethereum</h1>
-          <div className="flex items-center gap-2">
-            {showEthereumIcon && (
-              <Image
-                src={getWalletIcon()}
-                width={20}
-                height={20}
-                alt={walletInfo?.name || "Wallet"}
-                className="rounded-full"
-                onError={() => setShowEthereumIcon(false)}
-              />
-            )}
-            <span>{walletInfo?.name}</span>
-            <button
-              onClick={async () => await open({ view: "Connect" })}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <Pencil />
-            </button>
-            <button
-              type="button"
-              onClick={handleDisconnect}
-              className="text-gray-500 hover:text-red-600 transition-colors"
-            >
-              <LogOut />
-            </button>
+      <div className="flex items-center justify-between w-full pr-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {showEthereumIcon && (
+            <Image
+              src={getWalletIcon()}
+              width={20}
+              height={20}
+              alt={walletInfo?.name || "Wallet"}
+              className="rounded-full flex-shrink-0"
+              onError={() => setShowEthereumIcon(false)}
+            />
+          )}
+          <span className="font-medium">Ethereum</span>
+          {ethereumAccount && (
+            <span className="text-xs text-muted-foreground truncate mt-2px">
+              {trimAccount(ethereumAccount, 10)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <div
+            role="button"
+            onClick={async (e) => {
+              e.stopPropagation();
+              await open({ view: "Connect" });
+            }}
+            className="text-gray-500 hover:text-gray-700 transition-colors p-1 cursor-pointer"
+          >
+            <Pencil className="w-4 h-4" />
+          </div>
+          <div
+            role="button"
+            onClick={handleDisconnect}
+            className="text-gray-500 hover:text-red-600 transition-colors p-1 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
           </div>
         </div>
+      </div>
+    );
+  };
+
+  const EthereumWalletContent = () => {
+    const { walletInfo } = useWalletInfo();
+
+    if (!walletInfo?.name) {
+      return (
+        <div className="text-sm text-muted-foreground text-center py-2">
+          Connect your Ethereum wallet to view accounts
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
         <SelectedEthereumWallet />
-      </>
+        <EthereumTokenList />
+      </div>
     );
   };
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openAccordions, setOpenAccordions] = useState<string[]>([]);
 
   return (
     <div className="flex items-center">
@@ -347,8 +430,11 @@ export const Menu: FC = () => {
             <WalletIcons />
           </button>
         </SheetTrigger>
-        <SheetContent className="wallet-panel glass p-6 text-primary overflow-y-auto">
-          <SheetHeader className="mb-6">
+        <SheetContent
+          className="wallet-panel glass p-6 text-primary overflow-y-auto"
+          aria-describedby={undefined}
+        >
+          <SheetHeader className="mb-4">
             <SheetTitle
               className="text-center font-semibold text-lg"
               style={{ color: "#212d41" }}
@@ -356,10 +442,35 @@ export const Menu: FC = () => {
               Wallets
             </SheetTitle>
           </SheetHeader>
-          <div className="space-y-4">
-            <EthereumWallet />
-            <PolkadotWallet />
-          </div>
+          <Accordion
+            type="multiple"
+            value={openAccordions}
+            onValueChange={setOpenAccordions}
+            className="w-full"
+          >
+            <AccordionItem
+              value="ethereum"
+              className="border-b border-white/20"
+            >
+              <AccordionTrigger className="py-3 hover:no-underline">
+                <EthereumWalletHeader />
+              </AccordionTrigger>
+              <AccordionContent>
+                <EthereumWalletContent />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem
+              value="polkadot"
+              className="border-b border-white/20"
+            >
+              <AccordionTrigger className="py-3 hover:no-underline">
+                <PolkadotWalletHeader />
+              </AccordionTrigger>
+              <AccordionContent>
+                <PolkadotWalletContent />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </SheetContent>
       </Sheet>
       <PolkadotWalletDialog />
