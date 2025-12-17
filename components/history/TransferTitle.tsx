@@ -172,7 +172,7 @@ export function TransferTitle({
       width={18}
       height={18}
       alt={tokenName ?? "token"}
-      className="inline-block rounded-full"
+      className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
       onError={() => setTokenImageError(true)}
     />
   );
@@ -187,7 +187,7 @@ export function TransferTitle({
       width={18}
       height={18}
       alt={destination?.name ?? "destination"}
-      className="inline-block rounded-full"
+      className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
       onError={() => setDestImageError(true)}
     />
   );
@@ -196,7 +196,7 @@ export function TransferTitle({
     return (
       <span className="flex items-center gap-1 col-span-6 place-self-start text-left text-sm">
         {showGlobeForGlobal && (
-          <LucideGlobe size={14} className="text-muted-foreground mr-1" />
+          <LucideGlobe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground mr-1" />
         )}
         {tokenIcon}
         <span className="truncate">
@@ -205,7 +205,7 @@ export function TransferTitle({
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{destination?.name ?? "unknown"}</span>
-        <span className="text-muted-foreground text-xs ml-1">{shortDate}</span>
+        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">{shortDate}</span>
       </span>
     );
   }
@@ -216,7 +216,7 @@ export function TransferTitle({
         transfer={transfer}
       />
       {showGlobeForGlobal && (
-        <LucideGlobe size={14} className="text-muted-foreground" />
+        <LucideGlobe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
       )}
       <p className="flex-1 text-left flex items-center gap-1 text-sm">
         {tokenIcon}
@@ -226,7 +226,7 @@ export function TransferTitle({
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{destination?.name ?? "unknown"}</span>
-        <span className="text-muted-foreground text-xs ml-1">{shortDate}</span>
+        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">{shortDate}</span>
       </p>
     </div>
   );

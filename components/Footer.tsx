@@ -10,7 +10,7 @@ export function Footer() {
   const setAccepted = useSetAtom(acceptedTermsOfUseAtom);
   return (
     <>
-      <div className="text-xs mb-2">
+      <div className="text-xs mb-2 flex flex-wrap justify-center gap-1.5">
         <a
           className="footer-item glass-pill"
           onClick={() => setAccepted(false)}
@@ -53,12 +53,13 @@ export function Footer() {
           Dune Dashboard
         </a>
       </div>
-      <div className="text-xs mt-2 flex items-center gap-2">
+      <div className="text-xs mt-2 flex items-center gap-1">
         Powered and Funded by{" "}
         <Image
-          src="/images/polkadot_logo.png"
-          width={80}
-          height={20}
+          className={"opacity-80"}
+          src="/images/polkadot_new.png"
+          width={100}
+          height={17}
           alt="Polkadot"
         />
       </div>

@@ -13,15 +13,15 @@ export function TransferStatusBadge({
 }: TransferStatusBadgeProps) {
   const statusConfig = {
     [historyV2.TransferStatus.Complete]: {
-      icon: <Check size={16} />,
+      icon: <Check className="w-3 h-3 sm:w-4 sm:h-4" />,
       style: "bg-emerald-500/20 border-white/40 text-emerald-200",
     },
     [historyV2.TransferStatus.Pending]: {
-      icon: <Loader2 size={16} className="animate-spin" />,
+      icon: <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />,
       style: "bg-amber-500/20 border-white/40 text-amber-200",
     },
     [historyV2.TransferStatus.Failed]: {
-      icon: <AlertCircle size={16} />,
+      icon: <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />,
       style: "bg-red-500/20 border-white/40 text-red-200",
     },
   };
@@ -31,7 +31,7 @@ export function TransferStatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center w-7 h-7 rounded-full",
+        "inline-flex items-center justify-center w-5 h-5 sm:w-7 sm:h-7 rounded-full",
         "backdrop-blur-sm border",
         config.style,
         className,

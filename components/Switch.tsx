@@ -397,7 +397,7 @@ export const SwitchComponent: FC = () => {
 
   return (
     <>
-      <Card className="w-full max-w-2xl glass border-white/60">
+      <Card className="w-full max-w-[min(42rem,calc(100vw-2rem))] glass border-white/60">
         <CardHeader>
           <CardTitle>Polar Path</CardTitle>
           <CardDescription className="hidden md:flex">
