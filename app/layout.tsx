@@ -16,16 +16,6 @@ import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
 
-export const metadata: Metadata = {
-  ...meta,
-  icons: [
-    {
-      rel: "icon",
-      url: "/icon.svg",
-    },
-  ],
-};
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -50,13 +40,13 @@ export default async function RootLayout({
             <header className="w-full px-6 py-4 flex items-center justify-between">
               <div className="flex items-center">
                 <Image
-                  src="/images/logo-blue.png"
-                  width={40}
-                  height={40}
+                  src="/images/snowbridge-icon-light.svg"
+                  width={32}
+                  height={32}
                   alt="Snowbridge"
                 />
-                <h1 className="text-2xl px-2 ml-2 mt-1 text-white">
-                  Snowbridge
+                <h1 className="font-medium text-2xl px-2 ml-1 text-white">
+                  SNOWBRIDGE
                 </h1>
               </div>
               <Menu />
