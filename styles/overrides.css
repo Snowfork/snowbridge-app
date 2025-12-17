@@ -189,10 +189,10 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #a8d5f7 0%, #c0f9fd 25%, #c5f4fb 50%, #a8fce9 75%, #7ff5fe 100%);
+    background: linear-gradient(135deg, #91bde3 0%, #a2dbdf 25%, #a6cce4 50%, #8a9dcc 75%, #7ff5fe 100%);
     background-size: 400% 400%;
     opacity: 0.5;
-    animation: gradient 10s ease infinite;
+    animation: gradient 20s ease infinite;
     pointer-events: none;
     z-index: 0;
 }
