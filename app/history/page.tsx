@@ -333,11 +333,24 @@ const transferDetail = (
     transfer,
     registry.ethereumChains[registry.ethChainId].assets,
   );
+  const when = new Date(transfer.info.when);
+  const formattedDate =
+    when.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "2-digit",
+    }) +
+    " " +
+    when.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   return (
     <div className="flex-col">
       <div className="glass-sub p-4 pt-2 overflow-x-auto">
         <table className="w-full text-sm">
           <tbody>
+            <tr>
+              <td className="py-1 font-medium">Date</td>
+              <td className="py-1 text-right">{formattedDate}</td>
+            </tr>
             <tr>
               <td className="py-1 font-medium">Source</td>
               <td className="py-1 text-right">
@@ -629,7 +642,7 @@ export default function History() {
   return (
     <Suspense fallback={<Loading />}>
       <div className="flex justify-center">
-        <Card className="w-full max-w-3xl min-h-[460px] glass">
+        <Card className="w-full max-w-[min(48rem,calc(100vw-2rem))] min-h-[460px] glass">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>History</CardTitle>

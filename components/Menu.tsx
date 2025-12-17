@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { Pencil, LogOut } from "lucide-react";
+import { Pencil, LogOut, Menu as MenuIcon, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { ImageWithFallback } from "./ui/image-with-fallback";
@@ -262,26 +262,85 @@ export const Menu: FC = () => {
     );
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="flex items-center">
-      <Menubar>
-        <Link href="/" className="flex items-center px-3 py-1.5">
-          <p className="hidden md:flex glimmer-text">Transfer</p>
-        </Link>
-        {envName === "westend_sepolia" ? null : (
-          <Link href="/switch" className="flex items-center px-3 py-1.5">
-            <p className="hidden md:flex glimmer-text">Polar Path</p>
+      {/* Desktop menu */}
+      <div className="hidden md:block">
+        <Menubar>
+          <Link href="/" className="flex items-center px-3 py-1.5">
+            <p className="glimmer-text">Transfer</p>
           </Link>
+          {envName === "westend_sepolia" ? null : (
+            <Link href="/switch" className="flex items-center px-3 py-1.5">
+              <p className="glimmer-text">Polar Path</p>
+            </Link>
+          )}
+          {envName === "polkadot_mainnet" ? (
+            <Link href="/kusama" className="flex items-center px-3 py-1.5">
+              <p className="glimmer-text">Kusama</p>
+            </Link>
+          ) : null}
+          <Link href="/history" className="flex items-center px-3 py-1.5">
+            <p className="glimmer-text">History</p>
+          </Link>
+        </Menubar>
+      </div>
+
+      {/* Mobile hamburger button */}
+      <button
+        type="button"
+        className="md:hidden p-2"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      >
+        {mobileMenuOpen ? (
+          <X className="h-6 w-6 text-white" />
+        ) : (
+          <MenuIcon className="h-6 w-6 text-white" />
         )}
-        {envName === "polkadot_mainnet" ? (
-          <Link href="/kusama" className="flex items-center px-3 py-1.5">
-            <p className="hidden md:flex glimmer-text">Kusama</p>
-          </Link>
-        ) : null}
-        <Link href="/history" className="flex items-center px-3 py-1.5">
-          <p className="hidden md:flex glimmer-text">History</p>
-        </Link>
-      </Menubar>
+      </button>
+
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 right-0 px-4 py-3 z-50">
+          <div className="flex flex-wrap gap-2 justify-center glass rounded-2xl p-3">
+            <Link
+              href="/"
+              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Transfer
+            </Link>
+            {envName === "westend_sepolia" ? null : (
+              <Link
+                href="/switch"
+                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Polar Path
+              </Link>
+            )}
+            {envName === "polkadot_mainnet" ? (
+              <Link
+                href="/kusama"
+                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Kusama
+              </Link>
+            ) : null}
+            <Link
+              href="/history"
+              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              History
+            </Link>
+          </div>
+        </div>
+      )}
+
       <Sheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen}>
         <SheetTrigger asChild>
           <button type="button" className="ml-2 mt-2">

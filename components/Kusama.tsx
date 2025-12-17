@@ -396,7 +396,7 @@ export const KusamaComponent: FC = () => {
 
   return (
     <>
-      <Card className="w-full max-w-[700px] glass border-white/60">
+      <Card className="w-full max-w-[min(700px,calc(100vw-2rem))] glass border-white/60">
         <CardHeader>
           <CardTitle>Transfer to Kusama</CardTitle>
           <CardDescription className="hidden md:flex">
@@ -414,18 +414,18 @@ export const KusamaComponent: FC = () => {
                 <div className="grid grid-cols-2 space-x-2">
                   <FormLabel>Route</FormLabel>
                 </div>
-                <div className="glass-sub px-4 py-3 flex items-center justify-between gap-3">
+                <div className="glass-sub px-3 sm:px-4 py-3 flex flex-row items-center justify-between gap-1 sm:gap-3">
                   <FormField
                     control={form.control}
                     name="source"
                     render={({ field }) => (
-                      <FormItem className="flex-1">
+                      <FormItem className="flex-1 min-w-0">
                         <FormControl>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
                           >
-                            <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                            <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow px-2 sm:px-3">
                               <SelectValue placeholder="Select source" />
                             </SelectTrigger>
                             <SelectContent>
@@ -476,13 +476,13 @@ export const KusamaComponent: FC = () => {
                     control={form.control}
                     name="destination"
                     render={({ field }) => (
-                      <FormItem className="flex-1">
+                      <FormItem className="flex-1 min-w-0">
                         <FormControl>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
                           >
-                            <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                            <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow px-2 sm:px-3">
                               <SelectValue placeholder="Select destination" />
                             </SelectTrigger>
                             <SelectContent>

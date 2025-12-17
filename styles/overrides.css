@@ -115,8 +115,7 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide
     background-color: rgba(255, 255, 255, 0.75);
     border-radius: 30px;
     padding: 5px 10px;
-    margin-left: 5px;
-    margin-right: 5px;
+    white-space: nowrap;
 }
 
 .selectIcon {
@@ -312,6 +311,12 @@ div[role="menubar"],
 [data-talisman-connect-root] * {
     z-index: 10000 !important;
     pointer-events: auto !important;
+}
+
+/* Make Talisman wallet dialog wider */
+[data-talisman-connect-root] [class*="Modal__Content"] {
+    max-width: 420px !important;
+    width: 90vw !important;
 }
 
 /* Disable pointer events on sheet when Polkadot modal is open */

@@ -12,10 +12,10 @@ export function SelectItemWithIcon({
   altImage,
 }: SelectItemWithIconProps) {
   return (
-    <div className="flex items-center">
+    <div className="flex items-center min-w-0">
       {image && (
         <ImageWithFallback
-          className="selectIcon"
+          className="selectIcon flex-shrink-0"
           src={`/images/${image.toLowerCase()}.png`}
           fallbackSrc={`/images/${(altImage ?? "token_generic").toLowerCase()}.png`}
           width={20}
@@ -23,7 +23,7 @@ export function SelectItemWithIcon({
           alt={image ?? ""}
         />
       )}
-      {label}
+      <span className="truncate">{label}</span>
     </div>
   );
 }

@@ -30,6 +30,7 @@ SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  side?: "left" | "right";
   onInteractOutside?: (event: Event) => void;
   onPointerDownOutside?: (event: Event) => void;
 }
@@ -37,14 +38,16 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   SheetContentProps
->(({ className, children, onInteractOutside, onPointerDownOutside, ...props }, ref) => (
+>(({ className, children, side = "right", onInteractOutside, onPointerDownOutside, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
         "fixed z-50 gap-4 bg-background shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=open]:duration-200",
-        "inset-y-0 right-0 h-full w-3/4 sm:max-w-sm data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right rounded-tl-2xl rounded-br-none rounded-tr-none rounded-bl-none",
+        "inset-y-0 h-full w-3/4 sm:max-w-md",
+        side === "right" && "right-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right rounded-tl-2xl",
+        side === "left" && "left-0 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left rounded-tr-2xl",
         className
       )}
       onInteractOutside={onInteractOutside}

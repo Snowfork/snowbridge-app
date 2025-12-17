@@ -557,15 +557,15 @@ export const TransferForm: FC<TransferFormProps> = ({
           <div className="grid grid-cols-2 space-x-2">
             <FormLabel>Route</FormLabel>
           </div>
-          <div className="glass-sub px-4 py-3 flex items-center justify-between gap-3">
+          <div className="glass-sub px-3 sm:px-4 py-3 flex flex-row items-center justify-between gap-1 sm:gap-3">
             <FormField
               control={form.control}
               name="source"
               render={({ field }) => (
-                <FormItem className="flex-1">
+                <FormItem className="flex-1 min-w-0">
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow px-2 sm:px-3">
                         <SelectValue placeholder="Select source" />
                       </SelectTrigger>
                       <SelectContent>
@@ -607,7 +607,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               type="button"
               variant="ghost"
               size="sm"
-              className="rounded-full bg-white/[0.28] hover:bg-white/40 p-2 h-auto"
+              className="rounded-full bg-white/[0.28] hover:bg-white/40 p-1.5 sm:p-2 h-auto flex-shrink-0"
               onClick={() => {
                 const currentSource = form.getValues("source");
                 const currentDest = form.getValues("destination");
@@ -615,17 +615,17 @@ export const TransferForm: FC<TransferFormProps> = ({
                 form.setValue("destination", currentSource);
               }}
             >
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
 
             <FormField
               control={form.control}
               name="destination"
               render={({ field }) => (
-                <FormItem className="flex-1">
+                <FormItem className="flex-1 min-w-0">
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow">
+                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow px-2 sm:px-3">
                         <SelectValue placeholder="Select destination" />
                       </SelectTrigger>
                       <SelectContent>
@@ -744,10 +744,10 @@ export const TransferForm: FC<TransferFormProps> = ({
                 <FormItem className="space-y-2">
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <div className="amountContainer flex items-center gap-2 w-full px-3 py-3">
+                    <div className="amountContainer flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full px-3 py-3">
                       <div className="flex-1 flex flex-col min-w-0">
                         <input
-                          className="amountInput p2 text-left text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                          className="amountInput p2 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
                           type="string"
                           placeholder="0.0"
                           {...field}
@@ -758,84 +758,86 @@ export const TransferForm: FC<TransferFormProps> = ({
                           </div>
                         )}
                       </div>
-                      <Button
-                        type="button"
-                        variant={"clean"}
-                        className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
-                        onClick={() => {
-                          if (balanceInfo && tokenMetadata) {
-                            let maxAmount = balanceInfo.balance;
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button
+                          type="button"
+                          variant={"clean"}
+                          className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
+                          onClick={() => {
+                            if (balanceInfo && tokenMetadata) {
+                              let maxAmount = balanceInfo.balance;
 
-                            // If transferring ETH from Ethereum, subtract the fee
-                            const isEther =
-                              token.toLowerCase() ===
-                              assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
-                            if (
-                              isEther &&
-                              source.type === "ethereum" &&
-                              feeInfo
-                            ) {
-                              const feeBuffer =
-                                (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for gas fluctuations
-                              maxAmount =
-                                maxAmount > feeBuffer
-                                  ? maxAmount - feeBuffer
-                                  : 0n;
+                              // If transferring ETH from Ethereum, subtract the fee
+                              const isEther =
+                                token.toLowerCase() ===
+                                assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
+                              if (
+                                isEther &&
+                                source.type === "ethereum" &&
+                                feeInfo
+                              ) {
+                                const feeBuffer =
+                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for gas fluctuations
+                                maxAmount =
+                                  maxAmount > feeBuffer
+                                    ? maxAmount - feeBuffer
+                                    : 0n;
+                              }
+
+                              // If transferring native token from substrate (e.g., DOT), subtract the fee
+                              if (
+                                source.type === "substrate" &&
+                                feeInfo &&
+                                tokenMetadata.symbol.toUpperCase() ===
+                                  feeInfo.symbol.toUpperCase()
+                              ) {
+                                const feeBuffer =
+                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer
+                                maxAmount =
+                                  maxAmount > feeBuffer
+                                    ? maxAmount - feeBuffer
+                                    : 0n;
+                              }
+
+                              const maxBalance = formatBalance({
+                                number: maxAmount,
+                                decimals: Number(tokenMetadata.decimals),
+                                displayDecimals: Number(tokenMetadata.decimals),
+                              });
+                              form.setValue("amount", maxBalance);
                             }
-
-                            // If transferring native token from substrate (e.g., DOT), subtract the fee
-                            if (
-                              source.type === "substrate" &&
-                              feeInfo &&
-                              tokenMetadata.symbol.toUpperCase() ===
-                                feeInfo.symbol.toUpperCase()
-                            ) {
-                              const feeBuffer =
-                                (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer
-                              maxAmount =
-                                maxAmount > feeBuffer
-                                  ? maxAmount - feeBuffer
-                                  : 0n;
-                            }
-
-                            const maxBalance = formatBalance({
-                              number: maxAmount,
-                              decimals: Number(tokenMetadata.decimals),
-                              displayDecimals: Number(tokenMetadata.decimals),
-                            });
-                            form.setValue("amount", maxBalance);
-                          }
-                        }}
-                        disabled={!balanceInfo || !tokenMetadata}
-                      >
-                        Max
-                      </Button>
-                      <FormField
-                        control={form.control}
-                        name="token"
-                        render={({ field }) => (
-                          <FormItem className="flex-shrink-0">
-                            <FormControl>
-                              <TokenSelector
-                                value={field.value}
-                                onChange={field.onChange}
-                                assets={
-                                  source.destinations[destination.key].assets
-                                }
-                                assetRegistry={assetRegistry}
-                                ethChainId={assetRegistry.ethChainId}
-                                sourceAccount={watchSourceAccount}
-                                source={assetsV2.getTransferLocation(
-                                  assetRegistry,
-                                  source.type,
-                                  source.key,
-                                )}
-                                destination={destination}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                          }}
+                          disabled={!balanceInfo || !tokenMetadata}
+                        >
+                          Max
+                        </Button>
+                        <FormField
+                          control={form.control}
+                          name="token"
+                          render={({ field }) => (
+                            <FormItem className="flex-shrink-0">
+                              <FormControl>
+                                <TokenSelector
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  assets={
+                                    source.destinations[destination.key].assets
+                                  }
+                                  assetRegistry={assetRegistry}
+                                  ethChainId={assetRegistry.ethChainId}
+                                  sourceAccount={watchSourceAccount}
+                                  source={assetsV2.getTransferLocation(
+                                    assetRegistry,
+                                    source.type,
+                                    source.key,
+                                  )}
+                                  destination={destination}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   </FormControl>
                   {form.formState.errors.amount && (
