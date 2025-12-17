@@ -958,7 +958,7 @@ function SubmitButton({
             ? "Validating..."
             : !feeInfo
               ? "Fetching Fees..."
-              : "Review transfer"}
+              : "Next"}
       </Button>
     </div>
   );
