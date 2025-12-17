@@ -12,6 +12,7 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { Pencil, LogOut } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { ImageWithFallback } from "./ui/image-with-fallback";
 import { FC, useContext, useState } from "react";
 import { Button } from "./ui/button";
 import {
@@ -105,8 +106,6 @@ export const Menu: FC = () => {
   };
 
   const PolkadotWallet = () => {
-    const [showPolkadotIcon, setShowPolkadotIcon] = useState(true);
-
     if (!polkadotAccounts || polkadotAccounts.length == 0) {
       return (
         <div className="flex items-center justify-between py-2 mt-2">
@@ -131,14 +130,14 @@ export const Menu: FC = () => {
         <div className="flex items-center justify-between py-2 mt-2">
           <h1>Polkadot</h1>
           <div className="flex items-center gap-2">
-            {showPolkadotIcon && wallet?.logo?.src && (
-              <img
+            {wallet?.logo?.src && (
+              <ImageWithFallback
                 src={wallet.logo.src}
+                fallbackSrc="/images/polkadot.png"
                 width={20}
                 height={20}
                 alt={wallet?.title || "Wallet"}
                 className="rounded-full"
-                onError={() => setShowPolkadotIcon(false)}
               />
             )}
             <span>{wallet?.title}</span>

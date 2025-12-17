@@ -60,6 +60,7 @@ import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -337,43 +338,33 @@ const transferDetail = (
       <div className="glass-sub p-4 pt-2 overflow-x-auto">
         <table className="w-full text-sm">
           <tbody>
-            <tr className="border-b border-white/10">
+            <tr>
               <td className="py-1 font-medium">Source</td>
               <td className="py-1 text-right">
                 <span className="inline-flex items-center gap-1">
-                  <img
+                  <ImageWithFallback
                     src={`/images/${source.id.toLowerCase().replace(/_/g, "")}.png`}
+                    fallbackSrc="/images/parachain_generic.png"
                     width={16}
                     height={16}
                     alt={source.name}
                     className="rounded-full"
-                    onError={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      if (!img.src.endsWith("parachain_generic.png")) {
-                        img.src = "/images/parachain_generic.png";
-                      }
-                    }}
                   />
                   {source.name}
                 </span>
               </td>
             </tr>
-            <tr className="border-b border-white/10">
+            <tr>
               <td className="py-1 font-medium">Value</td>
               <td className="py-1 text-right">
                 <span className="inline-flex items-center gap-1">
-                  <img
+                  <ImageWithFallback
                     src={`/images/${(tokenName ?? "token_generic").toLowerCase()}.png`}
+                    fallbackSrc="/images/token_generic.png"
                     width={16}
                     height={16}
                     alt={tokenName ?? "token"}
                     className="rounded-full"
-                    onError={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      if (!img.src.endsWith("token_generic.png")) {
-                        img.src = "/images/token_generic.png";
-                      }
-                    }}
                   />
                   {amount}{" "}
                   {transfer.info.tokenAddress !==
@@ -392,7 +383,7 @@ const transferDetail = (
                 </span>
               </td>
             </tr>
-            <tr className="border-b border-white/10">
+            <tr>
               <td className="py-1 font-medium">From</td>
               <td className="py-1 text-right">
                 <span
@@ -405,7 +396,7 @@ const transferDetail = (
                 </span>
               </td>
             </tr>
-            <tr className="border-b border-white/10">
+            <tr>
               <td className="py-1 font-medium">To</td>
               <td className="py-1 text-right">
                 <span
@@ -462,10 +453,10 @@ const transferDetail = (
         )}
         <div
           hidden={!transfer.isWalletTransaction}
-          className="p-4 flex justify-center"
+          className="flex justify-center"
         >
           <Button
-            className={"glass-button"}
+            className={"glass-button mt-2"}
             onClick={() => {
               router.push(`txcomplete?messageId=${transfer.id}`);
             }}

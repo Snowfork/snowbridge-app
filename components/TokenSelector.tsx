@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
+import { ImageWithFallback } from "./ui/image-with-fallback";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { formatBalance } from "@/utils/formatting";
 import { assetsV2, Context } from "@snowbridge/api";
@@ -43,12 +44,6 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [tokenModalOpen, setTokenModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [imageError, setImageError] = useState(false);
-
-  // Reset image error when token changes
-  useEffect(() => {
-    setImageError(false);
-  }, [value]);
 
   const [balances, setBalances] = useState<
     Record<string, { balance: bigint; decimals: number }>
@@ -192,18 +187,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           {selectedAsset ? (
             <>
               <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={
-                    imageError
-                      ? "/images/token_generic.png"
-                      : `/images/${selectedAsset.symbol.toLowerCase()}.png`
-                  }
+                <ImageWithFallback
+                  src={`/images/${selectedAsset.symbol.toLowerCase()}.png`}
+                  fallbackSrc="/images/token_generic.png"
                   width={16}
                   height={16}
                   alt={selectedAsset.symbol}
                   className="rounded-full"
-                  onError={() => setImageError(true)}
                 />
               </div>
               <span className="text-xs font-medium">
