@@ -183,13 +183,13 @@ export const TransferSteps: FC<TransferStepsProps> = ({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-4 justify-end">
-        <RefreshButton
+      <div className="flex items-center gap-2 justify-end">
+        <RefreshButton className={"glass-button mt-2"}
           onClick={async () => {
             if (onRefreshTransfer) await onRefreshTransfer(data, true);
           }}
         />
-        <Button variant="link" onClick={onBack}>
+        <Button variant="link" onClick={onBack} className={"glass-button mt-2"}>
           Back
         </Button>
       </div>

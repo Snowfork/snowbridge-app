@@ -583,10 +583,10 @@ export const KusamaComponent: FC = () => {
                     <FormItem className="space-y-2">
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
-                        <div className="amountContainer flex items-center gap-2 w-full px-3 py-3">
-                          <div className="flex-1 flex flex-col">
+                        <div className="amountContainer flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full px-3 py-3">
+                          <div className="flex-1 flex flex-col min-w-0">
                             <input
-                              className="amountInput p2 text-left text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                              className="amountInput p2 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
                               type="string"
                               placeholder="0.0"
                               {...field}
@@ -597,44 +597,46 @@ export const KusamaComponent: FC = () => {
                               </div>
                             )}
                           </div>
-                          <Button
-                            type="button"
-                            variant={"clean"}
-                            className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
-                            onClick={() => {
-                              if (balanceInfo && balanceInfo.tokenBalance) {
-                                const maxBalance = formatBalance({
-                                  number: balanceInfo.tokenBalance,
-                                  decimals: Number(balanceInfo.tokenDecimals),
-                                  displayDecimals: Number(
-                                    balanceInfo.tokenDecimals,
-                                  ),
-                                });
-                                form.setValue("amount", maxBalance);
-                              }
-                            }}
-                            disabled={!balanceInfo || !balanceInfo.tokenBalance}
-                          >
-                            Max
-                          </Button>
-                          <FormField
-                            control={form.control}
-                            name="token"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <KusamaTokenSelector
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    tokens={tokens}
-                                    assetRegistry={assetRegistry}
-                                    sourceAccount={watchSourceAccount}
-                                    source={sourceId}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
+                          <div className="flex items-center gap-2 justify-end">
+                            <Button
+                              type="button"
+                              variant={"clean"}
+                              className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
+                              onClick={() => {
+                                if (balanceInfo && balanceInfo.tokenBalance) {
+                                  const maxBalance = formatBalance({
+                                    number: balanceInfo.tokenBalance,
+                                    decimals: Number(balanceInfo.tokenDecimals),
+                                    displayDecimals: Number(
+                                      balanceInfo.tokenDecimals,
+                                    ),
+                                  });
+                                  form.setValue("amount", maxBalance);
+                                }
+                              }}
+                              disabled={!balanceInfo || !balanceInfo.tokenBalance}
+                            >
+                              Max
+                            </Button>
+                            <FormField
+                              control={form.control}
+                              name="token"
+                              render={({ field }) => (
+                                <FormItem className="flex-shrink-0">
+                                  <FormControl>
+                                    <KusamaTokenSelector
+                                      value={field.value}
+                                      onChange={field.onChange}
+                                      tokens={tokens}
+                                      assetRegistry={assetRegistry}
+                                      sourceAccount={watchSourceAccount}
+                                      source={sourceId}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         </div>
                       </FormControl>
                       <FormMessage />
