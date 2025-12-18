@@ -54,7 +54,7 @@ export function Footer() {
         </a>
       </div>
       <div className="text-xs mt-2 flex items-center gap-1">
-        <span className={"mt-1"}>Powered and Funded by{" "}</span>
+        <span className={"mt-1"}>Powered and Funded by </span>
         <Image
           className={"opacity-80"}
           src="/images/polkadot_new.png"

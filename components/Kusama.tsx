@@ -612,7 +612,8 @@ export const KusamaComponent: FC = () => {
                                     balanceInfo.tokenSymbol.toUpperCase() ===
                                       feeInfo.symbol.toUpperCase()
                                   ) {
-                                    const feeBuffer = (feeInfo.fee * 120n) / 100n; // Add 20% buffer
+                                    const feeBuffer =
+                                      (feeInfo.fee * 120n) / 100n; // Add 20% buffer
                                     maxAmount =
                                       maxAmount > feeBuffer
                                         ? maxAmount - feeBuffer
@@ -629,7 +630,9 @@ export const KusamaComponent: FC = () => {
                                   form.setValue("amount", maxBalance);
                                 }
                               }}
-                              disabled={!balanceInfo || !balanceInfo.tokenBalance}
+                              disabled={
+                                !balanceInfo || !balanceInfo.tokenBalance
+                              }
                             >
                               Max
                             </Button>

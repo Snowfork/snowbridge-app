@@ -119,7 +119,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       let usdValue = 0;
       if (hasBalance && tokenBalance) {
         const asset =
-          assetRegistry.ethereumChains[ethChainId].assets[tokenAddress.toLowerCase()];
+          assetRegistry.ethereumChains[ethChainId].assets[
+            tokenAddress.toLowerCase()
+          ];
         const price = prices?.[asset.symbol.toUpperCase()] ?? 0;
         const balanceInTokens =
           Number(balance) / Math.pow(10, tokenBalance.decimals);

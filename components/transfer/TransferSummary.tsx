@@ -169,9 +169,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
 
       {/* Sender & Recipient Card */}
       <div className="glass-sub p-4 space-y-3">
-        <h3 className="text-primary font-bold text-l">
-          Sender & Recipient
-        </h3>
+        <h3 className="text-primary font-bold text-l">Sender & Recipient</h3>
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">From</span>
           <span
@@ -208,9 +206,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
 
       {/* Amounts & Fees Card */}
       <div className="glass-sub p-4 space-y-3">
-        <h3 className="text-primary font-bold text-l">
-          Fees
-        </h3>
+        <h3 className="text-primary font-bold text-l">Fees</h3>
         {data.tokenMetadata.symbol === data.fee.symbol &&
           data.fee.symbol === sourceTokenSymbol && (
             <div className="flex items-center justify-between text-sm">

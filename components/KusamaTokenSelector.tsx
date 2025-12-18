@@ -150,7 +150,9 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
       let usdValue = 0;
       if (hasBalance && tokenBalance) {
         const asset =
-          assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[tokenAddress];
+          assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
+            tokenAddress
+          ];
         const price = prices?.[asset?.symbol?.toUpperCase()] ?? 0;
         const balanceInTokens =
           Number(balance) / Math.pow(10, tokenBalance.decimals);

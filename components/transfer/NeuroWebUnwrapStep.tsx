@@ -411,11 +411,14 @@ export function NeuroWebUnwrapForm({
         >
           <div className="flex items-start gap-3">
             <LucideInfo className="text-yellow-600/80 flex-shrink-0 mt-0.5 w-5 h-5" />
-            <span className="text-sm text-yellow-800/70">{displayDescription}</span>
+            <span className="text-sm text-yellow-800/70">
+              {displayDescription}
+            </span>
           </div>
         </div>
       )}
-      {!waitingForTransfer && (beneficiary !== undefined ? form : connectWalletMsg)}
+      {!waitingForTransfer &&
+        (beneficiary !== undefined ? form : connectWalletMsg)}
     </div>
   );
 }
