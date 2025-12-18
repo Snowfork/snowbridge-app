@@ -58,6 +58,9 @@ export const initializeWeb3Modal = () => {
     adapters: [new EthersAdapter()],
     networks: [network, moonbeam],
     themeMode: "light",
+    customRpcUrls: {
+      "eip155:1284": [{ url: "https://rpc.api.moonbeam.network" }],
+    },
     metadata: {
       name: metadata.title,
       description: metadata.description,
