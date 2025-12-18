@@ -1,21 +1,21 @@
-/* eslint-disable import/no-anonymous-default-export */
-import prettier from "eslint-plugin-prettier";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
+import nextConfig from "eslint-config-next";
+import prettier from "eslint-plugin-prettier";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+const [
+  nextBaseConfig,
+  nextTypescriptConfig = {},
+  nextIgnoreConfig = { ignores: [] },
+] = nextConfig;
+const mergedIgnores = Array.from(
+  new Set([...(nextIgnoreConfig.ignores ?? []), "components/ui/**/*"]),
+);
 
-export default [
-  { ignores: [".next/", "components/ui/**/*"] },
-  ...compat.extends("next/core-web-vitals", "prettier"),
+const config = [
+  { ignores: mergedIgnores },
+  js.configs.recommended,
+  nextBaseConfig,
+  nextTypescriptConfig,
   {
     plugins: {
       prettier,
@@ -42,3 +42,5 @@ export default [
     },
   },
 ];
+
+export default config;
