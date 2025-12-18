@@ -474,7 +474,7 @@ const transferDetail = (
               router.push(`txcomplete?messageId=${transfer.id}`);
             }}
           >
-            View
+            Post Transfer Steps
           </Button>
         </div>
       </div>

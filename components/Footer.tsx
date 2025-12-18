@@ -59,7 +59,7 @@ export function Footer() {
           className={"opacity-80"}
           src="/images/polkadot_new.png"
           width={90}
-          height={15}
+          height={17}
           alt="Polkadot"
         />
       </div>

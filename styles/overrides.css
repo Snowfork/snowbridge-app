@@ -333,8 +333,7 @@ body.polkadot-modal-open [data-radix-dialog-overlay] {
     color: #1d2a3b;
 }
 .link-button .lucide, .link-button p, .outline-button[data-state="off"],
-.outline-button[data-state="off"], .outline-button[data-state="off"] .lucide,
-.text-card-foreground  .accordian .lucide{
+.outline-button[data-state="off"], .outline-button[data-state="off"] .lucide {
     color: #173651;
 }
 
@@ -419,6 +418,10 @@ button[role="combobox"]:focus-visible,
     -webkit-backdrop-filter: blur(28px);
     text-align: center;
     color: #163653;
+}
+
+.glass-button, .glass-button:hover {
+    border-radius: 15px !important;
 }
 
 .label-glass {
