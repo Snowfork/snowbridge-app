@@ -13,7 +13,7 @@ interface EthereumTxStepProps {
   data: ValidationData;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
-  action: (data: ValidationData, amount: string) => Promise<ContractResponse>;
+  action: (_data: ValidationData, _amount: string) => Promise<ContractResponse>;
   errorMessage?: string;
   submitButtonText?: string;
   description?: string;

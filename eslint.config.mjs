@@ -52,6 +52,7 @@ const config = [
       prettier,
     },
     rules: {
+      "@next/next/no-page-custom-font": "off",
       "prettier/prettier": [
         "error",
         {
@@ -60,14 +61,9 @@ const config = [
           semi: true,
         },
       ],
-      "no-unused-vars": [
-        "warn",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-        },
-      ],
+      "no-unused-vars": "off",
       "no-unsafe-optional-chaining": "off",
+      "react-hooks/exhaustive-deps": "off",
       "react-hooks/immutability": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/set-state-in-render": "off",

@@ -57,7 +57,6 @@ export const SelectAccount: FC<SelectAccountProps> = ({
     if (!field.value && accounts.length > 0) {
       field.onChange(accounts[0].key);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
   }, [accounts, field.value, allowManualInput, accountFromWallet]);
 
   let input: JSX.Element;
