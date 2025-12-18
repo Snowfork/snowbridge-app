@@ -355,7 +355,7 @@ export const KusamaComponent: FC = () => {
         // delay slightly, to give the indexer time to index the transaction
         // and show it on the history page
         setTimeout(() => {
-          router.push("/history");
+          router.push("/activity");
         }, 3000);
       } else if (!result.success || result.dispatchError) {
         setBusyMessage("");

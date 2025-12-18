@@ -7,7 +7,7 @@ import {
   getChainIdentifiers,
   getEnvDetail,
   TransferTitle,
-} from "@/components/history/TransferTitle";
+} from "@/components/activity/TransferTitle";
 import {
   Accordion,
   AccordionContent,
@@ -31,7 +31,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Toggle } from "@/components/ui/toggle";
-import { useTransferHistory } from "@/hooks/useTransferHistory";
+import { useTransferActivity } from "@/hooks/useTransferActivity";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import {
   etherscanAddressLink,
@@ -45,10 +45,10 @@ import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
   Transfer,
-  transferHistoryCacheAtom,
-  transferHistoryShowGlobal,
+  transferActivityCacheAtom,
+  transferActivityShowGlobal,
   transfersPendingLocalAtom,
-} from "@/store/transferHistory";
+} from "@/store/transferActivity";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
@@ -482,12 +482,12 @@ const transferDetail = (
   );
 };
 
-export default function History() {
+export default function Activity() {
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  const [transferHistoryCache, setTransferHistoryCache] = useAtom(
-    transferHistoryCacheAtom,
+  const [transferActivityCache, setTransferActivityCache] = useAtom(
+    transferActivityCacheAtom,
   );
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
@@ -500,7 +500,7 @@ export default function History() {
     isLoading: isTransfersLoading,
     isValidating: isTransfersValidating,
     error: transfersError,
-  } = useTransferHistory();
+  } = useTransferActivity();
 
   const isRefreshing = isTransfersLoading || isTransfersValidating;
   const [transfersErrorMessage, setTransfersErrorMessage] = useState<
@@ -510,29 +510,29 @@ export default function History() {
   useEffect(() => {
     if (transfersError) {
       console.error(transfersError);
-      track("History Page Failed", transfersError);
+      track("Activity Page Failed", transfersError);
       setTransfersErrorMessage(
-        "The history service is under heavy load, so this may take a while...",
+        "The activity service is under heavy load, so this may take a while...",
       );
     } else {
       setTransfersErrorMessage(null);
     }
   }, [transfersError, setTransfersErrorMessage]);
 
-  const [showGlobal, setShowGlobal] = useAtom(transferHistoryShowGlobal);
+  const [showGlobal, setShowGlobal] = useAtom(transferActivityShowGlobal);
 
   const hashItem = useWindowHash();
 
   useEffect(() => {
     if (transfers === null) return;
-    setTransferHistoryCache(transfers);
-  }, [transfers, setTransferHistoryCache]);
+    setTransferActivityCache(transfers);
+  }, [transfers, setTransferActivityCache]);
 
   useEffect(() => {
     const oldTransferCutoff = new Date().getTime() - 4 * 60 * 60 * 1000; // 4 hours
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
-        transferHistoryCache.find(
+        transferActivityCache.find(
           (h) =>
             h.id?.toLowerCase() === transfersPendingLocal[i].id?.toLowerCase(),
         ) ||
@@ -547,7 +547,7 @@ export default function History() {
     }
     // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transferHistoryCache, setTransfersPendingLocal]);
+  }, [transferActivityCache, setTransfersPendingLocal]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -560,12 +560,12 @@ export default function History() {
     ]);
     const allTransfers: Transfer[] = [];
     for (const pending of transfersPendingLocal) {
-      if (transferHistoryCache.find((t) => t.id === pending.id)) {
+      if (transferActivityCache.find((t) => t.id === pending.id)) {
         continue;
       }
       allTransfers.push(pending);
     }
-    for (const transfer of transferHistoryCache) {
+    for (const transfer of transferActivityCache) {
       const id = getChainIdentifiers(transfer, assetRegistry);
       if (
         !id ||
@@ -591,7 +591,7 @@ export default function History() {
     return pages;
   }, [
     transfersPendingLocal,
-    transferHistoryCache,
+    transferActivityCache,
     assetRegistry,
     polkadotAccounts,
     ethereumAccounts,
@@ -626,7 +626,7 @@ export default function History() {
   if (
     pages.length === 0 &&
     isTransfersLoading &&
-    transferHistoryCache.length === 0
+    transferActivityCache.length === 0
   ) {
     return <Loading />;
   }
@@ -645,11 +645,11 @@ export default function History() {
         <Card className="w-full max-w-[min(48rem,calc(100vw-2rem))] min-h-[460px] glass">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>History</CardTitle>
+              <CardTitle>Activity</CardTitle>
               <CardDescription>
                 {showGlobal
                   ? "All Snowbridge transfers."
-                  : "My transfer history."}
+                  : "My transfer activity."}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -779,7 +779,7 @@ export default function History() {
       </div>
       <ErrorDialog
         open={!isRefreshing && transfersErrorMessage !== null}
-        title="Error Fetching History"
+        title="Error Fetching Activity"
         description={transfersErrorMessage ?? "Unknown Error."}
         dismiss={() => setTransfersErrorMessage(null)}
       />

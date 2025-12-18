@@ -1,12 +1,12 @@
 import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/Footer";
-import { Menu } from "@/components/Menu";
+import { HeaderNav } from "@/components/HeaderNav";
+import { WalletConnect } from "@/components/WalletConnect";
 import { TermsOfUse } from "@/components/TermsOfUse";
 import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 import "@/styles/overrides.css";
 import { Providers } from "./providers";
-import Image from "next/image";
 import { Metadata } from "next";
 import { metadata as meta } from "@/lib/metadata";
 import { assetRegistryFor } from "@snowbridge/registry";
@@ -48,18 +48,8 @@ export default async function RootLayout({
         <Providers registry={registry}>
           <main className="flex min-h-screen flex-col relative z-10">
             <header className="w-full px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <Image
-                  src="/images/logo-blue.png"
-                  width={40}
-                  height={40}
-                  alt="Snowbridge"
-                />
-                <h1 className="text-2xl px-2 ml-2 mt-1 text-white">
-                  Snowbridge
-                </h1>
-              </div>
-              <Menu />
+              <HeaderNav />
+              <WalletConnect />
             </header>
             <div className="flex-1 w-full px-4 sm:px-6 py-1 flex items-center justify-center box-border overflow-x-hidden">
               {children}

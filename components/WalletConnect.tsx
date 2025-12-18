@@ -1,6 +1,5 @@
 "use client";
 
-import { Menubar } from "@/components/ui/menubar";
 import {
   Sheet,
   SheetContent,
@@ -8,10 +7,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { Pencil, LogOut, Menu as MenuIcon, X } from "lucide-react";
-import Link from "next/link";
+import { Pencil, LogOut } from "lucide-react";
 import Image from "next/image";
 import { ImageWithFallback } from "./ui/image-with-fallback";
 import { FC, useContext, useState, useEffect } from "react";
@@ -32,9 +29,7 @@ import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import { disconnectWallet } from "@/lib/client/web3modal";
 import { RegistryContext } from "@/app/providers";
 
-export const Menu: FC = () => {
-  const envName = useAtomValue(snowbridgeEnvNameAtom);
-
+export const WalletConnect: FC = () => {
   useEthereumProvider();
   const registry = useContext(RegistryContext)!;
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
@@ -45,7 +40,9 @@ export const Menu: FC = () => {
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const setPolkadotAccounts = useSetAtom(polkadotAccountsAtom);
   const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
-  const [polkadotWalletModalOpen, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const [polkadotWalletModalOpen, setPolkadotWalletModalOpen] = useAtom(
+    polkadotWalletModalOpenAtom,
+  );
   const [walletSheetOpen, setWalletSheetOpen] = useAtom(walletSheetOpenAtom);
 
   // Disable pointer events on sheet overlay when Polkadot modal is open
@@ -80,16 +77,16 @@ export const Menu: FC = () => {
   const WalletIcons = () => {
     if (!isEthConnected && !isPolkadotConnected) {
       return (
-        <span className="glimmer-text px-3 py-1 rounded-full border border-white/60">
+        <Button className="w-full action-button" type="button">
           Connect
-        </span>
+        </Button>
       );
     }
 
     return (
-      <div className="flex items-center px-1 py-1 rounded-full border border-white/60 cursor-pointer">
+      <div className="flex items-center px-1 py-1 rounded-full border border-gray-600 cursor-pointer">
         {isEthConnected && (
-          <div className="w-7 h-7 rounded-full border-2 border-white bg-white/70 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full border-2 border-gray-400 bg-white/70 flex items-center justify-center">
             <Image
               src={ethIconError ? "/images/ethereum.png" : getEthWalletIcon()}
               width={18}
@@ -101,7 +98,9 @@ export const Menu: FC = () => {
         )}
         {isPolkadotConnected && (
           <div
-            className={`w-7 h-7 rounded-full border-2 border-white bg-white/70 flex items-center justify-center ${isEthConnected ? "-ml-2" : ""}`}
+            className={`w-7 h-7 rounded-full border-2 border-gray-400 bg-white/70 flex items-center justify-center ${
+              isEthConnected ? "-ml-2" : ""
+            }`}
           >
             <Image
               src={
@@ -262,88 +261,11 @@ export const Menu: FC = () => {
     );
   };
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
-    <div className="flex items-center">
-      {/* Desktop menu */}
-      <div className="hidden md:block">
-        <Menubar>
-          <Link href="/" className="flex items-center px-3 py-1.5">
-            <p className="glimmer-text">Transfer</p>
-          </Link>
-          {envName === "westend_sepolia" ? null : (
-            <Link href="/switch" className="flex items-center px-3 py-1.5">
-              <p className="glimmer-text">Polar Path</p>
-            </Link>
-          )}
-          {envName === "polkadot_mainnet" ? (
-            <Link href="/kusama" className="flex items-center px-3 py-1.5">
-              <p className="glimmer-text">Kusama</p>
-            </Link>
-          ) : null}
-          <Link href="/history" className="flex items-center px-3 py-1.5">
-            <p className="glimmer-text">History</p>
-          </Link>
-        </Menubar>
-      </div>
-
-      {/* Mobile hamburger button */}
-      <button
-        type="button"
-        className="md:hidden p-2"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-      >
-        {mobileMenuOpen ? (
-          <X className="h-6 w-6 text-white" />
-        ) : (
-          <MenuIcon className="h-6 w-6 text-white" />
-        )}
-      </button>
-
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 right-0 px-4 py-3 z-50">
-          <div className="flex flex-wrap gap-2 justify-center glass rounded-2xl p-3">
-            <Link
-              href="/"
-              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Transfer
-            </Link>
-            {envName === "westend_sepolia" ? null : (
-              <Link
-                href="/switch"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Polar Path
-              </Link>
-            )}
-            {envName === "polkadot_mainnet" ? (
-              <Link
-                href="/kusama"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Kusama
-              </Link>
-            ) : null}
-            <Link
-              href="/history"
-              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              History
-            </Link>
-          </div>
-        </div>
-      )}
-
+    <>
       <Sheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen}>
         <SheetTrigger asChild>
-          <button type="button" className="ml-2 mt-2">
+          <button type="button">
             <WalletIcons />
           </button>
         </SheetTrigger>
@@ -363,6 +285,6 @@ export const Menu: FC = () => {
         </SheetContent>
       </Sheet>
       <PolkadotWalletDialog />
-    </div>
+    </>
   );
 };
