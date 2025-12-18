@@ -767,32 +767,14 @@ export const TransferForm: FC<TransferFormProps> = ({
                             if (balanceInfo && tokenMetadata) {
                               let maxAmount = balanceInfo.balance;
 
-                              // If transferring ETH from Ethereum, subtract the fee
-                              const isEther =
-                                token.toLowerCase() ===
-                                assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
+                              // If transferring the same token used for fees, subtract the fee
                               if (
-                                isEther &&
-                                source.type === "ethereum" &&
-                                feeInfo
-                              ) {
-                                const feeBuffer =
-                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for gas fluctuations
-                                maxAmount =
-                                  maxAmount > feeBuffer
-                                    ? maxAmount - feeBuffer
-                                    : 0n;
-                              }
-
-                              // If transferring native token from substrate (e.g., DOT), subtract the fee
-                              if (
-                                source.type === "substrate" &&
                                 feeInfo &&
                                 tokenMetadata.symbol.toUpperCase() ===
                                   feeInfo.symbol.toUpperCase()
                               ) {
                                 const feeBuffer =
-                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer
+                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for fee fluctuations
                                 maxAmount =
                                   maxAmount > feeBuffer
                                     ? maxAmount - feeBuffer
