@@ -141,28 +141,52 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
       });
     }
 
-    // Sort by balance (highest first), then alphabetically
-    return [...filtered].sort((a, b) => {
-      const balanceA = balances?.[a]?.balance ?? 0n;
-      const balanceB = balances?.[b]?.balance ?? 0n;
+    // Helper to get token info for sorting
+    const getTokenInfo = (tokenAddress: string) => {
+      const tokenBalance = balances?.[tokenAddress];
+      const balance = tokenBalance?.balance ?? 0n;
+      const hasBalance = balance > 0n;
 
-      if (
-        (balanceA > 0n && balanceB > 0n) ||
-        (balanceA === 0n && balanceB === 0n)
-      ) {
-        if (balanceA !== balanceB) {
-          return balanceA > balanceB ? -1 : 1;
-        }
-        const assetA =
-          assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[a];
-        const assetB =
-          assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[b];
-        return (assetA?.name ?? "").localeCompare(assetB?.name ?? "");
+      let usdValue = 0;
+      if (hasBalance && tokenBalance) {
+        const asset =
+          assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[tokenAddress];
+        const price = prices?.[asset?.symbol?.toUpperCase()] ?? 0;
+        const balanceInTokens =
+          Number(balance) / Math.pow(10, tokenBalance.decimals);
+        usdValue = balanceInTokens * price;
       }
 
-      return balanceA > 0n ? -1 : 1;
+      return { hasBalance, usdValue };
+    };
+
+    // Sort by: 1) USD value (highest first), 2) has balance but no price, 3) no balance
+    return [...filtered].sort((a, b) => {
+      const infoA = getTokenInfo(a);
+      const infoB = getTokenInfo(b);
+
+      // Both have USD value - sort by value descending
+      if (infoA.usdValue > 0 && infoB.usdValue > 0) {
+        return infoB.usdValue - infoA.usdValue;
+      }
+
+      // One has USD value, one doesn't - USD value comes first
+      if (infoA.usdValue > 0 && infoB.usdValue === 0) return -1;
+      if (infoB.usdValue > 0 && infoA.usdValue === 0) return 1;
+
+      // Neither has USD value - check if they have balance
+      // Tokens with balance come before tokens without balance
+      if (infoA.hasBalance && !infoB.hasBalance) return -1;
+      if (infoB.hasBalance && !infoA.hasBalance) return 1;
+
+      // Same category - sort alphabetically by name
+      const assetA =
+        assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[a];
+      const assetB =
+        assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[b];
+      return (assetA?.name ?? "").localeCompare(assetB?.name ?? "");
     });
-  }, [tokenList, searchQuery, assetRegistry, balances]);
+  }, [tokenList, searchQuery, assetRegistry, balances, prices]);
 
   return (
     <Dialog

@@ -604,8 +604,23 @@ export const KusamaComponent: FC = () => {
                               className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
                               onClick={() => {
                                 if (balanceInfo && balanceInfo.tokenBalance) {
+                                  let maxAmount = balanceInfo.tokenBalance;
+
+                                  // If transferring the same token used for fees, subtract the fee
+                                  if (
+                                    feeInfo &&
+                                    balanceInfo.tokenSymbol.toUpperCase() ===
+                                      feeInfo.symbol.toUpperCase()
+                                  ) {
+                                    const feeBuffer = (feeInfo.fee * 120n) / 100n; // Add 20% buffer
+                                    maxAmount =
+                                      maxAmount > feeBuffer
+                                        ? maxAmount - feeBuffer
+                                        : 0n;
+                                  }
+
                                   const maxBalance = formatBalance({
-                                    number: balanceInfo.tokenBalance,
+                                    number: maxAmount,
                                     decimals: Number(balanceInfo.tokenDecimals),
                                     displayDecimals: Number(
                                       balanceInfo.tokenDecimals,

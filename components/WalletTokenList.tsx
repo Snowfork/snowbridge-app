@@ -240,26 +240,7 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
   const ethAssets = registry.ethereumChains[registry.ethChainId]?.assets || {};
   const tokenList: TokenDisplayItem[] = [];
 
-  // Add DOT if balance > 0
-  const dotBalance = balances["dot"]?.balance ?? 0n;
-  if (dotBalance > 0n) {
-    const dotPrice = prices?.["DOT"] || 0;
-    const dotNum =
-      Number(dotBalance) / Math.pow(10, registry.relaychain.tokenDecimals);
-    tokenList.push({
-      symbol: "DOT",
-      name: "Polkadot",
-      balance: formatBalance({
-        number: dotBalance,
-        decimals: registry.relaychain.tokenDecimals,
-        displayDecimals: 4,
-      }),
-      usdValue: dotPrice ? `$${(dotNum * dotPrice).toFixed(2)}` : null,
-      icon: "dot",
-    });
-  }
-
-  // Add bridgeable tokens with balance > 0
+  // Add bridgeable tokens with balance > 0 (includes DOT)
   for (const [tokenAddress, asset] of Object.entries(ethAssets)) {
     const tokenBalance = balances[tokenAddress.toLowerCase()]?.balance ?? 0n;
     if (tokenBalance > 0n) {
