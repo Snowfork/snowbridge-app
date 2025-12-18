@@ -13,8 +13,8 @@ export function Footer() {
         <Image
           className={"opacity-80"}
           src="/images/polkadot_new.png"
-          width={100}
-          height={17}
+          width={90}
+          height={15}
           alt="Polkadot"
         />
       </div>

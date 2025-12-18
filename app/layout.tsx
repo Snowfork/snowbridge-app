@@ -51,7 +51,7 @@ export default async function RootLayout({
               <HeaderNav />
               <WalletConnect />
             </header>
-            <div className="flex-1 w-full px-4 sm:px-6 py-1 flex items-center justify-center box-border overflow-x-hidden">
+            <div className="flex-1 w-full px-4 sm:px-6 py-1 pb-8 flex items-center justify-center box-border overflow-visible">
               {children}
             </div>
             <footer className="w-full px-6 py-6 flex flex-col items-center text-sm">

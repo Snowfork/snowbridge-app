@@ -509,6 +509,18 @@ button[role="combobox"][data-state="open"] {
   height: 15px;
 }
 
+
+.wallet-panel [data-radix-collection-item] {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.wallet-panel [data-state="open"] > [data-radix-accordion-content] {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
 .transfer-spacing {
   margin-top: 20px !important;
 }
@@ -616,4 +628,8 @@ button[role="combobox"][data-state="open"] {
   text-align: center;
 
   color: rgba(12, 24, 40, 0.9);
+}
+
+.mt-2px {
+    margin-top: 2px;
 }

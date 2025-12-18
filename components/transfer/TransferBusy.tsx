@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { Button } from "../ui/button";
 import { ValidationData } from "@/utils/types";
-import { LucideCheckCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface TransferBusyProps {
   message?: string;
@@ -20,10 +20,15 @@ export const TransferBusy: FC<TransferBusyProps> = ({
         {isSuccess ? (
           <div className="w-full rounded-xl bg-green-50 border border-green-200 p-4 mb-4">
             <div className="flex items-start gap-3">
-              <LucideCheckCircle className="text-green-800 flex-shrink-0 mt-0.5" />
+              <Loader2 className="text-green-600 flex-shrink-0 mt-0.5 animate-spin" />
               <div className="flex flex-col gap-1">
-                <span className="font-semibold text-green-800">Validated</span>
-                <span className="text-sm text-green-700">{message}</span>
+                <span className="font-semibold text-green-800">
+                  Submitting transaction
+                </span>
+                <span className="text-sm text-green-700">
+                  Please sign message and wait for transaction to confirm. This
+                  may take a couple of minutes.
+                </span>
               </div>
             </div>
           </div>

@@ -205,7 +205,9 @@ export function TransferTitle({
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{destination?.name ?? "unknown"}</span>
-        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">{shortDate}</span>
+        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
+          {shortDate}
+        </span>
       </span>
     );
   }
@@ -226,7 +228,9 @@ export function TransferTitle({
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{destination?.name ?? "unknown"}</span>
-        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">{shortDate}</span>
+        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
+          {shortDate}
+        </span>
       </p>
     </div>
   );

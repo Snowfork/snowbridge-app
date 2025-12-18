@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState, useMemo, useEffect } from "react";
+import { FC, useState, useMemo, useContext } from "react";
 import { SelectItemWithIcon } from "./SelectItemWithIcon";
 import {
   Dialog,
@@ -13,13 +13,18 @@ import { Input } from "./ui/input";
 import { ImageWithFallback } from "./ui/image-with-fallback";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { formatBalance } from "@/utils/formatting";
-import { assetsV2, Context } from "@snowbridge/api";
-import { getTokenBalance } from "@/utils/balances";
+import { assetsV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { ChevronsUpDown, ArrowUpRight } from "lucide-react";
 import { etherscanERC20TokenLink } from "@/lib/explorerLinks";
+import {
+  useEthereumTokenBalances,
+  usePolkadotTokenBalances,
+} from "@/hooks/useTokenBalances";
+import { RegistryContext } from "@/app/providers";
+import useSWR from "swr";
 
 type TokenSelectorProps = {
   value: string | undefined;
@@ -32,6 +37,13 @@ type TokenSelectorProps = {
   destination: assetsV2.TransferLocation;
 };
 
+const PRICE_SWR_CONFIG = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  dedupingInterval: 5 * 60 * 1000,
+  refreshInterval: 5 * 60 * 1000,
+};
+
 export const TokenSelector: FC<TokenSelectorProps> = ({
   value,
   onChange,
@@ -40,88 +52,44 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   ethChainId,
   sourceAccount,
   source,
-  destination,
 }) => {
   const [tokenModalOpen, setTokenModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [balances, setBalances] = useState<
-    Record<string, { balance: bigint; decimals: number }>
-  >({});
-  const [prices, setPrices] = useState<Record<string, number>>({});
   const context = useAtomValue(snowbridgeContextAtom);
+  const registry = useContext(RegistryContext);
 
-  // Fetch balances for all tokens
-  useEffect(() => {
-    if (!sourceAccount || !context) {
-      setBalances({});
-      return;
-    }
+  // Use shared balance hooks based on source type
+  const isEthereumSource = source.type === "ethereum";
+  const sourceParachainId = source.parachain?.parachainId;
 
-    const fetchBalances = async () => {
-      const newBalances: Record<string, { balance: bigint; decimals: number }> =
-        {};
-
-      await Promise.all(
-        assets.map(async (token) => {
-          try {
-            const balance = await getTokenBalance({
-              context,
-              token,
-              source,
-              destination,
-              registry: assetRegistry,
-              sourceAccount,
-            });
-
-            if (balance?.balance) {
-              const asset =
-                assetRegistry.ethereumChains[ethChainId].assets[
-                  token.toLowerCase()
-                ];
-              newBalances[token.toLowerCase()] = {
-                balance: balance.balance,
-                decimals: Number(asset.decimals),
-              };
-            }
-          } catch (error) {
-            console.error(`Error fetching balance for ${token}:`, error);
-          }
-        }),
-      );
-
-      setBalances(newBalances);
-    };
-
-    fetchBalances();
-  }, [
-    sourceAccount,
+  const { data: ethBalances } = useEthereumTokenBalances(
+    isEthereumSource ? sourceAccount : undefined,
     context,
-    assets.join(","),
-    source,
-    destination,
-    assetRegistry,
-    ethChainId,
-  ]);
+    registry,
+  );
 
-  useEffect(() => {
-    const fetchPrices = async () => {
-      const tokenSymbols = assets.map((t) => {
-        const asset =
-          assetRegistry.ethereumChains[ethChainId].assets[t.toLowerCase()];
-        return asset.symbol;
-      });
+  const { data: polkadotBalances } = usePolkadotTokenBalances(
+    !isEthereumSource ? sourceAccount : undefined,
+    context,
+    registry,
+    sourceParachainId,
+  );
 
-      const priceData = await fetchTokenPrices(tokenSymbols);
-      setPrices(priceData);
-    };
+  // Use the appropriate balances based on source
+  const balances = isEthereumSource ? ethBalances : polkadotBalances;
 
-    fetchPrices();
+  // Fetch prices with SWR
+  const tokenSymbols = assets.map((t) => {
+    const asset =
+      assetRegistry.ethereumChains[ethChainId].assets[t.toLowerCase()];
+    return asset.symbol;
+  });
 
-    // Refresh prices every 5 minutes
-    const interval = setInterval(fetchPrices, 300000);
-    return () => clearInterval(interval);
-  }, [assets, assetRegistry, ethChainId]);
+  const { data: prices } = useSWR(
+    tokenSymbols.length > 0 ? ["token-prices", tokenSymbols.join(",")] : null,
+    () => fetchTokenPrices(tokenSymbols),
+    PRICE_SWR_CONFIG,
+  );
 
   const selectedAsset = value
     ? assetRegistry.ethereumChains[ethChainId].assets[value.toLowerCase()]
@@ -248,7 +216,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               const truncatedAddress =
                 t.length > 10 ? `${t.substring(0, 10)}...` : t;
 
-              const tokenPrice = prices[asset.symbol.toUpperCase()];
+              const tokenPrice = prices?.[asset.symbol.toUpperCase()];
               let usdValue: string | null = null;
               if (tokenBalance && tokenBalance.balance > 0n && tokenPrice) {
                 const balanceInTokens =
