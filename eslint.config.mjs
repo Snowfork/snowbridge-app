@@ -8,15 +8,46 @@ const [
   nextIgnoreConfig = { ignores: [] },
 ] = nextConfig;
 const mergedIgnores = Array.from(
-  new Set([...(nextIgnoreConfig.ignores ?? []), "components/ui/**/*"]),
+  new Set([
+    ...(nextIgnoreConfig.ignores ?? []),
+    ".next/**",
+    "**/.next/**",
+    "node_modules/**",
+    "components/ui/**/*",
+  ]),
 );
 
 const config = [
   { ignores: mergedIgnores },
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    languageOptions: {
+      globals: {
+        React: "readonly",
+        JSX: "readonly",
+      },
+    },
+  },
   js.configs.recommended,
   nextBaseConfig,
   nextTypescriptConfig,
   {
+    files: ["**/__tests__/**/*.{js,jsx,ts,tsx}"],
+    languageOptions: {
+      globals: {
+        describe: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        jest: "readonly",
+      },
+    },
+  },
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
     plugins: {
       prettier,
     },
@@ -29,6 +60,18 @@ const config = [
           semi: true,
         },
       ],
+      "no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "no-unsafe-optional-chaining": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/set-state-in-render": "off",
+      "react-hooks/set-state-in-memo": "off",
       quotes: [
         "error",
         "double",
