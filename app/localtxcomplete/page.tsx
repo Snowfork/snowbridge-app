@@ -32,7 +32,7 @@ import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/api/dist/assets_v2";
 
 const Loading = () => {
-  return <SnowflakeLoader size="md" />;
+  return <SnowflakeLoader />;
 };
 
 interface TxCardProps {

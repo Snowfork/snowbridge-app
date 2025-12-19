@@ -788,5 +788,5 @@ export default function History() {
 }
 
 const Loading = () => {
-  return <SnowflakeLoader size="md" />;
+  return <SnowflakeLoader />;
 };

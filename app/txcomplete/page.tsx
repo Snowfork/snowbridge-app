@@ -40,7 +40,7 @@ import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
-  return <SnowflakeLoader size="md" />;
+  return <SnowflakeLoader />;
 };
 
 interface TxCardProps {

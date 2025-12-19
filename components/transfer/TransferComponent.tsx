@@ -357,5 +357,5 @@ export const TransferComponent: FC = () => {
 };
 
 const Loading = () => {
-  return <SnowflakeLoader size="md" />;
+  return <SnowflakeLoader />;
 };
