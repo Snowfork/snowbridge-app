@@ -720,6 +720,16 @@ export const TransferForm: FC<TransferFormProps> = ({
                 )}
               />
             </div>
+            {form.formState.errors.amount && (
+              <p className="text-sm font-medium text-destructive mt-2">
+                {form.formState.errors.amount.message}
+              </p>
+            )}
+            {form.formState.errors.token && (
+              <p className="text-sm font-medium text-destructive mt-2">
+                {form.formState.errors.token.message}
+              </p>
+            )}
           </div>
           <div className="text-sm text-center text-muted-foreground px-1 mt-1">
             Delivery Fee:{" "}

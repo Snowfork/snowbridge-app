@@ -6,6 +6,7 @@ import {
   toPolkadotV2,
   forKusama,
   forInterParachain,
+  toPolkadotSnowbridgeV2,
 } from "@snowbridge/api";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
@@ -153,6 +154,7 @@ export type FeeInfo = {
   delivery:
     | toEthereumV2.DeliveryFee
     | toPolkadotV2.DeliveryFee
+    | toPolkadotSnowbridgeV2.DeliveryFee
     | forInterParachain.DeliveryFee;
   type: assetsV2.SourceType;
 };
@@ -190,13 +192,18 @@ export type ValidationResult =
   | toEthereumV2.ValidationResult
   | toEthereumFromEVMV2.ValidationResultEvm
   | toPolkadotV2.ValidationResult
+  | toPolkadotSnowbridgeV2.ValidationResult
   | forKusama.ValidationResult
   | forInterParachain.ValidationResult;
 
-export type MessageReciept =
+export type MessageReceipt =
   | toEthereumV2.MessageReceipt
   | toEthereumFromEVMV2.MessageReceiptEvm
   | toPolkadotV2.MessageReceipt
+  | (toPolkadotSnowbridgeV2.MessageReceipt & {
+      messageId: string;
+      channelId: string;
+    })
   | forKusama.MessageReceipt
   | forInterParachain.MessageReceipt;
 
