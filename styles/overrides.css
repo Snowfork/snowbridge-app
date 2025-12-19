@@ -1,4 +1,3 @@
-/* Fonts */
 body {
     font-family: 'Inter', sans-serif !important;
     font-optical-sizing: auto;
@@ -14,7 +13,6 @@ body {
     background-color: #212d41;
 }
 
-/* Menubar */
 div[role="menubar"] {
     border: none;
     background: transparent;
@@ -22,7 +20,6 @@ div[role="menubar"] {
     align-items: center;
 }
 
-/* Sliding indicator */
 .menubar-indicator {
     display: none;
 }
@@ -36,7 +33,6 @@ div[role="menubar"] button {
     border: none;
 }
 
-/* Slow snowfall animation for background */
 @keyframes slowSnowfall {
     0% {
         transform: translateY(0) translateX(0) rotate(0deg);
@@ -50,9 +46,6 @@ div[role="menubar"] button {
     animation: slowSnowfall linear infinite;
 }
 
-div[role="menubar"] button:hover {
-    /* Glimmer effect on text instead of opacity */
-}
 
 div[role="menubar"] button p {
     color: #FFFFFF;
@@ -60,7 +53,6 @@ div[role="menubar"] button p {
     font-weight: 400;
 }
 
-/* Glimmer effect */
 .glimmer-text {
     background: linear-gradient(to right, #ffffff 0%, #ffffff 30%, #adc6e1 50%, #ffffff 70%, #ffffff 100%);
     background-size: 250px;
@@ -74,7 +66,6 @@ div[role="menubar"] button p {
     transition: background-position 1.5s ease-in-out;
 }
 
-/* Slim scrollbar */
 .ui-slimscroll {
     overflow: auto;
 }
@@ -110,7 +101,6 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide
     stroke-width: 1.5;
 }
 
-/* Footer */
 .footer-item {
     background-color: rgba(255, 255, 255, 0.75);
     border-radius: 30px;
@@ -289,7 +279,6 @@ div[role="menubar"],
     color: #88232f !important;
 }
 
-/* Wallet side panel */
 .wallet-panel {
     border-left: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: -12px 0 40px rgba(30, 40, 80, 0.15);
@@ -301,7 +290,6 @@ div[role="menubar"],
     color: rgba(15, 23, 42, 0.75);
 }
 
-/* Ensure Polkadot wallet dialog appears above sheet and can receive clicks */
 [data-talisman-connect-root] {
     z-index: 10000 !important;
     position: relative;
@@ -313,14 +301,11 @@ div[role="menubar"],
     pointer-events: auto !important;
 }
 
-/* Make Talisman wallet dialog wider */
 [data-talisman-connect-root] [class*="Modal__Content"] {
     max-width: 420px !important;
     width: 90vw !important;
 }
 
-/* Disable pointer events on sheet when Polkadot modal is open */
-/* Use high specificity to override inline styles set by Radix */
 body.polkadot-modal-open .wallet-panel[role="dialog"] {
     pointer-events: none !important;
 }
@@ -341,7 +326,6 @@ button.bg-primary:hover {
     background-color: hsl(208, 56%, 20%, 0.9) !important;
 }
 
-/* Joined input styling for amount + token */
 input.joined-input-left {
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
@@ -353,7 +337,6 @@ button[role="combobox"].joined-input-right {
     border-bottom-left-radius: 0 !important;
 }
 
-/* Remove all focus styles for cleaner appearance */
 input:focus,
 input:focus-visible,
 button[role="combobox"]:focus,
@@ -367,7 +350,6 @@ textarea:focus-visible {
     outline: none !important;
 }
 
-/* Keep the original shadow on inputs and comboboxes */
 input:not(.amountInput):focus,
 input:not(.amountInput):focus-visible {
     box-shadow: #86b1de 0 2px 2px 0 !important;
@@ -380,12 +362,10 @@ button[role="combobox"]:focus-visible,
     border-radius: 15px;
 }
 
-/* Remove focus ring styles but keep other styles */
 .focus\:ring-ring:focus {
     --tw-ring-color: transparent !important;
 }
 
-/* Glassmorphism utilities */
 .glass {
     background: rgba(255, 255, 255, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.6);
@@ -449,7 +429,6 @@ button[role="combobox"]:focus-visible,
     background: rgba(255, 255, 255, 0.18);
 }
 
-/* Route selector swap button */
 .glass-sub button[type="button"].rounded-full {
     transition: all 0.2s ease;
 }
@@ -458,7 +437,6 @@ button[role="combobox"]:focus-visible,
     transform: rotate(180deg);
 }
 
-/* Select dropdown menu - no top border radius */
 .select-box[data-state="open"] {
     border-top-left-radius: 0 !important;
     border-top-right-radius: 0 !important;
@@ -469,7 +447,6 @@ button[role="combobox"]:focus-visible,
     margin-top: 0 !important;
 }
 
-/* Select trigger button - no bottom border radius when open */
 button[role="combobox"][data-state="open"] {
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
@@ -489,12 +466,10 @@ button[role="combobox"][data-state="open"] {
     -webkit-backdrop-filter: blur(28px);
 }
 
-/* Soft dropdown shadow */
 .dropdown-shadow {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
 }
 
-/* Soft card shadow */
 .card-shadow {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
@@ -503,7 +478,6 @@ button[role="combobox"][data-state="open"] {
     width: 15px;
     height: 15px;
 }
-
 
 .wallet-panel [data-radix-collection-item] {
     border-color: rgba(255, 255, 255, 0.2);
@@ -562,11 +536,7 @@ button[role="combobox"][data-state="open"] {
             rgba(255, 255, 255, 0.55) 0%,
             rgba(255, 255, 255, 0.32) 100%
     );
-
-    /* Stronger border highlight */
     border-color: rgba(255, 255, 255, 0.9);
-
-    /* Noticeably stronger shadow */
     box-shadow:
             0 20px 48px rgba(30, 40, 80, 0.18),
             inset 0 0 8px rgba(255, 255, 255, 0.35);
@@ -588,7 +558,6 @@ button[role="combobox"][data-state="open"] {
     border-color: rgba(255, 255, 255, 0.55);
 }
 
-/* Snowflake loader animation */
 @keyframes spin-slow {
     from {
         transform: rotate(0deg);
@@ -618,9 +587,9 @@ button[role="combobox"][data-state="open"] {
     -webkit-backdrop-filter: blur(28px) saturate(1.15);
 
     box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.55),   /* top edge highlight */
-            inset 0 -1px 0 rgba(255, 255, 255, 0.18), /* bottom edge falloff */
-            0 10px 10px rgba(111, 122, 181, 0.12);        /* lift from background */
+            inset 0 1px 0 rgba(255, 255, 255, 0.55),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.18),
+            0 10px 10px rgba(111, 122, 181, 0.12);
 
     text-align: center;
 
