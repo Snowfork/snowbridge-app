@@ -59,6 +59,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
+import { trimAccount } from "@/utils/formatting";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
@@ -224,15 +225,6 @@ const getExplorerLinks = (
     }
   }
   return links;
-};
-
-const truncateAddress = (
-  address: string,
-  startChars = 10,
-  endChars = 4,
-): string => {
-  if (address.length <= startChars + endChars) return address;
-  return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
 };
 
 const transferDetail = (
@@ -404,7 +396,7 @@ const transferDetail = (
                   onClick={() => window.open(sourceAccountUrl)}
                   onAuxClick={() => window.open(sourceAccountUrl)}
                 >
-                  {truncateAddress(sourceAddress)}
+                  {trimAccount(sourceAddress)}
                   <ArrowUpRight className="w-4 h-4" />
                 </span>
               </td>
@@ -417,7 +409,7 @@ const transferDetail = (
                   onClick={() => window.open(beneficiaryAccountUrl)}
                   onAuxClick={() => window.open(beneficiaryAccountUrl)}
                 >
-                  {truncateAddress(beneficiary)}
+                  {trimAccount(beneficiary)}
                   <ArrowUpRight className="w-4 h-4" />
                 </span>
               </td>

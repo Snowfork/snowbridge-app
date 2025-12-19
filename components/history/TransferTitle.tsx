@@ -1,7 +1,7 @@
 import { Transfer } from "@/store/transferHistory";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import { LucideGlobe } from "lucide-react";
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, truncateAmount } from "@/utils/formatting";
 import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useContext, useState } from "react";
@@ -151,15 +151,6 @@ export function TransferTitle({
     transfer,
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
   );
-
-  // Truncate amount if more than 10 characters after decimal
-  const truncateAmount = (amt: string): string => {
-    const parts = amt.split(".");
-    if (parts.length === 2 && parts[1].length > 10) {
-      return parts[0] + "." + parts[1].slice(0, 10) + "…";
-    }
-    return amt;
-  };
   const amount = truncateAmount(rawAmount);
 
   const tokenIcon = (

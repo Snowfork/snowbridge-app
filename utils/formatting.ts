@@ -68,3 +68,11 @@ export function trimAccount(
     account.substring(account.length - keepChars)
   );
 }
+
+export function truncateAmount(amt: string): string {
+  const parts = amt.split(".");
+  if (parts.length === 2 && parts[1].length > 10) {
+    return parts[0] + "." + parts[1].slice(0, 10) + "…";
+  }
+  return amt;
+}
