@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -128,9 +129,12 @@ export const KusamaComponent: FC = () => {
       return;
     }
 
+    let cancelled = false;
+
     const calculateUsd = async () => {
       try {
         const prices = await fetchTokenPrices([tokenMetadata.symbol]);
+        if (cancelled) return;
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(amount) * price;
@@ -139,12 +143,28 @@ export const KusamaComponent: FC = () => {
           setAmountUsdValue(null);
         }
       } catch {
-        setAmountUsdValue(null);
+        if (!cancelled) {
+          setAmountUsdValue(null);
+        }
       }
     };
 
     calculateUsd();
+
+    return () => {
+      cancelled = true;
+    };
   }, [amount, tokenMetadata]);
+
+  // Reset amount and USD value when token changes
+  const prevTokenRef = useRef(watchToken);
+  useEffect(() => {
+    if (prevTokenRef.current !== watchToken) {
+      form.setValue("amount", "0");
+      setAmountUsdValue(null);
+      prevTokenRef.current = watchToken;
+    }
+  }, [watchToken, form]);
 
   useEffect(() => {
     const sourceAccounts =
