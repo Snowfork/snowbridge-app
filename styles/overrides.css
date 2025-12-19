@@ -76,7 +76,7 @@ button.action-button {
     border: 1px solid transparent; /* Keep box shadow from making the form bigger */
 }
 
-button.action-button:hover, button.action-button:focus {
+button.action-button:hover {
     color: #ffffff;
     background: linear-gradient(to bottom, #396f9f, #6496ad);
     box-shadow: #0a3563 0 2px 2px 0;
@@ -110,7 +110,7 @@ button[role="combobox"], input, .fake-dropdown  {
 }
 
 body {
-    background-image: url("/images/snow5.jpg");
+    background-image: url("/images/background_new.jpg");
     background-size:cover;
     background-attachment: fixed;
     background-position: center;
@@ -139,8 +139,8 @@ label {
 }
 
 .focus\:ring-ring:focus {
-    --tw-ring-color: hsl(0deg 0% 100%);
-    border-radius: 1px;
+    --tw-ring-color: transparent;
+    box-shadow: none !important;
 }
 
 .shadow-sm {
@@ -223,4 +223,46 @@ div[role="menubar"],
 
 button.bg-primary:hover {
     background-color: hsl(208, 56%, 20%, 0.9) !important;
+}
+
+/* Joined input styling for amount + token */
+input.joined-input-left {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-right: 0 !important;
+}
+
+button[role="combobox"].joined-input-right {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Remove all focus styles for cleaner appearance */
+input:focus,
+input:focus-visible,
+button[role="combobox"]:focus,
+button[role="combobox"]:focus-visible,
+button:focus,
+button:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+    outline: none !important;
+}
+
+/* Keep the original shadow on inputs and comboboxes */
+input:focus,
+input:focus-visible {
+    box-shadow: #86b1de 0 2px 2px 0 !important;
+}
+
+button[role="combobox"]:focus,
+button[role="combobox"]:focus-visible {
+    box-shadow: #86b1de 0 2px 2px 0 !important;
+}
+
+/* Remove focus ring styles but keep other styles */
+.focus\:ring-ring:focus {
+    --tw-ring-color: transparent !important;
 }

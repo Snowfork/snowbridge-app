@@ -19,6 +19,7 @@ type SelectedPolkadotAccountProps = {
   polkadotAccount?: string;
   onValueChange?: (address: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 };
 
 export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
@@ -28,13 +29,15 @@ export const SelectedPolkadotAccount: FC<SelectedPolkadotAccountProps> = ({
   polkadotAccounts,
   polkadotAccount,
   placeholder,
+  disabled,
 }) => {
   return (
     <Select
       onValueChange={onValueChange}
       value={polkadotAccount ?? polkadotAccounts[0]?.address}
+      disabled={disabled}
     >
-      <SelectTrigger>
+      <SelectTrigger disabled={disabled}>
         <SelectValue placeholder={placeholder ?? "Select an account"} />
       </SelectTrigger>
       <SelectContent>
