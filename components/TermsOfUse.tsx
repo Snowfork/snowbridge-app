@@ -19,7 +19,7 @@ export function TermsOfUse() {
   const [accepted, setAccepted] = useAtom(acceptedTermsOfUseAtom);
   return (
     <Dialog open={!accepted}>
-      <DialogContent>
+      <DialogContent className="glass more-blur">
         <DialogHeader>
           <DialogTitle>Terms of Use</DialogTitle>
           <DialogDescription>Disclaimer</DialogDescription>
@@ -31,6 +31,7 @@ export function TermsOfUse() {
         ></Textarea>
         <DialogFooter>
           <Button
+            className={"glass-button"}
             onClick={() => {
               setAccepted(true);
             }}

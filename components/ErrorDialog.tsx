@@ -30,12 +30,14 @@ export const ErrorDialog: FC<ErrorProps> = ({
         if (!a && dismiss) dismiss();
       }}
     >
-      <DialogContent>
+      <DialogContent className={"glass more-blur"}>
         <DialogHeader>
           <DialogTitle>{title ?? "Error"}</DialogTitle>
-          <DialogDescription className="flex items-center py-2">
-            <LucideAlertCircle className="mx-2 text-destructive" />
-            {description}
+          <DialogDescription className="flex items-start py-2 overflow-hidden">
+            <LucideAlertCircle className="mx-2 mt-0.5 flex-shrink-0 text-destructive" />
+            <span className="break-words overflow-y-auto max-h-60 min-w-0">
+              {description}
+            </span>
           </DialogDescription>
           {children}
         </DialogHeader>

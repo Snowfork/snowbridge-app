@@ -6,7 +6,9 @@ export default function Switch() {
   return (
     <MaintenanceBanner>
       <ContextComponent>
-        <SwitchComponent />
+        <div className="flex justify-center">
+          <SwitchComponent />
+        </div>
       </ContextComponent>
     </MaintenanceBanner>
   );

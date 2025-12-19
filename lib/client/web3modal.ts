@@ -92,3 +92,26 @@ export function getModalError() {
   }
   return modal.getError();
 }
+
+export async function openWalletModal(view: "Connect" | "Account" = "Connect") {
+  if (!initialized || !modal) {
+    console.warn("openWalletModal: modal not initialized.");
+    return;
+  }
+  await modal.open({ view });
+}
+
+export async function disconnectWallet() {
+  if (!initialized || !modal) {
+    console.warn("disconnectWallet: modal not initialized.");
+    return;
+  }
+  // Try adapter's connectionControllerClient disconnect
+  const adapter = (modal as any).adapters?.[0];
+  if (adapter?.connectionControllerClient?.disconnect) {
+    await adapter.connectionControllerClient.disconnect();
+    return;
+  }
+  // Fallback: open Account view
+  await modal.open({ view: "Account" });
+}
