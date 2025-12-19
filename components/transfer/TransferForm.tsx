@@ -18,8 +18,9 @@ import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtom, useAtomValue } from "jotai";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import Image from "next/image";
 import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
@@ -58,7 +59,7 @@ import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
-import { ArrowRight, LucideAlertCircle } from "lucide-react";
+import { ArrowRight, ChevronsUpDown, LucideAlertCircle } from "lucide-react";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
   getChainId,
@@ -289,6 +290,15 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchAmount = form.watch("amount");
   const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
+  // Reset amount when token changes
+  const prevTokenRef = useRef(watchToken);
+  useEffect(() => {
+    if (prevTokenRef.current !== watchToken) {
+      form.setValue("amount", "0");
+      prevTokenRef.current = watchToken;
+    }
+  }, [watchToken, form]);
+
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
     destination,
@@ -398,9 +408,12 @@ export const TransferForm: FC<TransferFormProps> = ({
       return;
     }
 
+    let cancelled = false;
+
     const calculateUsd = async () => {
       try {
         const prices = await fetchTokenPrices([tokenMetadata.symbol]);
+        if (cancelled) return;
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(watchAmount) * price;
@@ -409,11 +422,17 @@ export const TransferForm: FC<TransferFormProps> = ({
           setAmountUsdValue(null);
         }
       } catch {
-        setAmountUsdValue(null);
+        if (!cancelled) {
+          setAmountUsdValue(null);
+        }
       }
     };
 
     calculateUsd();
+
+    return () => {
+      cancelled = true;
+    };
   }, [watchAmount, tokenMetadata]);
 
   const submit = useCallback(
