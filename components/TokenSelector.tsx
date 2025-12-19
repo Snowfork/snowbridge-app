@@ -37,13 +37,6 @@ type TokenSelectorProps = {
   destination: assetsV2.TransferLocation;
 };
 
-const PRICE_SWR_CONFIG = {
-  revalidateOnFocus: false,
-  revalidateOnReconnect: false,
-  dedupingInterval: 5 * 60 * 1000,
-  refreshInterval: 5 * 60 * 1000,
-};
-
 export const TokenSelector: FC<TokenSelectorProps> = ({
   value,
   onChange,
@@ -88,7 +81,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   const { data: prices } = useSWR(
     tokenSymbols.length > 0 ? ["token-prices", tokenSymbols.join(",")] : null,
     () => fetchTokenPrices(tokenSymbols),
-    PRICE_SWR_CONFIG,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 5 * 60 * 1000,
+      refreshInterval: 5 * 60 * 1000,
+    },
   );
 
   const selectedAsset = value

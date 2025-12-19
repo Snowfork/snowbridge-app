@@ -23,13 +23,6 @@ interface TokenDisplayItem {
   icon: string;
 }
 
-const PRICE_SWR_CONFIG = {
-  revalidateOnFocus: false,
-  revalidateOnReconnect: false,
-  dedupingInterval: 5 * 60 * 1000,
-  refreshInterval: 5 * 60 * 1000,
-};
-
 export const EthereumTokenList: FC = () => {
   const context = useAtomValue(snowbridgeContextAtom);
   const registry = useContext(RegistryContext);
@@ -55,7 +48,12 @@ export const EthereumTokenList: FC = () => {
   const { data: prices } = useSWR(
     symbols.length > 0 ? ["eth-prices", symbols.join(",")] : null,
     () => fetchTokenPrices(symbols),
-    PRICE_SWR_CONFIG,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 5 * 60 * 1000,
+      refreshInterval: 5 * 60 * 1000,
+    },
   );
 
   if (isLoading) {
@@ -209,7 +207,12 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
   const { data: prices } = useSWR(
     symbols.length > 0 ? ["polkadot-prices", symbols.join(",")] : null,
     () => fetchTokenPrices(symbols),
-    PRICE_SWR_CONFIG,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 5 * 60 * 1000,
+      refreshInterval: 5 * 60 * 1000,
+    },
   );
 
   if (!account) {
