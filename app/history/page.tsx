@@ -59,7 +59,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
-import { trimAccount } from "@/utils/formatting";
+import { formatShortDate, trimAccount } from "@/utils/formatting";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
@@ -325,15 +325,7 @@ const transferDetail = (
     transfer,
     registry.ethereumChains[registry.ethChainId].assets,
   );
-  const when = new Date(transfer.info.when);
-  const formattedDate =
-    when.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "2-digit",
-    }) +
-    " " +
-    when.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const formattedDate = formatShortDate(new Date(transfer.info.when));
   return (
     <div className="flex-col">
       <div className="glass-sub p-4 pt-2 overflow-x-auto">

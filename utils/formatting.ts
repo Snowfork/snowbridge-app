@@ -69,6 +69,18 @@ export function trimAccount(
   );
 }
 
+export function formatShortDate(date: Date): string {
+  return (
+    date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "2-digit",
+    }) +
+    " " +
+    date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+  );
+}
+
 export function truncateAmount(amt: string): string {
   const parts = amt.split(".");
   if (parts.length === 2 && parts[1].length > 10) {
