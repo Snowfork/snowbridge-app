@@ -31,11 +31,6 @@ const transfersPendingReducer = (
   }
 };
 
-export const transferActivityShowGlobal = atomWithStorage(
-  "transfer_activity_show_global",
-  false,
-);
-
 export const transfersPendingLocalAtom = atom(
   (get) => get(transfersPendingLocalStorageAtom),
   (get, set, action: PendingTransferAction) => {

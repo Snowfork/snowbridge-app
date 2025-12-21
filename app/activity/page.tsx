@@ -24,7 +24,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Toggle } from "@/components/ui/toggle";
+
 import { useTransferActivity } from "@/hooks/useTransferActivity";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import {
@@ -38,22 +38,21 @@ import {
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  Transfer,
   transferActivityCacheAtom,
-  transferActivityShowGlobal,
   transfersPendingLocalAtom,
 } from "@/store/transferActivity";
+import type { Transfer } from "@/store/transferActivity";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { AssetRegistry } from "@snowbridge/base-types";
+import type { AssetRegistry } from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
+import { LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 const ITEMS_PER_PAGE = 5;
@@ -513,8 +512,6 @@ export default function Activity() {
     }
   }, [transfersError, setTransfersErrorMessage]);
 
-  const [showGlobal, setShowGlobal] = useAtom(transferActivityShowGlobal);
-
   const hashItem = useWindowHash();
 
   useEffect(() => {
@@ -574,7 +571,7 @@ export default function Activity() {
         transfer.info.sourceAddress,
         transfer.info.beneficiaryAddress,
       );
-      if (!showGlobal && !transfer.isWalletTransaction) continue;
+      if (!transfer.isWalletTransaction) continue;
 
       allTransfers.push(transfer);
     }
@@ -589,7 +586,6 @@ export default function Activity() {
     assetRegistry,
     polkadotAccounts,
     ethereumAccounts,
-    showGlobal,
   ]);
 
   useMemo(() => {
@@ -640,13 +636,9 @@ export default function Activity() {
           <div className="flex flex-row items-center justify-between mb-6">
             <div>
               <h2 className="text-3xl font-semibold">Activity</h2>
-              <p className="text-muted-foreground">
-                {showGlobal
-                  ? "All Snowbridge transfers."
-                  : "My transfer activity."}
-              </p>
+              <p className="text-muted-foreground">My transfer activity.</p>
             </div>
-            <div className="flex gap-2">
+            <div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -660,16 +652,6 @@ export default function Activity() {
                   size={18}
                 />
               </Button>
-              <Toggle
-                pressed={showGlobal}
-                onPressedChange={(p) => setShowGlobal(p)}
-                className="h-8 w-8 p-0"
-                title={
-                  showGlobal ? "Show my transfers" : "Show global transfers"
-                }
-              >
-                <LucideGlobe size={18} />
-              </Toggle>
             </div>
           </div>
           <div>
@@ -688,10 +670,7 @@ export default function Activity() {
                   value={v.id?.toString() ?? i.toString()}
                 >
                   <AccordionTrigger>
-                    <TransferTitle
-                      transfer={v}
-                      showGlobeForGlobal={!v.isWalletTransaction}
-                    />
+                    <TransferTitle transfer={v} />
                   </AccordionTrigger>
                   <AccordionContent>
                     {transferDetail(v, assetRegistry, router)}
@@ -707,9 +686,7 @@ export default function Activity() {
               }
             >
               <p className="text-muted-foreground text-center">
-                Your transactions will appear here. Click on the{" "}
-                <LucideGlobe size={16} className="inline align-middle mx-1" />{" "}
-                icon to see all Snowbridge transactions.
+                Your transactions will appear here.
               </p>
             </div>
             <Pagination className={pages.length == 0 ? "hidden" : ""}>

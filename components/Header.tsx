@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { useSetAtom, useAtomValue, useAtom } from "jotai";
 import { acceptedTermsOfUseAtom } from "@/store/termsOfUse";
@@ -411,6 +412,7 @@ export function Header() {
   const setAccepted = useSetAtom(acceptedTermsOfUseAtom);
   const envName = useAtomValue(snowbridgeEnvNameAtom);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header className="w-full px-6 py-4 flex items-center justify-between">
@@ -523,13 +525,21 @@ export function Header() {
         <nav className="flex items-center ml-5">
           <Link
             href="/send"
-            className="px-3 text-base text-gray-500 hover:text-gray-700 transition-colors"
+            className={`px-3 text-base transition-colors ${
+              pathname === "/send"
+                ? "text-black"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
           >
             Send
           </Link>
           <Link
             href="/activity"
-            className="px-3 text-base text-gray-500 hover:text-gray-700 transition-colors"
+            className={`px-3 text-base transition-colors ${
+              pathname === "/activity"
+                ? "text-black"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
           >
             Activity
           </Link>
@@ -540,7 +550,7 @@ export function Header() {
       <div className="md:hidden flex items-center w-full justify-between">
         <Link href="/" className="flex items-center">
           <Image
-            src="/images/logo-blue.png"
+            src="/images/snowbridge-icon-light.svg"
             width={40}
             height={40}
             alt="Snowbridge"
