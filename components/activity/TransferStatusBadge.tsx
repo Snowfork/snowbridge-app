@@ -1,4 +1,4 @@
-import { Transfer } from "@/store/transferHistory";
+import { Transfer } from "@/store/transferActivity";
 import { historyV2 } from "@snowbridge/api";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, AlertCircle } from "lucide-react";

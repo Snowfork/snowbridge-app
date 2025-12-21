@@ -1,5 +1,13 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import { useSetAtom, useAtomValue, useAtom } from "jotai";
+import { acceptedTermsOfUseAtom } from "@/store/termsOfUse";
+import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
+import { Menu as MenuIcon, X, Pencil, LogOut } from "lucide-react";
+import { useState, useEffect, useContext, FC } from "react";
 import {
   Sheet,
   SheetContent,
@@ -13,13 +21,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { Pencil, LogOut } from "lucide-react";
-import Image from "next/image";
 import { ImageWithFallback } from "./ui/image-with-fallback";
 import { trimAccount } from "@/utils/formatting";
-import { FC, useContext, useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   polkadotAccountAtom,
@@ -39,7 +42,7 @@ import { disconnectWallet } from "@/lib/client/web3modal";
 import { RegistryContext } from "@/app/providers";
 import { EthereumTokenList, PolkadotTokenList } from "./WalletTokenList";
 
-export const WalletConnect: FC = () => {
+const Wallet: FC = () => {
   useEthereumProvider();
   const registry = useContext(RegistryContext)!;
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
@@ -91,17 +94,25 @@ export const WalletConnect: FC = () => {
     return "/images/polkadot.png";
   };
 
-  const WalletIcons = () => {
+  const WalletButton = () => {
     if (!isEthConnected && !isPolkadotConnected) {
       return (
-        <Button className="w-full action-button" type="button">
+        <button
+          type="button"
+          className="action-button"
+          onClick={() => setWalletSheetOpen(true)}
+        >
           Connect
-        </Button>
+        </button>
       );
     }
 
     return (
-      <div className="flex items-center px-1 py-1 rounded-full border border-gray-600 cursor-pointer">
+      <button
+        type="button"
+        className="flex items-center px-1 py-1 rounded-full border border-gray-600 cursor-pointer"
+        onClick={() => setWalletSheetOpen(true)}
+      >
         {isEthConnected && (
           <div className="w-7 h-7 rounded-full border-2 border-gray-400 bg-white/70 flex items-center justify-center">
             <Image
@@ -132,7 +143,7 @@ export const WalletConnect: FC = () => {
             />
           </div>
         )}
-      </div>
+      </button>
     );
   };
 
@@ -342,17 +353,12 @@ export const WalletConnect: FC = () => {
     );
   };
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openAccordions, setOpenAccordions] = useState<string[]>([]);
 
   return (
     <>
+      <WalletButton />
       <Sheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen}>
-        <SheetTrigger asChild>
-          <button type="button">
-            <WalletIcons />
-          </button>
-        </SheetTrigger>
         <SheetContent
           className="wallet-panel glass p-6 text-primary overflow-y-auto"
           aria-describedby={undefined}
@@ -400,3 +406,226 @@ export const WalletConnect: FC = () => {
     </>
   );
 };
+
+export function Header() {
+  const setAccepted = useSetAtom(acceptedTermsOfUseAtom);
+  const envName = useAtomValue(snowbridgeEnvNameAtom);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <header className="w-full px-6 py-4 flex items-center justify-between">
+      {/* Desktop navigation */}
+      <div className="hidden md:flex items-center">
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <Link href="/" className="flex items-center cursor-pointer">
+              <Image
+                src="/images/snowbridge-icon-light.svg"
+                width={32}
+                height={32}
+                alt="Snowbridge"
+              />
+              <h1 className="text-lg px-2 flex items-center">
+                Snowbridge{" "}
+                <svg
+                  width="12px"
+                  height="12px"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="opacity-70 ml-1"
+                >
+                  <path
+                    d="M10.6979 16.2453L6.31787 9.75247C5.58184 8.66118 6.2058 7 7.35185 7L16.6482 7C17.7942 7 18.4182 8.66243 17.6821 9.75247L13.3021 16.2453C12.623 17.2516 11.377 17.2516 10.6979 16.2453Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </h1>
+            </Link>
+          </HoverCardTrigger>
+          <HoverCardContent
+            className="w-56 glass-sub p-3 relative"
+            align="start"
+            sideOffset={8}
+          >
+            <div className="flex flex-col space-y-3">
+              <a
+                className="text-xs text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
+                onClick={() => setAccepted(false)}
+              >
+                Terms of Use
+              </a>
+              <a
+                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                href="https://github.com/Snowfork/snowbridge"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+              </a>
+              <a
+                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                href="https://github.com/Snowfork/snowbridge-app/issues/new/choose"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Report an Issue
+              </a>
+              <a
+                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                href="https://docs.snowbridge.network/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Docs
+              </a>
+              <a
+                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                href="https://docs.snowbridge.network/security/bug-bounty"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Bug Bounty
+              </a>
+            </div>
+            <div className="absolute bottom-3 right-3 flex gap-2">
+              <a
+                href="https://github.com/Snowfork/snowbridge"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <Image
+                  src="/images/github.svg"
+                  width={16}
+                  height={16}
+                  alt="GitHub"
+                />
+              </a>
+              <a
+                href="https://twitter.com/snowbridge_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <Image
+                  src="/images/twitter-x.svg"
+                  width={16}
+                  height={16}
+                  alt="X (Twitter)"
+                />
+              </a>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+
+        {/* Navigation links in same container */}
+        <nav className="flex items-center ml-5">
+          <Link
+            href="/send"
+            className="px-3 text-base text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Send
+          </Link>
+          <Link
+            href="/activity"
+            className="px-3 text-base text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Activity
+          </Link>
+        </nav>
+      </div>
+
+      {/* Mobile navigation */}
+      <div className="md:hidden flex items-center w-full justify-between">
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/images/logo-blue.png"
+            width={40}
+            height={40}
+            alt="Snowbridge"
+          />
+          <h1 className="text-2xl px-2 ml-2 text-gray-600">Snowbridge</h1>
+        </Link>
+        <button
+          type="button"
+          className="ml-auto p-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? (
+            <X className="h-6 w-6 text-gray-600" />
+          ) : (
+            <MenuIcon className="h-6 w-6 text-gray-600" />
+          )}
+        </button>
+      </div>
+
+      {/* Desktop wallet */}
+      <div className="hidden md:block">
+        <Wallet />
+      </div>
+
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 right-0 px-4 py-3 z-50">
+          <div className="flex flex-wrap gap-2 justify-center glass rounded-2xl p-3">
+            <Link
+              href="/"
+              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Transfer
+            </Link>
+            {envName === "westend_sepolia" ? null : (
+              <Link
+                href="/switch"
+                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Polar Path
+              </Link>
+            )}
+            {envName === "polkadot_mainnet" ? (
+              <Link
+                href="/kusama"
+                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Kusama
+              </Link>
+            ) : null}
+            <Link
+              href="/activity"
+              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Activity
+            </Link>
+            <a
+              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium cursor-pointer"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setAccepted(false);
+              }}
+            >
+              Terms of Use
+            </a>
+            <a
+              href="https://docs.snowbridge.network/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Docs
+            </a>
+            {/* Mobile wallet button */}
+            <div className="mt-2 w-full">
+              <Wallet />
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

@@ -645,7 +645,124 @@ export const GetStartedForm: FC<TransferFormProps> = ({
             )}
           />
         </div>
+        <div className="transfer-spacing"></div>
+        <div>
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem className="space-y-2">
+                <FormControl>
+                  <div className="amountContainer flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full px-3 py-3">
+                    <div className="flex-1 flex flex-col min-w-0">
+                      <input
+                        className="amountInput p2 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                        type="string"
+                        placeholder="0.0"
+                        {...field}
+                      />
+                      {amountUsdValue && (
+                        <div className="text-sm text-muted-foreground pl-2">
+                          {amountUsdValue}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button
+                        type="button"
+                        variant={"clean"}
+                        className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
+                        onClick={() => {
+                          if (balanceInfo && tokenMetadata) {
+                            let maxAmount = balanceInfo.balance;
 
+                            // If transferring ETH from Ethereum, subtract the fee
+                            const isEther =
+                              token.toLowerCase() ===
+                              assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
+                            if (
+                              isEther &&
+                              source.type === "ethereum" &&
+                              feeInfo
+                            ) {
+                              const feeBuffer =
+                                (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for gas fluctuations
+                              maxAmount =
+                                maxAmount > feeBuffer
+                                  ? maxAmount - feeBuffer
+                                  : 0n;
+                            }
+
+                            // If transferring native token from substrate (e.g., DOT), subtract the fee
+                            if (
+                              source.type === "substrate" &&
+                              feeInfo &&
+                              tokenMetadata.symbol.toUpperCase() ===
+                                feeInfo.symbol.toUpperCase()
+                            ) {
+                              const feeBuffer =
+                                (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer
+                              maxAmount =
+                                maxAmount > feeBuffer
+                                  ? maxAmount - feeBuffer
+                                  : 0n;
+                            }
+
+                            const maxBalance = formatBalance({
+                              number: maxAmount,
+                              decimals: Number(tokenMetadata.decimals),
+                              displayDecimals: Number(tokenMetadata.decimals),
+                            });
+                            form.setValue("amount", maxBalance);
+                          }
+                        }}
+                        disabled={!balanceInfo || !tokenMetadata}
+                      >
+                        Max
+                      </Button>
+                      <FormField
+                        control={form.control}
+                        name="token"
+                        render={({ field }) => (
+                          <FormItem className="flex-shrink-0">
+                            <FormControl>
+                              <TokenSelector
+                                value={field.value}
+                                onChange={field.onChange}
+                                assets={
+                                  source.destinations[destination.key].assets
+                                }
+                                assetRegistry={assetRegistry}
+                                ethChainId={assetRegistry.ethChainId}
+                                sourceAccount={watchSourceAccount}
+                                source={assetsV2.getTransferLocation(
+                                  assetRegistry,
+                                  source.type,
+                                  source.key,
+                                )}
+                                destination={destination}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </FormControl>
+                {form.formState.errors.amount && (
+                  <div className="w-full rounded-xl bg-red-50 border border-red-200 p-3 mt-2">
+                    <div className="flex items-start gap-2">
+                      <LucideAlertCircle className="text-red-800 flex-shrink-0 mt-0.5 w-4 h-4" />
+                      <span className="text-sm text-red-800">
+                        {form.formState.errors.amount.message}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </FormItem>
+            )}
+          />
+        </div>
         <div className="transfer-spacing"></div>
         <Link href="/send">
           <div className="flex flex-col items-center">

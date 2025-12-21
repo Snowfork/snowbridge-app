@@ -15,13 +15,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import {
   Pagination,
   PaginationContent,
@@ -642,15 +636,15 @@ export default function Activity() {
   return (
     <Suspense fallback={<Loading />}>
       <div className="flex justify-center">
-        <Card className="w-full max-w-[min(48rem,calc(100vw-2rem))] min-h-[460px] glass">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <div className="w-full max-w-[min(48rem,calc(100vw-2rem))] min-h-[460px]">
+          <div className="flex flex-row items-center justify-between mb-6">
             <div>
-              <CardTitle>Activity</CardTitle>
-              <CardDescription>
+              <h2 className="text-3xl font-semibold">Activity</h2>
+              <p className="text-muted-foreground">
                 {showGlobal
                   ? "All Snowbridge transfers."
                   : "My transfer activity."}
-              </CardDescription>
+              </p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -677,8 +671,8 @@ export default function Activity() {
                 <LucideGlobe size={18} />
               </Toggle>
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             <Accordion
               type="single"
               className="w-full accordian"
@@ -774,8 +768,8 @@ export default function Activity() {
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
       <ErrorDialog
         open={!isRefreshing && transfersErrorMessage !== null}

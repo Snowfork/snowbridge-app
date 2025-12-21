@@ -1,7 +1,6 @@
 import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/Footer";
-import { HeaderNav } from "@/components/HeaderNav";
-import { WalletConnect } from "@/components/WalletConnect";
+import { Header } from "@/components/Header";
 import { TermsOfUse } from "@/components/TermsOfUse";
 import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
@@ -15,16 +14,6 @@ import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
 
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
-
-export const metadata: Metadata = {
-  ...meta,
-  icons: [
-    {
-      rel: "icon",
-      url: "/icon.svg",
-    },
-  ],
-};
 
 export default async function RootLayout({
   children,
@@ -47,11 +36,8 @@ export default async function RootLayout({
         <BackgroundSnowfall />
         <Providers registry={registry}>
           <main className="flex min-h-screen flex-col relative z-10">
-            <header className="w-full px-6 py-4 flex items-center justify-between">
-              <HeaderNav />
-              <WalletConnect />
-            </header>
-            <div className="flex-1 w-full px-4 sm:px-6 py-1 pb-8 flex items-center justify-center box-border overflow-visible">
+            <Header />
+            <div className="flex-1 w-full py-12 px-4 sm:px-6 py-1 pb-8 items-center justify-center box-border overflow-visible">
               {children}
             </div>
             <footer className="w-full px-6 py-6 flex flex-col items-center text-sm">

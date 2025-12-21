@@ -11,6 +11,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@duneanalytics/client-sdk": "^0.3.4",
     "@hookform/resolvers": "3.9.1",
     "@polkadot/api": "16.4.8",
     "@polkadot/extension-inject": "0.62.1",
@@ -39,8 +40,11 @@
     "@vercel/analytics": "1.5.0",
     "@vercel/edge": "1.1.2",
     "@vercel/functions": "1.5.0",
+    "@vercel/node": "^5.5.16",
+    "base-x": "5.0.1",
     "base64url": "3.0.1",
     "big.js": "6.2.2",
+    "brace-expansion": "1.1.12",
     "bufferutil": "4.0.8",
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",
@@ -53,13 +57,12 @@
     "react-dom": "18.3.1",
     "react-hook-form": "7.53.2",
     "sonner": "1.7.0",
+    "svgo": "^4.0.0",
     "swr": "2.2.5",
     "tailwind-merge": "2.5.4",
     "tailwindcss-animate": "1.0.7",
     "utf-8-validate": "5.0.10",
-    "zod": "3.23.8",
-    "base-x": "5.0.1",
-    "brace-expansion": "1.1.12"
+    "zod": "3.23.8"
   },
   "devDependencies": {
     "@babel/core": "7.26.10",

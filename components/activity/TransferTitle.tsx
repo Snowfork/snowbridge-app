@@ -1,4 +1,4 @@
-import { Transfer } from "@/store/transferHistory";
+import { Transfer } from "@/store/transferActivity";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import { LucideGlobe } from "lucide-react";
 import { formatBalance } from "@/utils/formatting";
