@@ -7,18 +7,25 @@ import Image from "next/image";
 export function Footer() {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
   return (
-    <div className="text-xs text-gray-600 flex items-center justify-between w-full px-8 md:px-12">
+    <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between w-full px-8 md:px-12">
       <div className="flex items-center gap-1">
         Powered and Funded by{" "}
         <a
           href="https://polkadot.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           <Image
-            className="opacity-80"
+            className="opacity-80 dark:hidden"
             src="/images/polkadot-icon.svg"
+            width={18}
+            height={18}
+            alt="Polkadot"
+          />
+          <Image
+            className="opacity-80 hidden dark:block"
+            src="/images/polkadot-icon-dark.svg"
             width={18}
             height={18}
             alt="Polkadot"
@@ -34,7 +41,7 @@ export function Footer() {
           href="https://docs.snowbridge.network/"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-gray-800 transition-colors"
+          className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           Docs
         </a>
@@ -42,7 +49,7 @@ export function Footer() {
           href="https://docs.snowbridge.network/security/bug-bounty"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-gray-800 transition-colors"
+          className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           Bug Bounty
         </a>
@@ -50,7 +57,7 @@ export function Footer() {
           href="https://github.com/Snowfork/snowbridge-app/issues/new/choose"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-gray-800 transition-colors"
+          className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           Contact
         </a>
@@ -60,7 +67,8 @@ export function Footer() {
           rel="noopener noreferrer"
           className="opacity-60 hover:opacity-100 transition-opacity"
         >
-          <Image src="/images/github.svg" width={16} height={16} alt="GitHub" />
+          <Image src="/images/github.svg" width={16} height={16} alt="GitHub" className="dark:hidden" />
+          <Image src="/images/github-dark.svg" width={16} height={16} alt="GitHub" className="hidden dark:block" />
         </a>
         <a
           href="https://x.com/_snowbridge"
@@ -73,6 +81,14 @@ export function Footer() {
             width={16}
             height={16}
             alt="X (Twitter)"
+            className="dark:hidden"
+          />
+          <Image
+            src="/images/twitter-x-dark.svg"
+            width={16}
+            height={16}
+            alt="X (Twitter)"
+            className="hidden dark:block"
           />
         </a>
       </div>

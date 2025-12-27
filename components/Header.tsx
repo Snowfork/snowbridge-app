@@ -465,7 +465,7 @@ export function Header() {
           >
             <div className="flex flex-col space-y-3">
               <a
-                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 href="https://docs.snowbridge.network/"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -473,7 +473,7 @@ export function Header() {
                 Docs
               </a>
               <a
-                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 href="https://docs.snowbridge.network/security/bug-bounty"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -481,7 +481,7 @@ export function Header() {
                 Bug Bounty
               </a>
               <a
-                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 href="https://github.com/Snowfork/snowbridge-app/issues/new/choose"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -489,7 +489,7 @@ export function Header() {
                 Report an Issue
               </a>
               <a
-                className="text-xs text-gray-700 hover:text-gray-500 transition-colors cursor-pointer"
+                className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer"
                 onClick={() => setAccepted(false)}
               >
                 Terms of Use
@@ -507,6 +507,14 @@ export function Header() {
                   width={16}
                   height={16}
                   alt="GitHub"
+                  className="dark:hidden"
+                />
+                <Image
+                  src="/images/github-dark.svg"
+                  width={16}
+                  height={16}
+                  alt="GitHub"
+                  className="hidden dark:block"
                 />
               </a>
               <a
@@ -520,6 +528,14 @@ export function Header() {
                   width={16}
                   height={16}
                   alt="X (Twitter)"
+                  className="dark:hidden"
+                />
+                <Image
+                  src="/images/twitter-x-dark.svg"
+                  width={16}
+                  height={16}
+                  alt="X (Twitter)"
+                  className="hidden dark:block"
                 />
               </a>
             </div>
@@ -532,8 +548,8 @@ export function Header() {
             href="/send"
             className={`px-3 text-base transition-colors ${
               pathname === "/send"
-                ? "text-black"
-                : "text-gray-500 hover:text-gray-700"
+                ? "text-black dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             }`}
           >
             Send
@@ -542,8 +558,8 @@ export function Header() {
             href="/activity"
             className={`px-3 text-base transition-colors ${
               pathname === "/activity"
-                ? "text-black"
-                : "text-gray-500 hover:text-gray-700"
+                ? "text-black dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             }`}
           >
             Activity

@@ -11,13 +11,13 @@ export default function Home() {
       <ContextComponent>
         <div className="flex flex-col items-center justify-center w-full">
           <GetStartedComponent />
-          <p className="mt-6 text-center text-l text-gray-500 font-medium">
+          <p className="mt-6 text-center text-l text-gray-500 dark:text-gray-400 font-medium">
             Send tokens between Ethereum and 7+ networks on Polkadot
           </p>
 
           {/* Description and TVL - two column layout */}
           <div className="mt-20 w-full px-8 md:px-12 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <p className="text-xl text-gray-800 leading-relaxed text-center md:text-left">
+            <p className="text-xl text-gray-800 dark:text-gray-100 leading-relaxed text-center md:text-left">
               Snowbridge is a trust-minimized bridge between Ethereum and
               Polkadot. Built and governed by the Polkadot community, it enables
               secure general-purpose messaging and transfer of assets.
@@ -28,10 +28,10 @@ export default function Home() {
                   <TVLDisplay />
                   <div className="glass-sub flex items-center justify-center py-5 px-8 whitespace-nowrap">
                     <div className="text-center">
-                      <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
                         Monthly Volume
                       </p>
-                      <p className="text-4xl font-bold text-gray-800">$12M</p>
+                      <p className="text-4xl font-bold text-gray-800 dark:text-gray-100">$12M</p>
                     </div>
                   </div>
                 </div>
@@ -45,7 +45,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
             {/* Column 1: Text */}
             <div className="flex flex-col">
-              <p className="text-xl text-gray-800 leading-relaxed">
+              <p className="text-xl text-gray-800 dark:text-gray-100 leading-relaxed">
                 Snowbridge powers seamless cross-chain transfers for apps in the
                 Polkadot ecosystem.
               </p>

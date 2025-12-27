@@ -84,14 +84,14 @@ export function TVLDisplay() {
   return (
     <div className="glass-sub flex items-center justify-center py-5 px-8 whitespace-nowrap">
       <div className="text-center">
-        <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
           Total Value Secured
         </p>
-        <p className="text-4xl font-bold text-gray-800">
+        <p className="text-4xl font-bold text-gray-800 dark:text-gray-100">
           {tvl !== null ? (
             <span>${(tvl / 1_000_000).toFixed(1)}M</span>
           ) : (
-            <span className="text-gray-400">N/A</span>
+            <span className="text-gray-400 dark:text-gray-500">N/A</span>
           )}
         </p>
       </div>
