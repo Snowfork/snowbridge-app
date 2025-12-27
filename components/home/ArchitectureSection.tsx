@@ -60,7 +60,7 @@ export function ArchitectureSection() {
               <li className="flex gap-2">
                 <span className="text-gray-400">•</span>
                 <span>
-                  Governed using{" "}
+                  Upgrades are voted upon using{" "}
                   <a
                     href="https://wiki.polkadot.com/learn/learn-polkadot-opengov/"
                     target="_blank"
@@ -87,14 +87,23 @@ export function ArchitectureSection() {
               <li className="flex gap-2">
                 <span className="text-gray-400">•</span>
                 <span>
-                  10+ iterative code audits by Oak Security and CommonPrefix.
+                  10+ incremental{" "}
+                  <a
+                    href="https://docs.snowbridge.network/security/audits"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-gray-800"
+                  >
+                    code audits
+                  </a>
+                  .
                 </span>
               </li>
               <li className="flex gap-2">
                 <span className="text-gray-400">•</span>
                 <span>
-                  Our bug bounty program has rewarded whitehats with over
-                  $30,000 for valid reports.
+                  An active bug bounty program that has disbursed over $40,000
+                  in rewards.
                 </span>
               </li>
             </ul>

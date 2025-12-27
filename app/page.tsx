@@ -51,8 +51,8 @@ export default function Home() {
             {/* Column 1: Text */}
             <div className="flex flex-col">
               <p className="text-xl text-gray-800 leading-relaxed">
-                Snowbridge powers seamless cross-chain transfers for many apps
-                in the Polkadot ecosystem.
+                Snowbridge powers seamless cross-chain transfers for apps in the
+                Polkadot ecosystem.
               </p>
             </div>
 
