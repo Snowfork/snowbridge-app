@@ -3,15 +3,15 @@ body {
   font-family: "Inter", sans-serif !important;
   font-optical-sizing: auto;
   font-style: normal;
-  color: #212d41;
+  color: var(--text-primary);
 }
 
 .text-primary {
-  color: #212d41;
+  color: var(--text-primary);
 }
 
 .bg-dark-blue {
-  background-color: #212d41;
+  background-color: var(--text-primary);
 }
 
 /* Menubar */
@@ -92,12 +92,12 @@ div[role="menubar"] button p {
 }
 
 .ui-slimscroll::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.4);
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 .ui-slimscroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.6);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .ui-slimscroll::-webkit-scrollbar-track {
@@ -120,7 +120,7 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide {
 
 /* Footer */
 .footer-item {
-  color: #4a5568;
+  color: var(--footer-text);
   white-space: nowrap;
 }
 
@@ -131,8 +131,8 @@ div[role="menubar"] .focus\:bg-accent:focus .lucide {
 
 button.action-button {
   color: #ffffff;
-  background: linear-gradient(to right, #e8927b, #8888b8);
-  box-shadow: 0 12px 30px rgb(245, 168, 157);
+  background: linear-gradient(to right, var(--action-gradient-start), var(--action-gradient-end));
+  box-shadow: 0 12px 30px var(--action-shadow);
   padding: 12px 24px;
   border: none;
   letter-spacing: 0.02em;
@@ -142,14 +142,14 @@ button.action-button {
 button.action-button:hover,
 button.action-button:focus {
   color: #ffffff;
-  background: linear-gradient(to right, #e8927b, #f472b6);
-  box-shadow: 0 14px 40px rgb(244, 114, 182);
+  background: linear-gradient(to right, var(--action-gradient-start), var(--action-gradient-hover-end));
+  box-shadow: 0 14px 40px var(--action-shadow-hover);
   transform: translateY(-1px);
 }
 
 button.action-button:active {
   transform: translateY(1px);
-  box-shadow: 0 8px 20px rgba(236, 72, 153, 0.5);
+  box-shadow: 0 8px 20px var(--action-shadow-hover);
 }
 
 button.action-button:disabled {
@@ -161,8 +161,8 @@ button.action-button:disabled {
 button[role="combobox"],
 input:not(.amountInput),
 .fake-dropdown {
-  background-color: rgba(255, 255, 255, 0.3) !important;
-  color: #212d41;
+  background-color: var(--glass-bg) !important;
+  color: var(--text-primary);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   text-align: left;
@@ -185,7 +185,7 @@ button[role="combobox"] {
 
 body {
   position: relative;
-  background-color: rgb(220, 238, 238);
+  background-color: var(--body-bg);
 }
 
 body::before {
@@ -211,11 +211,11 @@ body::before {
 .text-card-foreground {
   border: none;
   padding: 10px;
-  color: #0d2b48 !important;
+  color: var(--text-heading) !important;
 }
 
 label:not(.text-muted-foreground) {
-  color: rgba(15, 23, 42, 0.75);
+  color: var(--text-label);
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -223,7 +223,7 @@ label:not(.text-muted-foreground) {
 }
 
 .text-muted-foreground {
-  color: rgba(15, 23, 42, 0.65);
+  color: var(--text-muted-glass);
 }
 
 label {
@@ -263,7 +263,7 @@ div[role="menubar"],
 }
 
 .text-card-foreground h3 {
-  color: #163653;
+  color: var(--text-heading);
 }
 
 .text-zinc-400 {
@@ -272,34 +272,34 @@ div[role="menubar"],
 }
 
 .badge {
-  background-color: #e4f1fb;
+  background-color: var(--badge-bg);
   border: none;
 }
 .badge.bg-destructive {
-  background-color: #f87e7e !important;
+  background-color: var(--badge-destructive) !important;
 }
 .badge.bg-secondary {
-  background-color: #54fed4 !important;
+  background-color: var(--badge-secondary) !important;
 }
 
 .text-green-700 {
-  color: #207d6f !important;
+  color: var(--color-success) !important;
 }
 
 .text-red-700 {
-  color: #88232f !important;
+  color: var(--color-error) !important;
 }
 
 /* Wallet side panel */
 .wallet-panel {
-  border-left: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: -12px 0 40px rgba(30, 40, 80, 0.15);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: -12px 0 40px var(--glass-shadow);
 }
 
 .wallet-panel h1 {
   font-size: 14px;
   font-weight: 500;
-  color: rgba(15, 23, 42, 0.75);
+  color: var(--text-label);
 }
 
 /* Ensure Polkadot wallet dialog appears above sheet and can receive clicks */
@@ -332,7 +332,7 @@ body.polkadot-modal-open [data-radix-dialog-overlay] {
 
 .outline-button,
 .outline-button .lucide {
-  color: #1d2a3b;
+  color: var(--text-primary);
 }
 .link-button .lucide,
 .link-button p,
@@ -340,7 +340,7 @@ body.polkadot-modal-open [data-radix-dialog-overlay] {
 .outline-button[data-state="off"],
 .outline-button[data-state="off"] .lucide,
 .text-card-foreground .accordian .lucide {
-  color: #173651;
+  color: var(--text-heading);
 }
 
 button.bg-primary:hover {
@@ -376,13 +376,13 @@ textarea:focus-visible {
 /* Keep the original shadow on inputs and comboboxes */
 input:not(.amountInput):focus,
 input:not(.amountInput):focus-visible {
-  box-shadow: #86b1de 0 2px 2px 0 !important;
+  box-shadow: var(--input-focus-shadow) 0 2px 2px 0 !important;
 }
 
 button[role="combobox"]:focus,
 button[role="combobox"]:focus-visible,
 .focus\:ring-ring:focus {
-  box-shadow: #86b1de 0 2px 2px 0 !important;
+  box-shadow: var(--input-focus-shadow) 0 2px 2px 0 !important;
   border-radius: 15px;
 }
 
@@ -393,9 +393,9 @@ button[role="combobox"]:focus-visible,
 
 /* Glassmorphism utilities */
 .glass {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--glass-bg);
   border: none;
-  box-shadow: 0 12px 40px rgba(30, 40, 80, 0.12);
+  box-shadow: 0 12px 40px var(--glass-shadow);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(32px);
 }
@@ -409,7 +409,7 @@ button[role="combobox"]:focus-visible,
 }
 
 .glass-sub {
-  background: rgba(255, 255, 255, 0.28);
+  background: var(--glass-bg-sub);
   border-radius: 16px;
   border: none;
   backdrop-filter: blur(28px);
@@ -417,48 +417,48 @@ button[role="combobox"]:focus-visible,
 }
 
 .dropdown-menu {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--glass-bg);
   border-radius: 12px;
   border: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px var(--glass-shadow);
 }
 
 .glass-pill,
 .glass-pill-hover:hover,
 button.glass-button,
 button.glass-button:hover {
-  background: rgba(255, 255, 255, 0.18) !important;
+  background: var(--glass-pill-bg) !important;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--glass-border);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   text-align: center;
-  color: #163653;
+  color: var(--text-heading);
 }
 
 .label-glass {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: rgba(15, 23, 42, 0.75);
+  color: var(--text-label);
   font-weight: 500;
 }
 
 .text-muted-glass {
-  color: rgba(15, 23, 42, 0.65);
+  color: var(--text-muted-glass);
 }
 
 .route-chip {
   padding: 0.5rem 0.75rem;
   border-radius: 999px;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--glass-pill-bg);
+  border: 1px solid var(--glass-border);
   transition: all 0.2s ease;
 }
 
 .route-chip:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--glass-bg);
 }
 
 /* Route selector swap button */
@@ -486,17 +486,17 @@ button[role="combobox"][data-state="open"] {
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
   border-bottom: 0 !important;
-  background-color: #ffffff !important;
+  background-color: var(--glass-bg-sub) !important;
 }
 
 .amountInput {
   padding-left: 10px;
   background: none;
-  color: #646f82;
+  color: var(--text-muted-glass);
 }
 
 .amountContainer {
-  background-color: rgba(255, 255, 255, 0.3) !important;
+  background-color: var(--glass-bg) !important;
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
 }
@@ -518,11 +518,11 @@ button[role="combobox"][data-state="open"] {
 
 
 .wallet-panel [data-radix-collection-item] {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--glass-border);
 }
 
 .wallet-panel [data-state="open"] > [data-radix-accordion-content] {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--glass-pill-bg);
     border-radius: 12px;
     padding: 12px;
     margin-top: 8px;
@@ -555,14 +555,14 @@ button[role="combobox"][data-state="open"] {
 
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.35) 0%,
-    rgba(255, 255, 255, 0.2) 100%
+    var(--glass-button-gradient-start) 0%,
+    var(--glass-button-gradient-end) 100%
   );
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--glass-border);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 
-  box-shadow: 0 12px 32px rgba(30, 40, 80, 0.12);
+  box-shadow: 0 12px 32px var(--glass-shadow);
   cursor: pointer;
   transition: all 160ms ease;
 }
@@ -570,17 +570,17 @@ button[role="combobox"][data-state="open"] {
 .glass-button:hover {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.32) 100%
+    var(--glass-button-hover-start) 0%,
+    var(--glass-button-hover-end) 100%
   );
 
   /* Stronger border highlight */
-  border-color: rgba(255, 255, 255, 0.9);
+  border-color: var(--glass-border);
 
   /* Noticeably stronger shadow */
   box-shadow:
-    0 20px 48px rgba(30, 40, 80, 0.18),
-    inset 0 0 8px rgba(255, 255, 255, 0.35);
+    0 20px 48px var(--glass-shadow),
+    inset 0 0 8px var(--glass-button-gradient-start);
 
   transform: translateY(-1px);
   text-decoration: none;
@@ -590,13 +590,13 @@ button[role="combobox"][data-state="open"] {
   transform: translateY(0) scale(0.97);
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.28) 0%,
-    rgba(255, 255, 255, 0.15) 100%
+    var(--glass-button-gradient-end) 0%,
+    var(--glass-pill-bg) 100%
   );
   box-shadow:
-    0 8px 20px rgba(30, 40, 80, 0.12),
-    inset 0 0 10px rgba(255, 255, 255, 0.45);
-  border-color: rgba(255, 255, 255, 0.55);
+    0 8px 20px var(--glass-shadow),
+    inset 0 0 10px var(--glass-button-gradient-start);
+  border-color: var(--glass-border);
 }
 
 /* Snowflake loader animation */
@@ -616,25 +616,25 @@ button[role="combobox"][data-state="open"] {
 .fancy-glass-pill {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.3),
-    rgba(255, 255, 255, 0.4)
+    var(--glass-bg),
+    var(--glass-bg-sub)
   );
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: var(--glass-pill-bg);
 
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--glass-border);
 
   backdrop-filter: blur(28px) saturate(1.15);
   -webkit-backdrop-filter: blur(28px) saturate(1.15);
 
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    /* top edge highlight */ inset 0 -1px 0 rgba(255, 255, 255, 0.18),
-    /* bottom edge falloff */ 0 10px 10px rgba(111, 122, 181, 0.12); /* lift from background */
+    inset 0 1px 0 var(--glass-border),
+    inset 0 -1px 0 var(--glass-pill-bg),
+    0 10px 10px var(--glass-shadow);
 
   text-align: center;
 
-  color: rgba(12, 24, 40, 0.9);
+  color: var(--text-primary);
 }
 
 .mt-2px {

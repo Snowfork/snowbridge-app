@@ -22,7 +22,7 @@ export default async function RootLayout({
 }>) {
   const registry = assetRegistryFor(getEnvironmentName());
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" />

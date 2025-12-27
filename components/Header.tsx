@@ -3,11 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { useSetAtom, useAtomValue, useAtom } from "jotai";
 import { acceptedTermsOfUseAtom } from "@/store/termsOfUse";
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { Menu as MenuIcon, X, Pencil, LogOut } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 import { useState, useEffect, useContext, FC } from "react";
 import {
   Sheet,
@@ -369,10 +371,7 @@ const Wallet: FC = () => {
           aria-describedby={undefined}
         >
           <SheetHeader className="mb-4">
-            <SheetTitle
-              className="text-center font-semibold text-lg"
-              style={{ color: "#212d41" }}
-            >
+            <SheetTitle className="text-center font-semibold text-lg">
               Wallets
             </SheetTitle>
           </SheetHeader>
@@ -417,6 +416,16 @@ export function Header() {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const logoSrc = mounted && resolvedTheme === "dark"
+    ? "/images/snowbridge-icon-dark.svg"
+    : "/images/snowbridge-icon-light.svg";
 
   return (
     <header className="w-full px-6 py-4 flex items-center justify-between">
@@ -426,7 +435,7 @@ export function Header() {
           <HoverCardTrigger asChild>
             <Link href="/" className="flex items-center cursor-pointer">
               <Image
-                src="/images/snowbridge-icon-light.svg"
+                src={logoSrc}
                 width={32}
                 height={32}
                 alt="Snowbridge"
@@ -546,7 +555,7 @@ export function Header() {
       <div className="md:hidden flex items-center w-full justify-between">
         <Link href="/" className="flex items-center">
           <Image
-            src="/images/snowbridge-icon-light.svg"
+            src={logoSrc}
             width={40}
             height={40}
             alt="Snowbridge"
@@ -566,8 +575,9 @@ export function Header() {
         </button>
       </div>
 
-      {/* Desktop wallet */}
-      <div className="hidden md:block">
+      {/* Desktop wallet and theme toggle */}
+      <div className="hidden md:flex items-center gap-3">
+        <ThemeToggle />
         <Wallet />
       </div>
 
@@ -625,8 +635,9 @@ export function Header() {
             >
               Docs
             </a>
-            {/* Mobile wallet button */}
-            <div className="mt-2 w-full">
+            {/* Mobile wallet button and theme toggle */}
+            <div className="mt-2 w-full flex items-center justify-center gap-3">
+              <ThemeToggle />
               <Wallet />
             </div>
           </div>
