@@ -79,6 +79,25 @@ export function ArchitectureSection() {
                 </span>
               </li>
             </ul>
+
+            <h3 className="text-2xl font-semibold mt-8 mb-4 text-gray-700">
+              Defense in Depth
+            </h3>
+            <ul className="space-y-3 text-lg text-gray-700">
+              <li className="flex gap-2">
+                <span className="text-gray-400">•</span>
+                <span>
+                  10+ iterative code audits by Oak Security and CommonPrefix.
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-gray-400">•</span>
+                <span>
+                  Our bug bounty program has rewarded whitehats with over
+                  $30,000 for valid reports.
+                </span>
+              </li>
+            </ul>
           </div>
 
           {/* Right column: Diagram */}
