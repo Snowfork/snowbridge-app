@@ -345,7 +345,7 @@ export const GetStartedComponent: FC = () => {
   }
 
   return (
-    <Card className="w-full max-w-[min(38rem,calc(100vw-2rem))] glass border-white/60">
+    <Card className="w-full max-w-[min(38rem,calc(100vw-2rem))] glass border-none">
       <CardContent>{content}</CardContent>
     </Card>
   );

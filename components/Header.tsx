@@ -446,33 +446,11 @@ export function Header() {
             </Link>
           </HoverCardTrigger>
           <HoverCardContent
-            className="w-56 glass-sub p-3 relative"
+            className="w-56 dropdown-menu p-3 relative"
             align="start"
             sideOffset={8}
           >
             <div className="flex flex-col space-y-3">
-              <a
-                className="text-xs text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
-                onClick={() => setAccepted(false)}
-              >
-                Terms of Use
-              </a>
-              <a
-                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
-                href="https://github.com/Snowfork/snowbridge"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                GitHub
-              </a>
-              <a
-                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
-                href="https://github.com/Snowfork/snowbridge-app/issues/new/choose"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Report an Issue
-              </a>
               <a
                 className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
                 href="https://docs.snowbridge.network/"
@@ -488,6 +466,20 @@ export function Header() {
                 rel="noopener noreferrer"
               >
                 Bug Bounty
+              </a>
+              <a
+                className="text-xs text-gray-700 hover:text-gray-900 transition-colors"
+                href="https://github.com/Snowfork/snowbridge-app/issues/new/choose"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Report an Issue
+              </a>
+              <a
+                className="text-xs text-gray-700 hover:text-gray-500 transition-colors cursor-pointer"
+                onClick={() => setAccepted(false)}
+              >
+                Terms of Use
               </a>
             </div>
             <div className="absolute bottom-3 right-3 flex gap-2">
@@ -505,7 +497,7 @@ export function Header() {
                 />
               </a>
               <a
-                href="https://twitter.com/snowbridge_"
+                href="https://x.com/_snowbridge"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="opacity-60 hover:opacity-100 transition-opacity"
