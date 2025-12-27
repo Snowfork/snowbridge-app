@@ -55,22 +55,16 @@ export function TVLDisplay() {
       }
     }
 
-    // Initial fetch
     fetchTVL();
-
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchTVL, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl">
+      <div className="glass-sub flex items-center justify-center py-5 px-8">
         <div className="text-center">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-48 mx-auto mb-2"></div>
-            <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-32 mx-auto"></div>
+            <div className="h-4 bg-white/40 rounded w-32 mx-auto mb-3"></div>
+            <div className="h-8 bg-white/40 rounded w-24 mx-auto"></div>
           </div>
         </div>
       </div>
@@ -79,37 +73,26 @@ export function TVLDisplay() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl">
+      <div className="glass-sub flex items-center justify-center py-5 px-8 border border-red-200/50">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400 text-sm">
-            Unable to load TVL data
-          </p>
+          <p className="text-red-600/80 text-sm">Unable to load TVL data</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl">
+    <div className="glass-sub flex items-center justify-center py-5 px-8">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">
-          Total Value Locked (TVL)
-        </h3>
-        <p className="text-3xl font-bold text-gray-900 dark:text-white">
-          {tvl !== null ? (
-            <span>
-              $
-              {tvl.toLocaleString("en-US", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </span>
-          ) : (
-            <span className="text-gray-500">N/A</span>
-          )}
+        <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+          Total Value Secured
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          Across all Snowbridge networks
+        <p className="text-4xl font-bold text-gray-800">
+          {tvl !== null ? (
+            <span>${(tvl / 1_000_000).toFixed(1)}M</span>
+          ) : (
+            <span className="text-gray-400">N/A</span>
+          )}
         </p>
       </div>
     </div>
