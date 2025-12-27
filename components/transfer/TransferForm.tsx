@@ -825,16 +825,12 @@ export const TransferForm: FC<TransferFormProps> = ({
               control={form.control}
               name="beneficiary"
               render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>To account</FormLabel>
+                <FormItem>
                   <FormControl>
                     <SelectAccount
                       accounts={beneficiaries}
                       field={field}
                       allowManualInput={true}
-                      destination={destination.id}
-                      polkadotWalletName={polkadotWallet?.title}
-                      ethereumWalletName={ethereumWalletInfo?.name}
                     />
                   </FormControl>
                   <FormMessage />
