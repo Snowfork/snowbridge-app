@@ -14,7 +14,7 @@ export function ArchitectureSection() {
 
   return (
     <>
-      <section className="mt-12 w-full px-8 md:px-12">
+      <section className="mt-24 w-full px-8 md:px-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Left column: Text */}
           <div>

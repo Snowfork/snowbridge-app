@@ -40,13 +40,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Section Divider */}
-        <div className="mt-16 w-full flex justify-center">
-          <div className="h-px w-32 bg-gradient-to-r from-transparent via-gray-400/50 to-transparent" />
-        </div>
-
         {/* Explore Apps Section */}
-        <section className="mt-12 w-full px-8 md:px-12">
+        <section className="mt-24 w-full px-8 md:px-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
             {/* Column 1: Text */}
             <div className="flex flex-col">
@@ -87,11 +82,6 @@ export default function Home() {
             </a>
           </div>
         </section>
-
-        {/* Section Divider */}
-        <div className="mt-16 w-full flex justify-center">
-          <div className="h-px w-32 bg-gradient-to-r from-transparent via-gray-400/50 to-transparent" />
-        </div>
 
         {/* Architecture Section */}
         <ArchitectureSection />
