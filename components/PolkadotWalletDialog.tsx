@@ -5,7 +5,12 @@ import {
 } from "@/store/polkadot";
 import { useAtom, useSetAtom } from "jotai";
 import { FC, useState } from "react";
-import { useConnectors, useConnect, useAccounts, useStatus } from "@luno-kit/react";
+import {
+  useConnectors,
+  useConnect,
+  useAccounts,
+  useStatus,
+} from "@luno-kit/react";
 import {
   Dialog,
   DialogContent,
@@ -81,8 +86,12 @@ export const PolkadotWalletDialog: FC = () => {
                 onClick={() => handleAccountSelect(account.address)}
                 className="w-full p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left"
               >
-                <div className="font-medium">{account.name || "Unnamed Account"}</div>
-                <div className="text-sm text-gray-500 truncate">{account.address}</div>
+                <div className="font-medium">
+                  {account.name || "Unnamed Account"}
+                </div>
+                <div className="text-sm text-gray-500 truncate">
+                  {account.address}
+                </div>
               </button>
             ))}
           </div>

@@ -49,7 +49,9 @@ export function EthereumTxStep({
           Step {id}: {title}
         </div>
         <div className="text-sm" hidden={!success}>
-          <span className="text-green-500 dark:text-green-400">{success?.text}</span>
+          <span className="text-green-500 dark:text-green-400">
+            {success?.text}
+          </span>
           {success?.link ? (
             <a href={success?.link}> (view explorer)</a>
           ) : (

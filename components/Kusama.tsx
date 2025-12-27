@@ -614,7 +614,9 @@ export const KusamaComponent: FC = () => {
                                   form.setValue("amount", maxBalance);
                                 }
                               }}
-                              disabled={!balanceInfo || !balanceInfo.tokenBalance}
+                              disabled={
+                                !balanceInfo || !balanceInfo.tokenBalance
+                              }
                             >
                               Max
                             </Button>

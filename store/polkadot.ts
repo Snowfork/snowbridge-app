@@ -66,7 +66,15 @@ export const walletAtom = atom(
       logo: connector.icon ? { src: connector.icon } : undefined,
     };
   },
-  (_get, set, newWallet: { title?: string; extensionName?: string; logo?: { src?: string } } | null) => {
+  (
+    _get,
+    set,
+    newWallet: {
+      title?: string;
+      extensionName?: string;
+      logo?: { src?: string };
+    } | null,
+  ) => {
     if (!newWallet) {
       set(connectorInfoAtom, null);
     } else {

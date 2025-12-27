@@ -276,7 +276,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                       {formattedBalance}
                     </span>
                     {usdValue && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{usdValue}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {usdValue}
+                      </span>
                     )}
                   </div>
                 </button>

@@ -289,6 +289,15 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchAmount = form.watch("amount");
   const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
+  // Auto-set sourceAccount when wallet connects
+  useEffect(() => {
+    if (source.type === "ethereum" && ethereumAccount) {
+      form.setValue("sourceAccount", ethereumAccount);
+    } else if (source.type === "substrate" && polkadotAccount?.address) {
+      form.setValue("sourceAccount", polkadotAccount.address);
+    }
+  }, [source.type, ethereumAccount, polkadotAccount?.address, form]);
+
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
     destination,
@@ -404,7 +413,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(`≈ $${usdAmount.toFixed(2)}`);
+          setAmountUsdValue(`$${usdAmount.toFixed(2)}`);
         } else {
           setAmountUsdValue(null);
         }
@@ -645,92 +654,6 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
         </div>
         <div className="transfer-details space-y-2">
-          {/* Only show From account when the corresponding wallet is connected */}
-          {((source.type === "ethereum" &&
-            ethereumAccounts &&
-            ethereumAccounts.length > 0) ||
-            (source.type === "substrate" &&
-              polkadotAccounts &&
-              polkadotAccounts.length > 0)) && (
-            <FormField
-              control={form.control}
-              name="sourceAccount"
-              render={({ field }) => (
-                <FormItem {...field} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <FormLabel>From account</FormLabel>
-                    <div className="text-right">
-                      <BalanceDisplay
-                        source={assetsV2.getTransferLocation(
-                          assetRegistry,
-                          source.type,
-                          source.key,
-                        )}
-                        destination={destination}
-                        sourceAccount={watchSourceAccount ?? ""}
-                        registry={assetRegistry}
-                        token={token}
-                        tokenMetadata={tokenMetadata}
-                        displayDecimals={8}
-                      />
-                    </div>
-                  </div>
-                  <FormControl>
-                    <div>
-                      {source.type == "ethereum" ? (
-                        <SelectedEthereumWallet field={field} />
-                      ) : (
-                        <SelectedPolkadotAccount
-                          source={source.id}
-                          polkadotAccounts={
-                            polkadotAccounts?.filter(
-                              filterByAccountType(
-                                assetRegistry.parachains[source.key].info
-                                  .accountType,
-                              ),
-                            ) ?? []
-                          }
-                          polkadotAccount={watchSourceAccount}
-                          onValueChange={field.onChange}
-                          ss58Format={
-                            assetRegistry.parachains[source.key]?.info
-                              .ss58Format ??
-                            assetRegistry.relaychain.ss58Format ??
-                            0
-                          }
-                          walletName={polkadotWallet?.title}
-                        />
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-          {/* Only show To account when beneficiaries are available */}
-          {beneficiaries && beneficiaries.length > 0 && (
-            <FormField
-              control={form.control}
-              name="beneficiary"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel>To account</FormLabel>
-                  <FormControl>
-                    <SelectAccount
-                      accounts={beneficiaries}
-                      field={field}
-                      allowManualInput={true}
-                      destination={destination.id}
-                      polkadotWalletName={polkadotWallet?.title}
-                      ethereumWalletName={ethereumWalletInfo?.name}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
           <div>
             <FormField
               control={form.control}
@@ -738,73 +661,33 @@ export const TransferForm: FC<TransferFormProps> = ({
               render={({ field }) => (
                 <FormItem className="space-y-2">
                   <FormControl>
-                    <div className="amountContainer flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full px-3 py-3">
-                      <div className="flex-1 flex flex-col min-w-0">
+                    <div className="amountContainer flex flex-col w-full px-3 py-3 gap-2">
+                      {/* Row 1: Send label + source wallet + balance */}
+                      <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Send</span>
+                        {watchSourceAccount && (
+                          <div className="flex items-center gap-2">
+                            <span>{trimAccount(watchSourceAccount, 12)}</span>
+                            <span>
+                              {balanceInfo && tokenMetadata
+                                ? `${formatBalance({
+                                    number: balanceInfo.balance,
+                                    decimals: Number(tokenMetadata.decimals),
+                                    displayDecimals: 4,
+                                  })} ${tokenMetadata.symbol}`
+                                : "..."}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Row 2: Amount input + token selector */}
+                      <div className="flex flex-row items-center gap-2">
                         <input
-                          className="amountInput p2 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                          className="amountInput flex-1 p2 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground min-w-0"
                           type="string"
                           placeholder="0.0"
                           {...field}
                         />
-                        {amountUsdValue && (
-                          <div className="text-sm text-muted-foreground pl-2">
-                            {amountUsdValue}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 justify-end">
-                        <Button
-                          type="button"
-                          variant={"clean"}
-                          className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
-                          onClick={() => {
-                            if (balanceInfo && tokenMetadata) {
-                              let maxAmount = balanceInfo.balance;
-
-                              // If transferring ETH from Ethereum, subtract the fee
-                              const isEther =
-                                token.toLowerCase() ===
-                                assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
-                              if (
-                                isEther &&
-                                source.type === "ethereum" &&
-                                feeInfo
-                              ) {
-                                const feeBuffer =
-                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for gas fluctuations
-                                maxAmount =
-                                  maxAmount > feeBuffer
-                                    ? maxAmount - feeBuffer
-                                    : 0n;
-                              }
-
-                              // If transferring native token from substrate (e.g., DOT), subtract the fee
-                              if (
-                                source.type === "substrate" &&
-                                feeInfo &&
-                                tokenMetadata.symbol.toUpperCase() ===
-                                  feeInfo.symbol.toUpperCase()
-                              ) {
-                                const feeBuffer =
-                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer
-                                maxAmount =
-                                  maxAmount > feeBuffer
-                                    ? maxAmount - feeBuffer
-                                    : 0n;
-                              }
-
-                              const maxBalance = formatBalance({
-                                number: maxAmount,
-                                decimals: Number(tokenMetadata.decimals),
-                                displayDecimals: Number(tokenMetadata.decimals),
-                              });
-                              form.setValue("amount", maxBalance);
-                            }
-                          }}
-                          disabled={!balanceInfo || !tokenMetadata}
-                        >
-                          Max
-                        </Button>
                         <FormField
                           control={form.control}
                           name="token"
@@ -832,6 +715,94 @@ export const TransferForm: FC<TransferFormProps> = ({
                           )}
                         />
                       </div>
+                      {/* Row 3: USD value + percentage buttons */}
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {amountUsdValue ?? "\u00A0"}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {[25, 50, 75].map((percent) => (
+                            <Button
+                              key={percent}
+                              type="button"
+                              variant="clean"
+                              className="h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill"
+                              onClick={() => {
+                                if (balanceInfo && tokenMetadata) {
+                                  const percentAmount =
+                                    (balanceInfo.balance * BigInt(percent)) /
+                                    100n;
+                                  const formatted = formatBalance({
+                                    number: percentAmount,
+                                    decimals: Number(tokenMetadata.decimals),
+                                    displayDecimals: Number(
+                                      tokenMetadata.decimals,
+                                    ),
+                                  });
+                                  form.setValue("amount", formatted);
+                                }
+                              }}
+                              disabled={!balanceInfo || !tokenMetadata}
+                            >
+                              {percent}%
+                            </Button>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="clean"
+                            className="h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill"
+                            onClick={() => {
+                              if (balanceInfo && tokenMetadata) {
+                                let maxAmount = balanceInfo.balance;
+
+                                // If transferring ETH from Ethereum, subtract the fee
+                                const isEther =
+                                  token.toLowerCase() ===
+                                  assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
+                                if (
+                                  isEther &&
+                                  source.type === "ethereum" &&
+                                  feeInfo
+                                ) {
+                                  const feeBuffer =
+                                    (feeInfo.totalFee * 120n) / 100n;
+                                  maxAmount =
+                                    maxAmount > feeBuffer
+                                      ? maxAmount - feeBuffer
+                                      : 0n;
+                                }
+
+                                // If transferring native token from substrate, subtract the fee
+                                if (
+                                  source.type === "substrate" &&
+                                  feeInfo &&
+                                  tokenMetadata.symbol.toUpperCase() ===
+                                    feeInfo.symbol.toUpperCase()
+                                ) {
+                                  const feeBuffer =
+                                    (feeInfo.totalFee * 120n) / 100n;
+                                  maxAmount =
+                                    maxAmount > feeBuffer
+                                      ? maxAmount - feeBuffer
+                                      : 0n;
+                                }
+
+                                const maxBalance = formatBalance({
+                                  number: maxAmount,
+                                  decimals: Number(tokenMetadata.decimals),
+                                  displayDecimals: Number(
+                                    tokenMetadata.decimals,
+                                  ),
+                                });
+                                form.setValue("amount", maxBalance);
+                              }
+                            }}
+                            disabled={!balanceInfo || !tokenMetadata}
+                          >
+                            Max
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </FormControl>
                   {form.formState.errors.amount && (
@@ -848,6 +819,29 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           </div>
+          {/* Only show To account when beneficiaries are available */}
+          {beneficiaries && beneficiaries.length > 0 && (
+            <FormField
+              control={form.control}
+              name="beneficiary"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>To account</FormLabel>
+                  <FormControl>
+                    <SelectAccount
+                      accounts={beneficiaries}
+                      field={field}
+                      allowManualInput={true}
+                      destination={destination.id}
+                      polkadotWalletName={polkadotWallet?.title}
+                      ethereumWalletName={ethereumWalletInfo?.name}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           <div className="glass-sub p-4 space-y-2 card-shadow transfer-spacing">
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Delivery fee</dt>
@@ -913,6 +907,23 @@ function SubmitButton({
   beneficiaries,
   context,
 }: SubmitButtonProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent hydration mismatch by showing loading state until mounted
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center">
+        <Button disabled className="w-full action-button" type="button">
+          Loading...
+        </Button>
+      </div>
+    );
+  }
+
   if (tokenMetadata !== null && context !== null) {
     if (
       (ethereumAccounts === null || ethereumAccounts.length === 0) &&

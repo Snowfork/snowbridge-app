@@ -10,7 +10,15 @@
       "Bash(pnpm test:*)",
       "Bash(pnpm format:*)",
       "Bash(pnpm ls:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:dedot.dev)",
+      "WebFetch(domain:docs.dedot.dev)",
+      "WebFetch(domain:docs.polkadot.com)",
+      "WebFetch(domain:docs.lunolab.xyz)",
+      "Bash(pnpm remove:*)",
+      "WebFetch(domain:deepwiki.com)",
+      "Bash(git mv:*)",
+      "Bash(ls:*)"
     ]
   },
   "enabledPlugins": {

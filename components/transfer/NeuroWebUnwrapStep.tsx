@@ -369,9 +369,17 @@ export function NeuroWebUnwrapForm({
   return (
     <div className="flex flex-col gap-4 justify-between">
       <div className="flex justify-between">
-        <div className={success ? "" : "text-xl font-semibold leading-none tracking-tight"}>{displayTitle}</div>
+        <div
+          className={
+            success ? "" : "text-xl font-semibold leading-none tracking-tight"
+          }
+        >
+          {displayTitle}
+        </div>
         <div className="text-sm" hidden={!success}>
-          <span className="text-green-500 dark:text-green-400">{success?.text}</span>
+          <span className="text-green-500 dark:text-green-400">
+            {success?.text}
+          </span>
           {success?.link ? (
             <a href={success?.link} target="_blank" rel="noopener noreferrer">
               {" "}
@@ -391,7 +399,9 @@ export function NeuroWebUnwrapForm({
       >
         <div className="flex items-start gap-3">
           <LucideInfo className="text-yellow-600/80 dark:text-yellow-400/80 flex-shrink-0 mt-0.5 w-5 h-5" />
-          <span className="text-sm text-yellow-800/70 dark:text-yellow-200/70">{displayDescription}</span>
+          <span className="text-sm text-yellow-800/70 dark:text-yellow-200/70">
+            {displayDescription}
+          </span>
         </div>
       </div>
       {beneficiary !== undefined ? form : connectWalletMsg}

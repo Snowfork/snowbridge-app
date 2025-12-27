@@ -31,7 +31,9 @@ export default function Home() {
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
                         Monthly Volume
                       </p>
-                      <p className="text-4xl font-bold text-gray-800 dark:text-gray-100">$12M</p>
+                      <p className="text-4xl font-bold text-gray-800 dark:text-gray-100">
+                        $12M
+                      </p>
                     </div>
                   </div>
                 </div>

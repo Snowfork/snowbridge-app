@@ -423,9 +423,10 @@ export function Header() {
     setMounted(true);
   }, []);
 
-  const logoSrc = mounted && resolvedTheme === "dark"
-    ? "/images/snowbridge-icon-dark.svg"
-    : "/images/snowbridge-icon-light.svg";
+  const logoSrc =
+    mounted && resolvedTheme === "dark"
+      ? "/images/snowbridge-icon-dark.svg"
+      : "/images/snowbridge-icon-light.svg";
 
   return (
     <header className="w-full px-6 py-4 flex items-center justify-between">
@@ -434,12 +435,7 @@ export function Header() {
         <HoverCard openDelay={200} closeDelay={100}>
           <HoverCardTrigger asChild>
             <Link href="/" className="flex items-center cursor-pointer">
-              <Image
-                src={logoSrc}
-                width={32}
-                height={32}
-                alt="Snowbridge"
-              />
+              <Image src={logoSrc} width={32} height={32} alt="Snowbridge" />
               <h1 className="text-lg px-2 flex items-center">
                 Snowbridge{" "}
                 <svg
@@ -570,12 +566,7 @@ export function Header() {
       {/* Mobile navigation */}
       <div className="md:hidden flex items-center w-full justify-between">
         <Link href="/" className="flex items-center">
-          <Image
-            src={logoSrc}
-            width={40}
-            height={40}
-            alt="Snowbridge"
-          />
+          <Image src={logoSrc} width={40} height={40} alt="Snowbridge" />
           <h1 className="text-2xl px-2 ml-2 text-gray-600">Snowbridge</h1>
         </Link>
         <button

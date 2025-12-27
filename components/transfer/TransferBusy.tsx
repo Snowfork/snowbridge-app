@@ -40,7 +40,9 @@ export const TransferBusy: FC<TransferBusyProps> = ({
                 <span className="font-semibold text-slate-700 dark:text-slate-200">
                   Validating transaction
                 </span>
-                <span className="text-sm text-slate-600 dark:text-slate-300">{message}</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">
+                  {message}
+                </span>
               </div>
             </div>
           </div>

@@ -67,8 +67,20 @@ export function Footer() {
           rel="noopener noreferrer"
           className="opacity-60 hover:opacity-100 transition-opacity"
         >
-          <Image src="/images/github.svg" width={16} height={16} alt="GitHub" className="dark:hidden" />
-          <Image src="/images/github-dark.svg" width={16} height={16} alt="GitHub" className="hidden dark:block" />
+          <Image
+            src="/images/github.svg"
+            width={16}
+            height={16}
+            alt="GitHub"
+            className="dark:hidden"
+          />
+          <Image
+            src="/images/github-dark.svg"
+            width={16}
+            height={16}
+            alt="GitHub"
+            className="hidden dark:block"
+          />
         </a>
         <a
           href="https://x.com/_snowbridge"
