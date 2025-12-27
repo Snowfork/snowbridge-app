@@ -11,12 +11,13 @@ export function Footer() {
       <div className="flex items-center gap-1">
         Powered and Funded by{" "}
         <Image
-          className={"opacity-80"}
-          src="/images/polkadot_new.png"
-          width={90}
-          height={15}
+          className="opacity-80"
+          src="/images/polkadot-icon.svg"
+          width={18}
+          height={18}
           alt="Polkadot"
         />
+        <span>Polkadot</span>
       </div>
       {envName !== "polkadot_mainnet" && <span>(env: {envName})</span>}
     </div>

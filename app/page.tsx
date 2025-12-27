@@ -2,6 +2,7 @@ import { GetStartedComponent } from "@/components/transfer/GetStartedComponent";
 import { ContextComponent } from "@/components/Context";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { TVLDisplay } from "@/components/home/TVLDisplay";
+import { ArchitectureSection } from "@/components/home/ArchitectureSection";
 import Image from "next/image";
 
 export default function Home() {
@@ -93,85 +94,7 @@ export default function Home() {
         </div>
 
         {/* Architecture Section */}
-        <section className="mt-12 w-full px-8 md:px-12">
-          <h2 className="text-2xl font-semibold mb-6 text-center text-gray-700">
-            How It Works
-          </h2>
-          <ul className="mb-6 space-y-3 text-sm text-gray-600">
-            <li className="flex gap-2">
-              <span className="text-gray-400">•</span>
-              <span>
-                Secure interoperability by exchanging cryptographically-secure
-                proofs of finality between on-chain light clients
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-gray-400">•</span>
-              <span>
-                Offchain relayers are untrusted and have no capability to forge
-                messages. Anyone can spin up their own relayers.
-              </span>
-            </li>
-          </ul>
-          <div className="glass-sub p-6 rounded-2xl">
-            <Image
-              src="/images/architecture.svg"
-              alt="Snowbridge Architecture - showing consensus and message relayers between Ethereum and Polkadot"
-              width={1054}
-              height={846}
-              className="w-full h-auto"
-            />
-          </div>
-        </section>
-
-        {/* Section Divider */}
-        <div className="mt-16 w-full flex justify-center">
-          <div className="h-px w-32 bg-gradient-to-r from-transparent via-gray-400/50 to-transparent" />
-        </div>
-
-        {/* Governance Section */}
-        <section className="mt-12 w-full px-8 md:px-12">
-          <h2 className="text-2xl font-semibold mb-6 text-center text-gray-700">
-            Governance
-          </h2>
-          <ul className="space-y-3 text-sm text-gray-600">
-            <li className="flex gap-2">
-              <span className="text-gray-400">•</span>
-              <span>
-                Snowbridge is a system bridge that is part of the{" "}
-                <a
-                  href="https://github.com/paritytech/polkadot-sdk/tree/master/bridges/snowbridge"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  Polkadot SDK
-                </a>
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-gray-400">•</span>
-              <span>
-                Governed by the Polkadot community using{" "}
-                <a
-                  href="https://wiki.polkadot.com/learn/learn-polkadot-opengov/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  OpenGov
-                </a>
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-gray-400">•</span>
-              <span>
-                Snowfork, Inc, builds and maintains the bridge and is funded by
-                Polkadot Treasury grants.
-              </span>
-            </li>
-          </ul>
-        </section>
+        <ArchitectureSection />
       </ContextComponent>
     </MaintenanceBanner>
   );
