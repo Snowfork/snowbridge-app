@@ -27,7 +27,7 @@ Snowbridge App is a Next.js application for cross-chain token transfers between 
 - **SWR** for client-side data fetching
 - **@snowbridge/api** for bridge operations
 - **ethers v6** + **@reown/appkit** for Ethereum wallet connectivity
-- **@talismn/connect-wallets** for Polkadot wallet connectivity
+- **@luno-kit/react** for Polkadot wallet connectivity
 - **Radix UI** + **Tailwind CSS** for UI components
 
 ### Directory Structure

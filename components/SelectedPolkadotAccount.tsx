@@ -10,13 +10,13 @@ import { FC, useState } from "react";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { transformSs58Format, trimAccount } from "@/utils/formatting";
 import { isHex } from "@polkadot/util";
-import { WalletAccount } from "@talismn/connect-wallets";
+import { PolkadotAccount } from "@/store/polkadot";
 import Image from "next/image";
 
 type SelectedPolkadotAccountProps = {
   source?: string;
   ss58Format: number;
-  polkadotAccounts: WalletAccount[];
+  polkadotAccounts: PolkadotAccount[];
   polkadotAccount?: string;
   onValueChange?: (address: string) => void;
   placeholder?: string;

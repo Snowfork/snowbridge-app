@@ -31,6 +31,7 @@ import {
   polkadotWalletModalOpenAtom,
   walletAtom,
   walletSheetOpenAtom,
+  connectorInfoAtom,
 } from "@/store/polkadot";
 import { ethereumAccountAtom } from "@/store/ethereum";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
@@ -42,6 +43,7 @@ import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import { disconnectWallet } from "@/lib/client/web3modal";
 import { RegistryContext } from "@/app/providers";
 import { EthereumTokenList, PolkadotTokenList } from "./WalletTokenList";
+import { useDisconnect } from "@luno-kit/react";
 
 const Wallet: FC = () => {
   useEthereumProvider();
@@ -49,7 +51,8 @@ const Wallet: FC = () => {
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
   const wallet = useAtomValue(walletAtom);
-  const setWallet = useSetAtom(walletAtom);
+  const setConnectorInfo = useSetAtom(connectorInfoAtom);
+  const { disconnect: disconnectPolkadot } = useDisconnect();
 
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const setPolkadotAccounts = useSetAtom(polkadotAccountsAtom);
@@ -208,9 +211,10 @@ const Wallet: FC = () => {
             role="button"
             onClick={(e) => {
               e.stopPropagation();
+              disconnectPolkadot();
               setPolkadotAccount(null);
               setPolkadotAccounts([]);
-              setWallet(null);
+              setConnectorInfo(null);
             }}
             className="text-gray-500 hover:text-red-600 transition-colors p-1 cursor-pointer"
           >

@@ -13,6 +13,7 @@
   "dependencies": {
     "@duneanalytics/client-sdk": "^0.3.4",
     "@hookform/resolvers": "3.9.1",
+    "@luno-kit/react": "^0.0.11",
     "@polkadot/api": "16.4.8",
     "@polkadot/extension-inject": "0.62.1",
     "@polkadot/keyring": "13.5.6",
@@ -34,8 +35,7 @@
     "@snowbridge/base-types": "0.2.19",
     "@snowbridge/contract-types": "0.2.19",
     "@snowbridge/registry": "0.2.19",
-    "@talismn/connect-components": "1.1.9",
-    "@talismn/connect-wallets": "1.2.8",
+    "@tanstack/react-query": "^5.90.12",
     "@types/big.js": "6.2.2",
     "@vercel/analytics": "1.5.0",
     "@vercel/functions": "1.5.0",

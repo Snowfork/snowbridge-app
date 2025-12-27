@@ -4,6 +4,7 @@ import {
   polkadotAccountsAtom,
   polkadotWalletModalOpenAtom,
   walletAtom,
+  PolkadotAccount,
 } from "@/store/polkadot";
 import {
   snowbridgeContextAtom,
@@ -16,7 +17,6 @@ import {
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assetsV2, Context, environment } from "@snowbridge/api";
-import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -74,7 +74,7 @@ import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
-  polkadotAccounts: WalletAccount[],
+  polkadotAccounts: PolkadotAccount[],
   ethereumAccounts: string[],
   ss58Format: number,
 ) {
@@ -776,7 +776,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
 
 interface SubmitButtonProps {
   ethereumAccounts: string[] | null;
-  polkadotAccounts: WalletAccount[] | null;
+  polkadotAccounts: PolkadotAccount[] | null;
   destination: assetsV2.TransferLocation;
   source: assetsV2.Source;
   feeInfo?: FeeInfo;
