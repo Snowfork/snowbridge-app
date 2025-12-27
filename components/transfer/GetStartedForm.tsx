@@ -750,10 +750,10 @@ export const GetStartedForm: FC<TransferFormProps> = ({
                   </div>
                 </FormControl>
                 {form.formState.errors.amount && (
-                  <div className="w-full rounded-xl bg-red-50 border border-red-200 p-3 mt-2">
+                  <div className="w-full rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-3 mt-2">
                     <div className="flex items-start gap-2">
-                      <LucideAlertCircle className="text-red-800 flex-shrink-0 mt-0.5 w-4 h-4" />
-                      <span className="text-sm text-red-800">
+                      <LucideAlertCircle className="text-red-800 dark:text-red-200 flex-shrink-0 mt-0.5 w-4 h-4" />
+                      <span className="text-sm text-red-800 dark:text-red-200">
                         {form.formState.errors.amount.message}
                       </span>
                     </div>

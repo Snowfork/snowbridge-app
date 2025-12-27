@@ -108,7 +108,7 @@ export function SubstrateTransferStep({
           Step {id}: {title}
         </div>
         <div className="text-sm" hidden={!success}>
-          <span className="text-green-500">{success?.text}</span>
+          <span className="text-green-500 dark:text-green-400">{success?.text}</span>
           {success?.link ? (
             <a href={success?.link} target="_blank" rel="noopener noreferrer">
               {" "}
@@ -169,7 +169,7 @@ export function SubstrateTransferStep({
         </div>
         <div className="flex gap-4 place-items-center">
           <Label className="flex w-1/5">Beneficiary</Label>
-          <div className="flex-col text-gray-500 text-center w-4/5">
+          <div className="flex-col text-gray-500 dark:text-gray-400 text-center w-4/5">
             {beneficiary?.name}{" "}
             <pre className="inline lg:hidden text-sm">
               ({trimAccount(beneficiary?.address ?? data.formData.beneficiary)})
@@ -273,7 +273,7 @@ export function SubstrateTransferStep({
         </div>
       </div>
       <div className="text-sm" hidden={!error}>
-        <span className="text-red-500 ">{error?.text}</span>
+        <span className="text-red-500 dark:text-red-400">{error?.text}</span>
         {error?.link ? (
           <a href={error?.link} target="_blank" rel="noopener noreferrer">
             {" "}

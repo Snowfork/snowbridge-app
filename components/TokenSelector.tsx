@@ -150,7 +150,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs bg-white hover:bg-white/90 rounded-full flex-shrink-0 transition-colors"
+          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs bg-white dark:bg-slate-700 hover:bg-white/90 dark:hover:bg-slate-600 rounded-full flex-shrink-0 transition-colors"
         >
           {selectedAsset ? (
             <>
@@ -186,10 +186,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
             placeholder="Search by name or symbol..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/80 border-gray-200"
+            className="w-full bg-white/80 dark:bg-slate-800/80 border-gray-200 dark:border-slate-600"
           />
         </div>
-        <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 rounded-lg">
+        <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
           {filteredAssets.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No tokens found
@@ -235,7 +235,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                     setSearchQuery("");
                     setTokenModalOpen(false);
                   }}
-                  className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 rounded-md transition-colors border-b border-gray-100 last:border-b-0"
+                  className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0"
                 >
                   <div className="flex items-center gap-3">
                     <SelectItemWithIcon
@@ -244,13 +244,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                       altImage="token_generic"
                     />
                     <div className="flex flex-col items-start">
-                      <span
-                        className="font-medium"
-                        style={{ color: "#212d41" }}
-                      >
+                      <span className="font-medium text-primary">
                         {asset.symbol}
                       </span>
-                      <span className="text-xs text-gray-500 inline-flex items-center gap-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
                         {asset.name}
                         {t.toLowerCase() !==
                           assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
@@ -275,14 +272,11 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "#212d41" }}
-                    >
+                    <span className="text-sm font-medium text-primary">
                       {formattedBalance}
                     </span>
                     {usdValue && (
-                      <span className="text-xs text-gray-500">{usdValue}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{usdValue}</span>
                     )}
                   </div>
                 </button>

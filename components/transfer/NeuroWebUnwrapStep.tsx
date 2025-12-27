@@ -233,10 +233,10 @@ export function NeuroWebUnwrapForm({
           </div>
         </div>
         {balanceData?.nativeBalance === 0n && (
-          <div className="w-full rounded-xl bg-red-50 border border-red-200 p-3">
+          <div className="w-full rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-3">
             <div className="flex items-start gap-2">
-              <LucideInfo className="text-red-600 flex-shrink-0 mt-0.5 w-4 h-4" />
-              <span className="text-sm text-red-700">
+              <LucideInfo className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5 w-4 h-4" />
+              <span className="text-sm text-red-700 dark:text-red-300">
                 Insufficient NEURO balance to pay transaction fees. Please
                 acquire NEURO on NeuroWeb parachain.
               </span>
@@ -351,7 +351,7 @@ export function NeuroWebUnwrapForm({
   const connectWalletMsg = (
     <div className="flex flex-col gap-2">
       {beneficiaryLabel}
-      <div className="text-red-500">
+      <div className="text-red-500 dark:text-red-400">
         Connect beneficiary account wallet in order to {mode}.
       </div>
     </div>
@@ -371,7 +371,7 @@ export function NeuroWebUnwrapForm({
       <div className="flex justify-between">
         <div className={success ? "" : "text-xl font-semibold leading-none tracking-tight"}>{displayTitle}</div>
         <div className="text-sm" hidden={!success}>
-          <span className="text-green-500">{success?.text}</span>
+          <span className="text-green-500 dark:text-green-400">{success?.text}</span>
           {success?.link ? (
             <a href={success?.link} target="_blank" rel="noopener noreferrer">
               {" "}
@@ -386,12 +386,12 @@ export function NeuroWebUnwrapForm({
         className={
           success !== undefined
             ? "hidden"
-            : "w-full rounded-xl bg-yellow-100/40 border border-yellow-200/60 backdrop-blur-sm p-4"
+            : "w-full rounded-xl bg-yellow-100/40 dark:bg-yellow-900/30 border border-yellow-200/60 dark:border-yellow-700/50 backdrop-blur-sm p-4"
         }
       >
         <div className="flex items-start gap-3">
-          <LucideInfo className="text-yellow-600/80 flex-shrink-0 mt-0.5 w-5 h-5" />
-          <span className="text-sm text-yellow-800/70">{displayDescription}</span>
+          <LucideInfo className="text-yellow-600/80 dark:text-yellow-400/80 flex-shrink-0 mt-0.5 w-5 h-5" />
+          <span className="text-sm text-yellow-800/70 dark:text-yellow-200/70">{displayDescription}</span>
         </div>
       </div>
       {beneficiary !== undefined ? form : connectWalletMsg}
