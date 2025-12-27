@@ -38,17 +38,6 @@ Snowbridge App is a Next.js application for cross-chain token transfers between 
 - `/lib` - Utilities split by environment: `/lib/client` (browser) and `/lib/server` (Node.js)
 - `/utils` - Helper functions (types, validation, formatting, balances)
 
-### Transfer Flow
-1. `TransferForm.tsx` - Form for source/destination/token/amount
-2. `useSendToken.ts` - Orchestrates transfer with fee validation
-3. `utils/sendToken.ts` - Executes token operations (ERC20 approval, deposit)
-4. `inferTransferType.ts` - Determines transfer type from form state
-
-### Transfer Types (see `utils/inferTransferType.ts`)
-- `toPolkadotV2` - Ethereum → Polkadot (substrate destination)
-- `toEthereumV2` - Polkadot/EVM → Ethereum (handles both substrate and EVM chains like Moonbeam)
-- `forInterParachain` - Polkadot parachain ↔ parachain (substrate to substrate)
-
 ### Environment Configuration
 Set `NEXT_PUBLIC_SNOWBRIDGE_ENV` in `.env`:
 - `local_e2e` - Local development
