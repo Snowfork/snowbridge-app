@@ -29,7 +29,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
     return (
       <FormLabel
         className={
-          "text-sm text-right text-muted-foreground px-1 " +
+          "text-xs text-right text-muted-foreground px-1" +
           (sourceAccount ? " visible" : " hidden")
         }
       >
@@ -41,7 +41,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
     return (
       <FormLabel
         className={
-          "text-sm text-right text-muted-foreground px-1 " +
+          "text-xs text-right text-muted-foreground px-1" +
           (sourceAccount ? " visible" : " hidden")
         }
       >
@@ -64,7 +64,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
     return (
       <FormLabel
         className={
-          "text-sm text-right text-muted-foreground px-1 " +
+          "text-xs text-right text-muted-foreground px-1" +
           (sourceAccount ? " visible" : " hidden")
         }
       >
@@ -76,7 +76,7 @@ export const KusamaBalanceDisplay: FC<BalanceDisplayKusamaProps> = ({
   return (
     <FormLabel
       className={
-        "text-sm text-right text-muted-foreground px-1 " +
+        "text-xs text-right text-muted-foreground px-1" +
         (sourceAccount ? " visible" : " hidden")
       }
     >

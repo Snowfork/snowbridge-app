@@ -11,6 +11,7 @@ import { Metadata } from "next";
 import { metadata as meta } from "@/lib/metadata";
 import { assetRegistryFor } from "@snowbridge/registry";
 import { getEnvironmentName } from "@/lib/snowbridge";
+import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
 
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
@@ -37,40 +38,38 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
         <title>Snowbridge</title>
       </head>
       <body>
+        <BackgroundSnowfall />
         <Providers registry={registry}>
-          <main>
-            <div className="flex min-h-screen flex-col items-center justify-between p-4 lg:p-24">
-              <div className="w-full max-w-5xl md:gap-4 flex flex-col">
-                <div className="w-full place-items-center justify-between flex flex-col md:flex-row">
-                  <div className="flex mb-4 lg:mb-0">
-                    <Image
-                      src="/images/logo-blue.png"
-                      width={58}
-                      height={58}
-                      alt="Snowbridge"
-                    />
-                    <h1 className="text-3xl font-semibold lg:text-4xl px-2 main-heading ml-2">
-                      Snowbridge
-                    </h1>
-                  </div>
-                  <Menu />
-                </div>
+          <main className="flex min-h-screen flex-col relative z-10">
+            <header className="w-full px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center">
+                <Image
+                  src="/images/logo-blue.png"
+                  width={40}
+                  height={40}
+                  alt="Snowbridge"
+                />
+                <h1 className="text-2xl px-2 ml-2 mt-1 text-white">
+                  Snowbridge
+                </h1>
               </div>
-              <div className="w-full max-w-5xl flex place-content-center mt-6">
-                {children}
-              </div>
-              <div className="w-full max-w-5xl flex flex-col place-items-center text-sm mt-6">
-                <Footer />
-              </div>
-              <Toaster />
-              <TermsOfUse />
+              <Menu />
+            </header>
+            <div className="flex-1 w-full px-4 sm:px-6 py-1 pb-8 flex items-center justify-center box-border overflow-visible">
+              {children}
             </div>
+            <footer className="w-full px-6 py-6 flex flex-col items-center text-sm">
+              <Footer />
+            </footer>
+
+            <Toaster />
+            <TermsOfUse />
           </main>
         </Providers>
         <Analytics />

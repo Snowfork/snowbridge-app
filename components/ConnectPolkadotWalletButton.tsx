@@ -1,7 +1,8 @@
-import { polkadotWalletModalOpenAtom } from "@/store/polkadot";
+import { walletSheetOpenAtom } from "@/store/polkadot";
 import { Button } from "./ui/button";
-import { useAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { cn } from "@/lib/utils";
+
 interface ConnectPolkadotWalletButtonProps {
   className?: string;
   variant?:
@@ -18,14 +19,14 @@ export function ConnectPolkadotWalletButton({
   className,
   variant,
 }: ConnectPolkadotWalletButtonProps) {
-  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const setWalletSheetOpen = useSetAtom(walletSheetOpenAtom);
   return (
     <Button
       className={cn("w-full action-button", className)}
       variant={variant ?? "link"}
       onClick={(e) => {
         e.preventDefault();
-        setPolkadotWalletModalOpen(true);
+        setWalletSheetOpen(true);
       }}
     >
       Connect Wallet

@@ -1,6 +1,7 @@
 "use client";
 
 import { ErrorDialog } from "@/components/ErrorDialog";
+import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
   formatTokenData,
   getChainIdentifiers,
@@ -53,12 +54,14 @@ import { assetsV2, historyV2 } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideGlobe, LucideLoaderCircle, LucideRefreshCw } from "lucide-react";
+import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
+import { formatShortDate, trimAccount } from "@/utils/formatting";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -360,72 +363,143 @@ const transferDetail = (
     transfer,
     registry.ethereumChains[registry.ethChainId].assets,
   );
+  const formattedDate = formatShortDate(new Date(transfer.info.when));
   return (
     <div className="flex-col">
-      <div className="p-2">
-        <p>
-          Source{" "}
-          <span className="inline whitespace-pre font-mono">{source.name}</span>{" "}
-        </p>
-        <p>
-          Value{" "}
-          <span className="inline whitespace-pre font-mono">
-            {amount} {tokenName}
-          </span>{" "}
-        </p>
-        <p hidden={transfer.info.tokenAddress === assetsV2.ETHER_TOKEN_ADDRESS}>
-          Token Address{" "}
-          <span className="inline whitespace-pre font-mono">
-            {transfer.info.tokenAddress}
-          </span>{" "}
-          <span
-            className="text-sm underline cursor-pointer"
-            onClick={() => window.open(tokenUrl)}
-            onAuxClick={() => window.open(tokenUrl)}
-          >
-            (view)
-          </span>
-        </p>
-        <p>
-          From Account{" "}
-          <span className="inline whitespace-pre font-mono">
-            {sourceAddress}
-          </span>{" "}
-          <span
-            className="text-sm underline cursor-pointer"
-            onClick={() => window.open(sourceAccountUrl)}
-            onAuxClick={() => window.open(sourceAccountUrl)}
-          >
-            (view)
-          </span>
-        </p>
-        <p>
-          To Beneficiary{" "}
-          <span className="inline whitespace-pre font-mono">{beneficiary}</span>
-        </p>{" "}
-        <span
-          className="text-sm underline cursor-pointer"
-          onClick={() => window.open(beneficiaryAccountUrl)}
-          onAuxClick={() => window.open(beneficiaryAccountUrl)}
-        >
-          (view)
-        </span>
-      </div>
+      <div className="glass-sub p-4 pt-2 overflow-x-auto">
+        <table className="w-full text-sm">
+          <tbody>
+            <tr>
+              <td className="py-1 font-medium">Date</td>
+              <td className="py-1 text-right">{formattedDate}</td>
+            </tr>
+            <tr>
+              <td className="py-1 font-medium">Source</td>
+              <td className="py-1 text-right">
+                <span className="inline-flex items-center gap-1">
+                  <ImageWithFallback
+                    src={`/images/${source.id.toLowerCase().replace(/_/g, "")}.png`}
+                    fallbackSrc="/images/parachain_generic.png"
+                    width={16}
+                    height={16}
+                    alt={source.name}
+                    className="rounded-full"
+                  />
+                  {source.name}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td className="py-1 font-medium">Value</td>
+              <td className="py-1 text-right">
+                <span className="inline-flex items-center gap-1">
+                  <ImageWithFallback
+                    src={`/images/${(tokenName ?? "token_generic").toLowerCase()}.png`}
+                    fallbackSrc="/images/token_generic.png"
+                    width={16}
+                    height={16}
+                    alt={tokenName ?? "token"}
+                    className="rounded-full"
+                  />
+                  {amount}{" "}
+                  {transfer.info.tokenAddress !==
+                  assetsV2.ETHER_TOKEN_ADDRESS ? (
+                    <span
+                      className="hover:underline cursor-pointer inline-flex items-center"
+                      onClick={() => window.open(tokenUrl)}
+                      onAuxClick={() => window.open(tokenUrl)}
+                    >
+                      {tokenName}
+                      <ArrowUpRight className="w-4 h-4" />
+                    </span>
+                  ) : (
+                    tokenName
+                  )}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td className="py-1 font-medium">From</td>
+              <td className="py-1 text-right">
+                <span
+                  className="hover:underline cursor-pointer inline-flex items-center"
+                  onClick={() => window.open(sourceAccountUrl)}
+                  onAuxClick={() => window.open(sourceAccountUrl)}
+                >
+                  {trimAccount(sourceAddress)}
+                  <ArrowUpRight className="w-4 h-4" />
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td className="py-1 font-medium">To</td>
+              <td className="py-1 text-right">
+                <span
+                  className="hover:underline cursor-pointer inline-flex items-center"
+                  onClick={() => window.open(beneficiaryAccountUrl)}
+                  onAuxClick={() => window.open(beneficiaryAccountUrl)}
+                >
+                  {trimAccount(beneficiary)}
+                  <ArrowUpRight className="w-4 h-4" />
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-      <ul className="p-2 list-inside list-disc">
-        {links.map((link, i) => (
-          <li key={i}>
-            {link.text}{" "}
-            <span
-              className="text-sm underline cursor-pointer"
-              onClick={() => window.open(link.url)}
-              onAuxClick={() => window.open(link.url)}
-            >
-              (view)
-            </span>
-          </li>
-        ))}
-      </ul>
+        <div className="p-1"></div>
+        {links.length > 0 && (
+          <div className="relative">
+            {links.map((link, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 relative pb-2 last:pb-0"
+              >
+                {/* Vertical line */}
+                {i < links.length - 1 && (
+                  <div className="absolute left-[7px] top-[16px] w-0.5 h-[calc(100%-8px)] bg-slate-700/30" />
+                )}
+                {/* Checkmark circle */}
+                <div className="w-4 h-4 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0 z-10">
+                  <svg
+                    className="w-2.5 h-2.5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div
+                  className="text-sm hover:underline cursor-pointer"
+                  onClick={() => window.open(link.url)}
+                  onAuxClick={() => window.open(link.url)}
+                >
+                  {link.text}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div
+          hidden={!transfer.isWalletTransaction}
+          className="flex justify-center"
+        >
+          <Button
+            className={"glass-button mt-2"}
+            onClick={() => {
+              router.push(`txcomplete?messageId=${transfer.id}`);
+            }}
+          >
+            Post Transfer Steps
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -594,130 +668,142 @@ export default function History() {
 
   return (
     <Suspense fallback={<Loading />}>
-      <Card className="w-full md:w-2/3 min-h-[460px]">
-        <CardHeader>
-          <CardTitle>History</CardTitle>
-          <CardDescription>
-            {showGlobal ? "Global transfer history." : "My transfer history."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex w-full pb-4">
-            <Button
-              variant="link"
-              size="sm"
-              disabled={isRefreshing}
-              onClick={() => mutate()}
-            >
-              <div className="flex gap-2 place-items-center">
-                <LucideRefreshCw />
-                <p>{isRefreshing ? "Refreshing" : "Refresh"}</p>
-              </div>
-            </Button>
-            <Toggle
-              className="flex gap-2 outline-button"
-              defaultPressed={false}
-              pressed={showGlobal}
-              onPressedChange={(p) => setShowGlobal(p)}
-              size="sm"
-            >
-              <div className="flex gap-2 place-items-center">
-                <LucideGlobe />
-                <p>Show global Transfers</p>
-              </div>
-            </Toggle>
-          </div>
-          <hr />
-          <Accordion
-            type="single"
-            className="w-full accordian"
-            value={selectedItem ?? undefined}
-            onValueChange={(v) => {
-              setSelectedItem(v);
-              router.push("#" + v);
-            }}
-          >
-            {pages[page]?.map((v, i) => (
-              <AccordionItem
-                key={v.id}
-                value={v.id?.toString() ?? i.toString()}
+      <div className="flex justify-center">
+        <Card className="w-full max-w-[min(48rem,calc(100vw-2rem))] min-h-[460px] glass">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>History</CardTitle>
+              <CardDescription>
+                {showGlobal
+                  ? "All Snowbridge transfers."
+                  : "My transfer history."}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isRefreshing}
+                onClick={() => mutate()}
+                className="h-8 w-8"
+                title="Refresh"
               >
-                <AccordionTrigger>
-                  <TransferTitle transfer={v} />
-                </AccordionTrigger>
-                <AccordionContent>
-                  {transferDetail(v, assetRegistry, router)}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-          <br></br>
-          <div
-            className={
-              "justify-self-center align-middle " +
-              (pages.length > 0 ? "hidden" : "")
-            }
-          >
-            <p className="text-muted-foreground text-center">No history.</p>
-          </div>
-          <Pagination className={pages.length == 0 ? "hidden" : ""}>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => {
-                    const p = Math.max(0, page - 1);
-                    setPage(p);
-                    setSelectedItem(null);
-                  }}
+                <LucideRefreshCw
+                  className={isRefreshing ? "animate-spin" : ""}
+                  size={18}
                 />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink
-                  onClick={() => {
-                    setPage(0);
-                    setSelectedItem(null);
-                  }}
+              </Button>
+              <Toggle
+                pressed={showGlobal}
+                onPressedChange={(p) => setShowGlobal(p)}
+                className="h-8 w-8 p-0"
+                title={
+                  showGlobal ? "Show my transfers" : "Show global transfers"
+                }
+              >
+                <LucideGlobe size={18} />
+              </Toggle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Accordion
+              type="single"
+              className="w-full accordian"
+              value={selectedItem ?? undefined}
+              onValueChange={(v) => {
+                setSelectedItem(v);
+                router.push("#" + v);
+              }}
+            >
+              {pages[page]?.map((v, i) => (
+                <AccordionItem
+                  key={v.id}
+                  value={v.id?.toString() ?? i.toString()}
                 >
-                  First
-                </PaginationLink>
-              </PaginationItem>
-              {renderPages.map(({ index }) => (
-                <PaginationItem key={index + 1}>
-                  <PaginationLink
-                    isActive={page == index}
+                  <AccordionTrigger>
+                    <TransferTitle
+                      transfer={v}
+                      showGlobeForGlobal={!v.isWalletTransaction}
+                    />
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {transferDetail(v, assetRegistry, router)}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <br></br>
+            <div
+              className={
+                "justify-self-center align-middle " +
+                (pages.length > 0 ? "hidden" : "")
+              }
+            >
+              <p className="text-muted-foreground text-center">
+                Your transactions will appear here. Click on the{" "}
+                <LucideGlobe size={16} className="inline align-middle mx-1" />{" "}
+                icon to see all Snowbridge transactions.
+              </p>
+            </div>
+            <Pagination className={pages.length == 0 ? "hidden" : ""}>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
                     onClick={() => {
-                      setPage(index);
+                      const p = Math.max(0, page - 1);
+                      setPage(p);
+                      setSelectedItem(null);
+                    }}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink
+                    onClick={() => {
+                      setPage(0);
                       setSelectedItem(null);
                     }}
                   >
-                    {index + 1}
+                    First
                   </PaginationLink>
                 </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationLink
-                  onClick={() => {
-                    const p = pages.length - 1;
-                    setPage(p);
-                    setSelectedItem(null);
-                  }}
-                >
-                  Last
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => {
-                    const p = Math.min(pages.length - 1, page + 1);
-                    setPage(p);
-                    setSelectedItem(null);
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </CardContent>
-      </Card>
+                {renderPages.map(({ index }) => (
+                  <PaginationItem key={index + 1}>
+                    <PaginationLink
+                      isActive={page == index}
+                      onClick={() => {
+                        setPage(index);
+                        setSelectedItem(null);
+                      }}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationLink
+                    onClick={() => {
+                      const p = pages.length - 1;
+                      setPage(p);
+                      setSelectedItem(null);
+                    }}
+                  >
+                    Last
+                  </PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => {
+                      const p = Math.min(pages.length - 1, page + 1);
+                      setPage(p);
+                      setSelectedItem(null);
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </CardContent>
+        </Card>
+      </div>
       <ErrorDialog
         open={!isRefreshing && transfersErrorMessage !== null}
         title="Error Fetching History"
@@ -729,10 +815,5 @@ export default function History() {
 }
 
 const Loading = () => {
-  return (
-    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
-      Fetching Transfer History{" "}
-      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-    </div>
-  );
+  return <SnowflakeLoader />;
 };

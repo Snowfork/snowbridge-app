@@ -1,13 +1,17 @@
 import { Transfer } from "@/store/transferHistory";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { LucideGlobe, LucideWallet } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatBalance } from "@/utils/formatting";
+import { LucideGlobe } from "lucide-react";
+import {
+  formatBalance,
+  formatShortDate,
+  truncateAmount,
+} from "@/utils/formatting";
 import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { RegistryContext } from "@/app/providers";
 import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import Image from "next/image";
 
 export function getChainIdentifiers(
   transfer: Transfer,
@@ -123,60 +127,97 @@ export function formatTokenData(
 
 interface TransferTitleProps {
   transfer: Transfer;
-  showWallet?: boolean;
   showBagde?: boolean;
+  showGlobeForGlobal?: boolean;
 }
 
 export function TransferTitle({
   transfer,
-  showWallet,
   showBagde,
+  showGlobeForGlobal,
 }: TransferTitleProps) {
   const assetRegistry = useContext(RegistryContext)!;
+  const [tokenImageError, setTokenImageError] = useState(false);
+  const [destImageError, setDestImageError] = useState(false);
 
   const { destination } = getEnvDetail(transfer, assetRegistry);
-  const when = new Date(transfer.info.when);
+  const shortDate = formatShortDate(new Date(transfer.info.when));
 
-  const { tokenName, amount } = formatTokenData(
+  const { tokenName, amount: rawAmount } = formatTokenData(
     transfer,
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
   );
+  const amount = truncateAmount(rawAmount);
 
-  if (!(showWallet ?? true) && !(showBagde ?? true)) {
+  const tokenIcon = (
+    <Image
+      src={
+        tokenImageError
+          ? "/images/token_generic.png"
+          : `/images/${(tokenName ?? "token_generic").toLowerCase()}.png`
+      }
+      width={18}
+      height={18}
+      alt={tokenName ?? "token"}
+      className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
+      onError={() => setTokenImageError(true)}
+    />
+  );
+
+  const destIcon = (
+    <Image
+      src={
+        destImageError
+          ? "/images/parachain_generic.png"
+          : `/images/${(destination?.id ?? "parachain_generic").toLowerCase()}.png`
+      }
+      width={18}
+      height={18}
+      alt={destination?.name ?? "destination"}
+      className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
+      onError={() => setDestImageError(true)}
+    />
+  );
+
+  if (!(showBagde ?? true)) {
     return (
-      <span className="block col-span-6 place-self-start text-left">
-        {amount +
-          " " +
-          (tokenName ?? "unknown") +
-          " to " +
-          (destination?.name ?? "unknown") +
-          " on " +
-          when.toLocaleString()}
+      <span className="flex items-center gap-1 col-span-6 place-self-start text-left text-sm">
+        {showGlobeForGlobal && (
+          <LucideGlobe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground mr-1" />
+        )}
+        {tokenIcon}
+        <span className="truncate">
+          {amount} {tokenName ?? "unknown"}
+        </span>
+        <span className="text-muted-foreground">→</span>
+        {destIcon}
+        <span className="truncate">{destination?.name ?? "unknown"}</span>
+        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
+          {shortDate}
+        </span>
       </span>
     );
   }
   return (
-    <div className="grid grid-cols-8 justify-stretch w-full">
+    <div className="flex items-center gap-2 w-full">
       <TransferStatusBadge
-        className={!(showBagde ?? true) ? "hidden" : "ml-8"}
+        className={!(showBagde ?? true) ? "hidden" : ""}
         transfer={transfer}
       />
-      <div
-        className={cn(
-          "flex px-4 mr-2 col-span-1 w-full place-content-center",
-          !(showWallet ?? true) ? "hidden" : "",
-        )}
-      >
-        {transfer.isWalletTransaction ? <LucideWallet /> : <LucideGlobe />}
-      </div>
-      <p className="col-span-6 place-self-start text-left">
-        {amount +
-          " " +
-          (tokenName ?? "unknown") +
-          " to " +
-          (destination?.name ?? "unknown") +
-          " on " +
-          when.toLocaleString()}
+      {showGlobeForGlobal && (
+        <LucideGlobe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
+      )}
+      <p className="flex-1 text-left flex items-center gap-1 text-sm">
+        {tokenIcon}
+        <span className="truncate">
+          {amount} {tokenName ?? "unknown"}
+        </span>
+        <span className="text-muted-foreground">→</span>
+        {destIcon}
+        <span className="truncate">{destination?.name ?? "unknown"}</span>
+        <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
+          {shortDate}
+        </span>
       </p>
     </div>
   );

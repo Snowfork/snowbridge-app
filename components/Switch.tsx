@@ -35,7 +35,11 @@ import {
   assetHubToParachainTransfer,
   parachainToAssetHubTransfer,
 } from "@/utils/onSwitch";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
+import {
+  polkadotAccountAtom,
+  polkadotAccountsAtom,
+  walletAtom,
+} from "@/store/polkadot";
 import {
   snowbridgeEnvironmentAtom,
   snowbridgeContextAtom,
@@ -72,6 +76,7 @@ export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
+  const polkadotWallet = useAtomValue(walletAtom);
   const assetRegistry = useContext(RegistryContext)!;
 
   const [feeDisplay, setFeeDisplay] = useState("");
@@ -392,7 +397,7 @@ export const SwitchComponent: FC = () => {
 
   return (
     <>
-      <Card className="w-auto md:w-2/3">
+      <Card className="w-full max-w-[min(42rem,calc(100vw-2rem))] glass border-white/60">
         <CardHeader>
           <CardTitle>Polar Path</CardTitle>
           <CardDescription className="hidden md:flex">
@@ -486,10 +491,7 @@ export const SwitchComponent: FC = () => {
                 name="sourceAccount"
                 render={({ field }) => (
                   <FormItem {...field}>
-                    <FormLabel>Source Account</FormLabel>
-                    <FormDescription className="hidden md:flex">
-                      Account on the source.
-                    </FormDescription>
+                    <FormLabel>From Account</FormLabel>
                     <FormControl>
                       <>
                         <SelectedPolkadotAccount
@@ -502,6 +504,7 @@ export const SwitchComponent: FC = () => {
                           }
                           polkadotAccount={watchSourceAccount}
                           onValueChange={field.onChange}
+                          walletName={polkadotWallet?.title}
                         />
                         <PolkadotBalance
                           sourceAccount={watchSourceAccount}
@@ -525,10 +528,7 @@ export const SwitchComponent: FC = () => {
                 name="beneficiary"
                 render={({ field }) => (
                   <FormItem {...field}>
-                    <FormLabel>Beneficiary</FormLabel>
-                    <FormDescription className="hidden md:flex">
-                      Receiver account on the destination.
-                    </FormDescription>
+                    <FormLabel>To Account</FormLabel>
                     <FormControl>
                       <SelectAccount
                         accounts={beneficiaries}
@@ -536,6 +536,7 @@ export const SwitchComponent: FC = () => {
                         allowManualInput={false}
                         disabled={true}
                         destination="kilt"
+                        polkadotWalletName={polkadotWallet?.title}
                       />
                     </FormControl>
                     <FormMessage />

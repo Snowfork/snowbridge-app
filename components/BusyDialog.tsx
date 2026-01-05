@@ -30,7 +30,7 @@ export const BusyDialog: FC<BusyDialogProps> = ({
         if (!a && dismiss) dismiss();
       }}
     >
-      <DialogContent>
+      <DialogContent className={"glass more-blur"}>
         <DialogHeader>
           <DialogTitle>{title ?? "Busy"}</DialogTitle>
           <DialogDescription className="flex items-center py-2">

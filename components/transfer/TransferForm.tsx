@@ -1,5 +1,10 @@
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
-import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
+import {
+  polkadotAccountAtom,
+  polkadotAccountsAtom,
+  polkadotWalletModalOpenAtom,
+  walletAtom,
+} from "@/store/polkadot";
 import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
@@ -12,15 +17,17 @@ import {
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assetsV2, Context, environment } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
-import { useAtomValue } from "jotai";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import Image from "next/image";
 import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
 import { SelectedEthereumWallet } from "../SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "../SelectedPolkadotAccount";
 import { Button } from "../ui/button";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 import {
   Form,
   FormControl,
@@ -40,6 +47,7 @@ import {
 } from "../ui/select";
 import { track } from "@vercel/analytics";
 import { validateOFAC } from "@/utils/validateOFAC";
+import { fetchTokenPrices } from "@/utils/coindesk";
 import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -50,6 +58,8 @@ import {
 import { ConnectEthereumWalletButton } from "../ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "../ConnectPolkadotWalletButton";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
+import { TokenSelector } from "../TokenSelector";
+import { ArrowRight, ChevronsUpDown, LucideAlertCircle } from "lucide-react";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import {
   getChainId,
@@ -60,6 +70,7 @@ import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 
 function getBeneficiaries(
   destination: assetsV2.TransferLocation,
@@ -224,6 +235,12 @@ export const TransferForm: FC<TransferFormProps> = ({
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
+  const polkadotWallet = useAtomValue(walletAtom);
+
+  // Wallet connection hooks
+  const { open: openEthereumWallet } = useAppKit();
+  const { walletInfo: ethereumWalletInfo } = useWalletInfo();
+  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const locations = useMemo(
     () => assetsV2.getTransferLocations(assetRegistry),
@@ -270,19 +287,36 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
+  const watchAmount = form.watch("amount");
+  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
+
+  // Reset amount when token changes
+  const prevTokenRef = useRef(watchToken);
+  useEffect(() => {
+    if (prevTokenRef.current !== watchToken) {
+      form.setValue("amount", "0");
+      prevTokenRef.current = watchToken;
+    }
+  }, [watchToken, form]);
+
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
   );
 
-  useEffect(() => {
-    const newSourceAccount =
-      source.type == "ethereum"
-        ? (ethereumAccount ?? undefined)
-        : polkadotAccount?.address;
-    setSourceAccount(newSourceAccount);
+  // Get balance for MAX button
+  const { data: balanceInfo } = useTokenBalance(
+    watchSourceAccount ?? "",
+    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    destination,
+    token,
+  );
 
+  // Fetch balances for all tokens in the list
+  const availableTokens = source.destinations[destination.key].assets;
+
+  useEffect(() => {
     let newDestinations = destinations;
     let newSource = source;
     if (source.id !== watchSource) {
@@ -366,6 +400,40 @@ export const TransferForm: FC<TransferFormProps> = ({
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
       token.toLowerCase()
     ];
+
+  // Calculate USD value for amount
+  useEffect(() => {
+    if (!watchAmount || !tokenMetadata || Number(watchAmount) === 0) {
+      setAmountUsdValue(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const calculateUsd = async () => {
+      try {
+        const prices = await fetchTokenPrices([tokenMetadata.symbol]);
+        if (cancelled) return;
+        const price = prices[tokenMetadata.symbol.toUpperCase()];
+        if (price) {
+          const usdAmount = Number(watchAmount) * price;
+          setAmountUsdValue(`≈ $${usdAmount.toFixed(2)}`);
+        } else {
+          setAmountUsdValue(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setAmountUsdValue(null);
+        }
+      }
+    };
+
+    calculateUsd();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [watchAmount, tokenMetadata]);
 
   const submit = useCallback(
     async (formData: TransferFormData) => {
@@ -504,118 +572,118 @@ export const TransferForm: FC<TransferFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-2">
-        <div className="grid grid-cols-2 space-x-2">
-          <FormField
-            control={form.control}
-            name="source"
-            render={({ field }) => (
-              <FormItem {...field}>
-                <FormLabel>From</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {locations.map((s) => {
-                          let name: string;
-                          if (s.type === "ethereum") {
-                            const eth = assetRegistry.ethereumChains[s.key];
-                            if (!eth.evmParachainId) {
-                              name = "Ethereum";
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 space-x-2">
+            <FormLabel>Route</FormLabel>
+          </div>
+          <div className="glass-sub px-3 sm:px-4 py-3 flex flex-row items-center justify-between gap-1 sm:gap-3">
+            <FormField
+              control={form.control}
+              name="source"
+              render={({ field }) => (
+                <FormItem className="flex-1 min-w-0">
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow px-2 sm:px-3">
+                        <SelectValue placeholder="Select source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {locations.map((s) => {
+                            let name: string;
+                            if (s.type === "ethereum") {
+                              const eth = assetRegistry.ethereumChains[s.key];
+                              if (!eth.evmParachainId) {
+                                name = "Ethereum";
+                              } else {
+                                const evmChain =
+                                  assetRegistry.parachains[eth.evmParachainId];
+                                name = `${evmChain.info.name} (EVM)`;
+                              }
                             } else {
-                              const evmChain =
-                                assetRegistry.parachains[eth.evmParachainId];
-                              name = `${evmChain.info.name} (EVM)`;
+                              name = assetRegistry.parachains[s.key].info.name;
                             }
-                          } else {
-                            name = assetRegistry.parachains[s.key].info.name;
-                          }
-                          return (
+                            return (
+                              <SelectItem key={s.id} value={s.id}>
+                                <SelectItemWithIcon
+                                  label={name}
+                                  image={s.id}
+                                  altImage="parachain_generic"
+                                />
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-full bg-white/[0.28] hover:bg-white/40 p-1.5 sm:p-2 h-auto flex-shrink-0"
+              onClick={() => {
+                const currentSource = form.getValues("source");
+                const currentDest = form.getValues("destination");
+                form.setValue("source", currentDest);
+                form.setValue("destination", currentSource);
+              }}
+            >
+              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </Button>
+
+            <FormField
+              control={form.control}
+              name="destination"
+              render={({ field }) => (
+                <FormItem className="flex-1 min-w-0">
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="border-0 bg-transparent hover:bg-white/20 transition-colors dropdown-shadow px-2 sm:px-3">
+                        <SelectValue placeholder="Select destination" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {destinations.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               <SelectItemWithIcon
-                                label={name}
+                                label={s.name}
                                 image={s.id}
                                 altImage="parachain_generic"
                               />
                             </SelectItem>
-                          );
-                        })}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="destination"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>To</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a destination" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {destinations.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            <SelectItemWithIcon
-                              label={s.name}
-                              image={s.id}
-                              altImage="parachain_generic"
-                            />
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
-        <div className="transfer-details">
-          <FormField
-            control={form.control}
-            name="sourceAccount"
-            render={({ field }) => (
-              <FormItem {...field}>
-                <div className="grid grid-cols-2 space-x-2">
-                  <FormLabel>From account</FormLabel>
-                </div>
-                <FormControl>
-                  <div>
-                    {source.type == "ethereum" ? (
-                      <SelectedEthereumWallet field={field} />
-                    ) : (
-                      <SelectedPolkadotAccount
-                        source={source.id}
-                        polkadotAccounts={
-                          polkadotAccounts?.filter(
-                            filterByAccountType(
-                              assetRegistry.parachains[source.key].info
-                                .accountType,
-                            ),
-                          ) ?? []
-                        }
-                        polkadotAccount={watchSourceAccount}
-                        onValueChange={field.onChange}
-                        ss58Format={
-                          assetRegistry.parachains[source.key]?.info
-                            .ss58Format ??
-                          assetRegistry.relaychain.ss58Format ??
-                          0
-                        }
-                      />
-                    )}
-                    <div className="flex flex-row-reverse pt-1">
+        <div className="transfer-details space-y-2">
+          {/* Only show From account when the corresponding wallet is connected */}
+          {((source.type === "ethereum" &&
+            ethereumAccounts &&
+            ethereumAccounts.length > 0) ||
+            (source.type === "substrate" &&
+              polkadotAccounts &&
+              polkadotAccounts.length > 0)) && (
+            <FormField
+              control={form.control}
+              name="sourceAccount"
+              render={({ field }) => (
+                <FormItem {...field} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <FormLabel>From account</FormLabel>
+                    <div className="text-right">
                       <BalanceDisplay
                         source={assetsV2.getTransferLocation(
                           assetRegistry,
@@ -623,7 +691,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           source.key,
                         )}
                         destination={destination}
-                        sourceAccount={watchSourceAccount}
+                        sourceAccount={watchSourceAccount ?? ""}
                         registry={assetRegistry}
                         token={token}
                         tokenMetadata={tokenMetadata}
@@ -631,17 +699,46 @@ export const TransferForm: FC<TransferFormProps> = ({
                       />
                     </div>
                   </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormControl>
+                    <div>
+                      {source.type == "ethereum" ? (
+                        <SelectedEthereumWallet field={field} />
+                      ) : (
+                        <SelectedPolkadotAccount
+                          source={source.id}
+                          polkadotAccounts={
+                            polkadotAccounts?.filter(
+                              filterByAccountType(
+                                assetRegistry.parachains[source.key].info
+                                  .accountType,
+                              ),
+                            ) ?? []
+                          }
+                          polkadotAccount={watchSourceAccount}
+                          onValueChange={field.onChange}
+                          ss58Format={
+                            assetRegistry.parachains[source.key]?.info
+                              .ss58Format ??
+                            assetRegistry.relaychain.ss58Format ??
+                            0
+                          }
+                          walletName={polkadotWallet?.title}
+                        />
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          {/* Only show To account when beneficiaries are available */}
           {beneficiaries && beneficiaries.length > 0 && (
             <FormField
               control={form.control}
               name="beneficiary"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="space-y-2">
                   <FormLabel>To account</FormLabel>
                   <FormControl>
                     <SelectAccount
@@ -649,6 +746,8 @@ export const TransferForm: FC<TransferFormProps> = ({
                       field={field}
                       allowManualInput={true}
                       destination={destination.id}
+                      polkadotWalletName={polkadotWallet?.title}
+                      ethereumWalletName={ethereumWalletInfo?.name}
                     />
                   </FormControl>
                   <FormMessage />
@@ -656,96 +755,131 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           )}
-          <div className="flex space-x-2">
-            <div className="w-3/5">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        className="text-right"
-                        type="string"
-                        placeholder="0.0"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="w-2/5">
-              <FormField
-                control={form.control}
-                name="token"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="invisible">Token</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a token" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {source.destinations[destination.key].assets.map(
-                              (t) => {
-                                const asset =
-                                  assetRegistry.ethereumChains[
-                                    assetRegistry.ethChainId
-                                  ].assets[t.toLowerCase()];
-                                return (
-                                  <SelectItem key={t} value={t}>
-                                    <SelectItemWithIcon
-                                      label={asset.name}
-                                      image={asset.symbol}
-                                      altImage="token_generic"
-                                    />
-                                  </SelectItem>
-                                );
-                              },
-                            )}
-                          </SelectGroup>
-                        </SelectContent>
-                        <FormMessage />
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-            {form.formState.errors.amount && (
-              <p className="text-sm font-medium text-destructive mt-2">
-                {form.formState.errors.amount.message}
-              </p>
-            )}
-            {form.formState.errors.token && (
-              <p className="text-sm font-medium text-destructive mt-2">
-                {form.formState.errors.token.message}
-              </p>
-            )}
-          </div>
-          <div className="text-sm text-center text-muted-foreground px-1 mt-1">
-            Delivery Fee:{" "}
-            <FeeDisplay
-              className="inline"
-              source={assetsV2.getTransferLocation(
-                assetRegistry,
-                source.type,
-                source.key,
+          <div>
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <div className="amountContainer flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full px-3 py-3">
+                      <div className="flex-1 flex flex-col min-w-0">
+                        <input
+                          className="amountInput p2 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground"
+                          type="string"
+                          placeholder="0.0"
+                          {...field}
+                        />
+                        {amountUsdValue && (
+                          <div className="text-sm text-muted-foreground pl-2">
+                            {amountUsdValue}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button
+                          type="button"
+                          variant={"clean"}
+                          className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
+                          onClick={() => {
+                            if (balanceInfo && tokenMetadata) {
+                              let maxAmount = balanceInfo.balance;
+
+                              // If transferring the same token used for fees, subtract the fee
+                              if (
+                                feeInfo &&
+                                tokenMetadata.symbol.toUpperCase() ===
+                                  feeInfo.symbol.toUpperCase()
+                              ) {
+                                const feeBuffer =
+                                  (feeInfo.totalFee * 120n) / 100n; // Add 20% buffer for fee fluctuations
+                                maxAmount =
+                                  maxAmount > feeBuffer
+                                    ? maxAmount - feeBuffer
+                                    : 0n;
+                              }
+
+                              const maxBalance = formatBalance({
+                                number: maxAmount,
+                                decimals: Number(tokenMetadata.decimals),
+                                displayDecimals: Number(tokenMetadata.decimals),
+                              });
+                              form.setValue("amount", maxBalance);
+                            }
+                          }}
+                          disabled={!balanceInfo || !tokenMetadata}
+                        >
+                          Max
+                        </Button>
+                        <FormField
+                          control={form.control}
+                          name="token"
+                          render={({ field }) => (
+                            <FormItem className="flex-shrink-0">
+                              <FormControl>
+                                <TokenSelector
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  assets={
+                                    source.destinations[destination.key].assets
+                                  }
+                                  assetRegistry={assetRegistry}
+                                  ethChainId={assetRegistry.ethChainId}
+                                  sourceAccount={watchSourceAccount}
+                                  source={assetsV2.getTransferLocation(
+                                    assetRegistry,
+                                    source.type,
+                                    source.key,
+                                  )}
+                                  destination={destination}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </FormControl>
+                  {form.formState.errors.amount && (
+                    <div className="w-full rounded-xl bg-red-50 border border-red-200 p-3 mt-2">
+                      <div className="flex items-start gap-2">
+                        <LucideAlertCircle className="text-red-800 flex-shrink-0 mt-0.5 w-4 h-4" />
+                        <span className="text-sm text-red-800">
+                          {form.formState.errors.amount.message}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </FormItem>
               )}
-              destination={destination}
-              token={token}
-              displayDecimals={8}
             />
           </div>
-          <br />
+          <div className="glass-sub p-4 space-y-2 card-shadow transfer-spacing">
+            <div className="flex items-center justify-between text-sm">
+              <dt className="text-muted-glass">Delivery fee</dt>
+              <dd className="text-primary">
+                <FeeDisplay
+                  className="inline"
+                  source={assetsV2.getTransferLocation(
+                    assetRegistry,
+                    source.type,
+                    source.key,
+                  )}
+                  destination={destination}
+                  token={token}
+                  displayDecimals={8}
+                />
+              </dd>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <dt className="text-muted-glass">Estimated delivery time</dt>
+              <dd className="text-primary">
+                {source.type === "ethereum" ? "~20 minutes" : "~35 minutes"}
+              </dd>
+            </div>
+          </div>
+          <div className="transfer-spacing"></div>
           <SubmitButton
             ethereumAccounts={ethereumAccounts}
             polkadotAccounts={polkadotAccounts}
@@ -818,7 +952,7 @@ function SubmitButton({
         disabled={
           context === null || tokenMetadata === null || validating || !feeInfo
         }
-        className="w-1/3 action-button"
+        className="w-full action-button"
         type="submit"
       >
         {context === null
@@ -827,7 +961,7 @@ function SubmitButton({
             ? "Validating..."
             : !feeInfo
               ? "Fetching Fees..."
-              : "Submit"}
+              : "Next"}
       </Button>
     </div>
   );

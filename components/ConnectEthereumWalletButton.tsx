@@ -1,8 +1,9 @@
-import { useAppKit, useAppKitNetwork } from "@reown/appkit/react";
+import { useAppKitNetwork } from "@reown/appkit/react";
 import { Button } from "./ui/button";
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { ErrorDialog } from "./ErrorDialog";
 import { windowEthereumErrorAtom } from "@/store/ethereum";
+import { walletSheetOpenAtom } from "@/store/polkadot";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { track } from "@vercel/analytics";
 import { getEnvironment } from "@/lib/snowbridge";
@@ -25,8 +26,8 @@ export function ConnectEthereumWalletButton({
   className,
   variant,
 }: ConnectEthereumWalletButtonProps) {
-  const { open } = useAppKit();
   const env = getEnvironment();
+  const setWalletSheetOpen = useSetAtom(walletSheetOpenAtom);
 
   const [windowEthereumError, setWindowEthereumError] = useAtom(
     windowEthereumErrorAtom,
@@ -55,11 +56,12 @@ export function ConnectEthereumWalletButton({
   return (
     <div className="flex flex-col items-center">
       <Button
-        className="w-1/3 action-button"
+        className="w-full action-button"
         type="button"
         variant={variant ?? "link"}
-        onClick={async (e) => {
-          await open({ view: "Connect" });
+        onClick={(e) => {
+          e.preventDefault();
+          setWalletSheetOpen(true);
         }}
       >
         Connect Wallet

@@ -6,7 +6,9 @@ export default function Home() {
   return (
     <MaintenanceBanner>
       <ContextComponent>
-        <TransferComponent />
+        <div className="flex justify-center w-full">
+          <TransferComponent />
+        </div>
       </ContextComponent>
     </MaintenanceBanner>
   );

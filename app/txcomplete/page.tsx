@@ -6,6 +6,7 @@ import {
   TransferTitle,
 } from "@/components/history/TransferTitle";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
   Card,
   CardContent,
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
-import { LucideLoaderCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
 import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
@@ -40,12 +40,7 @@ import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
-  return (
-    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
-      Fetching Transfer Status{" "}
-      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-    </div>
-  );
+  return <SnowflakeLoader />;
 };
 
 interface TxCardProps {
@@ -147,21 +142,18 @@ function TxCard(props: TxCardProps) {
   }
 
   return (
-    <Card className="w-[360px] md:w-2/3">
+    <Card className="w-full max-w-2xl glass border-white/60">
       <CardHeader>
         <CardTitle>Nice! You did it.</CardTitle>
         <CardDescription className="hidden md:flex">
-          <TransferTitle
-            transfer={transfer}
-            showBagde={false}
-            showWallet={false}
-          />
+          <TransferTitle transfer={transfer} showBagde={false} />
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>
-            Transfer Status: <TransferStatusBadge transfer={transfer} />
+            Transfer Status:{" "}
+            <TransferStatusBadge transfer={transfer} showLabel />
           </div>
           <div
             className={cn(
@@ -199,26 +191,18 @@ function TxCard(props: TxCardProps) {
             </ul>
           </div>
           {neuroWeb}
-          <div className="flex justify-between items-center">
-            <Link
-              className={cn("underline text-sm", !inHistory ? "hidden" : "")}
-              href={`/history#${transfer.id}`}
-            >
-              See in History
+          <div className="flex justify-center items-center gap-3 mt-4">
+            <RefreshButton
+              onClick={refresh}
+              className={cn(
+                transfer.status !== historyV2.TransferStatus.Pending
+                  ? "hidden"
+                  : "glass-button",
+              )}
+            />
+            <Link href={inHistory ? `/history#${transfer.id}` : "/history"}>
+              <Button className="action-button">Transaction History</Button>
             </Link>
-            <div className="flex items-center">
-              <RefreshButton
-                onClick={refresh}
-                className={cn(
-                  transfer.status !== historyV2.TransferStatus.Pending
-                    ? "hidden"
-                    : "",
-                )}
-              />
-              <Link href="/history">
-                <Button variant="link">Transaction History</Button>
-              </Link>
-            </div>
           </div>
         </div>
       </CardContent>
@@ -328,9 +312,11 @@ export default function TxComplete() {
   return (
     <MaintenanceBanner>
       <ContextComponent>
-        <Suspense fallback={<Loading />}>
-          <TxComponent />
-        </Suspense>
+        <div className="flex justify-center">
+          <Suspense fallback={<Loading />}>
+            <TxComponent />
+          </Suspense>
+        </div>
       </ContextComponent>
     </MaintenanceBanner>
   );

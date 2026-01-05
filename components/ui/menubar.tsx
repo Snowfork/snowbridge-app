@@ -19,16 +19,76 @@ const MenubarRadioGroup = MenubarPrimitive.RadioGroup
 const Menubar = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <MenubarPrimitive.Root
-    ref={ref}
-    className={cn(
-      "flex h-10 items-center space-x-1 rounded-md border bg-background p-1",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const [indicatorStyle, setIndicatorStyle] = React.useState<React.CSSProperties>({
+    opacity: 0,
+  })
+  const menubarRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const menubar = menubarRef.current
+    if (!menubar) return
+
+    const handleMouseEnter = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const button = target.closest('button[role="menuitem"]')
+      if (!button) return
+
+      const menubarRect = menubar.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+
+      setIndicatorStyle({
+        left: buttonRect.left - menubarRect.left,
+        width: buttonRect.width,
+        height: buttonRect.height,
+        opacity: 1,
+      })
+    }
+
+    const handleMouseLeave = () => {
+      setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }))
+    }
+
+    const buttons = menubar.querySelectorAll('button[role="menuitem"]')
+    buttons.forEach((button) => {
+      button.addEventListener('mouseenter', handleMouseEnter as EventListener)
+    })
+    menubar.addEventListener('mouseleave', handleMouseLeave)
+
+    return () => {
+      buttons.forEach((button) => {
+        button.removeEventListener('mouseenter', handleMouseEnter as EventListener)
+      })
+      menubar.removeEventListener('mouseleave', handleMouseLeave)
+    }
+  }, [])
+
+  return (
+    <MenubarPrimitive.Root
+      ref={(node) => {
+        // @ts-ignore - We need to set both refs
+        menubarRef.current = node
+        if (typeof ref === 'function') {
+          ref(node)
+        } else if (ref) {
+          // @ts-ignore
+          ref.current = node
+        }
+      }}
+      className={cn(
+        "flex h-10 items-center space-x-1 rounded-md border bg-background p-1 gap-1 mt-2",
+        className
+      )}
+      {...props}
+    >
+      <div
+        className="menubar-indicator"
+        style={indicatorStyle}
+      />
+      {props.children}
+    </MenubarPrimitive.Root>
+  )
+})
 Menubar.displayName = MenubarPrimitive.Root.displayName
 
 const MenubarTrigger = React.forwardRef<
@@ -38,7 +98,7 @@ const MenubarTrigger = React.forwardRef<
   <MenubarPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex cursor-default select-none items-center rounded-sm px-3 py-1.5 text-sm font-medium outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+      "flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-sm font-medium outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
       className
     )}
     {...props}
@@ -116,7 +176,7 @@ const MenubarItem = React.forwardRef<
   <MenubarPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       inset && "pl-8",
       className
     )}

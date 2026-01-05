@@ -35,8 +35,8 @@ import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
-import { LucideLoaderCircle } from "lucide-react";
 import { RegistryContext } from "@/app/providers";
+import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { isHex, u8aToHex } from "@polkadot/util";
@@ -144,7 +144,13 @@ export const TransferComponent: FC = () => {
   const [validationData, setValidationData] = useState<ValidationData>();
   const [plan, setPlanData] = useState<TransferPlanSteps>();
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busyState, setBusyState] = useState<{
+    message: string;
+    isSuccess: boolean;
+  } | null>(null);
+  const setBusy = (message: string | null, isSuccess = false) => {
+    setBusyState(message ? { message, isSuccess } : null);
+  };
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
   const registry = useContext(RegistryContext)!;
@@ -175,9 +181,9 @@ export const TransferComponent: FC = () => {
   ) => {
     const req = requestId.current;
     const transferType = inferTransferType(data.source, data.destination);
-    let error = "Some preflight checks failed...";
+    let error = "Transaction cannot be sent, because:";
     try {
-      setBusy("Doing some preflight checks...");
+      setBusy("Checking transfer details.");
       track("Validate Send", { ...data?.formData });
 
       setValidationData(data);
@@ -216,7 +222,7 @@ export const TransferComponent: FC = () => {
         setBusy(null);
         return;
       }
-      setBusy("Preflight checks successful. Submitting transfer...");
+      setBusy("Please approve transaction in wallet.", true);
 
       error = "Error submitting transfer.";
       track("Sending Token", { ...data?.formData });
@@ -235,7 +241,7 @@ export const TransferComponent: FC = () => {
       }
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);
-      setBusy("Transfer successful...");
+      setBusy("Transfer successful...", true);
       const transferData = base64url.encode(JSON.stringify(historyItem));
       if (transferType !== "forInterParachain") {
         router.push(`/txcomplete?transfer=${transferData}`);
@@ -250,7 +256,7 @@ export const TransferComponent: FC = () => {
         ...data?.formData,
         message,
       });
-      showError(error, data.formData);
+      showError(message, data.formData);
     }
   };
 
@@ -283,14 +289,15 @@ export const TransferComponent: FC = () => {
         />
       </>
     );
-  } else if (busy !== null) {
+  } else if (busyState !== null) {
     if (validationData)
       content = (
         <>
           {summary}
           <TransferBusy
             data={validationData}
-            message={busy}
+            message={busyState.message}
+            isSuccess={busyState.isSuccess}
             onBack={() => {
               backToForm(formData);
               setSourceExecutionFee(null);
@@ -338,9 +345,11 @@ export const TransferComponent: FC = () => {
   }
 
   return (
-    <Card className="w-auto md:w-2/3">
-      <CardHeader>
-        <CardTitle>Transfer Tokens</CardTitle>
+    <Card className="w-full max-w-[min(42rem,calc(100vw-2rem))] glass border-white/60">
+      <CardHeader className="space-y-2">
+        <CardTitle className="text-2xl font-semibold text-slate-900">
+          Transfer Tokens
+        </CardTitle>
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>
@@ -348,10 +357,5 @@ export const TransferComponent: FC = () => {
 };
 
 const Loading = () => {
-  return (
-    <div className="flex text-primary underline-offset-4 hover:underline text-sm items-center">
-      Loading Transfer Form{" "}
-      <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
-    </div>
-  );
+  return <SnowflakeLoader />;
 };
