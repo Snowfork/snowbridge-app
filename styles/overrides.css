@@ -123,7 +123,7 @@ button.action-button {
     transition: all 0.2s ease;
 }
 
-button.action-button:hover, button.action-button:focus {
+button.action-button:hover {
     color: #ffffff;
     background: linear-gradient(to right, #e8927b, #F472B6);
     box-shadow: 0 14px 40px rgb(244, 114, 182);

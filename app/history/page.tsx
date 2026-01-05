@@ -65,6 +65,44 @@ import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 const ITEMS_PER_PAGE = 5;
 
+/**
+ * Check if two transfers are the same by comparing their unique identifiers.
+ * For V2 transfers, the backend returns database-generated IDs, while locally
+ * created transfers use messageId/txHash as ID. This function matches by
+ * transaction hash or extrinsic hash to handle this case.
+ */
+const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
+  // Match by ID if both have non-empty IDs
+  if (t1.id === t2.id && t1.id.length > 0) return true;
+
+  // For ToPolkadotTransferResult (E->P), match by transaction hash
+  if (t1.sourceType === "ethereum" && t2.sourceType === "ethereum") {
+    const t1Casted = t1 as historyV2.ToPolkadotTransferResult;
+    const t2Casted = t2 as historyV2.ToPolkadotTransferResult;
+    if (
+      t1Casted.submitted.transactionHash ===
+        t2Casted.submitted.transactionHash &&
+      t1Casted.submitted.transactionHash.length > 0
+    ) {
+      return true;
+    }
+  }
+
+  // For ToEthereumTransferResult (P->E), match by extrinsic hash
+  if (t1.sourceType === "substrate" && t2.sourceType === "substrate") {
+    const t1Casted = t1 as historyV2.ToEthereumTransferResult;
+    const t2Casted = t2 as historyV2.ToEthereumTransferResult;
+    if (
+      t1Casted.submitted.extrinsic_hash === t2Casted.submitted.extrinsic_hash &&
+      t1Casted.submitted.extrinsic_hash.length > 0
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const getExplorerLinks = (
   transfer: Transfer,
   source: assetsV2.TransferLocation,
@@ -516,9 +554,8 @@ export default function History() {
     const oldTransferCutoff = new Date().getTime() - 4 * 60 * 60 * 1000; // 4 hours
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
-        transferHistoryCache.find(
-          (h) =>
-            h.id?.toLowerCase() === transfersPendingLocal[i].id?.toLowerCase(),
+        transferHistoryCache.find((h) =>
+          isSameTransfer(h, transfersPendingLocal[i]),
         ) ||
         new Date(transfersPendingLocal[i].info.when).getTime() <
           oldTransferCutoff
@@ -544,7 +581,13 @@ export default function History() {
     ]);
     const allTransfers: Transfer[] = [];
     for (const pending of transfersPendingLocal) {
-      if (transferHistoryCache.find((t) => t.id === pending.id)) {
+      // Check if this pending transfer already exists in the cache
+      // Match by ID, transaction hash, or message ID to handle V2 transfers
+      const isDuplicate = transferHistoryCache.find((t) =>
+        isSameTransfer(t, pending),
+      );
+
+      if (isDuplicate) {
         continue;
       }
       allTransfers.push(pending);
