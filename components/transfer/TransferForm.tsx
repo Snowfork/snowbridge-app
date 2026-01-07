@@ -35,7 +35,6 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "../ui/input";
 import {
   Select,
   SelectContent,
@@ -73,6 +72,7 @@ import {
   ERC20Metadata,
   TransferLocation,
   Source,
+  SourceType,
 } from "@snowbridge/base-types";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import {
@@ -101,7 +101,7 @@ function getBeneficiaries(
           return {
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as environment.SourceType,
+            type: "ethereum" as SourceType,
           };
         } else {
           return {
@@ -122,7 +122,7 @@ function getBeneficiaries(
         beneficiaries.push({
           key: x,
           name: x,
-          type: "ethereum" as environment.SourceType,
+          type: "ethereum" as SourceType,
         });
       }
     });
@@ -138,7 +138,7 @@ function getBeneficiaries(
           beneficiaries.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as environment.SourceType,
+            type: "ethereum" as SourceType,
           });
         }
       });
