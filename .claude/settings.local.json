@@ -18,7 +18,8 @@
       "Bash(pnpm remove:*)",
       "WebFetch(domain:deepwiki.com)",
       "Bash(git mv:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git checkout:*)"
     ]
   },
   "enabledPlugins": {

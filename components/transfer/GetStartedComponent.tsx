@@ -7,7 +7,7 @@ import { errorMessage } from "@/utils/errorMessage";
 import { TransferFormData } from "@/utils/formSchema";
 import { createStepsFromPlan } from "@/utils/sendToken";
 import {
-  MessageReciept,
+  MessageReceipt,
   TransferPlanSteps,
   ValidationData,
 } from "@/utils/types";
@@ -45,7 +45,7 @@ import { decodeAddress } from "@polkadot/util-crypto";
 function sendResultToHistory(
   messageId: string,
   data: ValidationData,
-  result: MessageReciept,
+  result: MessageReceipt,
 ): Transfer {
   let sourceAddress = data.formData.sourceAccount;
   if (!isHex(sourceAddress)) {

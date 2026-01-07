@@ -1,6 +1,10 @@
 import type { Transfer } from "@/store/transferActivity";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { formatBalance } from "@/utils/formatting";
+import {
+  formatBalance,
+  formatShortDate,
+  truncateAmount,
+} from "@/utils/formatting";
 import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useContext, useState } from "react";
@@ -131,31 +135,13 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
   const [destImageError, setDestImageError] = useState(false);
 
   const { destination } = getEnvDetail(transfer, assetRegistry);
-  const when = new Date(transfer.info.when);
-  const shortDate =
-    when.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "2-digit",
-    }) +
-    " " +
-    when.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const shortDate = formatShortDate(new Date(transfer.info.when));
 
   const { tokenName, amount: rawAmount } = formatTokenData(
     transfer,
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
   );
-
-  // Truncate amount if more than 10 characters after decimal
-  const truncateAmount = (amt: string): string => {
-    const parts = amt.split(".");
-    if (parts.length === 2 && parts[1].length > 10) {
-      return parts[0] + "." + parts[1].slice(0, 10) + "…";
-    }
-    return amt;
-  };
   const amount = truncateAmount(rawAmount);
-
   const tokenIcon = (
     <Image
       src={

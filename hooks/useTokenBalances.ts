@@ -99,12 +99,37 @@ async function fetchPolkadotTokenBalances([
 
   const ethAssets = registry.ethereumChains[registry.ethChainId]?.assets || {};
 
+  // Find the native token address (DOT for Asset Hub)
+  // Native tokens have location {parents: 1, interior: "Here"}
+  let nativeTokenAddress: string | null = null;
+  if (isAssetHub) {
+    for (const [tokenAddress] of Object.entries(ethAssets)) {
+      const parachainAsset =
+        parachainConfig.assets?.[tokenAddress.toLowerCase()];
+      if (
+        parachainAsset?.location?.parents === 1 &&
+        parachainAsset?.location?.interior === "Here"
+      ) {
+        nativeTokenAddress = tokenAddress.toLowerCase();
+        break;
+      }
+    }
+  }
+
   // Filter tokens that have metadata on this parachain
+  // Exclude ETHER_TOKEN_ADDRESS and the native token (will be fetched separately)
   const bridgeableTokens = Object.entries(ethAssets).filter(
     ([tokenAddress]) => {
       if (
         tokenAddress.toLowerCase() ===
         assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()
+      ) {
+        return false;
+      }
+      // Skip native token - we'll fetch it via getNativeBalance
+      if (
+        nativeTokenAddress &&
+        tokenAddress.toLowerCase() === nativeTokenAddress
       ) {
         return false;
       }
@@ -127,17 +152,30 @@ async function fetchPolkadotTokenBalances([
     ),
   ]);
 
-  // Add native balance with parachain-specific key
-  // Use "dot" for Asset Hub, "native:{parachainId}" for others
-  const nativeKey = isAssetHub ? "dot" : `native:${parachainId}`;
-  const nativeDecimals = isAssetHub
-    ? registry.relaychain.tokenDecimals
-    : parachainConfig.info.tokenDecimals;
+  // Add native balance under its token address (for Asset Hub/DOT) or parachain key
+  if (nativeTokenAddress) {
+    // Store DOT balance under its actual token address so TokenSelector can find it
+    const nativeAsset = ethAssets[nativeTokenAddress];
+    balances[nativeTokenAddress] = {
+      balance: nativeBalance,
+      decimals: nativeAsset?.decimals ?? registry.relaychain.tokenDecimals,
+    };
+  } else {
+    // For non-Asset Hub parachains, store under native:{parachainId} key
+    const nativeKey = `native:${parachainId}`;
+    balances[nativeKey] = {
+      balance: nativeBalance,
+      decimals: parachainConfig.info.tokenDecimals,
+    };
+  }
 
-  balances[nativeKey] = {
-    balance: nativeBalance,
-    decimals: nativeDecimals,
-  };
+  // Also keep "dot" key for backward compatibility with PolkadotTokenList
+  if (isAssetHub) {
+    balances["dot"] = {
+      balance: nativeBalance,
+      decimals: registry.relaychain.tokenDecimals,
+    };
+  }
 
   // Add token balances
   bridgeableTokens.forEach(([tokenAddress, asset], index) => {

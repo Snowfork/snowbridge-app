@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -128,9 +129,12 @@ export const KusamaComponent: FC = () => {
       return;
     }
 
+    let cancelled = false;
+
     const calculateUsd = async () => {
       try {
         const prices = await fetchTokenPrices([tokenMetadata.symbol]);
+        if (cancelled) return;
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(amount) * price;
@@ -139,12 +143,28 @@ export const KusamaComponent: FC = () => {
           setAmountUsdValue(null);
         }
       } catch {
-        setAmountUsdValue(null);
+        if (!cancelled) {
+          setAmountUsdValue(null);
+        }
       }
     };
 
     calculateUsd();
+
+    return () => {
+      cancelled = true;
+    };
   }, [amount, tokenMetadata]);
+
+  // Reset amount and USD value when token changes
+  const prevTokenRef = useRef(watchToken);
+  useEffect(() => {
+    if (prevTokenRef.current !== watchToken) {
+      form.setValue("amount", "0");
+      setAmountUsdValue(null);
+      prevTokenRef.current = watchToken;
+    }
+  }, [watchToken, form]);
 
   useEffect(() => {
     const sourceAccounts =
@@ -604,8 +624,24 @@ export const KusamaComponent: FC = () => {
                               className="h-7 px-3 py-1 text-xs flex-shrink-0 rounded-full border-0 glass-pill"
                               onClick={() => {
                                 if (balanceInfo && balanceInfo.tokenBalance) {
+                                  let maxAmount = balanceInfo.tokenBalance;
+
+                                  // If transferring the same token used for fees, subtract the fee
+                                  if (
+                                    feeInfo &&
+                                    balanceInfo.tokenSymbol.toUpperCase() ===
+                                      feeInfo.symbol.toUpperCase()
+                                  ) {
+                                    const feeBuffer =
+                                      (feeInfo.fee * 120n) / 100n; // Add 20% buffer
+                                    maxAmount =
+                                      maxAmount > feeBuffer
+                                        ? maxAmount - feeBuffer
+                                        : 0n;
+                                  }
+
                                   const maxBalance = formatBalance({
-                                    number: balanceInfo.tokenBalance,
+                                    number: maxAmount,
                                     decimals: Number(balanceInfo.tokenDecimals),
                                     displayDecimals: Number(
                                       balanceInfo.tokenDecimals,

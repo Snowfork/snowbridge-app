@@ -110,32 +110,54 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       });
     }
 
-    // Sort by balance (highest first), then alphabetically
-    return [...filtered].sort((a, b) => {
-      const balanceA = balances?.[a.toLowerCase()]?.balance ?? 0n;
-      const balanceB = balances?.[b.toLowerCase()]?.balance ?? 0n;
+    // Helper to get token info for sorting
+    const getTokenInfo = (tokenAddress: string) => {
+      const tokenBalance = balances?.[tokenAddress.toLowerCase()];
+      const balance = tokenBalance?.balance ?? 0n;
+      const hasBalance = balance > 0n;
 
-      // If both have balance or both don't have balance
-      if (
-        (balanceA > 0n && balanceB > 0n) ||
-        (balanceA === 0n && balanceB === 0n)
-      ) {
-        if (balanceA !== balanceB) {
-          // Sort by balance (descending)
-          return balanceA > balanceB ? -1 : 1;
-        }
-        // If same balance, sort alphabetically by name
-        const assetA =
-          assetRegistry.ethereumChains[ethChainId].assets[a.toLowerCase()];
-        const assetB =
-          assetRegistry.ethereumChains[ethChainId].assets[b.toLowerCase()];
-        return assetA.name.localeCompare(assetB.name);
+      let usdValue = 0;
+      if (hasBalance && tokenBalance) {
+        const asset =
+          assetRegistry.ethereumChains[ethChainId].assets[
+            tokenAddress.toLowerCase()
+          ];
+        const price = prices?.[asset.symbol.toUpperCase()] ?? 0;
+        const balanceInTokens =
+          Number(balance) / Math.pow(10, tokenBalance.decimals);
+        usdValue = balanceInTokens * price;
       }
 
+      return { hasBalance, usdValue };
+    };
+
+    // Sort by: 1) USD value (highest first), 2) has balance but no price, 3) no balance
+    return [...filtered].sort((a, b) => {
+      const infoA = getTokenInfo(a);
+      const infoB = getTokenInfo(b);
+
+      // Both have USD value - sort by value descending
+      if (infoA.usdValue > 0 && infoB.usdValue > 0) {
+        return infoB.usdValue - infoA.usdValue;
+      }
+
+      // One has USD value, one doesn't - USD value comes first
+      if (infoA.usdValue > 0 && infoB.usdValue === 0) return -1;
+      if (infoB.usdValue > 0 && infoA.usdValue === 0) return 1;
+
+      // Neither has USD value - check if they have balance
       // Tokens with balance come before tokens without balance
-      return balanceA > 0n ? -1 : 1;
+      if (infoA.hasBalance && !infoB.hasBalance) return -1;
+      if (infoB.hasBalance && !infoA.hasBalance) return 1;
+
+      // Same category - sort alphabetically by name
+      const assetA =
+        assetRegistry.ethereumChains[ethChainId].assets[a.toLowerCase()];
+      const assetB =
+        assetRegistry.ethereumChains[ethChainId].assets[b.toLowerCase()];
+      return assetA.name.localeCompare(assetB.name);
     });
-  }, [assets, searchQuery, assetRegistry, ethChainId, balances]);
+  }, [assets, searchQuery, assetRegistry, ethChainId, balances, prices]);
 
   return (
     <Dialog

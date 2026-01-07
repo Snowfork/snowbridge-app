@@ -5,7 +5,7 @@ import { Label } from "../ui/label";
 import { formatBalance, trimAccount } from "@/utils/formatting";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { LucideInfo, LucideLoaderCircle } from "lucide-react";
+import { LucideClock, LucideInfo, LucideLoaderCircle } from "lucide-react";
 import { ImageWithFallback } from "../ui/image-with-fallback";
 import { formatUnits, parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
@@ -359,13 +359,15 @@ export function NeuroWebUnwrapForm({
   const displayTitle = title
     ? title
     : (mode === "unwrap" ? "Initialize Bridging" : "Finalize Bridging") +
-      " TRAC " +
-      (!ready ? " (Pending Transfer Complete)" : "");
+      " TRAC";
   const displayDescription = description
     ? description
     : mode === "unwrap"
       ? 'Start your transaction by converting NeuroWeb TRAC to bridged TRAC. Click on "Initiate Bridging"'
       : 'Complete your transaction by converting bridged TRAC to NeuroWeb TRAC. Click on "Finalize Bridging".';
+
+  const waitingForTransfer = !ready && mode === "wrap";
+
   return (
     <div className="flex flex-col gap-4 justify-between">
       <div className="flex justify-between">
@@ -385,26 +387,42 @@ export function NeuroWebUnwrapForm({
               {" "}
               (view explorer)
             </a>
-          ) : (
-            <span />
-          )}
+          ) : null}
         </div>
       </div>
-      <div
-        className={
-          success !== undefined
-            ? "hidden"
-            : "w-full rounded-xl bg-yellow-100/40 dark:bg-yellow-900/30 border border-yellow-200/60 dark:border-yellow-700/50 backdrop-blur-sm p-4"
-        }
-      >
-        <div className="flex items-start gap-3">
-          <LucideInfo className="text-yellow-600/80 dark:text-yellow-400/80 flex-shrink-0 mt-0.5 w-5 h-5" />
-          <span className="text-sm text-yellow-800/70 dark:text-yellow-200/70">
-            {displayDescription}
-          </span>
+      {waitingForTransfer ? (
+        <div className="w-full rounded-xl bg-slate-100/60 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 backdrop-blur-sm p-4">
+          <div className="flex items-start gap-3">
+            <LucideClock className="text-slate-500 dark:text-slate-400 flex-shrink-0 mt-0.5 w-5 h-5" />
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                Waiting for Ethereum → NeuroWeb transfer to complete
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                This step will become available once your bridged TRAC arrives
+                on NeuroWeb (approximately 20-30 minutes).
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
-      {beneficiary !== undefined ? form : connectWalletMsg}
+      ) : (
+        <div
+          className={
+            success !== undefined
+              ? "hidden"
+              : "w-full rounded-xl bg-yellow-100/40 dark:bg-yellow-900/30 border border-yellow-200/60 dark:border-yellow-700/50 backdrop-blur-sm p-4"
+          }
+        >
+          <div className="flex items-start gap-3">
+            <LucideInfo className="text-yellow-600/80 dark:text-yellow-400/80 flex-shrink-0 mt-0.5 w-5 h-5" />
+            <span className="text-sm text-yellow-800/70 dark:text-yellow-200/70">
+              {displayDescription}
+            </span>
+          </div>
+        </div>
+      )}
+      {!waitingForTransfer &&
+        (beneficiary !== undefined ? form : connectWalletMsg)}
     </div>
   );
 }

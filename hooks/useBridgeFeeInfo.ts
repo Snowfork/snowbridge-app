@@ -5,13 +5,20 @@ import {
   forInterParachain,
   toEthereumV2,
   toPolkadotV2,
+  toEthereumSnowbridgeV2,
+  toPolkadotSnowbridgeV2,
 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import { FeeInfo } from "@/utils/types";
 import { useContext } from "react";
 import { RegistryContext } from "@/app/providers";
-import { AssetRegistry, Parachain } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  Parachain,
+  supportsEthereumToPolkadotV2,
+  supportsPolkadotToEthereumV2,
+} from "@snowbridge/base-types";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { getEnvironmentName } from "@/lib/snowbridge";
 
@@ -19,7 +26,7 @@ async function estimateExecutionFee(
   context: Context,
   registry: AssetRegistry,
   para: Parachain,
-  deliveryFee: toPolkadotV2.DeliveryFee,
+  deliveryFee: toPolkadotV2.DeliveryFee | toPolkadotSnowbridgeV2.DeliveryFee,
 ) {
   const feeEstimateAccounts: { [env: string]: { src: string; dst: string } } = {
     polkadot_mainnet: {
@@ -39,15 +46,39 @@ async function estimateExecutionFee(
   if (env in feeEstimateAccounts) {
     try {
       const { src: sourceAccount, dst: destAccount } = feeEstimateAccounts[env];
-      const testTransfer = await toPolkadotV2.createTransfer(
-        registry,
-        sourceAccount,
-        destAccount,
-        assetsV2.ETHER_TOKEN_ADDRESS,
-        para.parachainId,
-        1n,
-        deliveryFee,
-      );
+
+      const useV2 = supportsEthereumToPolkadotV2(para);
+
+      let testTransfer;
+      if (useV2) {
+        const transferImpl =
+          toPolkadotSnowbridgeV2.createTransferImplementation(
+            para.parachainId,
+            registry,
+            assetsV2.ETHER_TOKEN_ADDRESS,
+          );
+        testTransfer = await transferImpl.createTransfer(
+          context,
+          registry,
+          para.parachainId,
+          sourceAccount,
+          destAccount,
+          assetsV2.ETHER_TOKEN_ADDRESS,
+          1n,
+          deliveryFee as toPolkadotSnowbridgeV2.DeliveryFee,
+        );
+      } else {
+        testTransfer = await toPolkadotV2.createTransfer(
+          registry,
+          sourceAccount,
+          destAccount,
+          assetsV2.ETHER_TOKEN_ADDRESS,
+          para.parachainId,
+          1n,
+          deliveryFee as toPolkadotV2.DeliveryFee,
+        );
+      }
+
       const [estimatedGas, feeData] = await Promise.all([
         context.ethereum().estimateGas(testTransfer.tx),
         context.ethereum().getFeeData(),
@@ -81,16 +112,35 @@ async function fetchBridgeFeeInfo([
   switch (inferTransferType(source, destination)) {
     case "toPolkadotV2": {
       const para = registry.parachains[destination.key];
-      const fee = await toPolkadotV2.getDeliveryFee(
-        {
-          gateway: context.gateway(),
-          assetHub: await context.assetHub(),
-          destination: await context.parachain(para.parachainId),
-        },
-        registry,
-        token,
-        para.parachainId,
-      );
+
+      const useV2 = supportsEthereumToPolkadotV2(para);
+
+      let fee;
+      if (useV2) {
+        const transferImpl =
+          toPolkadotSnowbridgeV2.createTransferImplementation(
+            para.parachainId,
+            registry,
+            token,
+          );
+        fee = await transferImpl.getDeliveryFee(
+          context,
+          registry,
+          token,
+          para.parachainId,
+        );
+      } else {
+        fee = await toPolkadotV2.getDeliveryFee(
+          {
+            gateway: context.gateway(),
+            assetHub: await context.assetHub(),
+            destination: await context.parachain(para.parachainId),
+          },
+          registry,
+          token,
+          para.parachainId,
+        );
+      }
 
       return {
         fee: fee.totalFeeInWei,
@@ -104,15 +154,33 @@ async function fetchBridgeFeeInfo([
       };
     }
     case "toEthereumV2": {
-      const fee = await toEthereumV2.getDeliveryFee(
-        {
-          assetHub: await context.assetHub(),
-          source: await context.parachain(source.parachain!.parachainId),
-        },
-        source.parachain!.parachainId,
-        registry,
-        token,
-      );
+      const useV2 = supportsPolkadotToEthereumV2(source.parachain!);
+
+      let fee;
+      if (useV2) {
+        const transferImpl =
+          toEthereumSnowbridgeV2.createTransferImplementation(
+            source.parachain!.parachainId,
+            registry,
+            token,
+          );
+        fee = await transferImpl.getDeliveryFee(
+          { sourceParaId: source.parachain!.parachainId, context },
+          registry,
+          token,
+        );
+      } else {
+        fee = await toEthereumV2.getDeliveryFee(
+          {
+            assetHub: await context.assetHub(),
+            source: await context.parachain(source.parachain!.parachainId),
+          },
+          source.parachain!.parachainId,
+          registry,
+          token,
+        );
+      }
+
       let feeValue = fee.totalFeeInDot;
       let decimals = registry.relaychain.tokenDecimals ?? 0;
       let symbol = registry.relaychain.tokenSymbols ?? "";

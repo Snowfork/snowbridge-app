@@ -2,7 +2,7 @@ import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
-  MessageReciept,
+  MessageReceipt,
   SignerInfo,
   ValidationData,
   ValidationResult,
@@ -14,7 +14,13 @@ import {
   toEthereumFromEVMV2,
   toPolkadotV2,
   forInterParachain,
+  toEthereumSnowbridgeV2,
+  toPolkadotSnowbridgeV2,
 } from "@snowbridge/api";
+import {
+  supportsEthereumToPolkadotV2,
+  supportsPolkadotToEthereumV2,
+} from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
@@ -163,6 +169,7 @@ async function planSend(
 ): Promise<
   | toEthereumV2.ValidationResult
   | toPolkadotV2.ValidationResult
+  | toPolkadotSnowbridgeV2.ValidationResult
   | toEthereumFromEVMV2.ValidationResultEvm
   | forInterParachain.ValidationResult
 > {
@@ -190,39 +197,88 @@ async function planSend(
     return plan;
   } else if (source.type === "substrate" && destination.type === "ethereum") {
     const parachain = validateSubstrateDestination(data);
-    const tx = await toEthereumV2.createTransfer(
-      { sourceParaId: parachain.parachainId, context },
-      assetRegistry,
-      formData.sourceAccount,
-      formData.beneficiary,
-      formData.token,
-      amountInSmallestUnit,
-      fee.delivery as toEthereumV2.DeliveryFee,
-    );
-    const plan = await toEthereumV2.validateTransfer(context, tx);
+
+    const useV2 = supportsPolkadotToEthereumV2(parachain);
+    let plan;
+    if (useV2) {
+      console.log(
+        `[planSend] Snowbridge V2: Source parachain ${parachain.parachainId} to Ethereum.`,
+      );
+      const transferImpl = toEthereumSnowbridgeV2.createTransferImplementation(
+        parachain.parachainId,
+        assetRegistry,
+        formData.token,
+      );
+      const tx = await transferImpl.createTransfer(
+        { sourceParaId: parachain.parachainId, context },
+        assetRegistry,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toEthereumV2.DeliveryFee,
+      );
+      plan = await transferImpl.validateTransfer(context, tx);
+    } else {
+      const tx = await toEthereumV2.createTransfer(
+        { sourceParaId: parachain.parachainId, context },
+        assetRegistry,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toEthereumV2.DeliveryFee,
+      );
+      plan = await toEthereumV2.validateTransfer(context, tx);
+    }
     console.log(plan);
     return plan;
   } else if (source.type === "ethereum" && destination.type === "substrate") {
     const paraInfo = validateEthereumDestination(data);
-    const tx = await toPolkadotV2.createTransfer(
-      assetRegistry,
-      formData.sourceAccount,
-      formData.beneficiary,
-      formData.token,
-      paraInfo.parachainId,
-      amountInSmallestUnit,
-      fee.delivery as toPolkadotV2.DeliveryFee,
-    );
-    const plan = await toPolkadotV2.validateTransfer(
-      {
-        assetHub: await context.assetHub(),
-        bridgeHub: await context.bridgeHub(),
-        ethereum: context.ethereum(),
-        gateway: context.gateway(),
-        destParachain: await context.parachain(paraInfo.parachainId),
-      },
-      tx,
-    );
+
+    const useV2 = supportsEthereumToPolkadotV2(paraInfo);
+    let plan;
+    if (useV2) {
+      console.log(
+        `[planSend] Snowbridge V2: Ethereum to Destination parachain ${paraInfo.parachainId}.`,
+      );
+      const transferImpl = toPolkadotSnowbridgeV2.createTransferImplementation(
+        paraInfo.parachainId,
+        assetRegistry,
+        formData.token,
+      );
+      const tx = await transferImpl.createTransfer(
+        context,
+        assetRegistry,
+        paraInfo.parachainId,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
+      );
+      plan = await transferImpl.validateTransfer(context, tx);
+    } else {
+      const tx = await toPolkadotV2.createTransfer(
+        assetRegistry,
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        paraInfo.parachainId,
+        amountInSmallestUnit,
+        fee.delivery as toPolkadotV2.DeliveryFee,
+      );
+      plan = await toPolkadotV2.validateTransfer(
+        {
+          assetHub: await context.assetHub(),
+          bridgeHub: await context.bridgeHub(),
+          ethereum: context.ethereum(),
+          gateway: context.gateway(),
+          destParachain: await context.parachain(paraInfo.parachainId),
+        },
+        tx,
+      );
+    }
     console.log(plan);
     return plan;
   } else if (source.type === "substrate" && destination.type === "substrate") {
@@ -257,7 +313,7 @@ async function sendToken(
   data: ValidationData,
   plan: ValidationResult,
   signerInfo: SignerInfo,
-): Promise<MessageReciept> {
+): Promise<MessageReceipt> {
   if (!plan.success) {
     throw Error(`Cannot execute a failed plan.`, {
       cause: plan,
@@ -302,29 +358,68 @@ async function sendToken(
       signerInfo,
       false,
     );
-    const tx = plan.transfer as toEthereumV2.Transfer;
-    const result = await toEthereumV2.signAndSend(
-      context,
-      tx,
-      polkadotAccount.address,
-      {
-        signer: polkadotAccount.signer! as Signer,
-        withSignedTransaction: true,
-      },
-    );
+
+    const useV2 = supportsPolkadotToEthereumV2(paraInfo);
+    let result;
+    if (useV2) {
+      console.log(
+        `[sendToken] Snowbridge V2: Source parachain ${paraInfo.parachainId} to Ethereum.`,
+      );
+      const tx = plan.transfer as toEthereumV2.Transfer;
+      result = await toEthereumSnowbridgeV2.signAndSend(
+        context,
+        tx,
+        polkadotAccount.address,
+        {
+          signer: polkadotAccount.signer! as Signer,
+          withSignedTransaction: true,
+        },
+      );
+    } else {
+      const tx = plan.transfer as toEthereumV2.Transfer;
+      result = await toEthereumV2.signAndSend(
+        context,
+        tx,
+        polkadotAccount.address,
+        {
+          signer: polkadotAccount.signer! as Signer,
+          withSignedTransaction: true,
+        },
+      );
+    }
     console.log(result);
     return result;
   } else if (source.type === "ethereum" && destination.type === "substrate") {
-    const { signer } = await validateEthereumSigner(data, signerInfo);
-    const transfer = plan.transfer as toPolkadotV2.Transfer;
-    const response = await signer.sendTransaction(transfer.tx);
-    const receipt = await response.wait();
-    if (!receipt) {
-      throw Error(`Could not fetch transaction receipt.`);
-    }
-    const result = await toPolkadotV2.getMessageReceipt(receipt);
-    if (!result) {
-      throw Error(`Could not fetch message receipt.`);
+    const { signer, paraInfo } = await validateEthereumSigner(data, signerInfo);
+
+    const useV2 = supportsEthereumToPolkadotV2(paraInfo);
+    let result;
+    if (useV2) {
+      console.log(
+        `[sendToken] Snowbridge V2: Destination parachain ${paraInfo.parachainId}`,
+      );
+      const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
+      const response = await signer.sendTransaction(transfer.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      result = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
+      if (!result) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      result = { ...result, messageId: receipt.hash, channelId: "" };
+    } else {
+      const transfer = plan.transfer as toPolkadotV2.Transfer;
+      const response = await signer.sendTransaction(transfer.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      result = await toPolkadotV2.getMessageReceipt(receipt);
+      if (!result) {
+        throw Error(`Could not fetch message receipt.`);
+      }
     }
     console.log(result);
     return result;
@@ -335,7 +430,7 @@ async function sendToken(
 
 export function useSendToken(): [
   (data: ValidationData) => Promise<ValidationResult>,
-  (data: ValidationData, plan: ValidationResult) => Promise<MessageReciept>,
+  (data: ValidationData, plan: ValidationResult) => Promise<MessageReceipt>,
 ] {
   const context = useAtomValue(snowbridgeContextAtom);
   const plan = useCallback(

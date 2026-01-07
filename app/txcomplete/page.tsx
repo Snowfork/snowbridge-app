@@ -34,10 +34,10 @@ import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { polkadotAccountsAtom } from "@/store/polkadot";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import { walletTxChecker } from "@/utils/addresses";
 import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
-import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
+import { ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
   return <SnowflakeLoader size="md" />;
@@ -152,7 +152,8 @@ function TxCard(props: TxCardProps) {
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>
-            Transfer Status: <TransferStatusBadge transfer={transfer} />
+            Transfer Status:{" "}
+            <TransferStatusBadge transfer={transfer} showLabel />
           </div>
           <div
             className={cn(
