@@ -14,14 +14,14 @@ import {
 } from "./types";
 import { Option } from "@polkadot/types";
 import { AssetBalance } from "@polkadot/types/interfaces";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
 import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
 
 interface TokenBalanceProps {
   context: Context;
   token: string;
-  source: assetsV2.TransferLocation;
-  destination: assetsV2.TransferLocation;
+  source: TransferLocation;
+  destination: TransferLocation;
   registry: AssetRegistry;
   sourceAccount: string;
 }
@@ -118,7 +118,7 @@ export async function getTokenBalance({
         context.ethereum(),
         token,
         sourceAccount,
-        context.config.appContracts.gateway,
+        context.environment.gatewayContract,
       );
       isNativeTransfer = false;
     }

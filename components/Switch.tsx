@@ -639,6 +639,7 @@ export const SwitchComponent: FC = () => {
       <SendErrorDialog
         info={error}
         formData={form.getValues()}
+        registry={assetRegistry}
         dismiss={() => setError(null)}
       />
     </>

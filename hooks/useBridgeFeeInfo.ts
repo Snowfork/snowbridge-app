@@ -18,6 +18,7 @@ import {
   Parachain,
   supportsEthereumToPolkadotV2,
   supportsPolkadotToEthereumV2,
+  TransferLocation,
 } from "@snowbridge/base-types";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { getEnvironmentName } from "@/lib/snowbridge";
@@ -99,8 +100,8 @@ async function fetchBridgeFeeInfo([
   token,
 ]: [
   Context | null,
-  assetsV2.TransferLocation,
-  assetsV2.TransferLocation,
+  TransferLocation,
+  TransferLocation,
   AssetRegistry,
   string,
   string,
@@ -224,8 +225,8 @@ async function fetchBridgeFeeInfo([
 }
 
 export function useBridgeFeeInfo(
-  source: assetsV2.TransferLocation,
-  destination: assetsV2.TransferLocation,
+  source: TransferLocation,
+  destination: TransferLocation,
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);

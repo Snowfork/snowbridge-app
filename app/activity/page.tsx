@@ -44,7 +44,7 @@ import {
 import type { Transfer } from "@/store/transferActivity";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import type { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideRefreshCw, ArrowUpRight } from "lucide-react";
@@ -98,9 +98,9 @@ const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
 
 const getExplorerLinks = (
   transfer: Transfer,
-  source: assetsV2.TransferLocation,
+  source: TransferLocation,
   registry: AssetRegistry,
-  destination: assetsV2.TransferLocation,
+  destination: TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
   if (transfer.sourceType == "kusama") {

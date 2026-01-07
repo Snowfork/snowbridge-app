@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { toPolkadotV2 } from "@snowbridge/api";
-import { useState, useCallback, FC, useMemo } from "react";
+import { useState, useCallback, FC, useMemo, useContext } from "react";
 import { Button } from "./ui/button";
 
 import { BusyDialog } from "./BusyDialog";
@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { TransferFormData } from "@/utils/formSchema";
 import { useActiveConnector } from "@luno-kit/react";
+import { RegistryContext } from "@/app/providers";
 
 interface Props {
   sourceAccount: string;
@@ -51,6 +52,7 @@ export const TopUpXcmFee: FC<Props> = ({
   formData,
   destinationId,
 }) => {
+  const assetRegistry = useContext(RegistryContext)!;
   const context = useAtomValue(snowbridgeContextAtom);
   const activeConnector = useActiveConnector();
 
@@ -313,6 +315,7 @@ export const TopUpXcmFee: FC<Props> = ({
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
       <SendErrorDialog
         info={error}
+        registry={assetRegistry}
         formData={formData}
         dismiss={() => setError(null)}
       />
