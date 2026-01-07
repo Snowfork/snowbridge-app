@@ -2,7 +2,7 @@ import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import { Context, environment } from "@snowbridge/api";
+import { Context } from "@snowbridge/api";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 import { AlchemyProvider } from "ethers";
@@ -11,15 +11,16 @@ import {
   parachainConfigs,
   SnowbridgeEnvironmentNames,
 } from "@/utils/parachainConfigs";
+import { Environment } from "@snowbridge/base-types";
 
 const createSnowbridgeContext = async (
-  env: environment.SnowbridgeEnvironment,
+  env: Environment,
   alchemyKey: string,
 ) => {
   const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
   const parachains: { [paraId: string]: string } = {};
-  Object.keys(env.config.PARACHAINS).forEach(
-    (paraId) => (parachains[paraId] = env.config.PARACHAINS[paraId]),
+  Object.keys(env.parachains).forEach(
+    (paraId) => (parachains[paraId] = env.parachains[paraId]),
   );
   // merge transfer and switch component parachain endpoints
   parachainConfigs[env.name as SnowbridgeEnvironmentNames].forEach(

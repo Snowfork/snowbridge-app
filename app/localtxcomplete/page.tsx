@@ -154,7 +154,7 @@ function TxComponent() {
     async ([, , messageId]) => {
       if (messageId !== null && transfer !== null) {
         const delivered = await subsquid.fetchInterParachainMessageById(
-          environment.config.GRAPHQL_API_URL,
+          environment.indexerGraphQlUrl,
           messageId,
         );
         if (delivered && delivered.length > 0) {

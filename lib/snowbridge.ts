@@ -1,5 +1,6 @@
-import { Context, environment, historyV2 } from "@snowbridge/api";
-import { SnowbridgeEnvironment } from "@snowbridge/api/dist/environment";
+import { Context, historyV2 } from "@snowbridge/api";
+import { Environment } from "@snowbridge/base-types";
+import { environmentFor } from "@snowbridge/registry";
 import { AbstractProvider } from "ethers";
 
 export function getEnvironmentName() {
@@ -10,8 +11,7 @@ export function getEnvironmentName() {
 
 export function getEnvironment() {
   const envName = getEnvironmentName();
-  const env: environment.SnowbridgeEnvironment =
-    environment.SNOWBRIDGE_ENV[envName];
+  const env: Environment = environmentFor(envName);
 
   if (env === undefined)
     throw new Error(
@@ -37,56 +37,27 @@ export type ContextOverrides = {
 
 export async function createContext(
   ethereumProvider: AbstractProvider,
-  { kusamaConfig, config, ethChainId, name }: SnowbridgeEnvironment,
+  env: Environment,
   overrides?: ContextOverrides,
 ) {
-  const parachains = {
-    ...config.PARACHAINS,
+  const allParachains = {
+    ...env.parachains,
     ...overrides?.parachains,
   };
-  const assetHubParaKey = config.ASSET_HUB_PARAID.toString();
-  parachains[assetHubParaKey] =
-    overrides?.assetHub ?? config.PARACHAINS[assetHubParaKey];
-  const bridgeHubParaKey = config.BRIDGE_HUB_PARAID.toString();
-  parachains[bridgeHubParaKey] =
-    overrides?.bridgeHub ?? config.PARACHAINS[bridgeHubParaKey];
+  const assetHubParaKey = env.assetHubParaId.toString();
+  allParachains[assetHubParaKey] =
+    overrides?.assetHub ?? env.parachains[assetHubParaKey];
+  const bridgeHubParaKey = env.bridgeHubParaId.toString();
+  allParachains[bridgeHubParaKey] =
+    overrides?.bridgeHub ?? env.parachains[bridgeHubParaKey];
 
-  const ethChains: { [ethChainId: string]: string | AbstractProvider } = {};
-  Object.keys(config.ETHEREUM_CHAINS).forEach(
-    (ethChainId) =>
-      (ethChains[ethChainId.toString()] = config.ETHEREUM_CHAINS[ethChainId]),
-  );
-  ethChains[ethChainId.toString()] = ethereumProvider;
+  let overrideEnv = { ...env };
+  overrideEnv.parachains = allParachains;
+  overrideEnv.relaychainUrl = overrides?.relaychain ?? env.relaychainUrl;
 
-  let context: any = {
-    environment: name,
-    ethereum: {
-      ethChainId,
-      ethChains,
-      beacon_url: config.BEACON_HTTP_API,
-    },
-    polkadot: {
-      relaychain: overrides?.relaychain ?? config.RELAY_CHAIN_URL,
-      assetHubParaId: config.ASSET_HUB_PARAID,
-      bridgeHubParaId: config.BRIDGE_HUB_PARAID,
-      parachains,
-    },
-    appContracts: {
-      gateway: config.GATEWAY_CONTRACT,
-      beefy: config.BEEFY_CONTRACT,
-    },
-    graphqlApiUrl: overrides?.graphqlApiUrl ?? config.GRAPHQL_API_URL,
-  };
-
-  if (name === "polkadot_mainnet" && kusamaConfig) {
-    context.kusama = {
-      assetHubParaId: kusamaConfig.ASSET_HUB_PARAID,
-      bridgeHubParaId: kusamaConfig.BRIDGE_HUB_PARAID,
-      parachains: kusamaConfig.PARACHAINS,
-    };
-  }
-
-  return new Context(context);
+  const context = new Context(overrideEnv);
+  context.setEthProvider(env.ethChainId, ethereumProvider);
+  return context;
 }
 
 export function getErrorMessage(err: any) {
@@ -102,14 +73,10 @@ export async function getTransferActivityV2() {
   const env = getEnvironment();
   console.log("Fetching transfer activity.");
 
-  const toEthereum = await historyV2.toEthereumHistory(
-    env.config.GRAPHQL_API_URL,
-  );
+  const toEthereum = await historyV2.toEthereumHistory(env.indexerGraphQlUrl);
   console.log("To Ethereum transfers V2:", toEthereum.length);
 
-  const toPolkadot = await historyV2.toPolkadotHistory(
-    env.config.GRAPHQL_API_URL,
-  );
+  const toPolkadot = await historyV2.toPolkadotHistory(env.indexerGraphQlUrl);
   console.log("To Polkadot transfers V2:", toPolkadot.length);
 
   const transfers = [...toEthereum, ...toPolkadot];
