@@ -242,11 +242,11 @@ function TxComponent() {
         if (sourceType === null) {
           const [toP, toE] = await Promise.all([
             historyV2.toPolkadotTransferById(
-              environment.config.GRAPHQL_API_URL,
+              environment.indexerGraphQlUrl,
               messageId,
             ),
             historyV2.toEthereumTransferById(
-              environment.config.GRAPHQL_API_URL,
+              environment.indexerGraphQlUrl,
               messageId,
             ),
           ]);
@@ -258,7 +258,7 @@ function TxComponent() {
           switch (sourceType) {
             case "ethereum": {
               const txData = await historyV2.toPolkadotTransferById(
-                environment.config.GRAPHQL_API_URL,
+                environment.indexerGraphQlUrl,
                 messageId,
               );
               return {
@@ -268,7 +268,7 @@ function TxComponent() {
             }
             case "substrate": {
               const txData = await historyV2.toEthereumTransferById(
-                environment.config.GRAPHQL_API_URL,
+                environment.indexerGraphQlUrl,
                 messageId,
               );
               return {
