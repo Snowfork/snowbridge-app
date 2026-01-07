@@ -719,6 +719,7 @@ export const KusamaComponent: FC = () => {
       />
       <SendErrorDialog
         info={error}
+        registry={assetRegistry}
         formData={form.getValues()}
         dismiss={() => setError(null)}
       />

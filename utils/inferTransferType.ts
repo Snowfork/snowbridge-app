@@ -1,9 +1,9 @@
-import { assetsV2 } from "@snowbridge/api";
 import { TransferType } from "./types";
+import { TransferLocation } from "@snowbridge/base-types";
 
 export function inferTransferType(
-  source: assetsV2.TransferLocation,
-  destination: assetsV2.TransferLocation,
+  source: TransferLocation,
+  destination: TransferLocation,
 ): TransferType {
   if (source.type === "ethereum" && destination.type === "substrate") {
     // source ethereum and destination is substrate so its a standard transfer.

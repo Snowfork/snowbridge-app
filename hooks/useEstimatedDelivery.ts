@@ -2,6 +2,7 @@ import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { formatTime } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { assetsV2, environment, subsquid, utils } from "@snowbridge/api";
+import { TransferLocation } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
@@ -51,8 +52,8 @@ export const useEstimatedDelivery = () => {
 };
 
 export function estimateDelivery(
-  source: assetsV2.TransferLocation,
-  destination: assetsV2.TransferLocation,
+  source: TransferLocation,
+  destination: TransferLocation,
   latency: BridgeLatency | null,
 ) {
   if (!latency) {

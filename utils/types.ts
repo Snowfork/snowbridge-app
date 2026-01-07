@@ -1,6 +1,5 @@
 import { type useRouter } from "next/navigation";
 import {
-  assetsV2,
   toEthereumV2,
   toEthereumFromEVMV2,
   toPolkadotV2,
@@ -18,7 +17,12 @@ import {
   TransactionReceipt,
   TransactionResponse,
 } from "ethers";
-import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  SourceType,
+  TransferLocation,
+} from "@snowbridge/base-types";
 
 export const DOT_DECIMALS = 10;
 export const KSM_DECIMALS = 12;
@@ -156,7 +160,7 @@ export type FeeInfo = {
     | toPolkadotV2.DeliveryFee
     | toPolkadotSnowbridgeV2.DeliveryFee
     | forInterParachain.DeliveryFee;
-  type: assetsV2.SourceType;
+  type: SourceType;
 };
 
 export type KusamaFeeInfo = {
@@ -169,8 +173,8 @@ export type KusamaFeeInfo = {
 export interface ValidationData {
   formData: TransferFormData;
   assetRegistry: AssetRegistry;
-  source: assetsV2.TransferLocation;
-  destination: assetsV2.TransferLocation;
+  source: TransferLocation;
+  destination: TransferLocation;
   tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
   fee: FeeInfo;

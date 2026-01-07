@@ -69,11 +69,20 @@ import {
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
-import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferLocation,
+  Source,
+} from "@snowbridge/base-types";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
+import {
+  getTransferLocation,
+  getTransferLocations,
+} from "@snowbridge/registry";
 
 function getBeneficiaries(
-  destination: assetsV2.TransferLocation,
+  destination: TransferLocation,
   polkadotAccounts: WalletAccount[],
   ethereumAccounts: string[],
   ss58Format: number,
@@ -147,7 +156,7 @@ interface TransferFormProps {
 }
 
 function initialFormData(
-  locations: assetsV2.Source[],
+  locations: Source[],
   registry: AssetRegistry,
   params: ReadonlyURLSearchParams,
 ) {
@@ -165,7 +174,7 @@ function initialFormData(
   }
 
   const destinations = Object.keys(source.destinations).map((destination) =>
-    assetsV2.getTransferLocation(
+    getTransferLocation(
       registry,
       source.destinations[destination].type,
       destination,
@@ -243,7 +252,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const locations = useMemo(
-    () => assetsV2.getTransferLocations(assetRegistry),
+    () => getTransferLocations(assetRegistry),
     [assetRegistry],
   );
 
@@ -300,7 +309,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   }, [watchToken, form]);
 
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
-    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
   );
@@ -308,7 +317,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   // Get balance for MAX button
   const { data: balanceInfo } = useTokenBalance(
     watchSourceAccount ?? "",
-    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
   );
@@ -335,7 +344,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       }
 
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
-        assetsV2.getTransferLocation(
+        getTransferLocation(
           assetRegistry,
           newSource.destinations[destination].type,
           destination,
@@ -378,7 +387,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   }, [
     destination.type,
     destinations,
-    environment.locations,
+    environment,
     ethereumAccount,
     form,
     formData?.beneficiary,
@@ -538,11 +547,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           );
         }
         await onValidated({
-          source: assetsV2.getTransferLocation(
-            assetRegistry,
-            source.type,
-            source.key,
-          ),
+          source: getTransferLocation(assetRegistry, source.type, source.key),
           destination,
           assetRegistry,
           formData,
@@ -685,7 +690,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                     <FormLabel>From account</FormLabel>
                     <div className="text-right">
                       <BalanceDisplay
-                        source={assetsV2.getTransferLocation(
+                        source={getTransferLocation(
                           assetRegistry,
                           source.type,
                           source.key,
@@ -827,7 +832,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   assetRegistry={assetRegistry}
                                   ethChainId={assetRegistry.ethChainId}
                                   sourceAccount={watchSourceAccount}
-                                  source={assetsV2.getTransferLocation(
+                                  source={getTransferLocation(
                                     assetRegistry,
                                     source.type,
                                     source.key,
@@ -861,7 +866,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               <dd className="text-primary">
                 <FeeDisplay
                   className="inline"
-                  source={assetsV2.getTransferLocation(
+                  source={getTransferLocation(
                     assetRegistry,
                     source.type,
                     source.key,
@@ -900,8 +905,8 @@ export const TransferForm: FC<TransferFormProps> = ({
 interface SubmitButtonProps {
   ethereumAccounts: string[] | null;
   polkadotAccounts: WalletAccount[] | null;
-  destination: assetsV2.TransferLocation;
-  source: assetsV2.Source;
+  destination: TransferLocation;
+  source: Source;
   feeInfo?: FeeInfo;
   tokenMetadata: ERC20Metadata | null;
   validating: boolean;

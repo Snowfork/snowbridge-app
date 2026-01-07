@@ -1,17 +1,18 @@
 "use client";
-import { environment, toPolkadotV2 } from "@snowbridge/api";
+import { toPolkadotV2 } from "@snowbridge/api";
 import { FC } from "react";
 import { ErrorDialog } from "./ErrorDialog";
 import { Button } from "./ui/button";
-import { getDestinationTokenIdByAddress } from "../utils/getDestinationTokenIdByAddress";
 import { userFriendlyErrorMessage } from "../utils/userFriendlyErrorMessage";
 import { ErrorInfo, ValidationError } from "@/utils/types";
 import { TransferFormData } from "@/utils/formSchema";
+import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
 
 export const SendErrorDialog: FC<{
   info: ErrorInfo | null;
   formData: TransferFormData;
-  destination?: environment.TransferLocation;
+  registry: AssetRegistry;
+  destination?: TransferLocation;
   onDepositAndApproveWeth?: () => Promise<void>;
   onApproveSpend?: () => Promise<void>;
   dismiss: () => void;
@@ -19,14 +20,14 @@ export const SendErrorDialog: FC<{
   info,
   formData,
   destination,
+  registry,
   dismiss,
   onDepositAndApproveWeth,
   onApproveSpend,
 }) => {
-  const token = getDestinationTokenIdByAddress({
-    tokenAddress: formData.token,
-    destination,
-  });
+  const token =
+    registry.ethereumChains[registry.ethChainId].assets[formData.token]?.symbol;
+
   let errors = info?.errors ?? [];
   const insufficentAsset = errors.find(
     (error) =>

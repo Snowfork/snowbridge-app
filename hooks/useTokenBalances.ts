@@ -47,7 +47,7 @@ async function fetchEthereumTokenBalances([, account, context, registry]: [
           context.ethereum(),
           tokenAddress,
           account,
-          context.config.appContracts.gateway,
+          context.environment.gatewayContract,
         )
         .catch(() => ({ balance: 0n })),
     ),
