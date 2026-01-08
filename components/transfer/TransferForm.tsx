@@ -15,12 +15,11 @@ import {
   transferFormSchema,
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
-import { assetsV2, Context, environment } from "@snowbridge/api";
+import { Context } from "@snowbridge/api";
 import { WalletAccount } from "@talismn/connect-wallets";
 import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import Image from "next/image";
 import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
