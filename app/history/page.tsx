@@ -566,6 +566,8 @@ export default function History() {
         });
       }
     }
+    // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transferHistoryCache, setTransfersPendingLocal]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
