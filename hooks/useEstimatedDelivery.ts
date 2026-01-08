@@ -1,7 +1,8 @@
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { formatTime } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
-import { assetsV2, environment, subsquid, utils } from "@snowbridge/api";
+import { subsquid, utils } from "@snowbridge/api";
+import { Environment, TransferLocation } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
@@ -14,12 +15,12 @@ interface BridgeLatency {
 }
 
 async function getEstimatedDeliveryTime([env]: [
-  environment.SnowbridgeEnvironment,
+  Environment,
 ]): Promise<BridgeLatency | null> {
   try {
-    const channelId = utils.paraIdToChannelId(env.config.ASSET_HUB_PARAID);
+    const channelId = utils.paraIdToChannelId(env.assetHubParaId);
     const estimated = await subsquid.fetchEstimatedDeliveryTime(
-      env.config.GRAPHQL_API_URL,
+      env.indexerGraphQlUrl,
       channelId,
     );
     console.log("Estimated Delivery", estimated);
@@ -51,8 +52,8 @@ export const useEstimatedDelivery = () => {
 };
 
 export function estimateDelivery(
-  source: assetsV2.TransferLocation,
-  destination: assetsV2.TransferLocation,
+  source: TransferLocation,
+  destination: TransferLocation,
   latency: BridgeLatency | null,
 ) {
   if (!latency) {

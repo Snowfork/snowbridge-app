@@ -1,10 +1,7 @@
 "use client";
 
 import { ContextComponent } from "@/components/Context";
-import {
-  getEnvDetail,
-  TransferTitle,
-} from "@/components/history/TransferTitle";
+import { TransferTitle } from "@/components/history/TransferTitle";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
@@ -14,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Transfer } from "@/store/transferHistory";
 import base64url from "base64url";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
@@ -29,7 +25,7 @@ import { subscanEventLink, subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
-import { getTransferLocation } from "@snowbridge/api/dist/assets_v2";
+import { getTransferLocation } from "@snowbridge/registry";
 
 const Loading = () => {
   return <SnowflakeLoader />;
@@ -159,7 +155,7 @@ function TxComponent() {
     async ([, , messageId]) => {
       if (messageId !== null && transfer !== null) {
         const delivered = await subsquid.fetchInterParachainMessageById(
-          environment.config.GRAPHQL_API_URL,
+          environment.indexerGraphQlUrl,
           messageId,
         );
         if (delivered && delivered.length > 0) {

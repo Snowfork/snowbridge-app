@@ -1,4 +1,3 @@
-import { TransferLocation } from "@snowbridge/api/dist/environment";
 import { SwitchPair } from "./types";
 
 export type SnowbridgeEnvironmentNames =

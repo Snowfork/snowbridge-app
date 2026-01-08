@@ -1,13 +1,16 @@
 import { FC, useEffect } from "react";
-import { assetsV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { FormLabel } from "./ui/form";
-import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferLocation,
+} from "@snowbridge/base-types";
 
 interface BalanceDisplayProps {
-  source: assetsV2.TransferLocation;
-  destination: assetsV2.TransferLocation;
+  source: TransferLocation;
+  destination: TransferLocation;
   registry: AssetRegistry;
   token: string;
   displayDecimals: number;
