@@ -52,7 +52,6 @@ const config = [
       prettier,
     },
     rules: {
-      "@next/next/no-page-custom-font": "off",
       "prettier/prettier": [
         "error",
         {
