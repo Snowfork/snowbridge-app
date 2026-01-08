@@ -16,7 +16,7 @@ import {
   transferFormSchema,
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
-import { assetsV2, Context, environment } from "@snowbridge/api";
+import { Context } from "@snowbridge/api";
 import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
