@@ -98,9 +98,9 @@ export function getErrorMessage(err: any) {
   return message;
 }
 
-export async function getTransferHistoryV2() {
+export async function getTransferActivityV2() {
   const env = getEnvironment();
-  console.log("Fetching transfer history.");
+  console.log("Fetching transfer activity.");
 
   const toEthereum = await historyV2.toEthereumHistory(
     env.config.GRAPHQL_API_URL,

@@ -1,8 +1,8 @@
 "use client";
 
 import { useSendToken } from "@/hooks/useSendToken";
-import { useTransferHistory } from "@/hooks/useTransferHistory";
-import { Transfer, transfersPendingLocalAtom } from "@/store/transferHistory";
+import { useTransferActivity } from "@/hooks/useTransferActivity";
+import { Transfer, transfersPendingLocalAtom } from "@/store/transferActivity";
 import { errorMessage } from "@/utils/errorMessage";
 import { TransferFormData } from "@/utils/formSchema";
 import { createStepsFromPlan } from "@/utils/sendToken";
@@ -155,7 +155,7 @@ export const TransferComponent: FC = () => {
   const router = useRouter();
   const registry = useContext(RegistryContext)!;
 
-  const { mutate: refreshHistory } = useTransferHistory();
+  const { mutate: refreshHistory } = useTransferActivity();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
 
   const backToForm = (formData?: TransferFormData) => {
@@ -346,16 +346,11 @@ export const TransferComponent: FC = () => {
 
   return (
     <Card className="w-full max-w-[min(42rem,calc(100vw-2rem))] glass border-white/60">
-      <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl font-semibold text-slate-900">
-          Transfer Tokens
-        </CardTitle>
-      </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>
   );
 };
 
 const Loading = () => {
-  return <SnowflakeLoader />;
+  return <SnowflakeLoader size="md" />;
 };

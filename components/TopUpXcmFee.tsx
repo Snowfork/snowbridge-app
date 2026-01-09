@@ -20,11 +20,12 @@ import { ParaConfig } from "@/utils/parachainConfigs";
 
 import { parseUnits } from "ethers";
 import { decodeAddress } from "@polkadot/util-crypto";
-import { WalletAccount } from "@talismn/connect-wallets";
+import { PolkadotAccount } from "@/store/polkadot";
 import { formatBalance } from "@/utils/formatting";
 import { toast } from "sonner";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { TransferFormData } from "@/utils/formSchema";
+import { useActiveConnector } from "@luno-kit/react";
 
 interface Props {
   sourceAccount: string;
@@ -32,7 +33,7 @@ interface Props {
   beneficiary: string;
   parachainSufficientTokenAvailable: boolean;
   assetHubSufficientTokenAvailable: boolean;
-  polkadotAccounts: WalletAccount[];
+  polkadotAccounts: PolkadotAccount[];
   xcmBalance: bigint;
   xcmBalanceDestination: bigint;
   formData: TransferFormData | FormDataSwitch;
@@ -51,6 +52,7 @@ export const TopUpXcmFee: FC<Props> = ({
   destinationId,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
+  const activeConnector = useActiveConnector();
 
   const { switchPair, parachainId } = targetChainInfo;
 
@@ -157,10 +159,19 @@ export const TopUpXcmFee: FC<Props> = ({
         "Unlimited",
       );
 
-      const { signer, address } = polkadotAccounts?.find(
-        (val: WalletAccount) => val.address === sourceAccount,
-      )!;
+      const account = polkadotAccounts?.find(
+        (val: PolkadotAccount) => val.address === sourceAccount,
+      );
 
+      if (!account) {
+        throw new Error("Account not found");
+      }
+
+      if (!activeConnector) {
+        throw new Error("No active wallet connector");
+      }
+
+      const signer = await activeConnector.getSigner();
       if (!signer) {
         throw new Error("Signer is not available");
       }
@@ -170,7 +181,7 @@ export const TopUpXcmFee: FC<Props> = ({
         destinationId === "assethub"
           ? "https://assethub-polkadot.subscan.io"
           : "https://spiritnet.subscan.io";
-      await tx.signAndSend(address, { signer }, (result) => {
+      await tx.signAndSend(account.address, { signer }, (result) => {
         setBusyMessage("Currently in flight");
 
         if (result.isFinalized && !result.dispatchError) {
@@ -233,6 +244,7 @@ export const TopUpXcmFee: FC<Props> = ({
     beneficiary,
     polkadotAccounts,
     sourceAccount,
+    activeConnector,
   ]);
 
   return (

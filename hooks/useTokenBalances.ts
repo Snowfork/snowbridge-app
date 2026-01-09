@@ -169,6 +169,14 @@ async function fetchPolkadotTokenBalances([
     };
   }
 
+  // Also keep "dot" key for backward compatibility with PolkadotTokenList
+  if (isAssetHub) {
+    balances["dot"] = {
+      balance: nativeBalance,
+      decimals: registry.relaychain.tokenDecimals,
+    };
+  }
+
   // Add token balances
   bridgeableTokens.forEach(([tokenAddress, asset], index) => {
     balances[tokenAddress.toLowerCase()] = {

@@ -4,7 +4,7 @@ import { ContextComponent } from "@/components/Context";
 import {
   getEnvDetail,
   TransferTitle,
-} from "@/components/history/TransferTitle";
+} from "@/components/activity/TransferTitle";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
@@ -14,11 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Transfer } from "@/store/transferHistory";
+import { Transfer } from "@/store/transferActivity";
 import base64url from "base64url";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
-import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
+import { TransferStatusBadge } from "@/components/activity/TransferStatusBadge";
 import { RefreshButton } from "@/components/RefreshButton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -32,7 +32,7 @@ import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/api/dist/assets_v2";
 
 const Loading = () => {
-  return <SnowflakeLoader />;
+  return <SnowflakeLoader size="md" />;
 };
 
 interface TxCardProps {
@@ -123,8 +123,8 @@ function TxCard(props: TxCardProps) {
                   : "glass-button",
               )}
             />
-            <Link href="/history">
-              <Button className="action-button">Transaction History</Button>
+            <Link href="/activity">
+              <Button className="action-button">Transaction Activity</Button>
             </Link>
           </div>
         </div>

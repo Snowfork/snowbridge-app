@@ -33,6 +33,37 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    /* Custom theme variables */
+    --body-bg: rgb(200, 222, 222);
+    --text-primary: #212d41;
+    --text-heading: #163653;
+    --text-label: rgba(15, 23, 42, 0.75);
+    --text-muted-glass: rgba(15, 23, 42, 0.65);
+    --glass-bg: rgba(255, 255, 255, 0.3);
+    --glass-bg-sub: rgba(255, 255, 255, 0.28);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --glass-pill-bg: rgba(255, 255, 255, 0.18);
+    --glass-button-gradient-start: rgba(255, 255, 255, 0.35);
+    --glass-button-gradient-end: rgba(255, 255, 255, 0.2);
+    --glass-button-hover-start: rgba(255, 255, 255, 0.55);
+    --glass-button-hover-end: rgba(255, 255, 255, 0.32);
+    --glass-shadow: rgba(30, 40, 80, 0.12);
+    --action-gradient-start: #e8927b;
+    --action-gradient-end: #8888b8;
+    --action-gradient-hover-end: #f472b6;
+    --action-shadow: rgb(245, 168, 157);
+    --action-shadow-hover: rgb(244, 114, 182);
+    --color-success: #207d6f;
+    --color-error: #88232f;
+    --badge-bg: #e4f1fb;
+    --badge-destructive: #f87e7e;
+    --badge-secondary: #54fed4;
+    --footer-text: #4a5568;
+    --scrollbar-thumb: rgba(156, 163, 175, 0.4);
+    --scrollbar-thumb-hover: rgba(156, 163, 175, 0.6);
+    --input-focus-shadow: #86b1de;
+    --snowflake-color: white;
   }
 
   .dark {
@@ -63,6 +94,37 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* Custom theme variables - dark mode */
+    --body-bg: #0f1729;
+    --text-primary: #e2e8f0;
+    --text-heading: #94d3e8;
+    --text-label: rgba(226, 232, 240, 0.85);
+    --text-muted-glass: rgba(226, 232, 240, 0.65);
+    --glass-bg: rgba(30, 41, 59, 0.5);
+    --glass-bg-sub: rgba(30, 41, 59, 0.6);
+    --glass-border: rgba(100, 116, 139, 0.4);
+    --glass-pill-bg: rgba(30, 41, 59, 0.6);
+    --glass-button-gradient-start: rgba(51, 65, 85, 0.5);
+    --glass-button-gradient-end: rgba(51, 65, 85, 0.3);
+    --glass-button-hover-start: rgba(71, 85, 105, 0.6);
+    --glass-button-hover-end: rgba(71, 85, 105, 0.4);
+    --glass-shadow: rgba(0, 0, 0, 0.3);
+    --action-gradient-start: #d97b66;
+    --action-gradient-end: #7b7bb0;
+    --action-gradient-hover-end: #e879a9;
+    --action-shadow: rgba(217, 123, 102, 0.3);
+    --action-shadow-hover: rgba(232, 121, 169, 0.4);
+    --color-success: #34d399;
+    --color-error: #f87171;
+    --badge-bg: rgba(30, 58, 95, 0.6);
+    --badge-destructive: #dc2626;
+    --badge-secondary: #10b981;
+    --footer-text: #94a3b8;
+    --scrollbar-thumb: rgba(100, 116, 139, 0.5);
+    --scrollbar-thumb-hover: rgba(100, 116, 139, 0.7);
+    --input-focus-shadow: #3b82f6;
+    --snowflake-color: rgba(200, 220, 255, 0.8);
   }
 }
 

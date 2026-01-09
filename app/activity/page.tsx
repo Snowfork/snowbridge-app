@@ -7,7 +7,7 @@ import {
   getChainIdentifiers,
   getEnvDetail,
   TransferTitle,
-} from "@/components/history/TransferTitle";
+} from "@/components/activity/TransferTitle";
 import {
   Accordion,
   AccordionContent,
@@ -15,13 +15,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import {
   Pagination,
   PaginationContent,
@@ -30,8 +24,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Toggle } from "@/components/ui/toggle";
-import { useTransferHistory } from "@/hooks/useTransferHistory";
+
+import { useTransferActivity } from "@/hooks/useTransferActivity";
 import { useWindowHash } from "@/hooks/useWindowHash";
 import {
   etherscanAddressLink,
@@ -44,23 +38,22 @@ import {
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  Transfer,
-  transferHistoryCacheAtom,
-  transferHistoryShowGlobal,
+  transferActivityCacheAtom,
   transfersPendingLocalAtom,
-} from "@/store/transferHistory";
+} from "@/store/transferActivity";
+import type { Transfer } from "@/store/transferActivity";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { AssetRegistry } from "@snowbridge/base-types";
+import type { AssetRegistry } from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
-import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
+import { LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { RegistryContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 const ITEMS_PER_PAGE = 5;
@@ -496,7 +489,7 @@ const transferDetail = (
               router.push(`txcomplete?messageId=${transfer.id}`);
             }}
           >
-            Post Transfer Steps
+            View
           </Button>
         </div>
       </div>
@@ -504,12 +497,12 @@ const transferDetail = (
   );
 };
 
-export default function History() {
+export default function Activity() {
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  const [transferHistoryCache, setTransferHistoryCache] = useAtom(
-    transferHistoryCacheAtom,
+  const [transferActivityCache, setTransferActivityCache] = useAtom(
+    transferActivityCacheAtom,
   );
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
@@ -522,7 +515,7 @@ export default function History() {
     isLoading: isTransfersLoading,
     isValidating: isTransfersValidating,
     error: transfersError,
-  } = useTransferHistory();
+  } = useTransferActivity();
 
   const isRefreshing = isTransfersLoading || isTransfersValidating;
   const [transfersErrorMessage, setTransfersErrorMessage] = useState<
@@ -532,29 +525,27 @@ export default function History() {
   useEffect(() => {
     if (transfersError) {
       console.error(transfersError);
-      track("History Page Failed", transfersError);
+      track("Activity Page Failed", transfersError);
       setTransfersErrorMessage(
-        "The history service is under heavy load, so this may take a while...",
+        "The activity service is under heavy load, so this may take a while...",
       );
     } else {
       setTransfersErrorMessage(null);
     }
   }, [transfersError, setTransfersErrorMessage]);
 
-  const [showGlobal, setShowGlobal] = useAtom(transferHistoryShowGlobal);
-
   const hashItem = useWindowHash();
 
   useEffect(() => {
     if (transfers === null) return;
-    setTransferHistoryCache(transfers);
-  }, [transfers, setTransferHistoryCache]);
+    setTransferActivityCache(transfers);
+  }, [transfers, setTransferActivityCache]);
 
   useEffect(() => {
     const oldTransferCutoff = new Date().getTime() - 4 * 60 * 60 * 1000; // 4 hours
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
-        transferHistoryCache.find((h) =>
+        transferActivityCache.find((h) =>
           isSameTransfer(h, transfersPendingLocal[i]),
         ) ||
         new Date(transfersPendingLocal[i].info.when).getTime() <
@@ -568,7 +559,7 @@ export default function History() {
     }
     // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transferHistoryCache, setTransfersPendingLocal]);
+  }, [transferActivityCache, setTransfersPendingLocal]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -583,7 +574,7 @@ export default function History() {
     for (const pending of transfersPendingLocal) {
       // Check if this pending transfer already exists in the cache
       // Match by ID, transaction hash, or message ID to handle V2 transfers
-      const isDuplicate = transferHistoryCache.find((t) =>
+      const isDuplicate = transferActivityCache.find((t) =>
         isSameTransfer(t, pending),
       );
 
@@ -592,7 +583,7 @@ export default function History() {
       }
       allTransfers.push(pending);
     }
-    for (const transfer of transferHistoryCache) {
+    for (const transfer of transferActivityCache) {
       const id = getChainIdentifiers(transfer, assetRegistry);
       if (
         !id ||
@@ -607,7 +598,7 @@ export default function History() {
         transfer.info.sourceAddress,
         transfer.info.beneficiaryAddress,
       );
-      if (!showGlobal && !transfer.isWalletTransaction) continue;
+      if (!transfer.isWalletTransaction) continue;
 
       allTransfers.push(transfer);
     }
@@ -618,11 +609,10 @@ export default function History() {
     return pages;
   }, [
     transfersPendingLocal,
-    transferHistoryCache,
+    transferActivityCache,
     assetRegistry,
     polkadotAccounts,
     ethereumAccounts,
-    showGlobal,
   ]);
 
   useMemo(() => {
@@ -653,7 +643,7 @@ export default function History() {
   if (
     pages.length === 0 &&
     isTransfersLoading &&
-    transferHistoryCache.length === 0
+    transferActivityCache.length === 0
   ) {
     return <Loading />;
   }
@@ -669,17 +659,13 @@ export default function History() {
   return (
     <Suspense fallback={<Loading />}>
       <div className="flex justify-center">
-        <Card className="w-full max-w-[min(48rem,calc(100vw-2rem))] min-h-[460px] glass">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <div className="w-full max-w-[min(48rem,calc(100vw-2rem))] min-h-[460px]">
+          <div className="flex flex-row items-center justify-between mb-6">
             <div>
-              <CardTitle>History</CardTitle>
-              <CardDescription>
-                {showGlobal
-                  ? "All Snowbridge transfers."
-                  : "My transfer history."}
-              </CardDescription>
+              <h2 className="text-3xl font-semibold">Activity</h2>
+              <p className="text-muted-foreground">My transfer activity.</p>
             </div>
-            <div className="flex gap-2">
+            <div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -693,19 +679,9 @@ export default function History() {
                   size={18}
                 />
               </Button>
-              <Toggle
-                pressed={showGlobal}
-                onPressedChange={(p) => setShowGlobal(p)}
-                className="h-8 w-8 p-0"
-                title={
-                  showGlobal ? "Show my transfers" : "Show global transfers"
-                }
-              >
-                <LucideGlobe size={18} />
-              </Toggle>
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div>
             <Accordion
               type="single"
               className="w-full accordian"
@@ -721,10 +697,7 @@ export default function History() {
                   value={v.id?.toString() ?? i.toString()}
                 >
                   <AccordionTrigger>
-                    <TransferTitle
-                      transfer={v}
-                      showGlobeForGlobal={!v.isWalletTransaction}
-                    />
+                    <TransferTitle transfer={v} />
                   </AccordionTrigger>
                   <AccordionContent>
                     {transferDetail(v, assetRegistry, router)}
@@ -740,9 +713,7 @@ export default function History() {
               }
             >
               <p className="text-muted-foreground text-center">
-                Your transactions will appear here. Click on the{" "}
-                <LucideGlobe size={16} className="inline align-middle mx-1" />{" "}
-                icon to see all Snowbridge transactions.
+                Your transactions will appear here.
               </p>
             </div>
             <Pagination className={pages.length == 0 ? "hidden" : ""}>
@@ -801,12 +772,12 @@ export default function History() {
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
       <ErrorDialog
         open={!isRefreshing && transfersErrorMessage !== null}
-        title="Error Fetching History"
+        title="Error Fetching Activity"
         description={transfersErrorMessage ?? "Unknown Error."}
         dismiss={() => setTransfersErrorMessage(null)}
       />
@@ -815,5 +786,5 @@ export default function History() {
 }
 
 const Loading = () => {
-  return <SnowflakeLoader />;
+  return <SnowflakeLoader size="md" />;
 };

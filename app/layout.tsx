@@ -1,12 +1,11 @@
 import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/Footer";
-import { Menu } from "@/components/Menu";
+import { Header } from "@/components/Header";
 import { TermsOfUse } from "@/components/TermsOfUse";
 import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 import "@/styles/overrides.css";
 import { Providers } from "./providers";
-import Image from "next/image";
 import { Metadata } from "next";
 import { metadata as meta } from "@/lib/metadata";
 import { assetRegistryFor } from "@snowbridge/registry";
@@ -16,16 +15,6 @@ import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
 
-export const metadata: Metadata = {
-  ...meta,
-  icons: [
-    {
-      rel: "icon",
-      url: "/icon.svg",
-    },
-  ],
-};
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -33,7 +22,7 @@ export default async function RootLayout({
 }>) {
   const registry = assetRegistryFor(getEnvironmentName());
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" />
@@ -47,21 +36,8 @@ export default async function RootLayout({
         <BackgroundSnowfall />
         <Providers registry={registry}>
           <main className="flex min-h-screen flex-col relative z-10">
-            <header className="w-full px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <Image
-                  src="/images/logo-blue.png"
-                  width={40}
-                  height={40}
-                  alt="Snowbridge"
-                />
-                <h1 className="text-2xl px-2 ml-2 mt-1 text-white">
-                  Snowbridge
-                </h1>
-              </div>
-              <Menu />
-            </header>
-            <div className="flex-1 w-full px-4 sm:px-6 py-1 pb-8 flex items-center justify-center box-border overflow-visible">
+            <Header />
+            <div className="flex-1 w-full py-12 px-4 sm:px-6 py-1 pb-8 items-center justify-center box-border overflow-visible">
               {children}
             </div>
             <footer className="w-full px-6 py-6 flex flex-col items-center text-sm">
