@@ -80,6 +80,7 @@ export function useSubstrateTransfer() {
       const pBeneficiary: { [key: string]: any } = {};
       pBeneficiary[xcmVersion] = beneficiary;
 
+      let unsubFn: (() => void) | undefined;
       const result = await new Promise<{
         unsub: () => void;
         data: {
@@ -88,15 +89,9 @@ export function useSubstrateTransfer() {
           blockHash: Hash;
           error?: DispatchError;
         };
-      }>(async (resolve, reject) => {
-        try {
-          var unsub = await transferAssets(
-            pDestination,
-            pBeneficiary,
-            pAssets,
-            feeAsset,
-            weight,
-          ).signAndSend(
+      }>((resolve, reject) => {
+        transferAssets(pDestination, pBeneficiary, pAssets, feeAsset, weight)
+          .signAndSend(
             sourceAccount,
             {
               signer: walletSigner.signer as Signer,
@@ -108,7 +103,7 @@ export function useSubstrateTransfer() {
               }
               if (cb.isFinalized) {
                 resolve({
-                  unsub,
+                  unsub: unsubFn ?? (() => undefined),
                   data: {
                     txHash: cb.txHash,
                     txIndex: cb.txIndex,
@@ -118,10 +113,11 @@ export function useSubstrateTransfer() {
                 });
               }
             },
-          );
-        } catch (err) {
-          reject(err);
-        }
+          )
+          .then((unsub) => {
+            unsubFn = unsub;
+          })
+          .catch((err) => reject(err));
       });
 
       result.unsub();

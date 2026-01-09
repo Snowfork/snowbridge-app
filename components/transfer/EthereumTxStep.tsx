@@ -6,14 +6,14 @@ import { LucideLoaderCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { etherscanTxHashLink } from "@/lib/explorerLinks";
 
-interface EthereumTxStep {
+interface EthereumTxStepProps {
   title: string;
   id: number;
   step: TransferStep;
   data: ValidationData;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
-  action: (data: ValidationData, amount: string) => Promise<ContractResponse>;
+  action: (_data: ValidationData, _amount: string) => Promise<ContractResponse>;
   errorMessage?: string;
   submitButtonText?: string;
   description?: string;
@@ -29,7 +29,7 @@ export function EthereumTxStep({
   errorMessage,
   submitButtonText,
   description,
-}: EthereumTxStep) {
+}: EthereumTxStepProps) {
   const [amount, setAmount] = useState(data.formData.amount);
   const [busy, setBusy] = useState(false);
   interface Message {
