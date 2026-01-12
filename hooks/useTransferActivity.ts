@@ -1,4 +1,4 @@
-import { getTransferHistoryV2 } from "@/lib/snowbridge";
+import { getTransferActivityV2 } from "@/lib/snowbridge";
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
@@ -6,9 +6,9 @@ import useSWR from "swr";
 export const REFRESH_INTERVAL: number = 2 * 60 * 1000; // 2 minutes
 export const ERROR_RETRY_INTERVAL: number = 2 * 60 * 1000; // 2 minute
 
-export const useTransferHistory = () => {
+export const useTransferActivity = () => {
   const env = useAtomValue(snowbridgeEnvironmentAtom);
-  return useSWR([env, "history"], getTransferHistoryV2, {
+  return useSWR([env, "activity"], getTransferActivityV2, {
     refreshInterval: REFRESH_INTERVAL,
     suspense: true,
     fallbackData: [],

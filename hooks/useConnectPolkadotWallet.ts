@@ -2,83 +2,60 @@ import { validateAddress } from "@/utils/validateAddress";
 import { transformSs58Format } from "@/utils/formatting";
 import {
   polkadotAccountsAtom,
-  walletAtom,
-  walletNameAtom,
+  connectorInfoAtom,
+  PolkadotAccount,
 } from "@/store/polkadot";
-import { WalletAccount } from "@talismn/connect-wallets";
-import { useAtom, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { useEffect } from "react";
-import { metadata } from "@/lib/metadata";
-import { getWalletBySource } from "@talismn/connect-wallets";
+import { useAccounts, useStatus, useActiveConnector } from "@luno-kit/react";
 import { isHex } from "@polkadot/util";
 
 export const useConnectPolkadotWallet = (ss58Format?: number): void => {
   const setAccounts = useSetAtom(polkadotAccountsAtom);
-  const [wallet, setWallet] = useAtom(walletAtom);
-  const [walletName] = useAtom(walletNameAtom);
+  const setConnectorInfo = useSetAtom(connectorInfoAtom);
 
-  useEffect(() => {
-    if (wallet != null || walletName == null) return;
-    let unmounted = false;
-    const connect = async (): Promise<void> => {
-      const newWallet = getWalletBySource(walletName);
-      if (newWallet != null) {
-        try {
-          await newWallet.enable(metadata.title);
-          if (!unmounted) {
-            setWallet(newWallet);
-          }
-        } catch (err) {
-          console.warn(err);
-          // Ignore auto connect errors
-        }
-      }
-    };
-    void connect();
-    return () => {
-      unmounted = true;
-    };
-  }, [setWallet, walletName, wallet]);
+  const { accounts } = useAccounts();
+  const status = useStatus();
+  const activeConnector = useActiveConnector();
 
+  // Update connector info when active connector changes
   useEffect(() => {
-    let unsub: () => void;
-    let unmounted = false;
-    const saveAccounts = (accounts?: WalletAccount[]): void => {
-      if (accounts == null || unmounted) return;
-      if (ss58Format === undefined) {
-        setAccounts(accounts);
-      } else {
-        setAccounts(
-          accounts.map((a) => {
-            return {
-              ...a,
-              address: !isHex(a.address)
-                ? transformSs58Format(a.address, ss58Format)
-                : a.address,
-            };
-          }),
-        );
-      }
-    };
-    const updateAccounts = async (): Promise<void> => {
-      if (wallet != null) {
-        // Some wallets don't implement subscribeAccounts correctly, so call getAccounts anyway
-        const walletAccounts = await wallet.getAccounts(true);
-        const accounts = walletAccounts.filter((account) =>
-          validateAddress(account.address),
-        );
-        saveAccounts(accounts);
-        if (!unmounted) {
-          unsub = (await wallet.subscribeAccounts(saveAccounts)) as () => void;
-        }
-      } else {
+    if (activeConnector) {
+      setConnectorInfo({
+        id: activeConnector.id,
+        name: activeConnector.name,
+        icon: activeConnector.icon,
+      });
+    }
+  }, [activeConnector, setConnectorInfo]);
+
+  // Sync accounts from LunoKit to Jotai store
+  useEffect(() => {
+    if (status !== "connected" || !accounts || accounts.length === 0) {
+      if (status === "disconnected") {
         setAccounts(null);
+        setConnectorInfo(null);
       }
-    };
-    void updateAccounts();
-    return () => {
-      unmounted = true;
-      unsub?.();
-    };
-  }, [wallet, setAccounts, ss58Format]);
+      return;
+    }
+
+    const validAccounts = accounts.filter((account) =>
+      validateAddress(account.address),
+    );
+
+    const mappedAccounts: PolkadotAccount[] = validAccounts.map((account) => {
+      let address = account.address;
+      if (ss58Format !== undefined && !isHex(address)) {
+        address = transformSs58Format(address, ss58Format);
+      }
+      return {
+        address,
+        name: account.name,
+        publicKey: account.publicKey,
+        type: account.type,
+      };
+    });
+
+    setAccounts(mappedAccounts);
+  }, [accounts, status, ss58Format, setAccounts, setConnectorInfo]);
 };

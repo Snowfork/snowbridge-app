@@ -2,18 +2,16 @@
 import { trimAccount } from "@/utils/formatting";
 import { FC, useEffect, useMemo, useState } from "react";
 import { Input } from "./ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import { AccountInfo } from "@/utils/types";
-import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
-import Image from "next/image";
-import { Pencil, X } from "lucide-react";
+import { Pencil } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Button } from "./ui/button";
 
 type SelectAccountProps = {
   field: any;
@@ -30,12 +28,9 @@ export const SelectAccount: FC<SelectAccountProps> = ({
   allowManualInput,
   accounts,
   disabled = false,
-  destination,
-  polkadotWalletName,
-  ethereumWalletName,
 }) => {
-  const [accountFromWallet, setBeneficiaryFromWallet] = useState(true);
-  const [imageError, setImageError] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [tempAddress, setTempAddress] = useState("");
 
   const selectedAccount = useMemo(
     () =>
@@ -48,128 +43,117 @@ export const SelectAccount: FC<SelectAccountProps> = ({
 
   useEffect(() => {
     // unset account selection if selected account is no longer found in accounts
-    if ((!allowManualInput || accountFromWallet) && !selectedAccount) {
+    // and manual input is not allowed
+    if (!allowManualInput && !selectedAccount && field.value) {
       field.onChange(undefined);
     }
-    if (!accountFromWallet) return;
 
     // if the field is not set and there are accounts available, select the first account
     if (!field.value && accounts.length > 0) {
       field.onChange(accounts[0].key);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watching for 'field' would introduce infinite loop
-  }, [accounts, field.value, allowManualInput, accountFromWallet]);
+  }, [accounts, field.value, allowManualInput]);
 
-  let input: JSX.Element;
-  if ((!allowManualInput || accountFromWallet) && accounts.length > 0) {
-    input = (
-      <div className="relative">
-        <Select
-          key={(destination ?? "unk") + accounts.length}
-          onValueChange={field.onChange}
-          defaultValue={selectedAccount?.key}
-          value={selectedAccount?.key}
-          disabled={disabled}
-        >
-          <SelectTrigger className="h-auto">
-            {selectedAccount ? (
-              <div className="flex items-start w-full gap-2 py-0.5 self-start">
-                {destination && !imageError && (
-                  <Image
-                    className="selectIcon mt-0.5"
-                    src={`/images/${destination.toLowerCase()}.png`}
-                    width={20}
-                    height={20}
-                    alt={destination}
-                    onError={() => setImageError(true)}
-                  />
-                )}
-                <div className="flex flex-col flex-1 min-w-0">
-                  <div className="truncate">
-                    {selectedAccount.type === "substrate"
-                      ? `${selectedAccount.name} (${trimAccount(selectedAccount.key, 20)})`
-                      : selectedAccount.name}
-                  </div>
-                  {((selectedAccount.type === "substrate" &&
-                    polkadotWalletName) ||
-                    (selectedAccount.type === "ethereum" &&
-                      ethereumWalletName)) && (
-                    <div className="text-xs text-muted-foreground">
-                      {selectedAccount.type === "substrate"
-                        ? polkadotWalletName
-                        : ethereumWalletName}
-                    </div>
-                  )}
+  const handleOpenDialog = () => {
+    setTempAddress(field.value || "");
+    setDialogOpen(true);
+  };
+
+  const handleSelectAccount = (address: string) => {
+    field.onChange(address);
+    setDialogOpen(false);
+  };
+
+  const handleConfirmCustomAddress = () => {
+    if (tempAddress) {
+      field.onChange(tempAddress);
+    }
+    setDialogOpen(false);
+  };
+
+  const displayValue = field.value
+    ? trimAccount(field.value, 16)
+    : "Select account";
+
+  return (
+    <div className="space-y-2">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={handleOpenDialog}
+            className="flex items-center justify-between w-full h-auto px-3 py-2 text-sm rounded-md glass-sub hover:bg-white/50 dark:hover:bg-slate-700/50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+          >
+            <span
+              className={field.value ? "text-primary" : "text-muted-foreground"}
+            >
+              <span className="text-sm text-muted-foreground">Beneficiary</span>{" "}
+              {displayValue}
+            </span>
+            <Pencil className="h-3.5 w-3.5 opacity-50" />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="glass more-blur">
+          <DialogHeader>
+            <DialogTitle className="text-center font-medium text-primary">
+              Select Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {accounts.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">
+                  Your Accounts
+                </div>
+                <div className="max-h-48 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
+                  {accounts.map((account, i) => (
+                    <button
+                      key={account.key + "-" + i}
+                      type="button"
+                      onClick={() => handleSelectAccount(account.key)}
+                      className={`w-full flex flex-col items-start p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
+                        field.value?.toLowerCase() === account.key.toLowerCase()
+                          ? "bg-white/60 dark:bg-slate-700/60"
+                          : ""
+                      }`}
+                    >
+                      <span className="font-medium text-primary text-sm">
+                        {account.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {trimAccount(account.key, 24)}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </div>
-            ) : (
-              <SelectValue placeholder="Select account" />
             )}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {accounts.map((account, i) =>
-                account.type === "substrate" ? (
-                  <SelectItem key={account.key + "-" + i} value={account.key}>
-                    <SelectItemWithIcon
-                      label={`${account.name} (${trimAccount(account.key, 20)})`}
-                      image={destination ?? ""}
-                    />
-                  </SelectItem>
-                ) : (
-                  <SelectItem key={account.key + "-" + i} value={account.key}>
-                    <SelectItemWithIcon
-                      label={account.name}
-                      image={destination ?? ""}
-                    />
-                  </SelectItem>
-                ),
-              )}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        {allowManualInput && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setBeneficiaryFromWallet(false);
-            }}
-            className="absolute right-10 top-1/2 -translate-y-1/2 p-1 rounded transition-opacity"
-            title="Input account manually"
-          >
-            <Pencil className="h-3 w-3 opacity-50 hover:opacity-100" />
-          </button>
-        )}
-      </div>
-    );
-  } else {
-    input = (
-      <div className="relative">
-        <Input
-          key="plain"
-          placeholder="0x0000000000000000000000000000000000000000"
-          className="h-auto py-2"
-          {...field}
-        />
-        {allowManualInput && accounts.length > 0 && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setBeneficiaryFromWallet(true);
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded transition-opacity"
-            title="Select from wallet"
-          >
-            <X className="h-3.5 w-3.5 opacity-50 hover:opacity-100" />
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  return input;
+            {allowManualInput && (
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">
+                  {accounts.length > 0 ? "Or enter address" : "Enter address"}
+                </div>
+                <Input
+                  placeholder="0x0000000000000000000000000000000000000000"
+                  value={tempAddress}
+                  onChange={(e) => setTempAddress(e.target.value)}
+                  className="bg-white/80 dark:bg-slate-800/80 border-gray-200 dark:border-slate-600"
+                />
+                <Button
+                  type="button"
+                  onClick={handleConfirmCustomAddress}
+                  className="w-full action-button"
+                  disabled={!tempAddress}
+                >
+                  Confirm
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 };
