@@ -25,6 +25,7 @@ import { RegistryContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/registry";
+import { TransferTitle } from "@/components/activity/TransferTitle";
 
 const Loading = () => {
   return <SnowflakeLoader size="md" />;

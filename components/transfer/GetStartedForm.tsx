@@ -16,7 +16,7 @@ import {
   transferFormSchema,
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
-import { assetsV2, Context, environment } from "@snowbridge/api";
+import { assetsV2, Context } from "@snowbridge/api";
 import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -33,10 +33,8 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "../ui/input";
 import {
   Select,
   SelectContent,
@@ -69,11 +67,21 @@ import {
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
-import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  Source,
+  SourceType,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
+import {
+  getTransferLocation,
+  getTransferLocations,
+} from "@snowbridge/registry";
 
 function getBeneficiaries(
-  destination: assetsV2.TransferLocation,
+  destination: TransferLocation,
   polkadotAccounts: PolkadotAccount[],
   ethereumAccounts: string[],
   ss58Format: number,
@@ -93,7 +101,7 @@ function getBeneficiaries(
           return {
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as environment.SourceType,
+            type: "ethereum" as SourceType,
           };
         } else {
           return {
@@ -114,7 +122,7 @@ function getBeneficiaries(
         beneficiaries.push({
           key: x,
           name: x,
-          type: "ethereum" as environment.SourceType,
+          type: "ethereum" as SourceType,
         });
       }
     });
@@ -130,7 +138,7 @@ function getBeneficiaries(
           beneficiaries.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as environment.SourceType,
+            type: "ethereum" as SourceType,
           });
         }
       });
@@ -147,7 +155,7 @@ interface TransferFormProps {
 }
 
 function initialFormData(
-  locations: assetsV2.Source[],
+  locations: Source[],
   registry: AssetRegistry,
   params: ReadonlyURLSearchParams,
 ) {
@@ -165,7 +173,7 @@ function initialFormData(
   }
 
   const destinations = Object.keys(source.destinations).map((destination) =>
-    assetsV2.getTransferLocation(
+    getTransferLocation(
       registry,
       source.destinations[destination].type,
       destination,
@@ -243,7 +251,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const locations = useMemo(
-    () => assetsV2.getTransferLocations(assetRegistry),
+    () => getTransferLocations(assetRegistry),
     [assetRegistry],
   );
 
@@ -291,7 +299,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
   const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
-    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
   );
@@ -299,7 +307,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
   // Get balance for MAX button
   const { data: balanceInfo } = useTokenBalance(
     watchSourceAccount ?? "",
-    assetsV2.getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source.type, source.key),
     destination,
     token,
   );
@@ -326,7 +334,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
       }
 
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
-        assetsV2.getTransferLocation(
+        getTransferLocation(
           assetRegistry,
           newSource.destinations[destination].type,
           destination,
@@ -369,7 +377,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
   }, [
     destination.type,
     destinations,
-    environment.locations,
+    environment,
     ethereumAccount,
     form,
     formData?.beneficiary,
@@ -520,11 +528,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
           );
         }
         await onValidated({
-          source: assetsV2.getTransferLocation(
-            assetRegistry,
-            source.type,
-            source.key,
-          ),
+          source: getTransferLocation(assetRegistry, source.type, source.key),
           destination,
           assetRegistry,
           formData,
@@ -735,7 +739,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
                                 assetRegistry={assetRegistry}
                                 ethChainId={assetRegistry.ethChainId}
                                 sourceAccount={watchSourceAccount}
-                                source={assetsV2.getTransferLocation(
+                                source={getTransferLocation(
                                   assetRegistry,
                                   source.type,
                                   source.key,
@@ -777,8 +781,8 @@ export const GetStartedForm: FC<TransferFormProps> = ({
 interface SubmitButtonProps {
   ethereumAccounts: string[] | null;
   polkadotAccounts: PolkadotAccount[] | null;
-  destination: assetsV2.TransferLocation;
-  source: assetsV2.Source;
+  destination: TransferLocation;
+  source: Source;
   feeInfo?: FeeInfo;
   tokenMetadata: ERC20Metadata | null;
   validating: boolean;

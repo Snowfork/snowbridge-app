@@ -606,6 +606,7 @@ export const SwitchComponent: FC = () => {
                 <TopUpXcmFee
                   sourceAccount={watchSourceAccount}
                   beneficiary={beneficiary}
+                  registry={assetRegistry}
                   targetChainInfo={
                     // target for transfer is source of switch
                     parachainsInfo.find(({ id }) => id === sourceId)!
