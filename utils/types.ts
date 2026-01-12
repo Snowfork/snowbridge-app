@@ -12,7 +12,7 @@ import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
 import { Codec } from "@polkadot/types/types";
 import { TransferFormData } from "./formSchema";
-import { WalletAccount } from "@talismn/connect-wallets";
+import { PolkadotAccount } from "@/store/polkadot";
 import {
   BrowserProvider,
   TransactionReceipt,
@@ -141,7 +141,7 @@ export interface PalletAssetSwitchSwitchSwitchPairInfo extends Struct {
 }
 
 export interface SignerInfo {
-  polkadotAccount?: WalletAccount;
+  polkadotAccount?: PolkadotAccount;
   ethereumAccount?: string;
   ethereumProvider?: BrowserProvider;
 }

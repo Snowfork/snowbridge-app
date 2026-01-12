@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 32 32"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   sodipodi:docname="snowbridge-icon-light-master.svg"
+   inkscape:export-filename="../public/images/snowbridge-icon-light.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="8.2128533"
+     inkscape:cx="9.3146678"
+     inkscape:cy="17.533492"
+     inkscape:window-width="1352"
+     inkscape:window-height="815"
+     inkscape:window-x="0"
+     inkscape:window-y="35"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient10"
+       id="linearGradient11"
+       x1="105.3578"
+       y1="24.833624"
+       x2="105.3578"
+       y2="138.65465"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.28114317,0,0,0.28114317,-13.620625,-6.9818039)" />
+    <linearGradient
+       id="linearGradient10"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop10" />
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0.5"
+         id="stop12" />
+      <stop
+         style="stop-color:#d8f1fd;stop-opacity:1;"
+         offset="1"
+         id="stop11" />
+    </linearGradient>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="path2"
+       style="fill:url(#linearGradient11);fill-opacity:1;stroke:#ffffff;stroke-width:0.281145;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1"
+       d="M 15.999999,0.14057221 A 15.859408,15.85941 0 0 0 0.14057221,15.999999 15.859408,15.85941 0 0 0 1.9079598,23.275576 C 8.2790071,14.591285 18.808017,9.179648 30.315924,9.1753931 A 15.859408,15.85941 0 0 0 15.999999,0.14057221 Z M 30.329435,10.140077 c -9.737109,0 -18.453724,7.31013 -22.0580029,19.708755 a 15.859408,15.85941 0 0 0 7.7285669,2.010595 15.859408,15.85941 0 0 0 15.859429,-15.859428 15.859408,15.85941 0 0 0 -1.120581,-5.855703 c -0.136222,-0.0024 -0.27278,-0.0048 -0.409412,-0.0048 z" />
+  </g>
+</svg>

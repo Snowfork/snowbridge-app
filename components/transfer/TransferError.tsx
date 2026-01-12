@@ -38,17 +38,21 @@ export const TransferError: FC<TransferErrorProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center gap-4 pt-4">
-      <div className="w-full rounded-xl bg-red-50 border border-red-200 p-4 overflow-hidden">
+      <div className="w-full rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-4 overflow-hidden">
         <div className="flex items-start gap-3 min-w-0">
-          <LucideAlertCircle className="text-red-800 flex-shrink-0 mt-0.5" />
+          <LucideAlertCircle className="text-red-800 dark:text-red-200 flex-shrink-0 mt-0.5" />
           <div className="flex flex-col gap-1 min-w-0">
-            <span className="font-semibold text-red-800">Transfer blocked</span>
-            <span className="text-sm text-red-700 break-words">{message}</span>
+            <span className="font-semibold text-red-800 dark:text-red-200">
+              Transfer blocked
+            </span>
+            <span className="text-sm text-red-700 dark:text-red-300 break-words">
+              {message}
+            </span>
             {(plan?.errors ?? []).length > 0 && (
               <div className="mt-2">
                 {(plan?.errors ?? []).map((e, i) => (
                   <div key={i} className="mt-1">
-                    <span className="font-medium text-red-800 break-words">
+                    <span className="font-medium text-red-800 dark:text-red-200 break-words">
                       {overrideMessage(e, data)}
                     </span>
                   </div>

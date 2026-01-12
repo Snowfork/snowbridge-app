@@ -1,6 +1,5 @@
-import { Transfer } from "@/store/transferHistory";
+import type { Transfer } from "@/store/transferActivity";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { LucideGlobe } from "lucide-react";
 import {
   formatBalance,
   formatShortDate,
@@ -10,7 +9,7 @@ import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useContext, useState } from "react";
 import { RegistryContext } from "@/app/providers";
-import { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import type { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
 import Image from "next/image";
 
 export function getChainIdentifiers(
@@ -128,14 +127,9 @@ export function formatTokenData(
 interface TransferTitleProps {
   transfer: Transfer;
   showBagde?: boolean;
-  showGlobeForGlobal?: boolean;
 }
 
-export function TransferTitle({
-  transfer,
-  showBagde,
-  showGlobeForGlobal,
-}: TransferTitleProps) {
+export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
   const assetRegistry = useContext(RegistryContext)!;
   const [tokenImageError, setTokenImageError] = useState(false);
   const [destImageError, setDestImageError] = useState(false);
@@ -148,7 +142,6 @@ export function TransferTitle({
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
   );
   const amount = truncateAmount(rawAmount);
-
   const tokenIcon = (
     <Image
       src={
@@ -182,9 +175,6 @@ export function TransferTitle({
   if (!(showBagde ?? true)) {
     return (
       <span className="flex items-center gap-1 col-span-6 place-self-start text-left text-sm">
-        {showGlobeForGlobal && (
-          <LucideGlobe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground mr-1" />
-        )}
         {tokenIcon}
         <span className="truncate">
           {amount} {tokenName ?? "unknown"}
@@ -204,9 +194,6 @@ export function TransferTitle({
         className={!(showBagde ?? true) ? "hidden" : ""}
         transfer={transfer}
       />
-      {showGlobeForGlobal && (
-        <LucideGlobe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
-      )}
       <p className="flex-1 text-left flex items-center gap-1 text-sm">
         {tokenIcon}
         <span className="truncate">

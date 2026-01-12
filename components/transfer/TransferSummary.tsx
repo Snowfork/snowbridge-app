@@ -10,7 +10,6 @@ import { formatBalance } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import Image from "next/image";
-import { ImageWithFallback } from "../ui/image-with-fallback";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -135,20 +134,8 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-sm my-2 glass-pill p-2 flex items-center justify-center gap-1 flex-wrap">
-        Send{" "}
-        <ImageWithFallback
-          src={`/images/${data.tokenMetadata.symbol.toLowerCase()}.png`}
-          fallbackSrc="/images/token_generic.png"
-          width={20}
-          height={20}
-          alt={data.tokenMetadata.symbol}
-          className="inline-block rounded-full"
-        />
-        <span className={"font-bold"}>
-          {data.formData.amount} {data.tokenMetadata.symbol}
-        </span>{" "}
-        from{" "}
+      <p className="text-l my-2 glass-pill p-2 flex items-center justify-center gap-1 flex-wrap">
+        Send {data.formData.amount} {data.tokenMetadata.symbol} from{" "}
         <Image
           src={`/images/${data.source.id.toLowerCase()}.png`}
           width={20}
@@ -165,11 +152,13 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
           className="inline-block rounded-full"
         />
         {data.destination.name}
-      </span>
+      </p>
 
       {/* Sender & Recipient Card */}
       <div className="glass-sub p-4 space-y-3">
-        <h3 className="text-primary font-bold text-l">Sender & Recipient</h3>
+        <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">
+          Sender & Recipient
+        </h3>
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">From</span>
           <span
@@ -206,7 +195,9 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
 
       {/* Amounts & Fees Card */}
       <div className="glass-sub p-4 space-y-3">
-        <h3 className="text-primary font-bold text-l">Fees</h3>
+        <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">
+          Fees
+        </h3>
         {data.tokenMetadata.symbol === data.fee.symbol &&
           data.fee.symbol === sourceTokenSymbol && (
             <div className="flex items-center justify-between text-sm">
@@ -273,7 +264,9 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       </div>
 
       <div className="glass-sub p-4 space-y-3">
-        <h3 className="text-primary font-bold text-l">Delivery</h3>
+        <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">
+          Delivery
+        </h3>
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">Estimated Delivery</span>
           <span>

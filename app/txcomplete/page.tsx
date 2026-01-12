@@ -4,7 +4,7 @@ import { ContextComponent } from "@/components/Context";
 import {
   getEnvDetail,
   TransferTitle,
-} from "@/components/history/TransferTitle";
+} from "@/components/activity/TransferTitle";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
@@ -14,11 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Transfer } from "@/store/transferHistory";
+import { Transfer } from "@/store/transferActivity";
 import base64url from "base64url";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useContext, useMemo } from "react";
-import { TransferStatusBadge } from "@/components/history/TransferStatusBadge";
+import { TransferStatusBadge } from "@/components/activity/TransferStatusBadge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { RefreshButton } from "@/components/RefreshButton";
@@ -40,7 +40,7 @@ import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 
 const Loading = () => {
-  return <SnowflakeLoader />;
+  return <SnowflakeLoader size="md" />;
 };
 
 interface TxCardProps {
@@ -200,8 +200,8 @@ function TxCard(props: TxCardProps) {
                   : "glass-button",
               )}
             />
-            <Link href={inHistory ? `/history#${transfer.id}` : "/history"}>
-              <Button className="action-button">Transaction History</Button>
+            <Link href={inHistory ? `/activity#${transfer.id}` : "/activity"}>
+              <Button className="action-button">Transaction Activity</Button>
             </Link>
           </div>
         </div>

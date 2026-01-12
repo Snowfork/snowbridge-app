@@ -48,7 +48,7 @@ export const BackgroundSnowfall: FC = () => {
             opacity: flake.opacity,
             animationDuration: `${flake.animationDuration}s`,
             animationDelay: `${flake.animationDelay}s`,
-            color: "white",
+            color: "var(--snowflake-color)",
             ["--drift" as string]: `${flake.drift}px`,
           }}
         >

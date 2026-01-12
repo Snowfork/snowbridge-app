@@ -23,6 +23,13 @@ interface TokenDisplayItem {
   icon: string;
 }
 
+const PRICE_SWR_CONFIG = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  dedupingInterval: 5 * 60 * 1000,
+  refreshInterval: 5 * 60 * 1000,
+};
+
 export const EthereumTokenList: FC = () => {
   const context = useAtomValue(snowbridgeContextAtom);
   const registry = useContext(RegistryContext);
@@ -48,12 +55,7 @@ export const EthereumTokenList: FC = () => {
   const { data: prices } = useSWR(
     symbols.length > 0 ? ["eth-prices", symbols.join(",")] : null,
     () => fetchTokenPrices(symbols),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 5 * 60 * 1000,
-      refreshInterval: 5 * 60 * 1000,
-    },
+    PRICE_SWR_CONFIG,
   );
 
   if (isLoading) {
@@ -207,12 +209,7 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
   const { data: prices } = useSWR(
     symbols.length > 0 ? ["polkadot-prices", symbols.join(",")] : null,
     () => fetchTokenPrices(symbols),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 5 * 60 * 1000,
-      refreshInterval: 5 * 60 * 1000,
-    },
+    PRICE_SWR_CONFIG,
   );
 
   if (!account) {
@@ -243,7 +240,26 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
   const ethAssets = registry.ethereumChains[registry.ethChainId]?.assets || {};
   const tokenList: TokenDisplayItem[] = [];
 
-  // Add bridgeable tokens with balance > 0 (includes DOT)
+  // Add DOT if balance > 0
+  const dotBalance = balances["dot"]?.balance ?? 0n;
+  if (dotBalance > 0n) {
+    const dotPrice = prices?.["DOT"] || 0;
+    const dotNum =
+      Number(dotBalance) / Math.pow(10, registry.relaychain.tokenDecimals);
+    tokenList.push({
+      symbol: "DOT",
+      name: "Polkadot",
+      balance: formatBalance({
+        number: dotBalance,
+        decimals: registry.relaychain.tokenDecimals,
+        displayDecimals: 4,
+      }),
+      usdValue: dotPrice ? `$${(dotNum * dotPrice).toFixed(2)}` : null,
+      icon: "dot",
+    });
+  }
+
+  // Add bridgeable tokens with balance > 0
   for (const [tokenAddress, asset] of Object.entries(ethAssets)) {
     const tokenBalance = balances[tokenAddress.toLowerCase()]?.balance ?? 0n;
     if (tokenBalance > 0n) {
