@@ -185,17 +185,7 @@ button[role="combobox"] {
 
 body {
   position: relative;
-  background: linear-gradient(
-    180deg,
-    #f5e6ee 0%,
-    #ede4f0 15%,
-    #e4e6f2 35%,
-    #dce8f0 55%,
-    #d4eaed 75%,
-    #cce8e8 100%
-  );
-  background-attachment: fixed;
-  min-height: 100vh;
+  background-color: var(--body-bg);
 }
 
 body::before {
