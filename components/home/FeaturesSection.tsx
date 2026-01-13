@@ -8,6 +8,7 @@ interface FeatureCardProps {
   title: string;
   description: string;
   image?: string;
+  images?: { src: string; alt: string; href?: string }[];
   imageAlt?: string;
   href?: string;
 }
@@ -17,6 +18,7 @@ function FeatureCard({
   title,
   description,
   image,
+  images,
   imageAlt,
   href,
 }: FeatureCardProps) {
@@ -34,14 +36,36 @@ function FeatureCard({
       {...cardProps}
       className={`glass-sub p-6 rounded-2xl h-full flex flex-col ${href ? "group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02]" : ""}`}
     >
-      <div className="mb-4">{icon}</div>
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
-        {title}
-      </h3>
-      <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+      <div className="flex items-center gap-3 mb-4">
+        {icon}
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          {title}
+        </h3>
+      </div>
+      <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
         {description}
       </p>
-      {image && (
+      {images && images.length > 0 && (
+        <div className="mt-auto flex gap-3">
+          {images.map((img, index) => (
+            <a
+              key={index}
+              href={img.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative flex-1 h-32 rounded-xl overflow-hidden group/img"
+            >
+              <Image
+                src={img.src}
+                alt={img.alt}
+                fill
+                className="object-cover rounded-xl transition-transform duration-300 group-hover/img:scale-105"
+              />
+            </a>
+          ))}
+        </div>
+      )}
+      {image && !images && (
         <div className="mt-auto relative h-32 rounded-xl overflow-hidden">
           <Image
             src={image}
@@ -64,7 +88,7 @@ export function FeaturesSection() {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <FeatureCard
           icon={
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-200 dark:shadow-cyan-900/30">
@@ -73,9 +97,18 @@ export function FeaturesSection() {
           }
           title="Cross-Chain Apps"
           description="Enable seamless cross-chain functionality with your favorite Polkadot apps like Hydration and more."
-          image="/images/home/hero-illustration.png"
-          imageAlt="Cross-chain bridge illustration"
-          href="https://app.hydration.net/trade/swap"
+          images={[
+            {
+              src: "/images/home/hydration.jpg",
+              alt: "Hydration",
+              href: "https://app.hydration.net/trade/swap",
+            },
+            {
+              src: "/images/home/turtle.jpg",
+              alt: "Turtle",
+              href: "https://app.turtle.cool/",
+            },
+          ]}
         />
 
         <FeatureCard

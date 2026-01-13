@@ -14,14 +14,16 @@ interface TrustCardProps {
 function TrustCard({ icon, title, bullets }: TrustCardProps) {
   return (
     <div className="glass-sub p-6 rounded-2xl h-full flex flex-col">
-      <div className="mb-4">{icon}</div>
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-        {title}
-      </h3>
-      <ul className="space-y-3 text-gray-600 dark:text-gray-300 text-sm flex-grow">
+      <div className="flex items-center gap-3 mb-5">
+        {icon}
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          {title}
+        </h3>
+      </div>
+      <ul className="space-y-4 flex-grow">
         {bullets.map((bullet, index) => (
-          <li key={index} className="flex gap-2">
-            <span className="text-gray-400 dark:text-gray-500 mt-0.5">•</span>
+          <li key={index} className="flex gap-3 text-gray-600 dark:text-gray-300 leading-relaxed">
+            <span className="text-cyan-500 dark:text-cyan-400 mt-1 text-xs">●</span>
             <span>
               {bullet.link ? (
                 <>
@@ -59,7 +61,7 @@ export function TrustSection() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
         <TrustCard
           icon={
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center shadow-lg shadow-pink-200 dark:shadow-pink-900/30">

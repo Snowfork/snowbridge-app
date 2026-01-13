@@ -255,6 +255,9 @@ export const TransferForm: FC<TransferFormProps> = ({
     token: firstToken,
   } = initialFormData(locations, assetRegistry, formParams);
 
+  // Read amount from query params
+  const queryAmount = formParams.get("amount");
+
   const [source, setSource] = useState(firstSource);
   const [sourceAccount, setSourceAccount] = useState<string>();
   const [destinations, setDestinations] = useState(firstDestinations);
@@ -278,7 +281,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       token: formData?.token ?? token,
       beneficiary: formData?.beneficiary,
       sourceAccount: formData?.sourceAccount ?? sourceAccount,
-      amount: formData?.amount ?? "0.0",
+      amount: formData?.amount ?? (queryAmount || "0.0"),
     },
   });
 
