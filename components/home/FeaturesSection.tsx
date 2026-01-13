@@ -121,6 +121,7 @@ export function FeaturesSection() {
           description="Pass any arbitrary data between chains, enabling your dApps to communicate across any chain, verified fully."
           image="/images/home/trust-illustration.png"
           imageAlt="Secure messaging illustration"
+          href="https://docs.snowbridge.network/developers/snowbridge-v2/typescript-sdk/transact-ah"
         />
 
         <FeatureCard

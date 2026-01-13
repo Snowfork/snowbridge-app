@@ -490,6 +490,22 @@ export function Header() {
               >
                 Terms of Use
               </a>
+              {envName !== "westend_sepolia" && (
+                <Link
+                  href="/switch"
+                  className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                >
+                  Polar Path
+                </Link>
+              )}
+              {envName === "polkadot_mainnet" && (
+                <Link
+                  href="/kusama"
+                  className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                >
+                  Kusama
+                </Link>
+              )}
             </div>
             <div className="absolute bottom-3 right-3 flex gap-2">
               <a

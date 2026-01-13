@@ -17,7 +17,6 @@ export function HeroSection() {
             Send tokens across blockchains in a safe, trust-minimized way,
             governed by the Polkadot community.
           </p>
-
         </div>
 
         {/* Right column: Transfer widget */}
@@ -27,7 +26,6 @@ export function HeroSection() {
           </div>
         </div>
       </div>
-
     </section>
   );
 }

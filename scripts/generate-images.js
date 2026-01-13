@@ -140,8 +140,8 @@ async function generateImage(prompt) {
           if (res.statusCode !== 200) {
             reject(
               new Error(
-                `API error (${res.statusCode}): ${response.error?.message || data}`
-              )
+                `API error (${res.statusCode}): ${response.error?.message || data}`,
+              ),
             );
             return;
           }
@@ -210,7 +210,9 @@ async function main() {
   if (!CONFIG.apiKey) {
     console.error("❌ Error: GEMINI_API_KEY environment variable not set");
     console.log("\nUsage:");
-    console.log("  GEMINI_API_KEY=your_api_key node scripts/generate-images.js");
+    console.log(
+      "  GEMINI_API_KEY=your_api_key node scripts/generate-images.js",
+    );
     console.log("\nOr add to .env.local:");
     console.log("  GEMINI_API_KEY=your_api_key");
     process.exit(1);
@@ -221,9 +223,10 @@ async function main() {
   let prompts = IMAGE_PROMPTS;
 
   if (args.includes("--single") || args.includes("-s")) {
-    const singleIndex = args.indexOf("--single") !== -1
-      ? args.indexOf("--single")
-      : args.indexOf("-s");
+    const singleIndex =
+      args.indexOf("--single") !== -1
+        ? args.indexOf("--single")
+        : args.indexOf("-s");
     const singleFilename = args[singleIndex + 1];
 
     if (singleFilename) {
@@ -275,7 +278,9 @@ async function main() {
   }
 
   console.log("\n==========================================");
-  console.log(`🎉 Complete! Generated ${successCount}/${prompts.length} images`);
+  console.log(
+    `🎉 Complete! Generated ${successCount}/${prompts.length} images`,
+  );
 
   if (successCount < prompts.length) {
     console.log("⚠️  Some images failed to generate. Check the errors above.");

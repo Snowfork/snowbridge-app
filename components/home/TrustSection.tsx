@@ -22,8 +22,13 @@ function TrustCard({ icon, title, bullets }: TrustCardProps) {
       </div>
       <ul className="space-y-4 flex-grow">
         {bullets.map((bullet, index) => (
-          <li key={index} className="flex gap-3 text-gray-600 dark:text-gray-300 leading-relaxed">
-            <span className="text-cyan-500 dark:text-cyan-400 mt-1 text-xs">●</span>
+          <li
+            key={index}
+            className="flex gap-3 text-gray-600 dark:text-gray-300 leading-relaxed"
+          >
+            <span className="text-cyan-500 dark:text-cyan-400 mt-1 text-xs">
+              ●
+            </span>
             <span>
               {bullet.link ? (
                 <>
@@ -128,7 +133,6 @@ export function TrustSection() {
           ]}
         />
       </div>
-
     </section>
   );
 }
