@@ -564,7 +564,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   );
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(submit)} className="space-y-2">
+      <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
         <div className="mt-5 flex flex-row items-center justify-between gap-1 sm:gap-3">
           <FormField
             control={form.control}
@@ -656,7 +656,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             )}
           />
         </div>
-        <div className="transfer-details space-y-2">
+        <div className="transfer-details space-y-4">
           <div>
             <FormField
               control={form.control}
@@ -841,7 +841,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           )}
-          <div className="glass-sub p-4 space-y-2 card-shadow transfer-spacing">
+          <div className="glass-sub p-4 space-y-2 card-shadow">
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Delivery fee</dt>
               <dd className="text-primary">
@@ -865,7 +865,6 @@ export const TransferForm: FC<TransferFormProps> = ({
               </dd>
             </div>
           </div>
-          <div className="transfer-spacing"></div>
           <SubmitButton
             ethereumAccounts={ethereumAccounts}
             polkadotAccounts={polkadotAccounts}
