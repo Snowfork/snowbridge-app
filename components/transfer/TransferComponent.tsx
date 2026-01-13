@@ -61,7 +61,9 @@ function sendResultToHistory(
       const transfer: historyV2.ToEthereumTransferResult = {
         sourceType: "substrate",
         id: messageId ?? sendResult.messageId,
-        status: historyV2.TransferStatus.Pending,
+        status: sendResult.success
+          ? historyV2.TransferStatus.Pending
+          : historyV2.TransferStatus.Failed,
         info: {
           amount: data.amountInSmallestUnit.toString(),
           sourceAddress,
@@ -113,7 +115,9 @@ function sendResultToHistory(
       const transfer: historyV2.InterParachainTransfer = {
         sourceType: "substrate",
         id: messageId ?? sendResult.messageId,
-        status: historyV2.TransferStatus.Pending,
+        status: sendResult.success
+          ? historyV2.TransferStatus.Pending
+          : historyV2.TransferStatus.Failed,
         info: {
           amount: data.amountInSmallestUnit.toString(),
           sourceAddress,
