@@ -116,11 +116,11 @@ const Wallet: FC = () => {
     return (
       <button
         type="button"
-        className="flex items-center px-1 py-1 rounded-full border border-gray-600 cursor-pointer"
+        className="flex items-center px-1 py-1 rounded-full cursor-pointer glass-pill"
         onClick={() => setWalletSheetOpen(true)}
       >
         {isEthConnected && (
-          <div className="w-7 h-7 rounded-full border-2 border-gray-400 bg-white/70 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full border border-[var(--glass-border)] bg-white/70 dark:bg-slate-700/70 flex items-center justify-center">
             <Image
               src={ethIconError ? "/images/ethereum.png" : getEthWalletIcon()}
               width={18}
@@ -132,7 +132,7 @@ const Wallet: FC = () => {
         )}
         {isPolkadotConnected && (
           <div
-            className={`w-7 h-7 rounded-full border-2 border-gray-400 bg-white/70 flex items-center justify-center ${
+            className={`w-7 h-7 rounded-full border border-[var(--glass-border)] bg-white/70 dark:bg-slate-700/70 flex items-center justify-center ${
               isEthConnected ? "-ml-2" : ""
             }`}
           >
