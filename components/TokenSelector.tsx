@@ -11,7 +11,7 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { ImageWithFallback } from "./ui/image-with-fallback";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
 import { formatBalance } from "@/utils/formatting";
 import { assetsV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
@@ -33,8 +33,8 @@ type TokenSelectorProps = {
   assetRegistry: AssetRegistry;
   ethChainId: number;
   sourceAccount: string | undefined;
-  source: assetsV2.TransferLocation;
-  destination: assetsV2.TransferLocation;
+  source: TransferLocation;
+  destination: TransferLocation;
 };
 
 const PRICE_SWR_CONFIG = {

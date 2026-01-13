@@ -26,11 +26,13 @@ import { toast } from "sonner";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { TransferFormData } from "@/utils/formSchema";
 import { useActiveConnector } from "@luno-kit/react";
+import { AssetRegistry } from "@snowbridge/base-types";
 
 interface Props {
   sourceAccount: string;
   targetChainInfo: ParaConfig;
   beneficiary: string;
+  registry: AssetRegistry;
   parachainSufficientTokenAvailable: boolean;
   assetHubSufficientTokenAvailable: boolean;
   polkadotAccounts: PolkadotAccount[];
@@ -46,6 +48,7 @@ export const TopUpXcmFee: FC<Props> = ({
   beneficiary,
   parachainSufficientTokenAvailable,
   polkadotAccounts,
+  registry,
   xcmBalance,
   xcmBalanceDestination,
   formData,
@@ -313,6 +316,7 @@ export const TopUpXcmFee: FC<Props> = ({
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
       <SendErrorDialog
         info={error}
+        registry={registry}
         formData={formData}
         dismiss={() => setError(null)}
       />

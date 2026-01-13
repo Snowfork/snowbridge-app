@@ -11,6 +11,10 @@ import { useContext, useState } from "react";
 import { RegistryContext } from "@/app/providers";
 import type { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
 import Image from "next/image";
+import {
+  getTransferLocation,
+  getTransferLocationKusama,
+} from "@snowbridge/registry";
 
 export function getChainIdentifiers(
   transfer: Transfer,
@@ -73,24 +77,20 @@ export function getEnvDetail(transfer: Transfer, registry: AssetRegistry) {
     throw Error(`Unknown transfer type ${transfer.sourceType}`);
   }
   if (id.sourceType === "kusama") {
-    const source = assetsV2.getTransferLocationKusama(
+    const source = getTransferLocationKusama(
       registry,
       transfer.info.sourceNetwork!,
       id.sourceId,
     );
-    const destination = assetsV2.getTransferLocationKusama(
+    const destination = getTransferLocationKusama(
       registry,
       transfer.info.destinationNetwork!,
       id.destinationId,
     );
     return { source, destination };
   } else {
-    const source = assetsV2.getTransferLocation(
-      registry,
-      id.sourceType,
-      id.sourceId,
-    );
-    const destination = assetsV2.getTransferLocation(
+    const source = getTransferLocation(registry, id.sourceType, id.sourceId);
+    const destination = getTransferLocation(
       registry,
       id.destinationType,
       id.destinationId,
