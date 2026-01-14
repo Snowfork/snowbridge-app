@@ -35,7 +35,7 @@
     --radius: 0.5rem;
 
     /* Custom theme variables */
-    --body-bg: rgb(200, 222, 222);
+    --body-bg: rgb(215, 232, 240);
     --text-primary: #212d41;
     --text-heading: #163653;
     --text-label: rgba(15, 23, 42, 0.75);
@@ -43,6 +43,7 @@
     --glass-bg: rgba(255, 255, 255, 0.3);
     --glass-bg-sub: rgba(255, 255, 255, 0.28);
     --glass-border: rgba(255, 255, 255, 0.6);
+    --dropdown-bg: rgba(255, 255, 255, 0.45);
     --glass-pill-bg: rgba(255, 255, 255, 0.18);
     --glass-button-gradient-start: rgba(255, 255, 255, 0.35);
     --glass-button-gradient-end: rgba(255, 255, 255, 0.2);
@@ -104,6 +105,7 @@
     --glass-bg: rgba(30, 41, 59, 0.5);
     --glass-bg-sub: rgba(30, 41, 59, 0.6);
     --glass-border: rgba(100, 116, 139, 0.4);
+    --dropdown-bg: rgba(30, 41, 59, 0.92);
     --glass-pill-bg: rgba(30, 41, 59, 0.6);
     --glass-button-gradient-start: rgba(51, 65, 85, 0.5);
     --glass-button-gradient-end: rgba(51, 65, 85, 0.3);

@@ -768,7 +768,9 @@ export const GetStartedForm: FC<TransferFormProps> = ({
           />
         </div>
         <div className="transfer-spacing"></div>
-        <Link href="/send">
+        <Link
+          href={`/send?source=${encodeURIComponent(watchSource)}&destination=${encodeURIComponent(watchDestination)}&token=${encodeURIComponent(watchToken)}&amount=${encodeURIComponent(watchAmount || "")}`}
+        >
           <div className="flex flex-col items-center">
             <Button className="w-full action-button">Get Started</Button>
           </div>

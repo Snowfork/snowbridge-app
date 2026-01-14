@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface TVLData {
   success: boolean;
@@ -60,11 +61,18 @@ export function TVLDisplay() {
 
   if (loading) {
     return (
-      <div className="glass-sub flex items-center justify-center py-5 px-8 whitespace-nowrap">
-        <div className="text-center">
+      <div className="glass-sub relative overflow-hidden flex items-start justify-start py-8 px-6 md:py-10 md:px-10 w-full md:min-w-[320px] min-h-[120px] md:min-h-[140px] rounded-2xl">
+        <Image
+          src="/images/vault.png"
+          alt=""
+          width={100}
+          height={100}
+          className="absolute -right-2 -bottom-2 opacity-20"
+        />
+        <div className="text-left relative z-10">
           <div className="animate-pulse">
-            <div className="h-4 bg-white/40 rounded w-32 mx-auto mb-3"></div>
-            <div className="h-8 bg-white/40 rounded w-24 mx-auto"></div>
+            <div className="h-5 bg-white/40 rounded w-36 mb-3"></div>
+            <div className="h-12 bg-white/40 rounded w-28"></div>
           </div>
         </div>
       </div>
@@ -73,21 +81,38 @@ export function TVLDisplay() {
 
   if (error) {
     return (
-      <div className="glass-sub flex items-center justify-center py-5 px-8 whitespace-nowrap border border-red-200/50">
-        <div className="text-center">
-          <p className="text-red-600/80 text-sm">Unable to load TVL data</p>
+      <div className="glass-sub relative overflow-hidden flex items-start justify-start py-8 px-6 md:py-10 md:px-10 w-full md:min-w-[320px] min-h-[120px] md:min-h-[140px] rounded-2xl border border-red-200/50">
+        <Image
+          src="/images/vault.png"
+          alt=""
+          width={100}
+          height={100}
+          className="absolute -right-2 -bottom-2 opacity-20"
+        />
+        <div className="text-left relative z-10">
+          <p className="text-sm md:text-base font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+            Total Value Secured
+          </p>
+          <p className="text-red-600/80 text-base">Unable to load</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="glass-sub flex items-center justify-center py-5 px-8 whitespace-nowrap">
-      <div className="text-center">
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+    <div className="glass-sub relative overflow-hidden flex items-start justify-start py-8 px-6 md:py-10 md:px-10 w-full md:min-w-[320px] min-h-[120px] md:min-h-[140px] rounded-2xl">
+      <Image
+        src="/images/vault.png"
+        alt=""
+        width={100}
+        height={100}
+        className="absolute -right-2 -bottom-2 opacity-20"
+      />
+      <div className="text-left relative z-10">
+        <p className="text-sm md:text-base font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
           Total Value Secured
         </p>
-        <p className="text-4xl font-bold text-gray-800 dark:text-gray-100">
+        <p className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
           {tvl !== null ? (
             <span>${(tvl / 1_000_000).toFixed(1)}M</span>
           ) : (

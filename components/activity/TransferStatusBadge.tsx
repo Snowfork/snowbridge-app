@@ -17,17 +17,17 @@ export function TransferStatusBadge({
     [historyV2.TransferStatus.Complete]: {
       icon: <Check className="w-3 h-3 sm:w-4 sm:h-4" />,
       label: "Complete",
-      style: "bg-emerald-500/20 border-white/40 text-emerald-200",
+      style: "bg-emerald-500/20 border-white/40 text-emerald-900",
     },
     [historyV2.TransferStatus.Pending]: {
       icon: <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />,
       label: "Busy",
-      style: "bg-amber-500/20 border-white/40 text-amber-200",
+      style: "bg-amber-500/20 border-white/40 text-amber-900",
     },
     [historyV2.TransferStatus.Failed]: {
       icon: <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />,
       label: "Failed",
-      style: "bg-red-500/20 border-white/40 text-red-200",
+      style: "bg-red-500/20 border-white/40 text-red-900",
     },
   };
 

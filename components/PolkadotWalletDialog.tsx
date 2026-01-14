@@ -65,7 +65,7 @@ export const PolkadotWalletDialog: FC = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {isConnected ? "Select Account" : "Connect Polkadot Wallet"}
@@ -89,7 +89,7 @@ export const PolkadotWalletDialog: FC = () => {
                 <div className="font-medium">
                   {account.name || "Unnamed Account"}
                 </div>
-                <div className="text-sm text-gray-500 truncate">
+                <div className="text-sm text-gray-500 break-all">
                   {account.address}
                 </div>
               </button>
