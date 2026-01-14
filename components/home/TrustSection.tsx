@@ -59,7 +59,7 @@ export function TrustSection() {
     <section className="w-full px-4 md:px-8 lg:px-12 mt-20">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-          A blockchain bridge you can actually trust.
+          A blockchain bridge you can actually trust
         </h2>
         <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
           A safe spot for Snowbridge ecosystem, with a trusted system.

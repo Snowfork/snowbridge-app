@@ -11,7 +11,7 @@ export function HeroSection() {
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100 leading-tight mb-4">
             Bridge between
             <br />
-            Ethereum and Polkadot.
+            Ethereum and Polkadot
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 max-w-lg mx-auto xl:mx-0">
             Send tokens across blockchains in a safe, trust-minimized way,
