@@ -602,7 +602,9 @@ export default function Activity() {
         transfer.info.sourceAddress,
         transfer.info.beneficiaryAddress,
       );
-      if (!showGlobal && !transfer.isWalletTransaction) continue;
+      const isLinkedTransaction = hashItem && transfer.id === hashItem;
+      if (!showGlobal && !transfer.isWalletTransaction && !isLinkedTransaction)
+        continue;
 
       allTransfers.push(transfer);
     }
@@ -618,6 +620,7 @@ export default function Activity() {
     polkadotAccounts,
     ethereumAccounts,
     showGlobal,
+    hashItem,
   ]);
 
   useMemo(() => {
