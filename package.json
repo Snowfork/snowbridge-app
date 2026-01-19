@@ -14,7 +14,8 @@
   "dependencies": {
     "@duneanalytics/client-sdk": "^0.3.5",
     "@hookform/resolvers": "3.9.1",
-    "@luno-kit/react": "^0.0.11",
+    "@talismn/connect-components": "1.1.9",
+    "@talismn/connect-wallets": "1.2.8",
     "@polkadot/api": "16.4.8",
     "@polkadot/extension-inject": "0.62.1",
     "@polkadot/keyring": "13.5.6",

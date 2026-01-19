@@ -25,7 +25,6 @@ import { formatBalance } from "@/utils/formatting";
 import { toast } from "sonner";
 import { SendErrorDialog } from "./SendErrorDialog";
 import { TransferFormData } from "@/utils/formSchema";
-import { useActiveConnector } from "@luno-kit/react";
 import { AssetRegistry } from "@snowbridge/base-types";
 
 interface Props {
@@ -55,7 +54,6 @@ export const TopUpXcmFee: FC<Props> = ({
   destinationId,
 }) => {
   const context = useAtomValue(snowbridgeContextAtom);
-  const activeConnector = useActiveConnector();
 
   const { switchPair, parachainId } = targetChainInfo;
 
@@ -170,11 +168,7 @@ export const TopUpXcmFee: FC<Props> = ({
         throw new Error("Account not found");
       }
 
-      if (!activeConnector) {
-        throw new Error("No active wallet connector");
-      }
-
-      const signer = await activeConnector.getSigner();
+      const { signer, address } = account;
       if (!signer) {
         throw new Error("Signer is not available");
       }
@@ -247,7 +241,6 @@ export const TopUpXcmFee: FC<Props> = ({
     beneficiary,
     polkadotAccounts,
     sourceAccount,
-    activeConnector,
   ]);
 
   return (
