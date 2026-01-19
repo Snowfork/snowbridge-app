@@ -639,8 +639,8 @@ export const SwitchComponent: FC = () => {
       <BusyDialog open={busyMessage !== ""} description={busyMessage} />
       <SendErrorDialog
         info={error}
-        formData={form.getValues()}
         registry={assetRegistry}
+        formData={form.getValues()}
         dismiss={() => setError(null)}
       />
     </>
