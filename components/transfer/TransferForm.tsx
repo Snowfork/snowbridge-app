@@ -3,10 +3,10 @@ import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import {
   polkadotAccountAtom,
   polkadotAccountsAtom,
-  polkadotWalletModalOpenAtom,
   walletAtom,
   PolkadotAccount,
 } from "@/store/polkadot";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
@@ -244,7 +244,8 @@ export const TransferForm: FC<TransferFormProps> = ({
   // Wallet connection hooks
   const { open: openEthereumWallet } = useAppKit();
   const { walletInfo: ethereumWalletInfo } = useWalletInfo();
-  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const [sourceAccountSelectorOpen, setSourceAccountSelectorOpen] =
+    useState(false);
 
   const locations = useMemo(
     () => getTransferLocations(assetRegistry),
@@ -303,10 +304,34 @@ export const TransferForm: FC<TransferFormProps> = ({
       // Set to Ethereum account if connected, otherwise clear
       form.setValue("sourceAccount", ethereumAccount ?? "");
     } else if (source.type === "substrate") {
-      // Set to Polkadot account if connected, otherwise clear
-      form.setValue("sourceAccount", polkadotAccount?.address ?? "");
+      // For substrate sources, filter accounts by account type (AccountId20 vs AccountId32)
+      const accountType =
+        assetRegistry.parachains[source.key]?.info.accountType ?? "AccountId32";
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+      // Check if current polkadotAccount is valid for this chain's account type
+      const currentAccountValid = validAccounts?.some(
+        (acc) => acc.address === polkadotAccount?.address,
+      );
+      if (currentAccountValid) {
+        form.setValue("sourceAccount", polkadotAccount?.address ?? "");
+      } else if (validAccounts && validAccounts.length > 0) {
+        // Pick the first valid account
+        form.setValue("sourceAccount", validAccounts[0].address);
+      } else {
+        form.setValue("sourceAccount", "");
+      }
     }
-  }, [source.type, ethereumAccount, polkadotAccount?.address, form]);
+  }, [
+    source.type,
+    source.key,
+    ethereumAccount,
+    polkadotAccount?.address,
+    polkadotAccounts,
+    assetRegistry,
+    form,
+  ]);
 
   // Auto-set beneficiary when wallet connects or destination type changes
   useEffect(() => {
@@ -691,7 +716,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                                 if (source.type === "ethereum") {
                                   openEthereumWallet({ view: "Account" });
                                 } else {
-                                  setPolkadotWalletModalOpen(true);
+                                  setSourceAccountSelectorOpen(true);
                                 }
                               }}
                               className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
@@ -928,6 +953,78 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
         </div>
       </form>
+
+      {/* Source Account Selector Dialog */}
+      <Dialog
+        open={sourceAccountSelectorOpen}
+        onOpenChange={setSourceAccountSelectorOpen}
+      >
+        <DialogContent className="glass more-blur">
+          <DialogHeader>
+            <DialogTitle className="text-center font-medium text-primary">
+              Select Source Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {polkadotAccounts && polkadotAccounts.length > 0 ? (
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">
+                  Your Accounts
+                </div>
+                <div className="max-h-64 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
+                  {polkadotAccounts
+                    .filter(
+                      filterByAccountType(
+                        source.type === "substrate"
+                          ? (assetRegistry.parachains[source.key]?.info
+                              .accountType ?? "AccountId32")
+                          : "AccountId32",
+                      ),
+                    )
+                    .map((account, i) => (
+                      <button
+                        key={account.address + "-" + i}
+                        type="button"
+                        onClick={() => {
+                          form.setValue("sourceAccount", account.address);
+                          setSourceAccountSelectorOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
+                          watchSourceAccount?.toLowerCase() ===
+                          account.address.toLowerCase()
+                            ? "bg-white/60 dark:bg-slate-700/60"
+                            : ""
+                        }`}
+                      >
+                        {polkadotWallet?.logo?.src && (
+                          <Image
+                            src={polkadotWallet.logo.src}
+                            width={24}
+                            height={24}
+                            alt="wallet"
+                            className="rounded-sm flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex flex-col items-start min-w-0">
+                          <span className="font-medium text-primary text-sm">
+                            {account.name || "Account"}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate w-full">
+                            {trimAccount(account.address, 24)}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No accounts available
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 };
