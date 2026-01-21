@@ -308,6 +308,17 @@ export const TransferForm: FC<TransferFormProps> = ({
     }
   }, [source.type, ethereumAccount, polkadotAccount?.address, form]);
 
+  // Auto-set beneficiary when wallet connects or destination type changes
+  useEffect(() => {
+    if (destination.type === "ethereum") {
+      // Set to Ethereum account if connected, otherwise clear
+      form.setValue("beneficiary", ethereumAccount ?? "");
+    } else if (destination.type === "substrate") {
+      // Set to Polkadot account if connected, otherwise clear
+      form.setValue("beneficiary", polkadotAccount?.address ?? "");
+    }
+  }, [destination.type, ethereumAccount, polkadotAccount?.address, form]);
+
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     getTransferLocation(assetRegistry, source.type, source.key),
     destination,
