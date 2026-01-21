@@ -34,7 +34,10 @@ import {
   walletAtom,
   walletSheetOpenAtom,
 } from "@/store/polkadot";
-import { ethereumAccountAtom } from "@/store/ethereum";
+import {
+  ethereumAccountAtom,
+  ethereumAccountsAtom,
+} from "@/store/ethereum";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
@@ -250,6 +253,8 @@ const Wallet: FC = () => {
     const { open } = useAppKit();
     const [showEthereumIcon, setShowEthereumIcon] = useState(true);
     const ethereumAccount = useAtomValue(ethereumAccountAtom);
+    const setEthereumAccount = useSetAtom(ethereumAccountAtom);
+    const setEthereumAccounts = useSetAtom(ethereumAccountsAtom);
 
     const getWalletIcon = () => {
       if (walletInfo?.icon) return walletInfo.icon;
@@ -260,9 +265,16 @@ const Wallet: FC = () => {
       e.preventDefault();
       e.stopPropagation();
       try {
+        // Disconnect first to trigger AppKit state change
         await disconnectWallet();
+        // Then clear atoms as backup in case AppKit doesn't trigger properly
+        setEthereumAccount(null);
+        setEthereumAccounts([]);
       } catch (error) {
         console.error("Error disconnecting:", error);
+        // Still try to clear atoms even if disconnect fails
+        setEthereumAccount(null);
+        setEthereumAccounts([]);
       }
     };
 

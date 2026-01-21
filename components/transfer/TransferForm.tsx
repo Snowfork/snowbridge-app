@@ -669,55 +669,59 @@ export const TransferForm: FC<TransferFormProps> = ({
                       {/* Row 1: Send label + source wallet + balance */}
                       <div className="flex justify-between items-center text-sm text-muted-foreground">
                         <span>Send</span>
-                        {watchSourceAccount && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (source.type === "ethereum") {
-                                openEthereumWallet({ view: "Account" });
-                              } else {
-                                setPolkadotWalletModalOpen(true);
-                              }
-                            }}
-                            className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
-                          >
-                            {source.type === "ethereum" ? (
-                              <Image
-                                src={
-                                  ethereumWalletInfo?.icon ||
-                                  "/images/ethereum.png"
+                        {/* Only show account if wallet is connected for current source type */}
+                        {watchSourceAccount &&
+                          ((source.type === "ethereum" && ethereumAccount) ||
+                            (source.type === "substrate" &&
+                              polkadotAccount?.address)) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (source.type === "ethereum") {
+                                  openEthereumWallet({ view: "Account" });
+                                } else {
+                                  setPolkadotWalletModalOpen(true);
                                 }
-                                width={16}
-                                height={16}
-                                alt="wallet"
-                                className="rounded-sm"
-                              />
-                            ) : (
-                              <Image
-                                src={
-                                  polkadotWallet?.logo?.src ||
-                                  "/images/polkadot.png"
-                                }
-                                width={16}
-                                height={16}
-                                alt="wallet"
-                                className="rounded-sm"
-                              />
-                            )}
-                            <span>
-                              {trimAccount(watchSourceAccount, 12)}
-                            </span>
-                            <span>
-                              {balanceInfo && tokenMetadata
-                                ? `${formatBalance({
-                                    number: balanceInfo.balance,
-                                    decimals: Number(tokenMetadata.decimals),
-                                    displayDecimals: 4,
-                                  })} ${tokenMetadata.symbol}`
-                                : "..."}
-                            </span>
-                          </button>
-                        )}
+                              }}
+                              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+                            >
+                              {source.type === "ethereum" ? (
+                                <Image
+                                  src={
+                                    ethereumWalletInfo?.icon ||
+                                    "/images/ethereum.png"
+                                  }
+                                  width={16}
+                                  height={16}
+                                  alt="wallet"
+                                  className="rounded-sm"
+                                />
+                              ) : (
+                                <Image
+                                  src={
+                                    polkadotWallet?.logo?.src ||
+                                    "/images/polkadot.png"
+                                  }
+                                  width={16}
+                                  height={16}
+                                  alt="wallet"
+                                  className="rounded-sm"
+                                />
+                              )}
+                              <span>
+                                {trimAccount(watchSourceAccount, 12)}
+                              </span>
+                              <span>
+                                {balanceInfo && tokenMetadata
+                                  ? `${formatBalance({
+                                      number: balanceInfo.balance,
+                                      decimals: Number(tokenMetadata.decimals),
+                                      displayDecimals: 4,
+                                    })} ${tokenMetadata.symbol}`
+                                  : "..."}
+                              </span>
+                            </button>
+                          )}
                       </div>
                       {/* Row 2: Amount input + token selector */}
                       <div className="flex flex-row items-center gap-2">
@@ -902,6 +906,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             </div>
           </div>
           <SubmitButton
+            ethereumAccount={ethereumAccount}
             ethereumAccounts={ethereumAccounts}
             polkadotAccounts={polkadotAccounts}
             beneficiaries={beneficiaries}
@@ -919,6 +924,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 };
 
 interface SubmitButtonProps {
+  ethereumAccount: string | null;
   ethereumAccounts: string[] | null;
   polkadotAccounts: PolkadotAccount[] | null;
   destination: TransferLocation;
@@ -931,6 +937,7 @@ interface SubmitButtonProps {
 }
 
 function SubmitButton({
+  ethereumAccount,
   ethereumAccounts,
   polkadotAccounts,
   destination,
@@ -959,18 +966,18 @@ function SubmitButton({
   }
 
   if (tokenMetadata !== null && context !== null) {
-    if (
-      (ethereumAccounts === null || ethereumAccounts.length === 0) &&
-      source.type === "ethereum"
-    ) {
+    // Check if Ethereum wallet is connected for Ethereum source
+    if (!ethereumAccount && source.type === "ethereum") {
       return <ConnectEthereumWalletButton variant="default" />;
     }
+    // Check if Polkadot wallet is connected for Substrate source
     if (
       (polkadotAccounts === null || polkadotAccounts.length === 0) &&
       source.type === "substrate"
     ) {
       return <ConnectPolkadotWalletButton variant="default" />;
     }
+    // Check beneficiaries for destination
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
       destination.type === "ethereum"
