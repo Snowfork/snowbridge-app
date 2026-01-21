@@ -335,14 +335,59 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   // Auto-set beneficiary when wallet connects or destination type changes
   useEffect(() => {
+    const currentBeneficiary = form.getValues("beneficiary");
     if (destination.type === "ethereum") {
-      // Set to Ethereum account if connected, otherwise clear
-      form.setValue("beneficiary", ethereumAccount ?? "");
+      // For Ethereum destination, check if current beneficiary is a valid Ethereum address
+      const isValidEthAddress =
+        currentBeneficiary?.startsWith("0x") &&
+        currentBeneficiary?.length === 42;
+      if (!isValidEthAddress) {
+        // Set to Ethereum account if connected, otherwise clear
+        form.setValue("beneficiary", ethereumAccount ?? "");
+      }
     } else if (destination.type === "substrate") {
-      // Set to Polkadot account if connected, otherwise clear
-      form.setValue("beneficiary", polkadotAccount?.address ?? "");
+      // For substrate destinations, filter accounts by account type (AccountId20 vs AccountId32)
+      const accountType =
+        destination.parachain?.info.accountType ?? "AccountId32";
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+
+      // Also include Ethereum accounts for AccountId20 destinations
+      const validEthereumAccounts =
+        accountType === "AccountId20" ? ethereumAccounts ?? [] : [];
+
+      // Check if current beneficiary is valid
+      const isCurrentValid =
+        validAccounts?.some(
+          (acc) =>
+            acc.address.toLowerCase() === currentBeneficiary?.toLowerCase(),
+        ) ||
+        validEthereumAccounts.some(
+          (acc) => acc.toLowerCase() === currentBeneficiary?.toLowerCase(),
+        );
+
+      if (!isCurrentValid) {
+        // Pick the first valid account
+        if (validAccounts && validAccounts.length > 0) {
+          form.setValue("beneficiary", validAccounts[0].address);
+        } else if (validEthereumAccounts.length > 0) {
+          form.setValue("beneficiary", validEthereumAccounts[0]);
+        } else {
+          form.setValue("beneficiary", "");
+        }
+      }
     }
-  }, [destination.type, ethereumAccount, polkadotAccount?.address, form]);
+  }, [
+    destination.type,
+    destination.parachain?.info.accountType,
+    destination.key,
+    ethereumAccount,
+    ethereumAccounts,
+    polkadotAccount?.address,
+    polkadotAccounts,
+    form,
+  ]);
 
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     getTransferLocation(assetRegistry, source.type, source.key),

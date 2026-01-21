@@ -61,9 +61,14 @@ export function filterByAccountType(
   accountType: AccountType | "both",
 ): (_: PolkadotAccount) => boolean {
   return function (acc: PolkadotAccount) {
-    // Use account type from wallet metadata (more reliable than address format check)
+    // Check wallet metadata first, fallback to address format if type is undefined
     // Ethereum-type accounts have type === "ethereum" and are for AccountId20 chains
-    const isEthereumType = (acc as any).type === "ethereum";
+    const walletType = (acc as any).type;
+    const isEthereumByAddress =
+      acc.address.startsWith("0x") && acc.address.length === 42;
+    const isEthereumType =
+      walletType === "ethereum" ||
+      (walletType === undefined && isEthereumByAddress);
     return (
       (accountType === "AccountId20" && isEthereumType) ||
       (accountType === "AccountId32" && !isEthereumType) ||
