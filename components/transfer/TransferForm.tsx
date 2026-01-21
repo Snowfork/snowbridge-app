@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import {
   polkadotAccountAtom,
@@ -59,11 +60,6 @@ import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
 import { ArrowRight, LucideAlertCircle } from "lucide-react";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
-import {
-  getChainId,
-  getEthereumNetwork,
-  switchNetwork,
-} from "@/lib/client/web3modal";
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
@@ -301,12 +297,14 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchAmount = form.watch("amount");
   const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
-  // Auto-set sourceAccount when wallet connects
+  // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
-    if (source.type === "ethereum" && ethereumAccount) {
-      form.setValue("sourceAccount", ethereumAccount);
-    } else if (source.type === "substrate" && polkadotAccount?.address) {
-      form.setValue("sourceAccount", polkadotAccount.address);
+    if (source.type === "ethereum") {
+      // Set to Ethereum account if connected, otherwise clear
+      form.setValue("sourceAccount", ethereumAccount ?? "");
+    } else if (source.type === "substrate") {
+      // Set to Polkadot account if connected, otherwise clear
+      form.setValue("sourceAccount", polkadotAccount?.address ?? "");
     }
   }, [source.type, ethereumAccount, polkadotAccount?.address, form]);
 
@@ -333,17 +331,26 @@ export const TransferForm: FC<TransferFormProps> = ({
     if (source.id !== watchSource) {
       newSource = locations.find((s) => s.id == watchSource)!;
       setSource(newSource);
+      // For substrate sources, validate account type (AccountId20 vs AccountId32)
       if (newSource.type === "substrate") {
         const accountType =
           assetRegistry.parachains[newSource.key].info.accountType;
-        const accounts = polkadotAccounts?.filter(
+        const validAccounts = polkadotAccounts?.filter(
           filterByAccountType(accountType),
         );
-        form.resetField("sourceAccount", {
-          defaultValue:
-            accounts && accounts.length > 0 ? accounts[0].address : undefined,
-        });
+        // Check if current account is valid for the new chain
+        const currentAccountValid = validAccounts?.some(
+          (acc) => acc.address === watchSourceAccount,
+        );
+        if (!currentAccountValid) {
+          const newAccount =
+            validAccounts && validAccounts.length > 0
+              ? validAccounts[0].address
+              : "";
+          form.setValue("sourceAccount", newAccount);
+        }
       }
+      // Note: Ethereum source account is handled by the auto-set useEffect
 
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
         getTransferLocation(
@@ -372,20 +379,6 @@ export const TransferForm: FC<TransferFormProps> = ({
       });
       form.setValue("beneficiary", formData.beneficiary);
     }
-    try {
-      const chainId = getChainId();
-      if (newSource.type === "ethereum" && newDestination.type === "ethereum") {
-        if (chainId?.toString() !== newSource.key) {
-          switchNetwork(getEthereumNetwork(Number(newSource.key)));
-        }
-      } else {
-        if (chainId?.toString() !== assetRegistry.ethChainId.toString()) {
-          switchNetwork(getEthereumNetwork(assetRegistry.ethChainId));
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    }
   }, [
     destination.type,
     destinations,
@@ -406,6 +399,9 @@ export const TransferForm: FC<TransferFormProps> = ({
     polkadotAccounts,
     firstSource.type,
   ]);
+
+  // Network switching is handled at transfer time, not on source change
+  // This prevents wallet disconnection issues during source selection
 
   const tokenMetadata =
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
@@ -674,8 +670,43 @@ export const TransferForm: FC<TransferFormProps> = ({
                       <div className="flex justify-between items-center text-sm text-muted-foreground">
                         <span>Send</span>
                         {watchSourceAccount && (
-                          <div className="flex items-center gap-2">
-                            <span>{trimAccount(watchSourceAccount, 12)}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (source.type === "ethereum") {
+                                openEthereumWallet({ view: "Account" });
+                              } else {
+                                setPolkadotWalletModalOpen(true);
+                              }
+                            }}
+                            className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+                          >
+                            {source.type === "ethereum" ? (
+                              <Image
+                                src={
+                                  ethereumWalletInfo?.icon ||
+                                  "/images/ethereum.png"
+                                }
+                                width={16}
+                                height={16}
+                                alt="wallet"
+                                className="rounded-sm"
+                              />
+                            ) : (
+                              <Image
+                                src={
+                                  polkadotWallet?.logo?.src ||
+                                  "/images/polkadot.png"
+                                }
+                                width={16}
+                                height={16}
+                                alt="wallet"
+                                className="rounded-sm"
+                              />
+                            )}
+                            <span>
+                              {trimAccount(watchSourceAccount, 12)}
+                            </span>
                             <span>
                               {balanceInfo && tokenMetadata
                                 ? `${formatBalance({
@@ -685,7 +716,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   })} ${tokenMetadata.symbol}`
                                 : "..."}
                             </span>
-                          </div>
+                          </button>
                         )}
                       </div>
                       {/* Row 2: Amount input + token selector */}
