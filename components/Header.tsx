@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { useSetAtom, useAtomValue, useAtom } from "jotai";
-import { acceptedTermsOfUseAtom } from "@/store/termsOfUse";
+import { termsOfUseModalOpenAtom } from "@/store/termsOfUse";
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { Menu as MenuIcon, X, Pencil, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -34,10 +34,7 @@ import {
   walletAtom,
   walletSheetOpenAtom,
 } from "@/store/polkadot";
-import {
-  ethereumAccountAtom,
-  ethereumAccountsAtom,
-} from "@/store/ethereum";
+import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import { SelectedEthereumWallet } from "./SelectedEthereumAccount";
 import { SelectedPolkadotAccount } from "./SelectedPolkadotAccount";
 import { PolkadotWalletDialog } from "./PolkadotWalletDialog";
@@ -419,7 +416,7 @@ const Wallet: FC = () => {
 };
 
 export function Header() {
-  const setAccepted = useSetAtom(acceptedTermsOfUseAtom);
+  const setTermsModalOpen = useSetAtom(termsOfUseModalOpenAtom);
   const envName = useAtomValue(snowbridgeEnvNameAtom);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -493,7 +490,7 @@ export function Header() {
               </a>
               <a
                 className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer"
-                onClick={() => setAccepted(false)}
+                onClick={() => setTermsModalOpen(true)}
               >
                 Terms of Use
               </a>
@@ -651,7 +648,7 @@ export function Header() {
               className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium cursor-pointer"
               onClick={() => {
                 setMobileMenuOpen(false);
-                setAccepted(false);
+                setTermsModalOpen(true);
               }}
             >
               Terms of Use

@@ -719,9 +719,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   className="rounded-sm"
                                 />
                               )}
-                              <span>
-                                {trimAccount(watchSourceAccount, 12)}
-                              </span>
+                              <span>{trimAccount(watchSourceAccount, 12)}</span>
                               <span>
                                 {balanceInfo && tokenMetadata
                                   ? `${formatBalance({
