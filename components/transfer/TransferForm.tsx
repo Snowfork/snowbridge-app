@@ -1,11 +1,12 @@
+import Image from "next/image";
 import { ethereumAccountAtom, ethereumAccountsAtom } from "@/store/ethereum";
 import {
   polkadotAccountAtom,
   polkadotAccountsAtom,
-  polkadotWalletModalOpenAtom,
   walletAtom,
   PolkadotAccount,
 } from "@/store/polkadot";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
@@ -59,11 +60,6 @@ import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
 import { ArrowRight, LucideAlertCircle } from "lucide-react";
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
-import {
-  getChainId,
-  getEthereumNetwork,
-  switchNetwork,
-} from "@/lib/client/web3modal";
 import { isHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
@@ -248,7 +244,8 @@ export const TransferForm: FC<TransferFormProps> = ({
   // Wallet connection hooks
   const { open: openEthereumWallet } = useAppKit();
   const { walletInfo: ethereumWalletInfo } = useWalletInfo();
-  const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
+  const [sourceAccountSelectorOpen, setSourceAccountSelectorOpen] =
+    useState(false);
 
   const locations = useMemo(
     () => getTransferLocations(assetRegistry),
@@ -301,14 +298,96 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchAmount = form.watch("amount");
   const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
-  // Auto-set sourceAccount when wallet connects
+  // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
-    if (source.type === "ethereum" && ethereumAccount) {
-      form.setValue("sourceAccount", ethereumAccount);
-    } else if (source.type === "substrate" && polkadotAccount?.address) {
-      form.setValue("sourceAccount", polkadotAccount.address);
+    if (source.type === "ethereum") {
+      // Set to Ethereum account if connected, otherwise clear
+      form.setValue("sourceAccount", ethereumAccount ?? "");
+    } else if (source.type === "substrate") {
+      // For substrate sources, filter accounts by account type (AccountId20 vs AccountId32)
+      const accountType =
+        assetRegistry.parachains[source.key]?.info.accountType ?? "AccountId32";
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+      // Check if current polkadotAccount is valid for this chain's account type
+      const currentAccountValid = validAccounts?.some(
+        (acc) => acc.address === polkadotAccount?.address,
+      );
+      if (currentAccountValid) {
+        form.setValue("sourceAccount", polkadotAccount?.address ?? "");
+      } else if (validAccounts && validAccounts.length > 0) {
+        // Pick the first valid account
+        form.setValue("sourceAccount", validAccounts[0].address);
+      } else {
+        form.setValue("sourceAccount", "");
+      }
     }
-  }, [source.type, ethereumAccount, polkadotAccount?.address, form]);
+  }, [
+    source.type,
+    source.key,
+    ethereumAccount,
+    polkadotAccount?.address,
+    polkadotAccounts,
+    assetRegistry,
+    form,
+  ]);
+
+  // Auto-set beneficiary when wallet connects or destination type changes
+  useEffect(() => {
+    const currentBeneficiary = form.getValues("beneficiary");
+    if (destination.type === "ethereum") {
+      // For Ethereum destination, check if current beneficiary is a valid Ethereum address
+      const isValidEthAddress =
+        currentBeneficiary?.startsWith("0x") &&
+        currentBeneficiary?.length === 42;
+      if (!isValidEthAddress) {
+        // Set to Ethereum account if connected, otherwise clear
+        form.setValue("beneficiary", ethereumAccount ?? "");
+      }
+    } else if (destination.type === "substrate") {
+      // For substrate destinations, filter accounts by account type (AccountId20 vs AccountId32)
+      const accountType =
+        destination.parachain?.info.accountType ?? "AccountId32";
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+
+      // Also include Ethereum accounts for AccountId20 destinations
+      const validEthereumAccounts =
+        accountType === "AccountId20" ? ethereumAccounts ?? [] : [];
+
+      // Check if current beneficiary is valid
+      const isCurrentValid =
+        validAccounts?.some(
+          (acc) =>
+            acc.address.toLowerCase() === currentBeneficiary?.toLowerCase(),
+        ) ||
+        validEthereumAccounts.some(
+          (acc) => acc.toLowerCase() === currentBeneficiary?.toLowerCase(),
+        );
+
+      if (!isCurrentValid) {
+        // Pick the first valid account
+        if (validAccounts && validAccounts.length > 0) {
+          form.setValue("beneficiary", validAccounts[0].address);
+        } else if (validEthereumAccounts.length > 0) {
+          form.setValue("beneficiary", validEthereumAccounts[0]);
+        } else {
+          form.setValue("beneficiary", "");
+        }
+      }
+    }
+  }, [
+    destination.type,
+    destination.parachain?.info.accountType,
+    destination.key,
+    ethereumAccount,
+    ethereumAccounts,
+    polkadotAccount?.address,
+    polkadotAccounts,
+    form,
+  ]);
 
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     getTransferLocation(assetRegistry, source.type, source.key),
@@ -333,17 +412,26 @@ export const TransferForm: FC<TransferFormProps> = ({
     if (source.id !== watchSource) {
       newSource = locations.find((s) => s.id == watchSource)!;
       setSource(newSource);
+      // For substrate sources, validate account type (AccountId20 vs AccountId32)
       if (newSource.type === "substrate") {
         const accountType =
           assetRegistry.parachains[newSource.key].info.accountType;
-        const accounts = polkadotAccounts?.filter(
+        const validAccounts = polkadotAccounts?.filter(
           filterByAccountType(accountType),
         );
-        form.resetField("sourceAccount", {
-          defaultValue:
-            accounts && accounts.length > 0 ? accounts[0].address : undefined,
-        });
+        // Check if current account is valid for the new chain
+        const currentAccountValid = validAccounts?.some(
+          (acc) => acc.address === watchSourceAccount,
+        );
+        if (!currentAccountValid) {
+          const newAccount =
+            validAccounts && validAccounts.length > 0
+              ? validAccounts[0].address
+              : "";
+          form.setValue("sourceAccount", newAccount);
+        }
       }
+      // Note: Ethereum source account is handled by the auto-set useEffect
 
       newDestinations = Object.keys(newSource.destinations).map((destination) =>
         getTransferLocation(
@@ -372,20 +460,6 @@ export const TransferForm: FC<TransferFormProps> = ({
       });
       form.setValue("beneficiary", formData.beneficiary);
     }
-    try {
-      const chainId = getChainId();
-      if (newSource.type === "ethereum" && newDestination.type === "ethereum") {
-        if (chainId?.toString() !== newSource.key) {
-          switchNetwork(getEthereumNetwork(Number(newSource.key)));
-        }
-      } else {
-        if (chainId?.toString() !== assetRegistry.ethChainId.toString()) {
-          switchNetwork(getEthereumNetwork(assetRegistry.ethChainId));
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    }
   }, [
     destination.type,
     destinations,
@@ -406,6 +480,9 @@ export const TransferForm: FC<TransferFormProps> = ({
     polkadotAccounts,
     firstSource.type,
   ]);
+
+  // Network switching is handled at transfer time, not on source change
+  // This prevents wallet disconnection issues during source selection
 
   const tokenMetadata =
     assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
@@ -673,20 +750,57 @@ export const TransferForm: FC<TransferFormProps> = ({
                       {/* Row 1: Send label + source wallet + balance */}
                       <div className="flex justify-between items-center text-sm text-muted-foreground">
                         <span>Send</span>
-                        {watchSourceAccount && (
-                          <div className="flex items-center gap-2">
-                            <span>{trimAccount(watchSourceAccount, 12)}</span>
-                            <span>
-                              {balanceInfo && tokenMetadata
-                                ? `${formatBalance({
-                                    number: balanceInfo.balance,
-                                    decimals: Number(tokenMetadata.decimals),
-                                    displayDecimals: 4,
-                                  })} ${tokenMetadata.symbol}`
-                                : "..."}
-                            </span>
-                          </div>
-                        )}
+                        {/* Only show account if wallet is connected for current source type */}
+                        {watchSourceAccount &&
+                          ((source.type === "ethereum" && ethereumAccount) ||
+                            (source.type === "substrate" &&
+                              polkadotAccount?.address)) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (source.type === "ethereum") {
+                                  openEthereumWallet({ view: "Account" });
+                                } else {
+                                  setSourceAccountSelectorOpen(true);
+                                }
+                              }}
+                              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+                            >
+                              {source.type === "ethereum" ? (
+                                <Image
+                                  src={
+                                    ethereumWalletInfo?.icon ||
+                                    "/images/ethereum.png"
+                                  }
+                                  width={16}
+                                  height={16}
+                                  alt="wallet"
+                                  className="rounded-sm"
+                                />
+                              ) : (
+                                <Image
+                                  src={
+                                    polkadotWallet?.logo?.src ||
+                                    "/images/polkadot.png"
+                                  }
+                                  width={16}
+                                  height={16}
+                                  alt="wallet"
+                                  className="rounded-sm"
+                                />
+                              )}
+                              <span>{trimAccount(watchSourceAccount, 12)}</span>
+                              <span>
+                                {balanceInfo && tokenMetadata
+                                  ? `${formatBalance({
+                                      number: balanceInfo.balance,
+                                      decimals: Number(tokenMetadata.decimals),
+                                      displayDecimals: 4,
+                                    })} ${tokenMetadata.symbol}`
+                                  : "..."}
+                              </span>
+                            </button>
+                          )}
                       </div>
                       {/* Row 2: Amount input + token selector */}
                       <div className="flex flex-row items-center gap-2">
@@ -871,6 +985,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             </div>
           </div>
           <SubmitButton
+            ethereumAccount={ethereumAccount}
             ethereumAccounts={ethereumAccounts}
             polkadotAccounts={polkadotAccounts}
             beneficiaries={beneficiaries}
@@ -883,11 +998,84 @@ export const TransferForm: FC<TransferFormProps> = ({
           />
         </div>
       </form>
+
+      {/* Source Account Selector Dialog */}
+      <Dialog
+        open={sourceAccountSelectorOpen}
+        onOpenChange={setSourceAccountSelectorOpen}
+      >
+        <DialogContent className="glass more-blur">
+          <DialogHeader>
+            <DialogTitle className="text-center font-medium text-primary">
+              Select Source Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {polkadotAccounts && polkadotAccounts.length > 0 ? (
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">
+                  Your Accounts
+                </div>
+                <div className="max-h-64 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
+                  {polkadotAccounts
+                    .filter(
+                      filterByAccountType(
+                        source.type === "substrate"
+                          ? (assetRegistry.parachains[source.key]?.info
+                              .accountType ?? "AccountId32")
+                          : "AccountId32",
+                      ),
+                    )
+                    .map((account, i) => (
+                      <button
+                        key={account.address + "-" + i}
+                        type="button"
+                        onClick={() => {
+                          form.setValue("sourceAccount", account.address);
+                          setSourceAccountSelectorOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
+                          watchSourceAccount?.toLowerCase() ===
+                          account.address.toLowerCase()
+                            ? "bg-white/60 dark:bg-slate-700/60"
+                            : ""
+                        }`}
+                      >
+                        {polkadotWallet?.logo?.src && (
+                          <Image
+                            src={polkadotWallet.logo.src}
+                            width={24}
+                            height={24}
+                            alt="wallet"
+                            className="rounded-sm flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex flex-col items-start min-w-0">
+                          <span className="font-medium text-primary text-sm">
+                            {account.name || "Account"}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate w-full">
+                            {trimAccount(account.address, 24)}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No accounts available
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 };
 
 interface SubmitButtonProps {
+  ethereumAccount: string | null;
   ethereumAccounts: string[] | null;
   polkadotAccounts: PolkadotAccount[] | null;
   destination: TransferLocation;
@@ -900,6 +1088,7 @@ interface SubmitButtonProps {
 }
 
 function SubmitButton({
+  ethereumAccount,
   ethereumAccounts,
   polkadotAccounts,
   destination,
@@ -928,18 +1117,18 @@ function SubmitButton({
   }
 
   if (tokenMetadata !== null && context !== null) {
-    if (
-      (ethereumAccounts === null || ethereumAccounts.length === 0) &&
-      source.type === "ethereum"
-    ) {
+    // Check if Ethereum wallet is connected for Ethereum source
+    if (!ethereumAccount && source.type === "ethereum") {
       return <ConnectEthereumWalletButton variant="default" />;
     }
+    // Check if Polkadot wallet is connected for Substrate source
     if (
       (polkadotAccounts === null || polkadotAccounts.length === 0) &&
       source.type === "substrate"
     ) {
       return <ConnectPolkadotWalletButton variant="default" />;
     }
+    // Check beneficiaries for destination
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
       destination.type === "ethereum"

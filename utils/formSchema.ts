@@ -1,5 +1,4 @@
 "use client";
-import { isHex } from "@polkadot/util";
 import { AccountType } from "@snowbridge/base-types";
 import { PolkadotAccount } from "@/store/polkadot";
 import { z } from "zod";
@@ -62,10 +61,17 @@ export function filterByAccountType(
   accountType: AccountType | "both",
 ): (_: PolkadotAccount) => boolean {
   return function (acc: PolkadotAccount) {
-    const is20byte = isHex(acc.address) && acc.address.trim().length === 42;
+    // Check wallet metadata first, fallback to address format if type is undefined
+    // Ethereum-type accounts have type === "ethereum" and are for AccountId20 chains
+    const walletType = (acc as any).type;
+    const isEthereumByAddress =
+      acc.address.startsWith("0x") && acc.address.length === 42;
+    const isEthereumType =
+      walletType === "ethereum" ||
+      (walletType === undefined && isEthereumByAddress);
     return (
-      (accountType === "AccountId20" && is20byte) ||
-      (accountType === "AccountId32" && !is20byte) ||
+      (accountType === "AccountId20" && isEthereumType) ||
+      (accountType === "AccountId32" && !isEthereumType) ||
       accountType === "both"
     );
   };

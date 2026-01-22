@@ -106,12 +106,17 @@ export async function disconnectWallet() {
     console.warn("disconnectWallet: modal not initialized.");
     return;
   }
-  // Try adapter's connectionControllerClient disconnect
+  // Use modal's disconnect method directly
+  if (typeof (modal as any).disconnect === "function") {
+    await (modal as any).disconnect();
+    return;
+  }
+  // Fallback: try adapter's connectionControllerClient disconnect
   const adapter = (modal as any).adapters?.[0];
   if (adapter?.connectionControllerClient?.disconnect) {
     await adapter.connectionControllerClient.disconnect();
     return;
   }
-  // Fallback: open Account view
+  // Last fallback: open Account view
   await modal.open({ view: "Account" });
 }
