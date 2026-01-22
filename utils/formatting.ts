@@ -88,3 +88,24 @@ export function truncateAmount(amt: string): string {
   }
   return amt;
 }
+
+/**
+ * Format USD value, showing more decimals for small values.
+ * For values >= 0.01: shows 2 decimal places (e.g., $0.20)
+ * For values < 0.01: shows first significant digit only, truncated (e.g., $0.003)
+ */
+export function formatUsdValue(value: number): string {
+  if (value === 0) return "$0.00";
+  if (value >= 0.01) {
+    return `$${value.toFixed(2)}`;
+  }
+  // For small values, find first non-zero decimal and show only that digit (truncated)
+  const str = value.toFixed(20);
+  const match = str.match(/^0\.(0*)([1-9])/);
+  if (match) {
+    const zeros = match[1];
+    const firstSignificantDigit = match[2];
+    return `$0.${zeros}${firstSignificantDigit}`;
+  }
+  return `$${value.toFixed(2)}`;
+}
