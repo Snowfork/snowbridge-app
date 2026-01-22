@@ -1,4 +1,4 @@
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { FC, useEffect, useState } from "react";
 import { useKusamaFeeInfo } from "@/hooks/useKusamaFeeInfo";
@@ -40,7 +40,7 @@ export const KusamaFeeDisplay: FC<KusamaFeeDisplayProps> = ({
           const feeInTokens =
             Number(feeInfo.fee) / Math.pow(10, feeInfo.decimals);
           const usdAmount = feeInTokens * price;
-          setUsdValue(`$${usdAmount.toFixed(2)}`);
+          setUsdValue(formatUsdValue(usdAmount));
         } else {
           setUsdValue(null);
         }

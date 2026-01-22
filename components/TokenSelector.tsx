@@ -12,7 +12,7 @@ import {
 import { Input } from "./ui/input";
 import { ImageWithFallback } from "./ui/image-with-fallback";
 import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { assetsV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
@@ -245,7 +245,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                   Number(tokenBalance.balance) /
                   Math.pow(10, tokenBalance.decimals);
                 const usdAmount = balanceInTokens * tokenPrice;
-                usdValue = `$${usdAmount.toFixed(2)}`;
+                usdValue = formatUsdValue(usdAmount);
               }
 
               return (

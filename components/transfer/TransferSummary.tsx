@@ -6,7 +6,7 @@ import {
   useEstimatedDelivery,
 } from "@/hooks/useEstimatedDelivery";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import Image from "next/image";
@@ -99,7 +99,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     const price = prices[symbol.toUpperCase()];
     if (!price) return null;
     const usd = amount * price;
-    return `$${usd.toFixed(2)}`;
+    return formatUsdValue(usd);
   };
 
   // Calculate USD values

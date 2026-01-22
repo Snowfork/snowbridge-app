@@ -66,7 +66,7 @@ import { Button } from "./ui/button";
 import { SelectAccount } from "@/components/SelectAccount";
 import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 import { RegistryContext } from "@/app/providers";
 import { ArrowRight } from "lucide-react";
@@ -138,7 +138,7 @@ export const KusamaComponent: FC = () => {
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(amount) * price;
-          setAmountUsdValue(`≈ $${usdAmount.toFixed(2)}`);
+          setAmountUsdValue(`≈ ${formatUsdValue(usdAmount)}`);
         } else {
           setAmountUsdValue(null);
         }

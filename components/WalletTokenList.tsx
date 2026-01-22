@@ -2,7 +2,7 @@
 
 import { FC, useContext } from "react";
 import { ImageWithFallback } from "./ui/image-with-fallback";
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { ethereumAccountAtom } from "@/store/ethereum";
@@ -92,7 +92,7 @@ export const EthereumTokenList: FC = () => {
         decimals: 18,
         displayDecimals: 6,
       }),
-      usdValue: ethPrice ? `$${(ethNum * ethPrice).toFixed(2)}` : null,
+      usdValue: ethPrice ? formatUsdValue(ethNum * ethPrice) : null,
       icon: "ethereum",
     });
   }
@@ -113,9 +113,7 @@ export const EthereumTokenList: FC = () => {
           decimals: Number(asset.decimals),
           displayDecimals: 6,
         }),
-        usdValue: tokenPrice
-          ? `$${(balanceNum * tokenPrice).toFixed(2)}`
-          : null,
+        usdValue: tokenPrice ? formatUsdValue(balanceNum * tokenPrice) : null,
         icon: asset.symbol.toLowerCase(),
       });
     }
@@ -254,7 +252,7 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
         decimals: registry.relaychain.tokenDecimals,
         displayDecimals: 4,
       }),
-      usdValue: dotPrice ? `$${(dotNum * dotPrice).toFixed(2)}` : null,
+      usdValue: dotPrice ? formatUsdValue(dotNum * dotPrice) : null,
       icon: "dot",
     });
   }
@@ -274,9 +272,7 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
           decimals: Number(asset.decimals),
           displayDecimals: 6,
         }),
-        usdValue: tokenPrice
-          ? `$${(balanceNum * tokenPrice).toFixed(2)}`
-          : null,
+        usdValue: tokenPrice ? formatUsdValue(balanceNum * tokenPrice) : null,
         icon: asset.symbol.toLowerCase(),
       });
     }

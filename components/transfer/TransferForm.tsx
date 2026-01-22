@@ -51,6 +51,7 @@ import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   formatBalance,
+  formatUsdValue,
   transformSs58Format,
   trimAccount,
 } from "@/utils/formatting";
@@ -334,13 +335,12 @@ export const TransferForm: FC<TransferFormProps> = ({
   ]);
 
   // Auto-set beneficiary when wallet connects or destination type changes
+  const watchBeneficiary = form.watch("beneficiary");
   useEffect(() => {
-    const currentBeneficiary = form.getValues("beneficiary");
     if (destination.type === "ethereum") {
       // For Ethereum destination, check if current beneficiary is a valid Ethereum address
       const isValidEthAddress =
-        currentBeneficiary?.startsWith("0x") &&
-        currentBeneficiary?.length === 42;
+        watchBeneficiary?.startsWith("0x") && watchBeneficiary?.length === 42;
       if (!isValidEthAddress) {
         // Set to Ethereum account if connected, otherwise clear
         form.setValue("beneficiary", ethereumAccount ?? "");
@@ -355,16 +355,16 @@ export const TransferForm: FC<TransferFormProps> = ({
 
       // Also include Ethereum accounts for AccountId20 destinations
       const validEthereumAccounts =
-        accountType === "AccountId20" ? ethereumAccounts ?? [] : [];
+        accountType === "AccountId20" ? (ethereumAccounts ?? []) : [];
 
-      // Check if current beneficiary is valid
+      // Check if current beneficiary is valid for this destination's account type
       const isCurrentValid =
         validAccounts?.some(
           (acc) =>
-            acc.address.toLowerCase() === currentBeneficiary?.toLowerCase(),
+            acc.address.toLowerCase() === watchBeneficiary?.toLowerCase(),
         ) ||
         validEthereumAccounts.some(
-          (acc) => acc.toLowerCase() === currentBeneficiary?.toLowerCase(),
+          (acc) => acc.toLowerCase() === watchBeneficiary?.toLowerCase(),
         );
 
       if (!isCurrentValid) {
@@ -386,6 +386,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     ethereumAccounts,
     polkadotAccount?.address,
     polkadotAccounts,
+    watchBeneficiary,
     form,
   ]);
 
@@ -502,7 +503,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(`$${usdAmount.toFixed(2)}`);
+          setAmountUsdValue(formatUsdValue(usdAmount));
         } else {
           setAmountUsdValue(null);
         }
@@ -701,8 +702,13 @@ export const TransferForm: FC<TransferFormProps> = ({
             onClick={() => {
               const currentSource = form.getValues("source");
               const currentDest = form.getValues("destination");
+              // Swap source and destination
               form.setValue("source", currentDest);
               form.setValue("destination", currentSource);
+              // Clear accounts to force re-validation with new chain types
+              // The auto-set useEffects will pick valid accounts for the new chains
+              form.setValue("sourceAccount", "");
+              form.setValue("beneficiary", "");
             }}
           >
             <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
