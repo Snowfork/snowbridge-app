@@ -3,6 +3,7 @@ const TOKEN_SYMBOL_MAPPING: Record<string, string> = {
   WETH: "ETH", // WETH uses same price as ETH
   Ether: "ETH",
   WND: "DOT", // Westend uses same price as DOT for approximation
+  HDX: "HYDRADX", // Hydration token is listed as HYDRADX on CryptoCompare
 };
 
 // Price cache with 5-minute TTL

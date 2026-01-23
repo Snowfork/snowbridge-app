@@ -12,7 +12,7 @@ import {
 import { Input } from "./ui/input";
 import { ImageWithFallback } from "./ui/image-with-fallback";
 import { AssetRegistry } from "@snowbridge/base-types";
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { Context } from "@snowbridge/api";
 import { getKusamaTokenBalance } from "@/utils/balances";
 import { useAtomValue } from "jotai";
@@ -274,7 +274,7 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
                   Number(tokenBalance.balance) /
                   Math.pow(10, tokenBalance.decimals);
                 const usdAmount = balanceInTokens * tokenPrice;
-                usdValue = `$${usdAmount.toFixed(2)}`;
+                usdValue = formatUsdValue(usdAmount);
               }
 
               return (

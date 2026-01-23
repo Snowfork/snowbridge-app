@@ -35,7 +35,13 @@ export const walletNameAtom = atomWithStorage<string | null>(
 const originalWalletAtom = atom<Wallet | null>(null);
 export const walletAtom = atom(
   (get) => get(originalWalletAtom),
-  (_get, set, newWallet: Wallet | null) => {
+  (get, set, newWallet: Wallet | null) => {
+    const currentWallet = get(originalWalletAtom);
+    // Clear selected account when wallet changes
+    if (currentWallet?.extensionName !== newWallet?.extensionName) {
+      set(polkadotAccountAddressAtom, null);
+      set(polkadotAccountsAtom, null);
+    }
     set(originalWalletAtom, newWallet);
     set(walletNameAtom, newWallet != null ? newWallet.extensionName : null);
   },

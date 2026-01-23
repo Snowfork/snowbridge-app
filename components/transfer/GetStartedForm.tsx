@@ -50,6 +50,7 @@ import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   formatBalance,
+  formatUsdValue,
   transformSs58Format,
   trimAccount,
 } from "@/utils/formatting";
@@ -413,7 +414,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(`≈ $${usdAmount.toFixed(2)}`);
+          setAmountUsdValue(`≈ ${formatUsdValue(usdAmount)}`);
         } else {
           setAmountUsdValue(null);
         }

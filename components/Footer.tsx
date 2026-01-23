@@ -1,11 +1,13 @@
 "use client";
 
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
-import { useAtomValue } from "jotai";
+import { termsOfUseModalOpenAtom } from "@/store/termsOfUse";
+import { useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
 
 export function Footer() {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
+  const setTermsModalOpen = useSetAtom(termsOfUseModalOpenAtom);
   return (
     <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between w-full px-8 md:px-12">
       <div className="flex items-center gap-1">
@@ -61,6 +63,12 @@ export function Footer() {
         >
           Contact
         </a>
+        <button
+          onClick={() => setTermsModalOpen(true)}
+          className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+        >
+          Terms
+        </button>
         <a
           href="https://github.com/Snowfork/snowbridge"
           target="_blank"

@@ -1,5 +1,5 @@
 import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
-import { formatBalance } from "@/utils/formatting";
+import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { FC, useEffect, useState } from "react";
 import { TransferLocation } from "@snowbridge/base-types";
@@ -42,7 +42,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
           const feeInTokens =
             Number(feeInfo.totalFee) / Math.pow(10, feeInfo.decimals);
           const usdAmount = feeInTokens * price;
-          setUsdValue(`$${usdAmount.toFixed(2)}`);
+          setUsdValue(formatUsdValue(usdAmount));
         } else {
           setUsdValue(null);
         }
