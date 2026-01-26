@@ -18,7 +18,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { historyV2, subsquid } from "@snowbridge/api";
+import { historyV2, subsquidV2 } from "@snowbridge/api";
 import useSWR from "swr";
 import { subscanEventLink, subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { RegistryContext } from "../providers";
@@ -154,7 +154,7 @@ function TxComponent() {
     [registry.environment, "localcompletedtx", messageId],
     async ([, , messageId]) => {
       if (messageId !== null && transfer !== null) {
-        const delivered = await subsquid.fetchInterParachainMessageById(
+        const delivered = await subsquidV2.fetchInterParachainMessageById(
           environment.indexerGraphQlUrl,
           messageId,
         );
