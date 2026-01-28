@@ -19,8 +19,8 @@ import {
 } from "ethers";
 import {
   AssetRegistry,
+  ChainKind,
   ERC20Metadata,
-  SourceType,
   TransferLocation,
 } from "@snowbridge/base-types";
 
@@ -160,7 +160,7 @@ export type FeeInfo = {
     | toPolkadotV2.DeliveryFee
     | toPolkadotSnowbridgeV2.DeliveryFee
     | forInterParachain.DeliveryFee;
-  type: SourceType;
+  kind: ChainKind;
 };
 
 export type KusamaFeeInfo = {

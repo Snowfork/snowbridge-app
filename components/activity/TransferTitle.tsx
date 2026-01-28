@@ -139,7 +139,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
 
   const { tokenName, amount: rawAmount } = formatTokenData(
     transfer,
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets,
+    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets,
   );
   const amount = truncateAmount(rawAmount);
   const tokenIcon = (

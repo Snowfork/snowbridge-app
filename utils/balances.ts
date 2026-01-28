@@ -191,9 +191,11 @@ export async function getKusamaTokenBalance({
     let tokenSymbol = sourceAssetMetadata.symbol;
     if (!tokenDecimals || !tokenSymbol) {
       tokenDecimals =
-        registry.ethereumChains[registry.ethChainId].assets[token].decimals;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .decimals;
       tokenSymbol =
-        registry.ethereumChains[registry.ethChainId].assets[token].symbol;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .symbol;
     }
 
     return {
@@ -249,9 +251,11 @@ export async function getKusamaTokenBalance({
     let tokenSymbol = sourceAssetMetadata.symbol;
     if (!tokenDecimals || !tokenSymbol) {
       tokenDecimals =
-        registry.ethereumChains[registry.ethChainId].assets[token].decimals;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .decimals;
       tokenSymbol =
-        registry.ethereumChains[registry.ethChainId].assets[token].symbol;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .symbol;
     }
 
     return {

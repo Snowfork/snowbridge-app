@@ -118,9 +118,8 @@ export const KusamaComponent: FC = () => {
 
   // Get token metadata for USD calculation
   const tokenMetadata = watchToken
-    ? assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-        watchToken.toLowerCase()
-      ]
+    ? assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+        ?.assets?.[watchToken.toLowerCase()]
     : null;
 
   useEffect(() => {
@@ -236,9 +235,8 @@ export const KusamaComponent: FC = () => {
       }
 
       let asset =
-        assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-          watchToken
-        ];
+        assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+          ?.assets?.[watchToken];
 
       // Fallback to parachain metadata if decimals are missing or empty
       if (!asset?.decimals || asset.decimals === 0) {

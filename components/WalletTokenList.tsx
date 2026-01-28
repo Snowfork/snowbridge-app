@@ -47,7 +47,8 @@ export const EthereumTokenList: FC = () => {
     ? [
         "ETH",
         ...Object.values(
-          registry.ethereumChains[registry.ethChainId]?.assets || {},
+          registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets ||
+            {},
         ).map((a) => a.symbol),
       ]
     : [];
@@ -75,7 +76,8 @@ export const EthereumTokenList: FC = () => {
   }
 
   // Build display list
-  const ethAssets = registry.ethereumChains[registry.ethChainId]?.assets || {};
+  const ethAssets =
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets || {};
   const tokenList: TokenDisplayItem[] = [];
 
   // Add ETH if balance > 0
@@ -199,7 +201,8 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
     ? [
         "DOT",
         ...Object.values(
-          registry.ethereumChains[registry.ethChainId]?.assets || {},
+          registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets ||
+            {},
         ).map((a) => a.symbol),
       ]
     : [];
@@ -235,7 +238,8 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
   }
 
   // Build display list
-  const ethAssets = registry.ethereumChains[registry.ethChainId]?.assets || {};
+  const ethAssets =
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets || {};
   const tokenList: TokenDisplayItem[] = [];
 
   // Add DOT if balance > 0

@@ -356,7 +356,7 @@ const transferDetail = (
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
-    registry.ethereumChains[registry.ethChainId].assets,
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets,
   );
   const formattedDate = formatShortDate(new Date(transfer.info.when));
   return (
