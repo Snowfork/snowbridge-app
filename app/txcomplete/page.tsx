@@ -55,7 +55,7 @@ function TxCard(props: TxCardProps) {
   const links: { name: string; link: string }[] = [];
 
   const token =
-    registry.ethereumChains[registry.ethChainId].assets[
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
       transfer.info.tokenAddress.toLowerCase()
     ];
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);

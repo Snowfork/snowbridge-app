@@ -81,7 +81,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   // Fetch prices with SWR
   const tokenSymbols = assets.map((t) => {
     const asset =
-      assetRegistry.ethereumChains[ethChainId].assets[t.toLowerCase()];
+      assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
+        t.toLowerCase()
+      ];
     return asset.symbol;
   });
 
@@ -92,7 +94,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   );
 
   const selectedAsset = value
-    ? assetRegistry.ethereumChains[ethChainId].assets[value.toLowerCase()]
+    ? assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
+        value.toLowerCase()
+      ]
     : null;
 
   const filteredAssets = useMemo(() => {
@@ -102,7 +106,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       const query = searchQuery.toLowerCase();
       filtered = assets.filter((t) => {
         const asset =
-          assetRegistry.ethereumChains[ethChainId].assets[t.toLowerCase()];
+          assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
+            t.toLowerCase()
+          ];
         return (
           asset.name.toLowerCase().includes(query) ||
           asset.symbol.toLowerCase().includes(query)
@@ -119,7 +125,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       let usdValue = 0;
       if (hasBalance && tokenBalance) {
         const asset =
-          assetRegistry.ethereumChains[ethChainId].assets[
+          assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
             tokenAddress.toLowerCase()
           ];
         const price = prices?.[asset.symbol.toUpperCase()] ?? 0;
@@ -152,9 +158,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
       // Same category - sort alphabetically by name
       const assetA =
-        assetRegistry.ethereumChains[ethChainId].assets[a.toLowerCase()];
+        assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
+          a.toLowerCase()
+        ];
       const assetB =
-        assetRegistry.ethereumChains[ethChainId].assets[b.toLowerCase()];
+        assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
+          b.toLowerCase()
+        ];
       return assetA.name.localeCompare(assetB.name);
     });
   }, [assets, searchQuery, assetRegistry, ethChainId, balances, prices]);
@@ -219,7 +229,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           ) : (
             filteredAssets.map((t) => {
               const asset =
-                assetRegistry.ethereumChains[ethChainId].assets[
+                assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
                   t.toLowerCase()
                 ];
               const tokenBalance = balances?.[t.toLowerCase()];

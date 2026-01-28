@@ -194,7 +194,7 @@ function initialFormData(
     }
   }
   const assets = Object.keys(
-    registry.ethereumChains[registry.ethChainId].assets,
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets,
   );
 
   const tokens = source.destinations[destination.key].assets;
@@ -203,7 +203,9 @@ function initialFormData(
   if (queryToken) {
     const ethAsset = assets.find((asset) => {
       const assetMeta =
-        registry.ethereumChains[registry.ethChainId].assets[asset];
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
+          asset
+        ];
       return (
         assetMeta.name.toLowerCase() === token.toLowerCase() ||
         assetMeta.symbol.toLowerCase() === queryToken.toLowerCase() ||
@@ -215,9 +217,9 @@ function initialFormData(
     }
   } else {
     const ethAsset = assets.find((asset) =>
-      registry.ethereumChains[registry.ethChainId].assets[asset].name.match(
-        /^Ether/,
-      ),
+      registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
+        asset
+      ].name.match(/^Ether/),
     );
     if (ethAsset) {
       token = ethAsset;
@@ -397,7 +399,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
   ]);
 
   const tokenMetadata =
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
       token.toLowerCase()
     ];
 
@@ -573,24 +575,11 @@ export const GetStartedForm: FC<TransferFormProps> = ({
                     <SelectContent>
                       <SelectGroup>
                         {locations.map((s) => {
-                          let name: string;
-                          if (s.type === "ethereum") {
-                            const eth = assetRegistry.ethereumChains[s.key];
-                            if (!eth.evmParachainId) {
-                              name = "Ethereum";
-                            } else {
-                              const evmChain =
-                                assetRegistry.parachains[eth.evmParachainId];
-                              name = `${evmChain.info.name} (EVM)`;
-                            }
-                          } else {
-                            name = assetRegistry.parachains[s.key].info.name;
-                          }
                           return (
-                            <SelectItem key={s.id} value={s.id}>
+                            <SelectItem key={s.key} value={s.key}>
                               <SelectItemWithIcon
-                                label={name}
-                                image={s.id}
+                                label={s.name}
+                                image={s.key}
                                 altImage="parachain_generic"
                               />
                             </SelectItem>

@@ -117,7 +117,7 @@ export function NeuroWebUnwrapForm({
   const { data: balanceData } = useNeuroWebBalance(beneficiary?.address);
   const { unwrap, wrap } = useNeuroWebWrapUnwrap();
   const token =
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
       tokenAddress.toLowerCase()
     ];
 

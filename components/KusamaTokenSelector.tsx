@@ -99,9 +99,9 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
       const tokenSymbols = tokenList
         .map((t) => {
           const asset =
-            assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-              t
-            ];
+            assetRegistry.ethereumChains?.[
+              `ethereum_${assetRegistry.ethChainId}`
+            ]?.assets?.[t];
           return asset?.symbol;
         })
         .filter((s): s is string => !!s);
@@ -120,9 +120,8 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
   }, [tokenList, assetRegistry]);
 
   const selectedAsset = value
-    ? assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-        value.toLowerCase()
-      ]
+    ? assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+        ?.assets?.[value.toLowerCase()]
     : null;
 
   const filteredTokens = useMemo(() => {
@@ -132,7 +131,8 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
       const query = searchQuery.toLowerCase();
       filtered = tokenList.filter((t) => {
         const asset =
-          assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[t];
+          assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+            ?.assets?.[t];
         if (!asset) return false;
         return (
           asset.name.toLowerCase().includes(query) ||
@@ -150,9 +150,8 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
       let usdValue = 0;
       if (hasBalance && tokenBalance) {
         const asset =
-          assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-            tokenAddress
-          ];
+          assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+            ?.assets?.[tokenAddress];
         const price = prices?.[asset?.symbol?.toUpperCase()] ?? 0;
         const balanceInTokens =
           Number(balance) / Math.pow(10, tokenBalance.decimals);
@@ -183,9 +182,11 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
 
       // Same category - sort alphabetically by name
       const assetA =
-        assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[a];
+        assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+          ?.assets?.[a];
       const assetB =
-        assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[b];
+        assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+          ?.assets?.[b];
       return (assetA?.name ?? "").localeCompare(assetB?.name ?? "");
     });
   }, [tokenList, searchQuery, assetRegistry, balances, prices]);
@@ -250,8 +251,9 @@ export const KusamaTokenSelector: FC<KusamaTokenSelectorProps> = ({
           ) : (
             filteredTokens.map((t) => {
               const asset =
-                assetRegistry.ethereumChains?.[assetRegistry.ethChainId]
-                  ?.assets?.[t];
+                assetRegistry.ethereumChains?.[
+                  `ethereum_${assetRegistry.ethChainId}`
+                ]?.assets?.[t];
               if (!asset) return null;
 
               const tokenBalance = balances?.[t];

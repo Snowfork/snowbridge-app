@@ -26,7 +26,8 @@ async function fetchEthereumTokenBalances([, account, context, registry]: [
 ]): Promise<TokenBalances> {
   const balances: TokenBalances = {};
   const ethChainId = registry.ethChainId;
-  const assets = registry.ethereumChains[ethChainId]?.assets || {};
+  const assets =
+    registry.ethereumChains[`ethereum_${ethChainId}`]?.assets || {};
 
   // Filter ERC20 tokens (exclude ETH placeholder)
   const erc20Tokens = Object.entries(assets).filter(
@@ -97,7 +98,8 @@ async function fetchPolkadotTokenBalances([
     m.paraImplementation(parachain),
   );
 
-  const ethAssets = registry.ethereumChains[registry.ethChainId]?.assets || {};
+  const ethAssets =
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets || {};
 
   // Find the native token address (DOT for Asset Hub)
   // Native tokens have location {parents: 1, interior: "Here"}
