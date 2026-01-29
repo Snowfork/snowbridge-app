@@ -64,9 +64,9 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   }
 
   const dotBalance =
-    destination.type === "ethereum" &&
+    destination.kind === "ethereum" &&
     source.parachain &&
-    source.parachain.parachainId !== registry.assetHubParaId &&
+    source.parachain.id !== registry.assetHubParaId &&
     source.parachain.features.hasDotBalance
       ? ` ;  ${formatBalance({
           number: balanceInfo.dotBalance ?? 0n,
@@ -99,9 +99,9 @@ export const BalanceDisplay: FC<BalanceDisplayProps> = ({
   })} ${balanceInfo.nativeSymbol}`;
 
   if (
-    destination.type === "ethereum" &&
+    destination.kind === "ethereum" &&
     source.parachain &&
-    source.parachain.parachainId == registry.assetHubParaId &&
+    source.parachain.id == registry.assetHubParaId &&
     tokenMetadata.symbol == "DOT"
   ) {
     return (

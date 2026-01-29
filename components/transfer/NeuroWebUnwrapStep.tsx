@@ -63,7 +63,7 @@ export function NeuroWebWrapStep({
 function reEncodeAddress(address: string | undefined, registry: AssetRegistry) {
   return encodeAddress(
     decodeAddress(address, false, registry.relaychain.ss58Format),
-    registry.parachains[NEURO_WEB_PARACHAIN].info.ss58Format,
+    registry.parachains[`polkadot_${NEURO_WEB_PARACHAIN}`].info.ss58Format,
   );
 }
 

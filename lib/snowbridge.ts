@@ -1,6 +1,6 @@
 import { Context, historyV2 } from "@snowbridge/api";
 import { Environment } from "@snowbridge/base-types";
-import { environmentFor } from "@snowbridge/registry";
+import { bridgeInfoFor } from "@snowbridge/registry";
 import { AbstractProvider } from "ethers";
 
 export function getEnvironmentName() {
@@ -11,7 +11,7 @@ export function getEnvironmentName() {
 
 export function getEnvironment() {
   const envName = getEnvironmentName();
-  const env: Environment = environmentFor(envName);
+  const env: Environment = bridgeInfoFor(envName).environment;
 
   if (env === undefined)
     throw new Error(

@@ -82,7 +82,7 @@ async function fetchPolkadotTokenBalances([
   const balances: TokenBalances = {};
 
   // Registry uses string keys for parachains
-  const parachainConfig = registry.parachains[String(parachainId)];
+  const parachainConfig = registry.parachains[`polkadot_${parachainId}`];
 
   if (!parachainConfig) {
     return balances;
