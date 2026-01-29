@@ -157,7 +157,7 @@ export const TransferComponent: FC = () => {
   };
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
-  const { registry } = useContext(BridgeInfoContext)!;
+  const { registry, routes } = useContext(BridgeInfoContext)!;
 
   const { mutate: refreshHistory } = useTransferActivity();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
@@ -337,6 +337,7 @@ export const TransferComponent: FC = () => {
         <TransferForm
           assetRegistry={registry}
           formData={validationData?.formData ?? formData}
+          routes={routes}
           onValidated={async (data) =>
             await validateAndSubmit(data, false, setSourceExecutionFee)
           }
