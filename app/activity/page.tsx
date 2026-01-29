@@ -108,7 +108,7 @@ const getExplorerLinks = (
   if (transfer.sourceType == "kusama") {
     const tx = transfer as historyV2.ToPolkadotTransferResult;
     if (tx.destinationReceived) {
-      let sourceParaId: string = source.parachain!.parachainId.toString();
+      let sourceParaId: string = source.parachain!.id.toString();
       if (transfer.info.sourceNetwork == "kusama") {
         sourceParaId = "kusama_" + sourceParaId;
       }
@@ -140,7 +140,7 @@ const getExplorerLinks = (
       text: `Submitted to ${source.name}`,
       url: subscanExtrinsicLink(
         registry.environment,
-        source.parachain!.parachainId,
+        source.parachain!.id,
         tx.submitted.extrinsic_hash,
       ),
     });
@@ -320,12 +320,12 @@ const transferDetail = (
     );
     beneficiaryAccountUrl = subscanAccountLink(
       registry.environment,
-      destination.parachain!.parachainId,
+      destination.parachain!.id,
       beneficiary,
     );
   } else if (transfer.sourceType === "kusama") {
-    let sourceParachain = source.parachain!.parachainId.toString();
-    let destParachain = destination.parachain!.parachainId.toString();
+    let sourceParachain = source.parachain!.id.toString();
+    let destParachain = destination.parachain!.id.toString();
     if (transfer.info.sourceNetwork == "kusama") {
       sourceParachain = "kusama_" + sourceParachain;
     }
@@ -345,7 +345,7 @@ const transferDetail = (
   } else {
     sourceAccountUrl = subscanAccountLink(
       registry.environment,
-      source.parachain!.parachainId,
+      source.parachain!.id,
       transfer.info.sourceAddress,
     );
     beneficiaryAccountUrl = etherscanAddressLink(
