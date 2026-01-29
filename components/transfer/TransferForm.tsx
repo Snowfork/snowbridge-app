@@ -76,6 +76,11 @@ import {
   getTransferLocation,
   getTransferLocations,
 } from "@snowbridge/registry";
+import {
+  getChainId,
+  getEthereumNetwork,
+  switchNetwork,
+} from "@/lib/client/web3modal";
 
 function getBeneficiaries(
   destination: TransferLocation,
@@ -337,7 +342,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       if (newSource.kind === "polkadot") {
         const accountType =
           assetRegistry.parachains[`polkadot_${newSource.id}`].info.accountType;
-        const accounts = polkadotAccounts?.filter(
+        const validAccounts = polkadotAccounts?.filter(
           filterByAccountType(accountType),
         );
         // Check if current account is valid for the new chain
@@ -381,7 +386,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       const chainId = getChainId();
       if (newSource.kind === "ethereum" && newDestination.kind === "ethereum") {
         if (chainId?.toString() !== newSource.key) {
-          switchNetwork(getEthereumNetwork(Number(newSource.key)));
+          switchNetwork(getEthereumNetwork(Number(newSource.id)));
         }
       } else {
         if (chainId?.toString() !== assetRegistry.ethChainId.toString()) {
@@ -678,13 +683,13 @@ export const TransferForm: FC<TransferFormProps> = ({
                         <span>Send</span>
                         {/* Only show account if wallet is connected for current source type */}
                         {watchSourceAccount &&
-                          ((source.type === "ethereum" && ethereumAccount) ||
-                            (source.type === "substrate" &&
+                          ((source.kind === "ethereum" && ethereumAccount) ||
+                            (source.kind === "polkadot" &&
                               polkadotAccount?.address)) && (
                             <button
                               type="button"
                               onClick={() => {
-                                if (source.type === "ethereum") {
+                                if (source.kind === "ethereum") {
                                   openEthereumWallet({ view: "Account" });
                                 } else {
                                   setSourceAccountSelectorOpen(true);
@@ -692,7 +697,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                               }}
                               className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
                             >
-                              {source.type === "ethereum" ? (
+                              {source.kind === "ethereum" ? (
                                 <Image
                                   src={
                                     ethereumWalletInfo?.icon ||
@@ -941,9 +946,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                   {polkadotAccounts
                     .filter(
                       filterByAccountType(
-                        source.type === "substrate"
-                          ? (assetRegistry.parachains[source.key]?.info
-                              .accountType ?? "AccountId32")
+                        source.kind === "polkadot"
+                          ? (assetRegistry.parachains[`polkadot_${source.id}`]
+                              ?.info.accountType ?? "AccountId32")
                           : "AccountId32",
                       ),
                     )
@@ -1038,15 +1043,11 @@ function SubmitButton({
   }
 
   if (tokenMetadata !== null && context !== null) {
-<<<<<<< HEAD
     // Check if Ethereum wallet is connected for Ethereum source
-    if (!ethereumAccount && source.type === "ethereum") {
-=======
     if (
       (ethereumAccounts === null || ethereumAccounts.length === 0) &&
       source.kind === "ethereum"
     ) {
->>>>>>> 70fd540 (final fixes)
       return <ConnectEthereumWalletButton variant="default" />;
     }
     // Check if Polkadot wallet is connected for Substrate source

@@ -33,6 +33,7 @@ import {
   getTransferLocations,
 } from "@snowbridge/registry";
 import { z } from "zod";
+import { formatUsdValue } from "@/utils/formatting";
 
 interface GetStartedFormProps {
   routes: readonly TransferRoute[];
@@ -197,7 +198,7 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(`≈ $${usdAmount.toFixed(2)}`);
+          setAmountUsdValue(`≈ $${formatUsdValue(usdAmount)}`);
         } else {
           setAmountUsdValue(null);
         }
