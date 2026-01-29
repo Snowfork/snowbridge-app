@@ -77,9 +77,9 @@ function TxCard(props: TxCardProps) {
     transfer.info.sourceAddress,
   ]);
 
-  switch (transfer.sourceType) {
+  switch (transfer.kind) {
     // Uniswap
-    case "substrate": {
+    case "polkadot": {
       const uniswap = {
         name: "Uniswap",
         link: uniswapTokenLink(
@@ -222,11 +222,7 @@ function TxComponent() {
     if (transferEncoded === null) return [messageId, sourceType];
 
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
-    return [
-      decoded?.id ?? messageId,
-      decoded.sourceType ?? sourceType,
-      decoded,
-    ];
+    return [decoded?.id ?? messageId, decoded.kind ?? sourceType, decoded];
   }, [searchParams]);
 
   const {
