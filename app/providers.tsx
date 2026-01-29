@@ -1,20 +1,20 @@
 "use client";
 
-import { AssetRegistry } from "@snowbridge/base-types";
+import { BridgeInfo } from "@snowbridge/base-types";
 import { Provider } from "jotai";
 import { createContext } from "react";
 
-export const RegistryContext = createContext<AssetRegistry | null>(null);
+export const BridgeInfoContext = createContext<BridgeInfo | null>(null);
 
 interface ProviderParams {
   children: React.ReactNode;
-  registry: AssetRegistry;
+  info: BridgeInfo;
 }
 
-export function Providers({ children, registry }: ProviderParams) {
+export function Providers({ children, info }: ProviderParams) {
   return (
-    <RegistryContext.Provider value={registry}>
+    <BridgeInfoContext.Provider value={info}>
       <Provider>{children}</Provider>
-    </RegistryContext.Provider>
+    </BridgeInfoContext.Provider>
   );
 }

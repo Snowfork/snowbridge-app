@@ -7,7 +7,7 @@ import {
 import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useContext, useState } from "react";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import type {
   AssetRegistry,
   ChainKind,
@@ -130,7 +130,7 @@ interface TransferTitleProps {
 }
 
 export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
   const [tokenImageError, setTokenImageError] = useState(false);
   const [destImageError, setDestImageError] = useState(false);
 

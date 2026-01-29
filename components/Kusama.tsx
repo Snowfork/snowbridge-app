@@ -67,7 +67,7 @@ import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { ArrowRight } from "lucide-react";
 import { KusamaTokenSelector } from "./KusamaTokenSelector";
 import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
@@ -78,7 +78,7 @@ export const KusamaComponent: FC = () => {
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotWallet = useAtomValue(walletAtom);
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
 
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");

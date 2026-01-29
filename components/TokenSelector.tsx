@@ -23,7 +23,7 @@ import {
   useEthereumTokenBalances,
   usePolkadotTokenBalances,
 } from "@/hooks/useTokenBalances";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import useSWR from "swr";
 
 type TokenSelectorProps = {
@@ -56,7 +56,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   const [tokenModalOpen, setTokenModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const context = useAtomValue(snowbridgeContextAtom);
-  const registry = useContext(RegistryContext);
+  const { registry } = useContext(BridgeInfoContext)!;
 
   // Use shared balance hooks based on source type
   const isEthereumSource = source.kind === "ethereum";

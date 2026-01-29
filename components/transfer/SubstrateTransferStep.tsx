@@ -20,7 +20,7 @@ import { LucideLoaderCircle } from "lucide-react";
 import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
 import { parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 
 interface TransferStepData {
   id: number;
@@ -45,7 +45,7 @@ export function SubstrateTransferStep({
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
 
   const { transferAsset } = useSubstrateTransfer();
 

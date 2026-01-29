@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { historyV2, subsquidV2 } from "@snowbridge/api";
 import useSWR from "swr";
 import { subscanEventLink, subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { RegistryContext } from "../providers";
+import { BridgeInfoContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/registry";
@@ -130,7 +130,7 @@ function TxCard(props: TxCardProps) {
 
 function TxComponent() {
   const searchParams = useSearchParams();
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   const environment = getEnvironment();
 
   const [messageId, transfer] = useMemo(() => {

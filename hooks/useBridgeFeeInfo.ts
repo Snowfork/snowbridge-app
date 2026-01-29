@@ -12,7 +12,7 @@ import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import { FeeInfo } from "@/utils/types";
 import { useContext } from "react";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import {
   AssetRegistry,
   Parachain,
@@ -228,7 +228,7 @@ export function useBridgeFeeInfo(
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   return useSWR(
     [context, source, destination, registry, token, "feeInfo"],
     fetchBridgeFeeInfo,

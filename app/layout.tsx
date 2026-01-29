@@ -18,7 +18,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { registry } = bridgeInfoFor(getEnvironmentName());
+  const info = bridgeInfoFor(getEnvironmentName());
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -32,7 +32,7 @@ export default async function RootLayout({
       </head>
       <body>
         <BackgroundSnowfall />
-        <Providers registry={registry}>
+        <Providers info={info}>
           <main className="flex min-h-screen flex-col relative z-10">
             <Header />
             <div className="flex-1 w-full py-12 px-4 sm:px-6 py-1 pb-8 items-center justify-center box-border overflow-visible">

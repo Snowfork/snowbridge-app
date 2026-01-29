@@ -14,7 +14,7 @@ import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
 import { assetsV2, toEthereumV2 } from "@snowbridge/api";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { NeuroWebWrapStep } from "./NeuroWebUnwrapStep";
 
@@ -39,7 +39,7 @@ interface StepData {
 }
 
 function TransferFeeStep(step: StepData) {
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
   const { data: feeInfo, error } = useBridgeFeeInfo(
     step.data.source,
     step.data.destination,
