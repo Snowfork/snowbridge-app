@@ -280,8 +280,8 @@ export const TransferForm: FC<TransferFormProps> = ({
   const form = useForm<TransferFormData>({
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
-      source: formData?.source ?? source.id,
-      destination: formData?.destination ?? destination.id,
+      source: formData?.source ?? source.key,
+      destination: formData?.destination ?? destination.key,
       token: formData?.token ?? token,
       beneficiary: formData?.beneficiary,
       sourceAccount: formData?.sourceAccount ?? sourceAccount,
