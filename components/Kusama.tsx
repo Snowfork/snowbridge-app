@@ -19,7 +19,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -104,8 +103,9 @@ export const KusamaComponent: FC = () => {
   const watchSourceAccount = form.watch("sourceAccount");
   const watchToken = form.watch("token");
   const tokens =
-    assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId]
-      .assets;
+    assetRegistry.kusama?.parachains[
+      `kusama_${assetRegistry.kusama?.assetHubParaId}`
+    ].assets;
   const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId, watchToken);
   const { data: balanceInfo } = useKusamaTokenBalance(
     watchSourceAccount,

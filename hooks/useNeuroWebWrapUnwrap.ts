@@ -85,7 +85,7 @@ export async function fetchNeuroWebBalance([context, registry, beneficiary]: [
 ]) {
   if (!beneficiary || !context) return undefined;
   const provider = await context.parachain(NEURO_WEB_PARACHAIN);
-  const info = registry.parachains[NEURO_WEB_PARACHAIN].info;
+  const info = registry.parachains[`polkadot_${NEURO_WEB_PARACHAIN}`].info;
   const para = new NeurowebParachain(
     provider,
     NEURO_WEB_PARACHAIN,

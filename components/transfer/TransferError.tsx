@@ -18,7 +18,7 @@ export function overrideMessage(
     | forInterParachain.ValidationLog,
   data?: ValidationData,
 ) {
-  switch (data?.source.id) {
+  switch (data?.source.kind) {
     case "ethereum": {
       const e = error as toPolkadotV2.ValidationLog;
       if (e.reason == toPolkadotV2.ValidationReason.InsufficientEther) {

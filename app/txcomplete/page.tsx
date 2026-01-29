@@ -98,7 +98,7 @@ function TxCard(props: TxCardProps) {
         name: "Stella Swap",
         link: stellasSwapTokenLink(
           registry.environment,
-          destination.parachain!.parachainId,
+          destination.parachain!.id,
           transfer.info.tokenAddress,
         ),
       };
@@ -107,10 +107,7 @@ function TxCard(props: TxCardProps) {
       }
       const dapp = {
         name: `${destination.name} Dapp`,
-        link: getDappLink(
-          registry.environment,
-          destination.parachain!.parachainId,
-        ),
+        link: getDappLink(registry.environment, destination.parachain!.id),
       };
       if (!dapp.link.startsWith("#")) {
         links.push(dapp);
@@ -164,7 +161,7 @@ function TxCard(props: TxCardProps) {
             )}
           >
             Transfer can take up to{" "}
-            {destination.type !== "ethereum" ? "25 minutes" : "35-90 minutes"}
+            {destination.kind !== "ethereum" ? "25 minutes" : "35-90 minutes"}
           </div>
           <div
             className={

@@ -28,7 +28,7 @@ import useSWR from "swr";
 
 type TokenSelectorProps = {
   value: string | undefined;
-  onChange: (value: string) => void;
+  onChange: (_: string) => void;
   assets: string[];
   assetRegistry: AssetRegistry;
   ethChainId: number;
@@ -59,8 +59,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   const registry = useContext(RegistryContext);
 
   // Use shared balance hooks based on source type
-  const isEthereumSource = source.type === "ethereum";
-  const sourceParachainId = source.parachain?.parachainId;
+  const isEthereumSource = source.kind === "ethereum";
+  const sourceParachainId = source.parachain?.id;
 
   const { data: ethBalances } = useEthereumTokenBalances(
     isEthereumSource ? sourceAccount : undefined,
