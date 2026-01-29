@@ -27,12 +27,12 @@ import { BridgeInfoContext } from "@/app/providers";
 import useSWR from "swr";
 
 type TokenSelectorProps = {
-  value: string | undefined;
+  value?: string;
   onChange: (_: string) => void;
   assets: string[];
   assetRegistry: AssetRegistry;
   ethChainId: number;
-  sourceAccount: string | undefined;
+  sourceAccount?: string;
   source: TransferLocation;
   destination: TransferLocation;
 };

@@ -1,8 +1,13 @@
 "use client";
 
-import { GetStartedComponent } from "@/components/transfer/GetStartedComponent";
+import { BridgeInfoContext } from "@/app/providers";
+import { useContext, Suspense } from "react";
+import { Card, CardContent } from "../ui/card";
+import { GetStartedForm } from "./GetStartedForm";
+import { SnowflakeLoader } from "../SnowflakeLoader";
 
 export function HeroSection() {
+  const { registry, routes } = useContext(BridgeInfoContext)!;
   return (
     <section className="w-full px-4 md:px-8 lg:px-12 relative">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-12 items-center">
@@ -22,10 +27,19 @@ export function HeroSection() {
         {/* Right column: Transfer widget */}
         <div className="order-2 xl:order-2 flex justify-center xl:justify-end">
           <div id="transfer">
-            <GetStartedComponent />
+            <Card className="w-full max-w-[min(38rem,calc(100vw-2rem))] glass border-none">
+              <CardContent>
+                <Suspense fallback={<Loading />}>
+                  <GetStartedForm assetRegistry={registry} routes={routes} />
+                </Suspense>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
     </section>
   );
 }
+const Loading = () => {
+  return <SnowflakeLoader size="md" />;
+};
