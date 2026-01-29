@@ -28,7 +28,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 import { TransferBusy } from "./TransferBusy";
 import { TransferError } from "./TransferError";
 import { GetStartedForm } from "./GetStartedForm";
@@ -59,7 +59,7 @@ function sendResultToHistory(
     case "toEthereumV2": {
       const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {
-        sourceType: "substrate",
+        kind: "polkadot",
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
@@ -77,7 +77,7 @@ function sendResultToHistory(
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
           bridgeHubMessageId: "",
-          sourceParachainId: data.source.parachain!.parachainId,
+          sourceParachainId: data.source.parachain!.id,
         },
       };
 
@@ -86,7 +86,7 @@ function sendResultToHistory(
     case "toPolkadotV2": {
       const sendResult = result as toPolkadotV2.MessageReceipt;
       const transfer: historyV2.ToPolkadotTransferResult = {
-        sourceType: "ethereum",
+        kind: "ethereum",
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
@@ -95,7 +95,7 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain?.parachainId,
+          destinationParachain: data.destination.parachain?.id,
         },
         submitted: {
           blockNumber: sendResult.blockNumber ?? 0,
@@ -111,7 +111,7 @@ function sendResultToHistory(
     case "forInterParachain": {
       const sendResult = result as forInterParachain.MessageReceipt;
       const transfer: historyV2.InterParachainTransfer = {
-        sourceType: "substrate",
+        kind: "polkadot",
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
@@ -120,7 +120,7 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain!.parachainId,
+          destinationParachain: data.destination.parachain!.id,
         },
         submitted: {
           block_num: sendResult.blockNumber,
@@ -130,7 +130,7 @@ function sendResultToHistory(
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
           bridgeHubMessageId: "",
-          sourceParachainId: data.source.parachain!.parachainId,
+          sourceParachainId: data.source.parachain!.id,
         },
       };
       return { ...transfer, isWalletTransaction: true };
