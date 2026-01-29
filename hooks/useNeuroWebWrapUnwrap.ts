@@ -1,4 +1,4 @@
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { NEURO_WEB_PARACHAIN, SignerInfo } from "@/utils/types";
 import { ApiPromise } from "@polkadot/api";
@@ -138,7 +138,7 @@ async function doUnwrap(
 
 export function useNeuroWebBalance(beneficiary?: string) {
   const context = useAtomValue(snowbridgeContextAtom)!;
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   return useSWR(
     [context, registry, beneficiary, "neuroWebBalance"],
     fetchNeuroWebBalance,

@@ -30,7 +30,7 @@ import {
   stellasSwapTokenLink,
   uniswapTokenLink,
 } from "@/lib/explorerLinks";
-import { RegistryContext } from "../providers";
+import { BridgeInfoContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { polkadotAccountsAtom } from "@/store/polkadot";
@@ -209,7 +209,7 @@ function TxCard(props: TxCardProps) {
 
 function TxComponent() {
   const searchParams = useSearchParams();
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   const environment = getEnvironment();
 
   const [messageId, sourceType, transfer] = useMemo(() => {

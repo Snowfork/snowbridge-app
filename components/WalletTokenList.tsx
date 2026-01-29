@@ -6,7 +6,7 @@ import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { ethereumAccountAtom } from "@/store/ethereum";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { Loader2, RefreshCw } from "lucide-react";
 import useSWR from "swr";
@@ -32,7 +32,7 @@ const PRICE_SWR_CONFIG = {
 
 export const EthereumTokenList: FC = () => {
   const context = useAtomValue(snowbridgeContextAtom);
-  const registry = useContext(RegistryContext);
+  const { registry } = useContext(BridgeInfoContext)!;
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
 
   const {
@@ -187,7 +187,7 @@ interface PolkadotTokenListProps {
 
 export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
   const context = useAtomValue(snowbridgeContextAtom);
-  const registry = useContext(RegistryContext);
+  const { registry } = useContext(BridgeInfoContext)!;
 
   const {
     data: balances,

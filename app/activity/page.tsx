@@ -56,7 +56,7 @@ import { useAtom, useAtomValue } from "jotai";
 import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
-import { RegistryContext } from "../providers";
+import { BridgeInfoContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
@@ -514,7 +514,7 @@ export default function Activity() {
     transfersPendingLocalAtom,
   );
 
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
   const {
     data: transfers,
     mutate,

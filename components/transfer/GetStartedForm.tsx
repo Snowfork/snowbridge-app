@@ -72,8 +72,8 @@ import {
   AssetRegistry,
   ERC20Metadata,
   Source,
-  SourceType,
   TransferLocation,
+  TransferRoute,
 } from "@snowbridge/base-types";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import {
@@ -88,34 +88,34 @@ function getBeneficiaries(
   ss58Format: number,
 ) {
   const beneficiaries: AccountInfo[] = [];
-  if (destination.type === "substrate") {
+  if (destination.kind === "polkadot") {
     polkadotAccounts
       .filter(
-        (x: any) =>
-          (x.type === "ethereum" &&
+        (x) =>
+          ((x as any).type === "ethereum" &&
             destination.parachain?.info.accountType === "AccountId20") ||
-          (x.type !== "ethereum" &&
+          ((x as any).type !== "ethereum" &&
             destination.parachain?.info.accountType === "AccountId32"),
       )
-      .map((x: any) => {
-        if (x.type === "ethereum") {
+      .map((x) => {
+        if ((x as any).type === "ethereum") {
           return {
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as SourceType,
+            type: "ethereum" as const,
           };
         } else {
           return {
             key: transformSs58Format(x.address, ss58Format),
-            name: x.name,
-            type: destination.type,
+            name: x.name!,
+            type: "substrate" as const,
           };
         }
       })
       .forEach((x) => beneficiaries.push(x));
   }
   if (
-    destination.type === "ethereum" ||
+    destination.kind === "ethereum" ||
     destination.parachain?.info.accountType === "AccountId20"
   ) {
     ethereumAccounts?.forEach((x) => {
@@ -123,7 +123,7 @@ function getBeneficiaries(
         beneficiaries.push({
           key: x,
           name: x,
-          type: "ethereum" as SourceType,
+          type: "ethereum" as const,
         });
       }
     });
@@ -139,7 +139,7 @@ function getBeneficiaries(
           beneficiaries.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as SourceType,
+            type: "ethereum" as const,
           });
         }
       });
@@ -153,6 +153,7 @@ interface TransferFormProps {
   onError: (form: TransferFormData, error: Error) => Promise<unknown> | unknown;
   formData?: TransferFormData;
   assetRegistry: AssetRegistry;
+  routes: readonly TransferRoute[];
 }
 
 function initialFormData(
@@ -165,7 +166,7 @@ function initialFormData(
   if (querySource) {
     const sourceLocation = locations.find(
       (l) =>
-        l.id.toLowerCase() === querySource.toLowerCase() ||
+        l.id.toString().toLowerCase() === querySource.toLowerCase() ||
         l.key.toLowerCase() == querySource.toLowerCase(),
     );
     if (sourceLocation) {
@@ -173,12 +174,8 @@ function initialFormData(
     }
   }
 
-  const destinations = Object.keys(source.destinations).map((destination) =>
-    getTransferLocation(
-      registry,
-      source.destinations[destination].type,
-      destination,
-    ),
+  const destinations = Object.values(source.destinations).map((destination) =>
+    getTransferLocation(registry, destination),
   );
 
   let destination = destinations[0];
@@ -186,7 +183,7 @@ function initialFormData(
   if (queryDestination) {
     const destinationLocation = destinations.find(
       (l) =>
-        l.id.toLowerCase() === queryDestination.toLowerCase() ||
+        l.id.toString().toLowerCase() === queryDestination.toLowerCase() ||
         l.key.toLowerCase() == queryDestination.toLowerCase(),
     );
     if (destinationLocation) {
@@ -239,6 +236,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
   onError,
   formData,
   assetRegistry,
+  routes,
 }) => {
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
@@ -254,7 +252,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
   const [, setPolkadotWalletModalOpen] = useAtom(polkadotWalletModalOpenAtom);
 
   const locations = useMemo(
-    () => getTransferLocations(assetRegistry),
+    () => getTransferLocations(routes),
     [assetRegistry],
   );
 

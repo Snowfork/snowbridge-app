@@ -70,14 +70,14 @@ import { TopUpXcmFee } from "./TopUpXcmFee";
 import { toPolkadotV2 } from "@snowbridge/api";
 import { formatBalance } from "@/utils/formatting";
 import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 
 export const SwitchComponent: FC = () => {
   const snowbridgeEnvironment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotWallet = useAtomValue(walletAtom);
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
 
   const [feeDisplay, setFeeDisplay] = useState("");
   const [balanceCheck, setBalanceCheck] = useState("");

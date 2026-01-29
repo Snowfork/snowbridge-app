@@ -35,7 +35,7 @@ import { GetStartedForm } from "./GetStartedForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
@@ -153,7 +153,7 @@ export const GetStartedComponent: FC = () => {
   };
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
-  const registry = useContext(RegistryContext)!;
+  const { registry, routes } = useContext(BridgeInfoContext)!;
 
   const { mutate: refreshHistory } = useTransferActivity();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
@@ -332,6 +332,7 @@ export const GetStartedComponent: FC = () => {
       <Suspense fallback={<Loading />}>
         <GetStartedForm
           assetRegistry={registry}
+          routes={routes}
           formData={validationData?.formData ?? formData}
           onValidated={async (data) =>
             await validateAndSubmit(data, false, setSourceExecutionFee)

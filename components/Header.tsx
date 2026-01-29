@@ -42,12 +42,12 @@ import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import { disconnectWallet } from "@/lib/client/web3modal";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { EthereumTokenList, PolkadotTokenList } from "./WalletTokenList";
 
 const Wallet: FC = () => {
   useEthereumProvider();
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
   const [wallet, setWallet] = useAtom(walletAtom);
