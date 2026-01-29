@@ -71,7 +71,7 @@ const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
   if (t1.id === t2.id && t1.id.length > 0) return true;
 
   // For ToPolkadotTransferResult (E->P), match by transaction hash
-  if (t1.sourceType === "ethereum" && t2.sourceType === "ethereum") {
+  if (t1.kind === "ethereum" && t2.kind === "ethereum") {
     const t1Casted = t1 as historyV2.ToPolkadotTransferResult;
     const t2Casted = t2 as historyV2.ToPolkadotTransferResult;
     if (
@@ -84,7 +84,7 @@ const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
   }
 
   // For ToEthereumTransferResult (P->E), match by extrinsic hash
-  if (t1.sourceType === "substrate" && t2.sourceType === "substrate") {
+  if (t1.kind === "polkadot" && t2.kind === "polkadot") {
     const t1Casted = t1 as historyV2.ToEthereumTransferResult;
     const t2Casted = t2 as historyV2.ToEthereumTransferResult;
     if (
@@ -105,10 +105,10 @@ const getExplorerLinks = (
   destination: TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
-  if (transfer.sourceType == "kusama") {
-    const tx = transfer as historyV2.ToPolkadotTransferResult;
+  if (transfer.kind == "kusama") {
+    const tx = transfer;
     if (tx.destinationReceived) {
-      let sourceParaId: string = source.parachain!.parachainId.toString();
+      let sourceParaId: string = source.parachain!.id.toString();
       if (transfer.info.sourceNetwork == "kusama") {
         sourceParaId = "kusama_" + sourceParaId;
       }
@@ -134,13 +134,13 @@ const getExplorerLinks = (
       });
     }
     return links;
-  } else if (transfer.sourceType == "substrate") {
+  } else if (transfer.kind == "polkadot") {
     const tx = transfer as historyV2.ToEthereumTransferResult;
     links.push({
       text: `Submitted to ${source.name}`,
       url: subscanExtrinsicLink(
         registry.environment,
-        source.parachain!.parachainId,
+        source.parachain!.id,
         tx.submitted.extrinsic_hash,
       ),
     });
@@ -205,7 +205,7 @@ const getExplorerLinks = (
       });
     }
   }
-  if (destination?.type == "substrate") {
+  if (destination.kind === "polkadot") {
     const tx = transfer as historyV2.ToPolkadotTransferResult;
     links.push({
       text: "Submitted to Snowbridge Gateway",
@@ -275,7 +275,7 @@ const transferDetail = (
 
   let sourceAddress = transfer.info.sourceAddress;
   if (
-    transfer.sourceType === "substrate" &&
+    transfer.kind === "polkadot" &&
     destination.ethChain &&
     source.parachain
   ) {
@@ -290,7 +290,7 @@ const transferDetail = (
   }
   let beneficiary = transfer.info.beneficiaryAddress;
   if (
-    transfer.sourceType === "ethereum" &&
+    transfer.kind === "polkadot" &&
     source.ethChain &&
     destination.parachain
   ) {
@@ -312,7 +312,7 @@ const transferDetail = (
   );
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
-  if (transfer.sourceType === "ethereum") {
+  if (transfer.kind === "ethereum") {
     sourceAccountUrl = etherscanAddressLink(
       registry.environment,
       source.ethChain!.chainId,
@@ -323,7 +323,7 @@ const transferDetail = (
       destination.parachain!.parachainId,
       beneficiary,
     );
-  } else if (transfer.sourceType === "kusama") {
+  } else if (transfer.kind === "kusama") {
     let sourceParachain = source.parachain!.parachainId.toString();
     let destParachain = destination.parachain!.parachainId.toString();
     if (transfer.info.sourceNetwork == "kusama") {

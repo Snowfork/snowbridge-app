@@ -6,11 +6,9 @@ import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 import "@/styles/overrides.css";
 import { Providers } from "./providers";
-import { Metadata } from "next";
-import { metadata as meta } from "@/lib/metadata";
-import { assetRegistryFor } from "@snowbridge/registry";
-import { getEnvironmentName } from "@/lib/snowbridge";
+import { bridgeInfoFor } from "@snowbridge/registry";
 import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
+import { getEnvironmentName } from "@/lib/snowbridge";
 
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12
@@ -20,7 +18,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const registry = assetRegistryFor(getEnvironmentName());
+  const { registry } = bridgeInfoFor(getEnvironmentName());
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
