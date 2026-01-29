@@ -8,7 +8,7 @@ import {
   ValidationResult,
 } from "./types";
 
-function isAssetHubLike(id: string) {
+function isAssetHubLike(id?: string) {
   return id === "asset-hub-paseo" || id === "statemint" || id === "westmint";
 }
 
@@ -26,8 +26,8 @@ export function createStepsFromPlan(
     | null = null;
 
   if (
-    (data.source.type === "substrate" || data.source.type === "ethereum") &&
-    data.destination.type === "ethereum"
+    (data.source.kind === "polkadot" || data.source.kind === "ethereum") &&
+    data.destination.kind === "ethereum"
   ) {
     const p = plan as toEthereumV2.ValidationResult;
     for (const log of p.logs) {
@@ -44,7 +44,7 @@ export function createStepsFromPlan(
       }
       if (
         log.reason === toEthereumV2.ValidationReason.InsufficientDotFee &&
-        isAssetHubLike(data.source.id)
+        isAssetHubLike(data.source.parachain?.info.specName)
       ) {
         steps.push({
           kind: TransferStepKind.SubstrateTransferFee,
@@ -74,8 +74,8 @@ export function createStepsFromPlan(
       plan,
     };
   } else if (
-    data.source.type === "ethereum" &&
-    data.destination.type === "substrate"
+    data.source.kind === "ethereum" &&
+    data.destination.kind === "polkadot"
   ) {
     const p = plan as toPolkadotV2.ValidationResult;
     for (const log of p.logs) {
@@ -92,7 +92,7 @@ export function createStepsFromPlan(
       }
       switch (log.reason) {
         case toPolkadotV2.ValidationReason.AccountDoesNotExist: {
-          if (isAssetHubLike(data.destination.id)) {
+          if (isAssetHubLike(data.destination.parachain.info.specName)) {
             steps.push({
               kind: TransferStepKind.SubstrateTransferED,
               displayOrder: 11,
@@ -137,8 +137,8 @@ export function createStepsFromPlan(
       plan,
     };
   } else if (
-    data.source.type === "substrate" &&
-    data.destination.type === "substrate"
+    data.source.kind === "polkadot" &&
+    data.destination.kind === "polkadot"
   ) {
     const p = plan as forInterParachain.ValidationResult;
     for (const log of p.logs) {

@@ -324,9 +324,10 @@ export const GetStartedForm: FC<TransferFormProps> = ({
     if (source.id !== watchSource) {
       newSource = locations.find((s) => s.id == watchSource)!;
       setSource(newSource);
-      if (newSource.type === "substrate") {
+      if (newSource.kind === "polkadot") {
         const accountType =
-          assetRegistry.parachains[newSource.key].info.accountType;
+          assetRegistry.parachains[`${newSource.kind}_${newSource.id}`].info
+            .accountType;
         const accounts = polkadotAccounts?.filter(
           filterByAccountType(accountType),
         );
@@ -486,9 +487,8 @@ export const GetStartedForm: FC<TransferFormProps> = ({
             destination.parachain?.assets[formData.token.toLowerCase()]
               .minimumBalance ?? minimumTransferAmount;
           const dhMin =
-            assetRegistry.parachains[assetRegistry.assetHubParaId].assets[
-              formData.token.toLowerCase()
-            ].minimumBalance;
+            assetRegistry.parachains[`poladkot_${assetRegistry.assetHubParaId}`]
+              .assets[formData.token.toLowerCase()].minimumBalance;
           if (ahMin > minimumTransferAmount) minimumTransferAmount = ahMin;
           if (dhMin > minimumTransferAmount) minimumTransferAmount = dhMin;
         }
@@ -531,7 +531,7 @@ export const GetStartedForm: FC<TransferFormProps> = ({
           );
         }
         await onValidated({
-          source: getTransferLocation(assetRegistry, source.type, source.key),
+          source: getTransferLocation(assetRegistry, source),
           destination,
           assetRegistry,
           formData,

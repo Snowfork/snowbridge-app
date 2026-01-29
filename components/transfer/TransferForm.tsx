@@ -69,7 +69,6 @@ import {
   ERC20Metadata,
   TransferLocation,
   Source,
-  SourceType,
 } from "@snowbridge/base-types";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import {
@@ -393,7 +392,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   ]);
 
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
-    getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source),
     destination,
     token,
   );
@@ -401,7 +400,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   // Get balance for MAX button
   const { data: balanceInfo } = useTokenBalance(
     watchSourceAccount ?? "",
-    getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source),
     destination,
     token,
   );
@@ -418,8 +417,9 @@ export const TransferForm: FC<TransferFormProps> = ({
       // For substrate sources, validate account type (AccountId20 vs AccountId32)
       if (newSource.type === "substrate") {
         const accountType =
-          assetRegistry.parachains[newSource.key].info.accountType;
-        const validAccounts = polkadotAccounts?.filter(
+          assetRegistry.parachains[`polkadot_${newSource.key}`].info
+            .accountType;
+        const accounts = polkadotAccounts?.filter(
           filterByAccountType(accountType),
         );
         // Check if current account is valid for the new chain
@@ -575,9 +575,8 @@ export const TransferForm: FC<TransferFormProps> = ({
             destination.parachain?.assets[formData.token.toLowerCase()]
               .minimumBalance ?? minimumTransferAmount;
           const dhMin =
-            assetRegistry.parachains[assetRegistry.assetHubParaId].assets[
-              formData.token.toLowerCase()
-            ].minimumBalance;
+            assetRegistry.parachains[`polkadot_${assetRegistry.assetHubParaId}`]
+              .assets[formData.token.toLowerCase()].minimumBalance;
           if (ahMin > minimumTransferAmount) minimumTransferAmount = ahMin;
           if (dhMin > minimumTransferAmount) minimumTransferAmount = dhMin;
         }
@@ -620,7 +619,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           );
         }
         await onValidated({
-          source: getTransferLocation(assetRegistry, source.type, source.key),
+          source: getTransferLocation(assetRegistry, source),
           destination,
           assetRegistry,
           formData,
