@@ -13,7 +13,6 @@ import { Input } from "./ui/input";
 import { ImageWithFallback } from "./ui/image-with-fallback";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
-import { Context } from "@snowbridge/api";
 import { getKusamaTokenBalance } from "@/utils/balances";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
