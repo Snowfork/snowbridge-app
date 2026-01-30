@@ -76,11 +76,6 @@ import {
   getTransferLocation,
   getTransferLocations,
 } from "@snowbridge/registry";
-import {
-  getChainId,
-  getEthereumNetwork,
-  switchNetwork,
-} from "@/lib/client/web3modal";
 
 function getBeneficiaries(
   destination: TransferLocation,
@@ -381,20 +376,6 @@ export const TransferForm: FC<TransferFormProps> = ({
         defaultValue: formData.beneficiary,
       });
       form.setValue("beneficiary", formData.beneficiary);
-    }
-    try {
-      const chainId = getChainId();
-      if (newSource.kind === "ethereum" && newDestination.kind === "ethereum") {
-        if (chainId?.toString() !== newSource.key) {
-          switchNetwork(getEthereumNetwork(Number(newSource.id)));
-        }
-      } else {
-        if (chainId?.toString() !== assetRegistry.ethChainId.toString()) {
-          switchNetwork(getEthereumNetwork(assetRegistry.ethChainId));
-        }
-      }
-    } catch (error) {
-      console.error(error);
     }
   }, [
     destination.kind,
