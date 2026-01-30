@@ -298,18 +298,95 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
-    if (
-      (source.kind === "ethereum" || source.kind === "ethereum_l2") &&
-      ethereumAccount
-    ) {
-      setSourceAccount(ethereumAccount);
-    } else if (
-      (source.kind === "polkadot" || source.kind === "kusama") &&
-      polkadotAccount?.address
-    ) {
-      setSourceAccount(polkadotAccount.address);
+    if (source.kind === "ethereum") {
+      // Set to Ethereum account if connected, otherwise clear
+      form.setValue("sourceAccount", ethereumAccount ?? "");
+    } else if (source.kind === "polkadot") {
+      // For substrate sources, filter accounts by account type (AccountId20 vs AccountId32)
+      const accountType =
+        assetRegistry.parachains[`polkadot_${source.id}`]?.info.accountType ??
+        "AccountId32";
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+      // Check if current polkadotAccount is valid for this chain's account type
+      const currentAccountValid = validAccounts?.some(
+        (acc) => acc.address === polkadotAccount?.address,
+      );
+      if (currentAccountValid) {
+        form.setValue("sourceAccount", polkadotAccount?.address ?? "");
+      } else if (validAccounts && validAccounts.length > 0) {
+        // Pick the first valid account
+        form.setValue("sourceAccount", validAccounts[0].address);
+      } else {
+        form.setValue("sourceAccount", "");
+      }
     }
-  }, [source.kind, ethereumAccount, polkadotAccount?.address]);
+  }, [
+    source.kind,
+    ethereumAccount,
+    polkadotAccount?.address,
+    polkadotAccounts,
+    assetRegistry,
+    form,
+    source.id,
+  ]);
+
+  // Auto-set beneficiary when wallet connects or destination type changes
+  const watchBeneficiary = form.watch("beneficiary");
+  useEffect(() => {
+    if (destination.kind === "ethereum") {
+      // For Ethereum destination, check if current beneficiary is a valid Ethereum address
+      const isValidEthAddress =
+        watchBeneficiary?.startsWith("0x") && watchBeneficiary?.length === 42;
+      if (!isValidEthAddress) {
+        // Set to Ethereum account if connected, otherwise clear
+        form.setValue("beneficiary", ethereumAccount ?? "");
+      }
+    } else if (destination.kind === "polkadot") {
+      // For substrate destinations, filter accounts by account type (AccountId20 vs AccountId32)
+      const accountType =
+        destination.parachain?.info.accountType ?? "AccountId32";
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+
+      // Also include Ethereum accounts for AccountId20 destinations
+      const validEthereumAccounts =
+        accountType === "AccountId20" ? (ethereumAccounts ?? []) : [];
+
+      // Check if current beneficiary is valid for this destination's account type
+      const isCurrentValid =
+        validAccounts?.some(
+          (acc) =>
+            acc.address.toLowerCase() === watchBeneficiary?.toLowerCase(),
+        ) ||
+        validEthereumAccounts.some(
+          (acc) => acc.toLowerCase() === watchBeneficiary?.toLowerCase(),
+        );
+
+      if (!isCurrentValid) {
+        // Pick the first valid account
+        if (validAccounts && validAccounts.length > 0) {
+          form.setValue("beneficiary", validAccounts[0].address);
+        } else if (validEthereumAccounts.length > 0) {
+          form.setValue("beneficiary", validEthereumAccounts[0]);
+        } else {
+          form.setValue("beneficiary", "");
+        }
+      }
+    }
+  }, [
+    destination.kind,
+    destination.parachain?.info.accountType,
+    destination.key,
+    ethereumAccount,
+    ethereumAccounts,
+    polkadotAccount?.address,
+    polkadotAccounts,
+    watchBeneficiary,
+    form,
+  ]);
 
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     getTransferLocation(assetRegistry, source),
@@ -1025,10 +1102,7 @@ function SubmitButton({
 
   if (tokenMetadata !== null && context !== null) {
     // Check if Ethereum wallet is connected for Ethereum source
-    if (
-      (ethereumAccounts === null || ethereumAccounts.length === 0) &&
-      source.kind === "ethereum"
-    ) {
+    if (!ethereumAccount && source.kind === "ethereum") {
       return <ConnectEthereumWalletButton variant="default" />;
     }
     // Check if Polkadot wallet is connected for Substrate source
