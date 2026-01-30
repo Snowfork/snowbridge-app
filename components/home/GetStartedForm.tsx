@@ -54,58 +54,6 @@ export const getStartedSchema = z.object({
 
 export type GetStartedZodForm = z.infer<typeof getStartedSchema>;
 
-type FormParams = {
-  form: UseFormReturn<GetStartedZodForm, any, undefined>;
-  destinations: TransferLocation[];
-  source: Source;
-  locations: Source[];
-  assetRegistry: AssetRegistry;
-  setSource: any;
-  setDestination: any;
-  setDestinations: any;
-  setToken: any;
-};
-
-function setFormParams(
-  params: FormParams,
-  wsource: string,
-  wdestination: string,
-  wtoken: string,
-) {
-  const {
-    destinations,
-    source,
-    locations,
-    assetRegistry,
-    form,
-    setSource,
-    setDestinations,
-    setDestination,
-    setToken,
-  } = params;
-  let newDestinations = destinations;
-  let newSource = source;
-  if (source.key !== wsource) {
-    newSource = locations.find((s) => s.key === wsource)!;
-    setSource(newSource);
-    newDestinations = Object.values(newSource.destinations).map((destination) =>
-      getTransferLocation(assetRegistry, destination),
-    );
-    setDestinations(newDestinations);
-  }
-  const newDestination =
-    newDestinations.find((d) => d.key == wdestination) ?? newDestinations[0];
-  setDestination(newDestination);
-  form.resetField("destination", { defaultValue: newDestination.key });
-
-  const newTokens = newSource.destinations[newDestination.key].assets;
-  const newToken =
-    newTokens.find((x) => x.toLowerCase() == wtoken.toLowerCase()) ??
-    newTokens[0];
-  setToken(newToken);
-  form.resetField("token", { defaultValue: newToken });
-}
-
 export const GetStartedForm: FC<GetStartedFormProps> = ({
   assetRegistry,
   routes,
@@ -116,6 +64,7 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
     locations.find(
       (l) => l.kind === "ethereum" && l.id === assetRegistry.ethChainId,
     ) ?? locations[0];
+
   const firstDestinations = Object.values(firstSource.destinations).map((d) =>
     getTransferLocation(assetRegistry, d),
   );
@@ -123,12 +72,13 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
     firstDestinations.find(
       (d) => d.kind === "polkadot" && d.id === assetRegistry.assetHubParaId,
     ) ?? firstDestinations[0];
+
   const firstTokens = firstSource.destinations[firstDestination.key].assets;
   const firstToken =
     firstTokens.find((a) =>
       assetRegistry.ethereumChains[
         `ethereum_${assetRegistry.ethChainId}`
-      ].assets[a].symbol.match(/ETH/),
+      ].assets[a].token.match(/0x0{20}/),
     ) ?? firstTokens[0];
 
   const [source, setSource] = useState(firstSource);
@@ -139,9 +89,9 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
   const form = useForm<GetStartedZodForm>({
     resolver: zodResolver(getStartedSchema),
     defaultValues: {
-      source: source.key,
-      destination: destination.key,
-      token: token,
+      source: firstSource.key,
+      destination: firstDestination.key,
+      token: firstToken,
       amount: "0.0",
     },
   });
@@ -153,22 +103,28 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
   const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   useEffect(() => {
-    setFormParams(
-      {
-        assetRegistry,
-        setDestination,
-        setDestinations,
-        locations,
-        destinations,
-        form,
-        setSource,
-        setToken,
-        source,
-      },
-      watchSource,
-      watchDestination,
-      watchToken,
-    );
+    let newDestinations = destinations;
+    let newSource = source;
+    if (source.key !== watchSource) {
+      newSource = locations.find((s) => s.key === watchSource)!;
+      setSource(newSource);
+      newDestinations = Object.values(newSource.destinations).map(
+        (destination) => getTransferLocation(assetRegistry, destination),
+      );
+      setDestinations(newDestinations);
+    }
+    const newDestination =
+      newDestinations.find((d) => d.key == watchDestination) ??
+      newDestinations[0];
+    setDestination(newDestination);
+    form.resetField("destination", { defaultValue: newDestination.key });
+
+    const newTokens = newSource.destinations[newDestination.key].assets;
+    const newToken =
+      newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
+      newTokens[0];
+    setToken(newToken);
+    form.resetField("token", { defaultValue: newToken });
   }, [
     assetRegistry,
     destinations,
@@ -253,22 +209,8 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
             size="sm"
             className="rounded-full bg-white/[0.28] hover:bg-white/40 p-1.5 sm:p-2 h-auto flex-shrink-0"
             onClick={() => {
-              setFormParams(
-                {
-                  assetRegistry,
-                  setDestination,
-                  setDestinations,
-                  locations,
-                  destinations,
-                  form,
-                  setSource,
-                  setToken,
-                  source,
-                },
-                watchDestination, // Source
-                watchSource, // Destination
-                watchToken,
-              );
+              form.setValue("destination", watchSource);
+              form.setValue("source", watchDestination);
             }}
           >
             <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
