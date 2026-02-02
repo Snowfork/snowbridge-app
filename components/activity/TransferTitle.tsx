@@ -40,7 +40,7 @@ export function getChainIdentifiers(
       const tx = transfer;
       return {
         sourceType: transfer.kind,
-        destinationType: "substrate",
+        destinationType: "polkadot",
         sourceId: registry.ethChainId.toString(),
         destinationId:
           tx.info.destinationParachain?.toString() ??

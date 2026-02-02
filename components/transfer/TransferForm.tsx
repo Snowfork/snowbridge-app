@@ -402,9 +402,6 @@ export const TransferForm: FC<TransferFormProps> = ({
     token,
   );
 
-  // Fetch balances for all tokens in the list
-  const availableTokens = source.destinations[destination.key].assets;
-
   useEffect(() => {
     let newDestinations = destinations;
     let newSource = source;
