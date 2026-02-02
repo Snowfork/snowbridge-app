@@ -1,5 +1,5 @@
 import { Context } from "@snowbridge/api";
-import { AlchemyProvider } from "ethers";
+import { getDefaultProvider } from "ethers";
 import { createContext, getEnvironment } from "@/lib/snowbridge";
 
 let context: Context | null = null;
@@ -11,8 +11,9 @@ export async function getServerContext(): Promise<Context> {
   if (!alchemyKey) {
     throw Error("Missing Alchemy Key");
   }
-
-  const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
+  const ethereumProvider = getDefaultProvider(env.ethChainId, {
+    alchemy: alchemyKey,
+  });
   const ctx = await createContext(ethereumProvider, env, {
     bridgeHub:
       process.env.NEXT_PUBLIC_BRIDGE_HUB_HTTP_URL ??

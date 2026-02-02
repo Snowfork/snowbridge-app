@@ -5,7 +5,7 @@ import {
 import { Context } from "@snowbridge/api";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
-import { AlchemyProvider } from "ethers";
+import { getDefaultProvider } from "ethers";
 import { createContext } from "@/lib/snowbridge";
 import {
   parachainConfigs,
@@ -17,7 +17,9 @@ const createSnowbridgeContext = async (
   env: Environment,
   alchemyKey: string,
 ) => {
-  const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
+  const ethereumProvider = getDefaultProvider(env.ethChainId, {
+    alchemy: alchemyKey,
+  });
   const parachains: { [paraId: string]: string } = {};
   Object.keys(env.parachains).forEach(
     (paraId) => (parachains[paraId] = env.parachains[paraId]),
