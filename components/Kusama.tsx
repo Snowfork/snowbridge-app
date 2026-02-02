@@ -454,7 +454,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Polkadot Asset Hub"
-                                    image={AssetHub.Polkadot}
+                                    image="polkadot_1000"
                                   />
                                 </SelectItem>
                                 <SelectItem
@@ -463,7 +463,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Kusama Asset Hub"
-                                    image={AssetHub.Kusama}
+                                    image="kusama_1000"
                                   />
                                 </SelectItem>
                               </SelectGroup>
@@ -512,7 +512,7 @@ export const KusamaComponent: FC = () => {
                                   >
                                     <SelectItemWithIcon
                                       label="Polkadot Asset Hub"
-                                      image={AssetHub.Polkadot}
+                                      image="polkadot_1000"
                                     />
                                   </SelectItem>
                                 ) : (
@@ -522,7 +522,7 @@ export const KusamaComponent: FC = () => {
                                   >
                                     <SelectItemWithIcon
                                       label="Kusama Asset Hub"
-                                      image={AssetHub.Kusama}
+                                      image="kusama_1000"
                                     />
                                   </SelectItem>
                                 )}
@@ -546,7 +546,11 @@ export const KusamaComponent: FC = () => {
                       <FormLabel>From Account</FormLabel>
                       <div className="text-right">
                         <KusamaBalanceDisplay
-                          source={sourceId}
+                          source={
+                            sourceId === AssetHub.Polkadot
+                              ? "polkadot_1000"
+                              : "kusama_1000"
+                          }
                           sourceAccount={watchSourceAccount}
                           token={watchToken}
                           displayDecimals={8}
@@ -555,7 +559,11 @@ export const KusamaComponent: FC = () => {
                     </div>
                     <FormControl>
                       <SelectedPolkadotAccount
-                        source={sourceId}
+                        source={
+                          sourceId === AssetHub.Polkadot
+                            ? "polkadot_1000"
+                            : "kusama_1000"
+                        }
                         ss58Format={assetRegistry.relaychain.ss58Format}
                         polkadotAccounts={
                           polkadotAccounts?.filter(
