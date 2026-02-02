@@ -47,11 +47,6 @@ export const initializeWeb3Modal = () => {
   if (initialized) {
     return;
   }
-  const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
-  if (!alchemyKey) {
-    throw Error("NEXT_PUBLIC_ALCHEMY_KEY not specified.");
-  }
-
   const network = getEnvEthereumNetwork();
 
   modal = createAppKit({

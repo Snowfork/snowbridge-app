@@ -259,7 +259,7 @@ function TxComponent() {
                 inHistory: txData !== undefined,
               };
             }
-            case "substrate": {
+            case "polkadot": {
               const txData = await historyV2.toEthereumTransferById(
                 environment.indexerGraphQlUrl,
                 messageId,

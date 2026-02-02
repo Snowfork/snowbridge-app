@@ -25,7 +25,7 @@ export function getChainIdentifiers(
       const tx = transfer;
       return {
         sourceType: transfer.kind,
-        destinationType: "kusama",
+        destinationType: "kusama" as const,
         sourceId:
           tx.info.sourceParachain?.toString() ??
           registry.assetHubParaId.toString(),
@@ -40,7 +40,7 @@ export function getChainIdentifiers(
       const tx = transfer;
       return {
         sourceType: transfer.kind,
-        destinationType: "polkadot",
+        destinationType: "polkadot" as const,
         sourceId: registry.ethChainId.toString(),
         destinationId:
           tx.info.destinationParachain?.toString() ??
@@ -60,7 +60,7 @@ export function getChainIdentifiers(
         const tx = transfer;
         return {
           sourceType: transfer.kind,
-          destinationType: "ethereum",
+          destinationType: "ethereum" as const,
           sourceId: tx.submitted.sourceParachainId.toString(),
           destinationId: registry.ethChainId.toString(),
         };
