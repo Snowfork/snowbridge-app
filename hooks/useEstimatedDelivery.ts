@@ -24,14 +24,14 @@ async function getEstimatedDeliveryTime([env]: [
     console.log("Estimated Delivery", estimated);
     if (
       !estimated ||
-      !estimated?.toEthereumElapse?.elapse ||
-      !estimated?.toPolkadotElapse?.elapse
+      !estimated?.toEthereumV2Elapse?.elapse ||
+      !estimated?.toPolkadotV2Elapse?.elapse
     ) {
       return null;
     }
     return {
-      toEthereum: Number(estimated?.toEthereumElapse?.elapse),
-      toPolkadot: Number(estimated?.toPolkadotElapse?.elapse),
+      toEthereum: Number(estimated?.toEthereumV2Elapse?.elapse),
+      toPolkadot: Number(estimated?.toPolkadotV2Elapse?.elapse),
     };
   } catch (err) {
     console.error(err);
