@@ -7,6 +7,7 @@ import {
   toPolkadotV2,
   toEthereumSnowbridgeV2,
   toPolkadotSnowbridgeV2,
+  xcmBuilder,
 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
@@ -169,6 +170,7 @@ async function fetchBridgeFeeInfo([
           { sourceParaId: source.parachain!.parachainId, context },
           registry,
           token,
+          { feeTokenLocation: xcmBuilder.DOT_LOCATION }, // Use DOT for now
         );
       } else {
         fee = await toEthereumV2.getDeliveryFee(
