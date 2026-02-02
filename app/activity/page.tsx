@@ -598,7 +598,7 @@ export default function Activity() {
         (id.sourceType === "polkadot" &&
           !(`polkadot_${id.sourceId}` in assetRegistry.parachains)) ||
         (id.destinationType === "polkadot" &&
-          !(id.destinationId in assetRegistry.parachains))
+          !(`polkadot_${id.destinationId}` in assetRegistry.parachains))
       )
         continue;
 

@@ -22,12 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
 import { ArrowRight, LucideAlertCircle } from "lucide-react";
-import {
-  AssetRegistry,
-  Source,
-  TransferLocation,
-  TransferRoute,
-} from "@snowbridge/base-types";
+import { AssetRegistry, TransferRoute } from "@snowbridge/base-types";
 import {
   getTransferLocation,
   getTransferLocations,
