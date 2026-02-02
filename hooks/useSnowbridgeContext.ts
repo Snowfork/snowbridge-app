@@ -17,19 +17,9 @@ const createSnowbridgeContext = async (
   env: Environment,
   alchemyKey: string,
 ) => {
-  // Hack: Remove when npm build is working again.
-  let url: string;
-  switch (env.ethChainId) {
-    case 1:
-      url = `https://eth-mainnet.g.alchemy.com/v2/${alchemyKey}`;
-      break;
-    case 11155111:
-      url = `https://eth-sepolia.g.alchemy.com/v2/${alchemyKey}`;
-      break;
-    default:
-      throw Error(`Alchemy Error`);
-  }
-  const ethereumProvider = getDefaultProvider(url);
+  const ethereumProvider = getDefaultProvider(env.ethChainId, {
+    alchemy: alchemyKey,
+  });
   const parachains: { [paraId: string]: string } = {};
   Object.keys(env.parachains).forEach(
     (paraId) => (parachains[paraId] = env.parachains[paraId]),
