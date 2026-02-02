@@ -5,7 +5,7 @@ import {
 import { Context } from "@snowbridge/api";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
-import { AlchemyProvider } from "ethers";
+import { getDefaultProvider } from "ethers";
 import { createContext } from "@/lib/snowbridge";
 import {
   parachainConfigs,
@@ -17,7 +17,19 @@ const createSnowbridgeContext = async (
   env: Environment,
   alchemyKey: string,
 ) => {
-  const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
+  // Hack: Remove when npm build is working again.
+  let url: string;
+  switch (env.ethChainId) {
+    case 1:
+      url = `https://eth-mainnet.g.alchemy.com/v2/${alchemyKey}`;
+      break;
+    case 11155111:
+      url = `https://eth-sepolia.g.alchemy.com/v2/${alchemyKey}`;
+      break;
+    default:
+      throw Error(`Alchemy Error`);
+  }
+  const ethereumProvider = getDefaultProvider(url);
   const parachains: { [paraId: string]: string } = {};
   Object.keys(env.parachains).forEach(
     (paraId) => (parachains[paraId] = env.parachains[paraId]),

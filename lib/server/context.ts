@@ -1,5 +1,5 @@
 import { Context } from "@snowbridge/api";
-import { AlchemyProvider } from "ethers";
+import { getDefaultProvider } from "ethers";
 import { createContext, getEnvironment } from "@/lib/snowbridge";
 
 let context: Context | null = null;
@@ -11,8 +11,18 @@ export async function getServerContext(): Promise<Context> {
   if (!alchemyKey) {
     throw Error("Missing Alchemy Key");
   }
-
-  const ethereumProvider = new AlchemyProvider(env.ethChainId, alchemyKey);
+  let url: string;
+  switch (env.ethChainId) {
+    case 1:
+      url = `https://eth-mainnet.g.alchemy.com/v2/${alchemyKey}`;
+      break;
+    case 11155111:
+      url = `https://eth-sepolia.g.alchemy.com/v2/${alchemyKey}`;
+      break;
+    default:
+      throw Error(`Alchemy Error`);
+  }
+  const ethereumProvider = getDefaultProvider(url);
   const ctx = await createContext(ethereumProvider, env, {
     bridgeHub:
       process.env.NEXT_PUBLIC_BRIDGE_HUB_HTTP_URL ??
