@@ -546,11 +546,7 @@ export const KusamaComponent: FC = () => {
                       <FormLabel>From Account</FormLabel>
                       <div className="text-right">
                         <KusamaBalanceDisplay
-                          source={
-                            sourceId === AssetHub.Polkadot
-                              ? "polkadot_1000"
-                              : "kusama_1000"
-                          }
+                          source={sourceId}
                           sourceAccount={watchSourceAccount}
                           token={watchToken}
                           displayDecimals={8}
