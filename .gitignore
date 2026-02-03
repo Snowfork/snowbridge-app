@@ -46,3 +46,4 @@ public/.*.registry.json
 
 .claude
 
+.vscode/launch.json
