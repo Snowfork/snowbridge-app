@@ -236,18 +236,18 @@ export const TransferComponent: FC = () => {
 
       const messageId = result.messageId ?? "0x";
       const historyItem = sendResultToHistory(messageId, data, result);
-      if (historyItem !== null) {
-        addPendingTransaction({
-          kind: "add",
-          transfer: historyItem,
-        });
-        refreshHistory();
-      }
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);
       setBusy("Transfer successful...", true);
       const transferData = base64url.encode(JSON.stringify(historyItem));
       if (transferType !== "forInterParachain") {
+        if (historyItem !== null) {
+          addPendingTransaction({
+            kind: "add",
+            transfer: historyItem,
+          });
+          refreshHistory();
+        }
         router.push(`/txcomplete?transfer=${transferData}`);
       } else {
         router.push(`/localtxcomplete?transfer=${transferData}`);
