@@ -1,7 +1,10 @@
 "use client";
 
 import { assetsV2, Context } from "@snowbridge/api";
-import { paraImplementation } from "@snowbridge/api/dist/parachains";
+import {
+  ParachainBase,
+  paraImplementation,
+} from "@snowbridge/api/dist/parachains";
 import {
   Asset,
   AssetRegistry,
@@ -11,6 +14,7 @@ import {
   TransferLocation,
 } from "@snowbridge/base-types";
 import useSWR from "swr";
+import { AbstractProvider } from "ethers";
 
 export interface TokenBalanceData {
   balance: bigint;
@@ -30,6 +34,7 @@ async function getEthereumBalance(
   context: Context,
   registry: AssetRegistry,
   source: TransferLocation,
+  provider: AbstractProvider,
   asset: ERC20Metadata,
   account: string,
 ): Promise<bigint> {
@@ -38,7 +43,7 @@ async function getEthereumBalance(
     // Ethereum Mainnet
     if (token.toLowerCase() === assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()) {
       try {
-        return await context.ethChain(source.id).getBalance(account);
+        return await provider.getBalance(account);
       } catch {
         return 0n;
       }
@@ -46,7 +51,7 @@ async function getEthereumBalance(
       let b: { balance: bigint };
       try {
         b = await assetsV2.erc20Balance(
-          context.ethChain(source.id),
+          provider,
           token,
           account,
           context.environment.gatewayContract,
@@ -62,7 +67,7 @@ async function getEthereumBalance(
     try {
       return (
         await assetsV2.erc20Balance(
-          context.ethChain(source.id),
+          provider,
           asset?.xc20 ?? token,
           account,
           context.environment.gatewayContract,
@@ -89,6 +94,7 @@ async function fetchEthereumTokenBalances(
   assets: ERC20Metadata[],
   account: string,
 ): Promise<TokenBalances> {
+  const provider = context.ethChain(source.id);
   const balances: TokenBalances = {};
   (
     await Promise.all(
@@ -97,6 +103,7 @@ async function fetchEthereumTokenBalances(
           context,
           registry,
           source,
+          provider,
           asset,
           account,
         );
@@ -116,14 +123,13 @@ async function getPolkadotBalance(
   context: Context,
   registry: AssetRegistry,
   source: ParachainLocation,
+  paraImpl: ParachainBase,
   asset: ERC20Metadata | null,
   account: string,
 ): Promise<[bigint, boolean, ERC20Metadata | null, Asset | null]> {
   if (source.kind === "polkadot") {
-    const parachain = await context.parachain(source.id);
-    const paraImp = await paraImplementation(parachain);
     if (asset === null) {
-      return [await paraImp.getNativeBalance(account), true, null, null];
+      return [await paraImpl.getNativeBalance(account), true, null, null];
     }
     const paraAsset = source.parachain.assets[asset.token.toLowerCase()];
     if (!paraAsset) return [0n, false, asset, paraAsset];
@@ -133,14 +139,14 @@ async function getPolkadotBalance(
       paraAsset.location?.interior === "Here"
     ) {
       return [
-        await paraImp.getNativeBalance(account).catch(() => 0n),
+        await paraImpl.getNativeBalance(account).catch(() => 0n),
         true,
         asset,
         paraAsset,
       ];
     }
     return [
-      await paraImp
+      await paraImpl
         .getTokenBalance(account, registry.ethChainId, asset.token, paraAsset)
         .catch(() => 0n),
       false,
@@ -148,10 +154,8 @@ async function getPolkadotBalance(
       paraAsset,
     ];
   } else if (source.kind === "kusama") {
-    const parachain = await context.kusamaParachain(source.id);
-    const paraImp = await paraImplementation(parachain);
     if (asset === null) {
-      return [await paraImp.getNativeBalance(account), true, null, null];
+      return [await paraImpl.getNativeBalance(account), true, null, null];
     }
     const paraAsset = source.parachain.assets[asset.token.toLowerCase()];
     if (!paraAsset) return [0n, false, asset, paraAsset];
@@ -161,14 +165,14 @@ async function getPolkadotBalance(
       paraAsset.location?.interior === "Here"
     ) {
       return [
-        await paraImp.getNativeBalance(account).catch(() => 0n),
+        await paraImpl.getNativeBalance(account).catch(() => 0n),
         true,
         asset,
         paraAsset,
       ];
     }
     return [
-      await paraImp
+      await paraImpl
         .getTokenBalance(account, registry.ethChainId, asset.token, paraAsset)
         .catch(() => 0n),
       false,
@@ -194,11 +198,18 @@ async function fetchPolkadotTokenBalances(
     return {};
   }
 
+  // Fetch paraImplementation here so that it is not done below in parallel
+  const paraImpl = await paraImplementation(
+    source.kind === "polkadot"
+      ? await context.parachain(source.id)
+      : await context.kusamaParachain(source.id),
+  );
+
   const balances: TokenBalances = {};
   (
     await Promise.all([
       ...[null, ...assets].map((asset) =>
-        getPolkadotBalance(context, registry, source, asset, account),
+        getPolkadotBalance(context, registry, source, paraImpl, asset, account),
       ),
     ])
   ).forEach(([balance, isNative, asset, paraAsset]) => {
