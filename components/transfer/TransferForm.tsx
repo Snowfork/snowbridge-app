@@ -468,9 +468,6 @@ export const TransferForm: FC<TransferFormProps> = ({
     firstSource.kind,
   ]);
 
-  // Network switching is handled at transfer time, not on source change
-  // This prevents wallet disconnection issues during source selection
-
   const tokenMetadata =
     assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
       token.toLowerCase()
@@ -805,7 +802,6 @@ export const TransferForm: FC<TransferFormProps> = ({
                                     source.destinations[destination.key].assets
                                   }
                                   assetRegistry={assetRegistry}
-                                  ethChainId={assetRegistry.ethChainId}
                                   sourceAccount={watchSourceAccount}
                                   source={getTransferLocation(
                                     assetRegistry,

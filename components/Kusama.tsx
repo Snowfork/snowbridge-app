@@ -691,7 +691,6 @@ export const KusamaComponent: FC = () => {
                                               id: 1000,
                                             })
                                       }
-                                      ethChainId={assetRegistry.ethChainId}
                                       destination={
                                         destinationId === AssetHub.Polkadot
                                           ? getTransferLocation(assetRegistry, {

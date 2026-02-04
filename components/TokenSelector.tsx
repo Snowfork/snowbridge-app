@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState, useMemo, useContext } from "react";
+import { FC, useState, useMemo, useCallback } from "react";
 import { SelectItemWithIcon } from "./SelectItemWithIcon";
 import {
   Dialog,
@@ -24,15 +24,14 @@ import { fetchTokenPrices } from "@/utils/coindesk";
 import { ChevronsUpDown, ArrowUpRight } from "lucide-react";
 import { etherscanERC20TokenLink } from "@/lib/explorerLinks";
 import { useTokenBalances } from "@/hooks/useTokenBalances";
-import { BridgeInfoContext } from "@/app/providers";
 import useSWR from "swr";
+import { Description } from "@radix-ui/react-dialog";
 
 type TokenSelectorProps = {
   value?: string;
   onChange: (_: string) => void;
   assets: string[];
   assetRegistry: AssetRegistry;
-  ethChainId: number;
   sourceAccount?: string;
   source: TransferLocation;
   destination: TransferLocation;
@@ -50,24 +49,93 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   onChange,
   assets,
   assetRegistry,
-  ethChainId,
   sourceAccount,
   source,
 }) => {
   const [tokenModalOpen, setTokenModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const context = useAtomValue(snowbridgeContextAtom)!;
-  const { registry } = useContext(BridgeInfoContext)!;
 
-  const [assetMeta, symbols] = useMemo(() => {
-    const meta = Object.values(
-      assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets,
-    ).filter((a) =>
-      assets.find((x) => x.toLowerCase() === a.token.toLowerCase()),
-    );
-    const symbols = meta.map((m) => m.symbol);
-    return [meta, symbols];
-  }, [assets, assetRegistry, ethChainId]);
+  const assetMeta = useMemo(
+    () =>
+      Object.values(
+        assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`]
+          .assets,
+      ).filter((a) =>
+        assets.find((x) => x.toLowerCase() === a.token.toLowerCase()),
+      ),
+    [assets, assetRegistry],
+  );
+
+  const selectedAsset = assetMeta.find(
+    (x) => x.token.toLowerCase() === value?.toLowerCase(),
+  );
+
+  return (
+    <Dialog
+      open={tokenModalOpen}
+      onOpenChange={(open) => {
+        setTokenModalOpen(open);
+      }}
+    >
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs bg-white dark:bg-slate-700 hover:bg-white/90 dark:hover:bg-slate-600 rounded-full flex-shrink-0 transition-colors"
+        >
+          {selectedAsset ? (
+            <>
+              <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+                <ImageWithFallback
+                  src={`/images/${selectedAsset.symbol.toLowerCase()}.png`}
+                  fallbackSrc="/images/token_generic.png"
+                  width={16}
+                  height={16}
+                  alt={selectedAsset.symbol}
+                  className="rounded-full"
+                />
+              </div>
+              <span className="text-xs font-medium">
+                {selectedAsset.symbol}
+              </span>
+            </>
+          ) : (
+            <span className="text-muted-foreground text-xs">Token</span>
+          )}
+          <ChevronsUpDown className="h-3 w-3 opacity-50" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="glass more-blur">
+        <Description></Description>
+        <TokenList
+          source={source}
+          assetMeta={assetMeta}
+          registry={assetRegistry}
+          sourceAccount={sourceAccount}
+          onChange={useCallback(
+            (a: string) => {
+              onChange(a);
+              setTokenModalOpen(false);
+            },
+            [onChange],
+          )}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+type TokenListProps = {
+  source: TransferLocation;
+  assetMeta: ERC20Metadata[];
+  sourceAccount?: string;
+  registry: AssetRegistry;
+  onChange: (_: string) => unknown;
+};
+const TokenList: FC<TokenListProps> = (props) => {
+  const { registry, source, assetMeta, sourceAccount, onChange } = props;
+
+  const context = useAtomValue(snowbridgeContextAtom)!;
+
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: balances } = useTokenBalances(
     context,
@@ -77,14 +145,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     sourceAccount,
   );
 
+  const symbols = useMemo(() => assetMeta.map((a) => a.symbol), [assetMeta]);
+
   const { data: prices } = useSWR(
     ["token-prices", symbols],
     () => fetchTokenPrices(symbols),
     PRICE_SWR_CONFIG,
-  );
-
-  const selectedAsset = assetMeta.find(
-    (x) => x.token.toLowerCase() === value?.toLowerCase(),
   );
 
   const filteredAssets = useMemo(() => {
@@ -142,153 +208,112 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   }, [assetMeta, searchQuery, balances, prices]);
 
   return (
-    <Dialog
-      open={tokenModalOpen}
-      onOpenChange={(open) => {
-        setTokenModalOpen(open);
-        if (!open) {
-          setSearchQuery("");
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs bg-white dark:bg-slate-700 hover:bg-white/90 dark:hover:bg-slate-600 rounded-full flex-shrink-0 transition-colors"
-        >
-          {selectedAsset ? (
-            <>
-              <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
-                <ImageWithFallback
-                  src={`/images/${selectedAsset.symbol.toLowerCase()}.png`}
-                  fallbackSrc="/images/token_generic.png"
-                  width={16}
-                  height={16}
-                  alt={selectedAsset.symbol}
-                  className="rounded-full"
-                />
-              </div>
-              <span className="text-xs font-medium">
-                {selectedAsset.symbol}
-              </span>
-            </>
-          ) : (
-            <span className="text-muted-foreground text-xs">Token</span>
-          )}
-          <ChevronsUpDown className="h-3 w-3 opacity-50" />
-        </button>
-      </DialogTrigger>
-      <DialogContent className="glass more-blur">
-        <DialogHeader>
-          <DialogTitle className="text-center font-medium text-primary">
-            Select Token
-          </DialogTitle>
-        </DialogHeader>
-        <div className="mb-4">
-          <Input
-            type="text"
-            placeholder="Search by name or symbol..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/80 dark:bg-slate-800/80 border-gray-200 dark:border-slate-600"
-          />
-        </div>
-        <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
-          {filteredAssets.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No tokens found
-            </div>
-          ) : (
-            filteredAssets.map((asset) => {
-              const tokenBalance = balances?.[asset.token.toLowerCase()];
+    <>
+      <DialogHeader>
+        <DialogTitle className="text-center font-medium text-primary">
+          Select Token
+        </DialogTitle>
+      </DialogHeader>
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Search by name or symbol..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-white/80 dark:bg-slate-800/80 border-gray-200 dark:border-slate-600"
+        />
+      </div>
+      <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
+        {filteredAssets.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">No tokens found</div>
+        ) : (
+          filteredAssets.map((asset) => {
+            const tokenBalance = balances?.[asset.token.toLowerCase()];
 
-              let formattedBalance: string;
-              if (tokenBalance && tokenBalance.balance > 0n) {
-                formattedBalance = formatBalance({
-                  number: tokenBalance.balance,
-                  decimals: tokenBalance.decimals,
-                  displayDecimals: 8,
-                });
-              } else {
-                formattedBalance = "0.00";
-              }
+            let formattedBalance: string;
+            if (tokenBalance && tokenBalance.balance > 0n) {
+              formattedBalance = formatBalance({
+                number: tokenBalance.balance,
+                decimals: tokenBalance.decimals,
+                displayDecimals: 8,
+              });
+            } else {
+              formattedBalance = "0.00";
+            }
 
-              const truncatedAddress =
-                asset.token.length > 10
-                  ? `${asset.token.substring(0, 10)}...`
-                  : asset.token;
+            const truncatedAddress =
+              asset.token.length > 10
+                ? `${asset.token.substring(0, 10)}...`
+                : asset.token;
 
-              const tokenPrice = prices?.[asset.symbol.toUpperCase()];
-              let usdValue: string | null = null;
-              if (tokenBalance && tokenBalance.balance > 0n && tokenPrice) {
-                const balanceInTokens =
-                  Number(tokenBalance.balance) /
-                  Math.pow(10, tokenBalance.decimals);
-                const usdAmount = balanceInTokens * tokenPrice;
-                usdValue = formatUsdValue(usdAmount);
-              }
+            const tokenPrice = prices?.[asset.symbol.toUpperCase()];
+            let usdValue: string | null = null;
+            if (tokenBalance && tokenBalance.balance > 0n && tokenPrice) {
+              const balanceInTokens =
+                Number(tokenBalance.balance) /
+                Math.pow(10, tokenBalance.decimals);
+              const usdAmount = balanceInTokens * tokenPrice;
+              usdValue = formatUsdValue(usdAmount);
+            }
 
-              return (
-                <button
-                  key={asset.token}
-                  type="button"
-                  onClick={() => {
-                    onChange(asset.token);
-                    setSearchQuery("");
-                    setTokenModalOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <SelectItemWithIcon
-                      label=""
-                      image={asset.symbol}
-                      altImage="token_generic"
-                    />
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium text-primary">
-                        {asset.symbol}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
-                        {asset.name}
-                        {asset.token.toLowerCase() !==
-                          assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
-                          <span
-                            className="hover:underline cursor-pointer inline-flex items-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(
-                                etherscanERC20TokenLink(
-                                  assetRegistry.environment,
-                                  ethChainId,
-                                  asset.token,
-                                ),
-                              );
-                            }}
-                          >
-                            ({truncatedAddress}
-                            <ArrowUpRight className="w-3 h-3" />)
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-sm font-medium text-primary">
-                      {formattedBalance}
+            return (
+              <button
+                key={asset.token}
+                type="button"
+                onClick={() => {
+                  onChange(asset.token);
+                }}
+                className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0"
+              >
+                <div className="flex items-center gap-3">
+                  <SelectItemWithIcon
+                    label=""
+                    image={asset.symbol}
+                    altImage="token_generic"
+                  />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium text-primary">
+                      {asset.symbol}
                     </span>
-                    {usdValue && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {usdValue}
-                      </span>
-                    )}
+                    <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
+                      {asset.name}
+                      {asset.token.toLowerCase() !==
+                        assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
+                        <span
+                          className="hover:underline cursor-pointer inline-flex items-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(
+                              etherscanERC20TokenLink(
+                                registry.environment,
+                                registry.ethChainId,
+                                asset.token,
+                              ),
+                            );
+                          }}
+                        >
+                          ({truncatedAddress}
+                          <ArrowUpRight className="w-3 h-3" />)
+                        </span>
+                      )}
+                    </span>
                   </div>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-medium text-primary">
+                    {formattedBalance}
+                  </span>
+                  {usdValue && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {usdValue}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </>
   );
 };

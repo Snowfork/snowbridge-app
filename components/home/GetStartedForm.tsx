@@ -285,7 +285,6 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
                                   source.destinations[destination.key].assets
                                 }
                                 assetRegistry={assetRegistry}
-                                ethChainId={assetRegistry.ethChainId}
                                 source={getTransferLocation(
                                   assetRegistry,
                                   source,
