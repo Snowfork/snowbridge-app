@@ -69,9 +69,10 @@ import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 import { BridgeInfoContext } from "@/app/providers";
 import { ArrowRight } from "lucide-react";
-import { KusamaTokenSelector } from "./KusamaTokenSelector";
 import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
 import { fetchTokenPrices } from "@/utils/coindesk";
+import { TokenSelector } from "./TokenSelector";
+import { getTransferLocation } from "@snowbridge/registry";
 
 export const KusamaComponent: FC = () => {
   const router = useRouter();
@@ -102,10 +103,15 @@ export const KusamaComponent: FC = () => {
   const amount = form.watch("amount");
   const watchSourceAccount = form.watch("sourceAccount");
   const watchToken = form.watch("token");
-  const tokens =
-    assetRegistry.kusama?.parachains[
-      `kusama_${assetRegistry.kusama?.assetHubParaId}`
-    ].assets;
+
+  const [tokens] = useMemo(() => {
+    const tokens =
+      assetRegistry.kusama?.parachains[
+        `kusama_${assetRegistry.kusama?.assetHubParaId}`
+      ].assets ?? {};
+    return [tokens];
+  }, [assetRegistry]);
+
   const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId, watchToken);
   const { data: balanceInfo } = useKusamaTokenBalance(
     watchSourceAccount,
@@ -402,14 +408,18 @@ export const KusamaComponent: FC = () => {
       });
     }
   }, [
-    context,
+    feeInfo,
+    watchToken,
+    tokens,
+    assetRegistry,
+    amount,
     sourceId,
     destinationId,
-    watchToken,
     watchSourceAccount,
     beneficiary,
-    amount,
-    feeInfo,
+    planSend,
+    sendToken,
+    router,
   ]);
 
   return (
@@ -664,13 +674,35 @@ export const KusamaComponent: FC = () => {
                               render={({ field }) => (
                                 <FormItem className="flex-shrink-0">
                                   <FormControl>
-                                    <KusamaTokenSelector
+                                    <TokenSelector
                                       value={field.value}
                                       onChange={field.onChange}
-                                      tokens={tokens}
+                                      assets={Object.keys(tokens)}
                                       assetRegistry={assetRegistry}
                                       sourceAccount={watchSourceAccount}
-                                      source={sourceId}
+                                      source={
+                                        sourceId === AssetHub.Polkadot
+                                          ? getTransferLocation(assetRegistry, {
+                                              kind: "polkadot",
+                                              id: 1000,
+                                            })
+                                          : getTransferLocation(assetRegistry, {
+                                              kind: "kusama",
+                                              id: 1000,
+                                            })
+                                      }
+                                      ethChainId={assetRegistry.ethChainId}
+                                      destination={
+                                        destinationId === AssetHub.Polkadot
+                                          ? getTransferLocation(assetRegistry, {
+                                              kind: "polkadot",
+                                              id: 1000,
+                                            })
+                                          : getTransferLocation(assetRegistry, {
+                                              kind: "kusama",
+                                              id: 1000,
+                                            })
+                                      }
                                     />
                                   </FormControl>
                                 </FormItem>

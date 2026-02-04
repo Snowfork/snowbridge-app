@@ -1,6 +1,5 @@
 import { FC, PropsWithChildren } from "react";
 import { LucideHardHat } from "lucide-react";
-import { Card, CardContent, CardDescription, CardTitle } from "./ui/card";
 
 export const MaintenanceBanner: FC<PropsWithChildren> = ({ children }) => {
   const maintenance =

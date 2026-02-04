@@ -148,7 +148,7 @@ async function getPolkadotBalance(
       paraAsset,
     ];
   } else if (source.kind === "kusama") {
-    const parachain = await context.parachain(source.id);
+    const parachain = await context.kusamaParachain(source.id);
     const paraImp = await paraImplementation(parachain);
     if (asset === null) {
       return [await paraImp.getNativeBalance(account), true, null, null];
