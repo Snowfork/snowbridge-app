@@ -1,7 +1,15 @@
 "use client";
 
 import { assetsV2, Context } from "@snowbridge/api";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { paraImplementation } from "@snowbridge/api/dist/parachains";
+import {
+  Asset,
+  AssetRegistry,
+  ERC20Metadata,
+  EthereumLocation,
+  ParachainLocation,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import useSWR from "swr";
 
 export interface TokenBalanceData {
@@ -18,212 +26,274 @@ const SWR_CONFIG = {
   refreshInterval: 5 * 60 * 1000, // Auto refresh every 5 minutes
 };
 
-async function fetchEthereumTokenBalances([, account, context, registry]: [
-  string,
-  string,
-  Context,
-  AssetRegistry,
-]): Promise<TokenBalances> {
-  const balances: TokenBalances = {};
-  const ethChainId = registry.ethChainId;
-  const assets =
-    registry.ethereumChains[`ethereum_${ethChainId}`]?.assets || {};
-
-  // Filter ERC20 tokens (exclude ETH placeholder)
-  const erc20Tokens = Object.entries(assets).filter(
-    ([addr]) =>
-      addr.toLowerCase() !== assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase(),
-  );
-
-  const [ethBalance, ...erc20Results] = await Promise.all([
-    // Fetch ETH balance
-    context
-      .ethereum()
-      .getBalance(account)
-      .catch(() => 0n),
-    // Fetch all ERC20 balances in parallel
-    ...erc20Tokens.map(([tokenAddress]) =>
-      assetsV2
-        .erc20Balance(
-          context.ethereum(),
-          tokenAddress,
+async function getEthereumBalance(
+  context: Context,
+  registry: AssetRegistry,
+  source: TransferLocation,
+  asset: ERC20Metadata,
+  account: string,
+): Promise<bigint> {
+  const token = asset.token.toLowerCase();
+  if (source.kind === "ethereum" && source.id === registry.ethChainId) {
+    // Ethereum Mainnet
+    if (token.toLowerCase() === assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()) {
+      try {
+        return await context.ethChain(source.id).getBalance(account);
+      } catch {
+        return 0n;
+      }
+    } else {
+      let b: { balance: bigint };
+      try {
+        b = await assetsV2.erc20Balance(
+          context.ethChain(source.id),
+          token,
+          account,
+          context.environment.gatewayContract,
+        );
+      } catch {
+        b = { balance: 0n };
+      }
+      return b.balance;
+    }
+  } else if (source.kind === "ethereum" && source.parachain) {
+    // Substrate EVM
+    const asset = source.parachain.assets[token.toLowerCase()];
+    try {
+      return (
+        await assetsV2.erc20Balance(
+          context.ethChain(source.id),
+          asset?.xc20 ?? token,
           account,
           context.environment.gatewayContract,
         )
-        .catch(() => ({ balance: 0n })),
-    ),
-  ]);
-
-  // Add ETH balance
-  balances[assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()] = {
-    balance: ethBalance,
-    decimals: 18,
-  };
-
-  // Add ERC20 balances
-  erc20Tokens.forEach(([tokenAddress, asset], index) => {
-    const erc20Balance = erc20Results[index];
-    balances[tokenAddress.toLowerCase()] = {
-      balance: erc20Balance.balance,
-      decimals: Number(asset.decimals),
-    };
-  });
-
-  return balances;
-}
-
-async function fetchPolkadotTokenBalances([
-  ,
-  account,
-  context,
-  registry,
-  parachainId,
-]: [string, string, Context, AssetRegistry, number]): Promise<TokenBalances> {
-  const balances: TokenBalances = {};
-
-  // Registry uses string keys for parachains
-  const parachainConfig = registry.parachains[`polkadot_${parachainId}`];
-
-  if (!parachainConfig) {
-    return balances;
-  }
-
-  // Get the appropriate parachain API
-  const isAssetHub = parachainId === registry.assetHubParaId;
-  const parachain = isAssetHub
-    ? await context.assetHub()
-    : await context.parachain(parachainId);
-
-  const paraImp = await import("@snowbridge/api/dist/parachains").then((m) =>
-    m.paraImplementation(parachain),
-  );
-
-  const ethAssets =
-    registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets || {};
-
-  // Find the native token address (DOT for Asset Hub)
-  // Native tokens have location {parents: 1, interior: "Here"}
-  let nativeTokenAddress: string | null = null;
-  if (isAssetHub) {
-    for (const [tokenAddress] of Object.entries(ethAssets)) {
-      const parachainAsset =
-        parachainConfig.assets?.[tokenAddress.toLowerCase()];
-      if (
-        parachainAsset?.location?.parents === 1 &&
-        parachainAsset?.location?.interior === "Here"
-      ) {
-        nativeTokenAddress = tokenAddress.toLowerCase();
-        break;
-      }
+      ).balance;
+    } catch {
+      return 0n;
     }
-  }
-
-  // Filter tokens that have metadata on this parachain
-  // Exclude ETHER_TOKEN_ADDRESS and the native token (will be fetched separately)
-  const bridgeableTokens = Object.entries(ethAssets).filter(
-    ([tokenAddress]) => {
-      if (
-        tokenAddress.toLowerCase() ===
-        assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()
-      ) {
-        return false;
-      }
-      // Skip native token - we'll fetch it via getNativeBalance
-      if (
-        nativeTokenAddress &&
-        tokenAddress.toLowerCase() === nativeTokenAddress
-      ) {
-        return false;
-      }
-      return !!parachainConfig.assets?.[tokenAddress.toLowerCase()];
-    },
-  );
-
-  // Fetch native balance and all token balances in parallel
-  const [nativeBalance, ...tokenResults] = await Promise.all([
-    paraImp.getNativeBalance(account).catch(() => 0n),
-    ...bridgeableTokens.map(([tokenAddress]) =>
-      paraImp
-        .getTokenBalance(
-          account,
-          registry.ethChainId,
-          tokenAddress,
-          parachainConfig.assets[tokenAddress.toLowerCase()],
-        )
-        .catch(() => 0n),
-    ),
-  ]);
-
-  // Add native balance under its token address (for Asset Hub/DOT) or parachain key
-  if (nativeTokenAddress) {
-    // Store DOT balance under its actual token address so TokenSelector can find it
-    const nativeAsset = ethAssets[nativeTokenAddress];
-    balances[nativeTokenAddress] = {
-      balance: nativeBalance,
-      decimals: nativeAsset?.decimals ?? registry.relaychain.tokenDecimals,
-    };
+  } else if (source.kind === "ethereum_l2") {
+    // L2
+    throw Error(`Not Implemented`);
   } else {
-    // For non-Asset Hub parachains, store under native:{parachainId} key
-    const nativeKey = `native:${parachainId}`;
-    balances[nativeKey] = {
-      balance: nativeBalance,
-      decimals: parachainConfig.info.tokenDecimals,
-    };
+    console.log(
+      `Warning could not infer ${source.kind} ${source.id} to get token balances.`,
+    );
+    return 0n;
   }
-
-  // Also keep "dot" key for backward compatibility with PolkadotTokenList
-  if (isAssetHub) {
-    balances["dot"] = {
-      balance: nativeBalance,
-      decimals: registry.relaychain.tokenDecimals,
-    };
-  }
-
-  // Add token balances
-  bridgeableTokens.forEach(([tokenAddress, asset], index) => {
-    balances[tokenAddress.toLowerCase()] = {
-      balance: tokenResults[index],
-      decimals: Number(asset.decimals),
-    };
-  });
-
-  return balances;
 }
 
-export function useEthereumTokenBalances(
-  account: string | undefined,
-  context: Context | null,
-  registry: AssetRegistry | null,
-) {
-  return useSWR(
-    account && context && registry
-      ? ["eth-token-balances", account, context, registry]
-      : null,
-    fetchEthereumTokenBalances,
-    SWR_CONFIG,
-  );
-}
-
-export function usePolkadotTokenBalances(
-  account: string | undefined,
-  context: Context | null,
-  registry: AssetRegistry | null,
-  parachainId?: number,
-) {
-  // Default to Asset Hub if no parachain ID provided
-  const effectiveParachainId = parachainId ?? registry?.assetHubParaId;
-
-  return useSWR(
-    account && context && registry && effectiveParachainId
-      ? [
-          "polkadot-token-balances",
-          account,
+async function fetchEthereumTokenBalances(
+  context: Context,
+  registry: AssetRegistry,
+  source: EthereumLocation,
+  assets: ERC20Metadata[],
+  account: string,
+): Promise<TokenBalances> {
+  const balances: TokenBalances = {};
+  (
+    await Promise.all(
+      assets.map(async (asset) => {
+        const balance = await getEthereumBalance(
           context,
           registry,
-          effectiveParachainId,
-        ]
-      : null,
-    fetchPolkadotTokenBalances,
+          source,
+          asset,
+          account,
+        );
+        return { asset, balance };
+      }),
+    )
+  ).forEach(({ asset, balance }) => {
+    balances[asset.token] = {
+      balance: balance,
+      decimals: asset.decimals,
+    };
+  });
+  return balances;
+}
+
+async function getPolkadotBalance(
+  context: Context,
+  registry: AssetRegistry,
+  source: ParachainLocation,
+  asset: ERC20Metadata | null,
+  account: string,
+): Promise<[bigint, boolean, ERC20Metadata | null, Asset | null]> {
+  if (source.kind === "polkadot") {
+    const parachain = await context.parachain(source.id);
+    const paraImp = await paraImplementation(parachain);
+    if (asset === null) {
+      return [await paraImp.getNativeBalance(account), true, null, null];
+    }
+    const paraAsset = source.parachain.assets[asset.token.toLowerCase()];
+    if (!paraAsset) return [0n, false, asset, paraAsset];
+    if (
+      source.id === registry.assetHubParaId &&
+      paraAsset.location?.parents === 1 &&
+      paraAsset.location?.interior === "Here"
+    ) {
+      return [
+        await paraImp.getNativeBalance(account).catch(() => 0n),
+        true,
+        asset,
+        paraAsset,
+      ];
+    }
+    return [
+      await paraImp
+        .getTokenBalance(account, registry.ethChainId, asset.token, paraAsset)
+        .catch(() => 0n),
+      false,
+      asset,
+      paraAsset,
+    ];
+  } else if (source.kind === "kusama") {
+    const parachain = await context.parachain(source.id);
+    const paraImp = await paraImplementation(parachain);
+    if (asset === null) {
+      return [await paraImp.getNativeBalance(account), true, null, null];
+    }
+    const paraAsset = source.parachain.assets[asset.token.toLowerCase()];
+    if (!paraAsset) return [0n, false, asset, paraAsset];
+    if (
+      source.id === registry.kusama?.assetHubParaId &&
+      paraAsset.location?.parents === 1 &&
+      paraAsset.location?.interior === "Here"
+    ) {
+      return [
+        await paraImp.getNativeBalance(account).catch(() => 0n),
+        true,
+        asset,
+        paraAsset,
+      ];
+    }
+    return [
+      await paraImp
+        .getTokenBalance(account, registry.ethChainId, asset.token, paraAsset)
+        .catch(() => 0n),
+      false,
+      asset,
+      paraAsset,
+    ];
+  } else {
+    console.log(
+      `Warning could not infer ${source.kind} ${source.id} to get token balances.`,
+    );
+    return [0n, false, null, null];
+  }
+}
+
+async function fetchPolkadotTokenBalances(
+  context: Context,
+  registry: AssetRegistry,
+  source: ParachainLocation,
+  assets: ERC20Metadata[],
+  account: string,
+): Promise<TokenBalances> {
+  if (!account) {
+    return {};
+  }
+
+  const balances: TokenBalances = {};
+  (
+    await Promise.all([
+      ...[null, ...assets].map((asset) =>
+        getPolkadotBalance(context, registry, source, asset, account),
+      ),
+    ])
+  ).forEach(([balance, isNative, asset, paraAsset]) => {
+    if (asset === null && isNative) {
+      // Native asset, not transferable.
+      balances[`native:${source.id}`] = {
+        balance,
+        decimals: source.parachain.info.tokenDecimals,
+      };
+    } else if (asset !== null && isNative && paraAsset) {
+      // Native asset that is transferable
+      balances[asset.token] = {
+        balance,
+        decimals: asset.decimals,
+      };
+      // DOT
+      if (
+        source.id === registry.assetHubParaId &&
+        source.kind === "polkadot" &&
+        asset.symbol === "DOT"
+      ) {
+        balances[asset.symbol.toLowerCase()] = {
+          balance: balance,
+          decimals: asset.decimals,
+        };
+      }
+      // KSM
+      if (
+        source.id === registry.kusama?.assetHubParaId &&
+        source.kind === "kusama" &&
+        asset.symbol === "KSM"
+      ) {
+        balances[asset.symbol.toLowerCase()] = {
+          balance: balance,
+          decimals: asset.decimals,
+        };
+      }
+    } else if (asset !== null) {
+      balances[asset.token] = {
+        balance,
+        decimals: Number(asset.decimals),
+      };
+    }
+  });
+
+  return balances;
+}
+
+async function fetchTokenBalances([
+  ,
+  context,
+  registry,
+  source,
+  assets,
+  account,
+]: [
+  string,
+  Context,
+  AssetRegistry,
+  TransferLocation,
+  ERC20Metadata[],
+  string | undefined,
+]): Promise<TokenBalances> {
+  if (!account) return {};
+  if (source.kind === "ethereum" || source.kind === "ethereum_l2") {
+    return await fetchEthereumTokenBalances(
+      context,
+      registry,
+      source,
+      assets,
+      account,
+    );
+  }
+  if (source.kind === "polkadot" || source.kind === "kusama") {
+    return await fetchPolkadotTokenBalances(
+      context,
+      registry,
+      source,
+      assets,
+      account,
+    );
+  }
+  return {};
+}
+
+export function useTokenBalances(
+  context: Context,
+  registry: AssetRegistry,
+  source: TransferLocation,
+  assets: ERC20Metadata[],
+  account?: string,
+) {
+  return useSWR(
+    ["token-balances", context, registry, source, assets, account],
+    fetchTokenBalances,
     SWR_CONFIG,
   );
 }

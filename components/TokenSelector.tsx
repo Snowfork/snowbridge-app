@@ -11,7 +11,11 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { ImageWithFallback } from "./ui/image-with-fallback";
-import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { assetsV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
@@ -19,10 +23,7 @@ import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { ChevronsUpDown, ArrowUpRight } from "lucide-react";
 import { etherscanERC20TokenLink } from "@/lib/explorerLinks";
-import {
-  useEthereumTokenBalances,
-  usePolkadotTokenBalances,
-} from "@/hooks/useTokenBalances";
+import { useTokenBalances } from "@/hooks/useTokenBalances";
 import { BridgeInfoContext } from "@/app/providers";
 import useSWR from "swr";
 
@@ -55,80 +56,59 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [tokenModalOpen, setTokenModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const context = useAtomValue(snowbridgeContextAtom);
+  const context = useAtomValue(snowbridgeContextAtom)!;
   const { registry } = useContext(BridgeInfoContext)!;
 
-  // Use shared balance hooks based on source type
-  const isEthereumSource = source.kind === "ethereum";
-  const sourceParachainId = source.parachain?.id;
+  const [assetMeta, symbols] = useMemo(() => {
+    const meta = Object.values(
+      assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets,
+    ).filter((a) =>
+      assets.find((x) => x.toLowerCase() === a.token.toLowerCase()),
+    );
+    const symbols = meta.map((m) => m.symbol);
+    return [meta, symbols];
+  }, [assets, assetRegistry, ethChainId]);
 
-  const { data: ethBalances } = useEthereumTokenBalances(
-    isEthereumSource ? sourceAccount : undefined,
+  const { data: balances } = useTokenBalances(
     context,
     registry,
+    source,
+    assetMeta,
+    sourceAccount,
   );
-
-  const { data: polkadotBalances } = usePolkadotTokenBalances(
-    !isEthereumSource ? sourceAccount : undefined,
-    context,
-    registry,
-    sourceParachainId,
-  );
-
-  // Use the appropriate balances based on source
-  const balances = isEthereumSource ? ethBalances : polkadotBalances;
-
-  // Fetch prices with SWR
-  const tokenSymbols = assets.map((t) => {
-    const asset =
-      assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
-        t.toLowerCase()
-      ];
-    return asset.symbol;
-  });
 
   const { data: prices } = useSWR(
-    tokenSymbols.length > 0 ? ["token-prices", tokenSymbols.join(",")] : null,
-    () => fetchTokenPrices(tokenSymbols),
+    ["token-prices", symbols],
+    () => fetchTokenPrices(symbols),
     PRICE_SWR_CONFIG,
   );
 
-  const selectedAsset = value
-    ? assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
-        value.toLowerCase()
-      ]
-    : null;
+  const selectedAsset = assetMeta.find(
+    (x) => x.token.toLowerCase() === value?.toLowerCase(),
+  );
 
   const filteredAssets = useMemo(() => {
-    let filtered = assets;
+    let filtered = assetMeta;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = assets.filter((t) => {
-        const asset =
-          assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
-            t.toLowerCase()
-          ];
+      filtered = assetMeta.filter((m) => {
         return (
-          asset.name.toLowerCase().includes(query) ||
-          asset.symbol.toLowerCase().includes(query)
+          m.name.toLowerCase().includes(query) ||
+          m.symbol.toLowerCase().includes(query)
         );
       });
     }
 
     // Helper to get token info for sorting
-    const getTokenInfo = (tokenAddress: string) => {
-      const tokenBalance = balances?.[tokenAddress.toLowerCase()];
+    const getTokenInfo = (token: ERC20Metadata) => {
+      const tokenBalance = balances?.[token.token.toLowerCase()];
       const balance = tokenBalance?.balance ?? 0n;
       const hasBalance = balance > 0n;
 
       let usdValue = 0;
       if (hasBalance && tokenBalance) {
-        const asset =
-          assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
-            tokenAddress.toLowerCase()
-          ];
-        const price = prices?.[asset.symbol.toUpperCase()] ?? 0;
+        const price = prices?.[token.symbol.toUpperCase()] ?? 0;
         const balanceInTokens =
           Number(balance) / Math.pow(10, tokenBalance.decimals);
         usdValue = balanceInTokens * price;
@@ -157,17 +137,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       if (infoB.hasBalance && !infoA.hasBalance) return 1;
 
       // Same category - sort alphabetically by name
-      const assetA =
-        assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
-          a.toLowerCase()
-        ];
-      const assetB =
-        assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
-          b.toLowerCase()
-        ];
-      return assetA.name.localeCompare(assetB.name);
+      return a.name.localeCompare(b.name);
     });
-  }, [assets, searchQuery, assetRegistry, ethChainId, balances, prices]);
+  }, [assetMeta, searchQuery, balances, prices]);
 
   return (
     <Dialog
@@ -227,12 +199,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               No tokens found
             </div>
           ) : (
-            filteredAssets.map((t) => {
-              const asset =
-                assetRegistry.ethereumChains[`ethereum_${ethChainId}`].assets[
-                  t.toLowerCase()
-                ];
-              const tokenBalance = balances?.[t.toLowerCase()];
+            filteredAssets.map((asset) => {
+              const tokenBalance = balances?.[asset.token.toLowerCase()];
 
               let formattedBalance: string;
               if (tokenBalance && tokenBalance.balance > 0n) {
@@ -246,7 +214,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               }
 
               const truncatedAddress =
-                t.length > 10 ? `${t.substring(0, 10)}...` : t;
+                asset.token.length > 10
+                  ? `${asset.token.substring(0, 10)}...`
+                  : asset.token;
 
               const tokenPrice = prices?.[asset.symbol.toUpperCase()];
               let usdValue: string | null = null;
@@ -260,10 +230,10 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
               return (
                 <button
-                  key={t}
+                  key={asset.token}
                   type="button"
                   onClick={() => {
-                    onChange(t);
+                    onChange(asset.token);
                     setSearchQuery("");
                     setTokenModalOpen(false);
                   }}
@@ -281,7 +251,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
                         {asset.name}
-                        {t.toLowerCase() !==
+                        {asset.token.toLowerCase() !==
                           assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
                           <span
                             className="hover:underline cursor-pointer inline-flex items-center"
@@ -291,7 +261,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
                                 etherscanERC20TokenLink(
                                   assetRegistry.environment,
                                   ethChainId,
-                                  t,
+                                  asset.token,
                                 ),
                               );
                             }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useContext } from "react";
+import { FC, useContext, useMemo } from "react";
 import { ImageWithFallback } from "./ui/image-with-fallback";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { useAtomValue } from "jotai";
@@ -10,10 +10,8 @@ import { BridgeInfoContext } from "@/app/providers";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { Loader2, RefreshCw } from "lucide-react";
 import useSWR from "swr";
-import {
-  useEthereumTokenBalances,
-  usePolkadotTokenBalances,
-} from "@/hooks/useTokenBalances";
+import { useTokenBalances } from "@/hooks/useTokenBalances";
+import { getTransferLocation } from "@snowbridge/registry";
 
 interface TokenDisplayItem {
   symbol: string;
@@ -31,30 +29,46 @@ const PRICE_SWR_CONFIG = {
 };
 
 export const EthereumTokenList: FC = () => {
-  const context = useAtomValue(snowbridgeContextAtom);
+  const context = useAtomValue(snowbridgeContextAtom)!;
   const { registry } = useContext(BridgeInfoContext)!;
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
+
+  const [assets, source, symbols] = useMemo(() => {
+    const source = getTransferLocation(registry, {
+      kind: "ethereum",
+      id: registry.ethChainId,
+    });
+    const assets = Object.values(
+      registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets,
+    );
+
+    // Swap ETH to the top of the list
+    const index = assets.findIndex((a) => a.symbol === "ETH");
+    if (index > 0) {
+      const tmp = assets[0];
+      assets[0] = assets[index];
+      assets[index] = tmp;
+    }
+
+    const symbols = assets.map((a) => a.symbol);
+    return [assets, source, symbols];
+  }, [registry]);
 
   const {
     data: balances,
     isLoading,
     isValidating,
     mutate,
-  } = useEthereumTokenBalances(ethereumAccount ?? undefined, context, registry);
-
-  // Fetch prices
-  const symbols = registry
-    ? [
-        "ETH",
-        ...Object.values(
-          registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets ||
-            {},
-        ).map((a) => a.symbol),
-      ]
-    : [];
+  } = useTokenBalances(
+    context,
+    registry,
+    source,
+    assets,
+    ethereumAccount ?? undefined,
+  );
 
   const { data: prices } = useSWR(
-    symbols.length > 0 ? ["eth-prices", symbols.join(",")] : null,
+    symbols.length > 0 ? ["eth-prices", symbols] : null,
     () => fetchTokenPrices(symbols),
     PRICE_SWR_CONFIG,
   );
@@ -186,29 +200,40 @@ interface PolkadotTokenListProps {
 }
 
 export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
-  const context = useAtomValue(snowbridgeContextAtom);
+  const context = useAtomValue(snowbridgeContextAtom)!;
   const { registry } = useContext(BridgeInfoContext)!;
+
+  const [source, assets, symbols] = useMemo(() => {
+    const source = getTransferLocation(registry, {
+      kind: "polkadot",
+      id: registry.assetHubParaId,
+    });
+
+    const assets = Object.values(
+      registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets,
+    );
+
+    // Move DOT to the top of the list with simple swap
+    const index = assets.findIndex((x) => x.symbol === "DOT");
+    if (index > 0) {
+      const tmp = assets[0];
+      assets[0] = assets[index];
+      assets[index] = tmp;
+    }
+    const symbols = assets.map((a) => a.symbol);
+
+    return [source, assets, symbols];
+  }, [registry]);
 
   const {
     data: balances,
     isLoading,
     isValidating,
     mutate,
-  } = usePolkadotTokenBalances(account, context, registry);
-
-  // Fetch prices
-  const symbols = registry
-    ? [
-        "DOT",
-        ...Object.values(
-          registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets ||
-            {},
-        ).map((a) => a.symbol),
-      ]
-    : [];
+  } = useTokenBalances(context, registry, source, assets, account);
 
   const { data: prices } = useSWR(
-    symbols.length > 0 ? ["polkadot-prices", symbols.join(",")] : null,
+    ["polkadot-prices", symbols],
     () => fetchTokenPrices(symbols),
     PRICE_SWR_CONFIG,
   );
@@ -238,32 +263,11 @@ export const PolkadotTokenList: FC<PolkadotTokenListProps> = ({ account }) => {
   }
 
   // Build display list
-  const ethAssets =
-    registry.ethereumChains[`ethereum_${registry.ethChainId}`]?.assets || {};
   const tokenList: TokenDisplayItem[] = [];
 
-  // Add DOT if balance > 0
-  const dotBalance = balances["dot"]?.balance ?? 0n;
-  if (dotBalance > 0n) {
-    const dotPrice = prices?.["DOT"] || 0;
-    const dotNum =
-      Number(dotBalance) / Math.pow(10, registry.relaychain.tokenDecimals);
-    tokenList.push({
-      symbol: "DOT",
-      name: "Polkadot",
-      balance: formatBalance({
-        number: dotBalance,
-        decimals: registry.relaychain.tokenDecimals,
-        displayDecimals: 4,
-      }),
-      usdValue: dotPrice ? formatUsdValue(dotNum * dotPrice) : null,
-      icon: "dot",
-    });
-  }
-
   // Add bridgeable tokens with balance > 0
-  for (const [tokenAddress, asset] of Object.entries(ethAssets)) {
-    const tokenBalance = balances[tokenAddress.toLowerCase()]?.balance ?? 0n;
+  for (const asset of assets) {
+    const tokenBalance = balances[asset.token.toLowerCase()]?.balance ?? 0n;
     if (tokenBalance > 0n) {
       const tokenPrice = prices?.[asset.symbol.toUpperCase()] || 0;
       const balanceNum =
