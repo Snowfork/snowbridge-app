@@ -25,7 +25,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   let beneficiaryDisplay = data.formData.beneficiary;
   let sourceAccountLink: string;
   let beneficiaryLink: string;
-  if (data.source.kind === "ethereum") {
+  if (data.source.kind === "ethereum" && data.destination.kind === "polkadot") {
     if (data.destination.parachain?.info.accountType === "AccountId32") {
       beneficiaryDisplay = encodeAddress(
         decodeAddress(beneficiaryDisplay),
