@@ -72,6 +72,11 @@ import {
   getTransferLocation,
   getTransferLocations,
 } from "@snowbridge/registry";
+import {
+  getChainId,
+  getEthereumNetwork,
+  switchNetwork,
+} from "@/lib/client/web3modal";
 
 function getBeneficiaries(
   destination: TransferLocation,
@@ -259,11 +264,11 @@ export const TransferForm: FC<TransferFormProps> = ({
   const queryAmount = formParams.get("amount");
 
   const [source, setSource] = useState(firstSource);
-  const [sourceAccount, setSourceAccount] = useState<string>();
   const [destinations, setDestinations] = useState(firstDestinations);
   const [destination, setDestination] = useState(firstDestination);
   const [token, setToken] = useState(firstToken);
   const [validating, setValidating] = useState(false);
+  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   const beneficiaries = getBeneficiaries(
     destination,
@@ -280,7 +285,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       destination: formData?.destination ?? destination.key,
       token: formData?.token ?? token,
       beneficiary: formData?.beneficiary,
-      sourceAccount: formData?.sourceAccount ?? sourceAccount,
+      sourceAccount: formData?.sourceAccount,
       amount: formData?.amount ?? (queryAmount || "0.0"),
     },
   });
@@ -289,8 +294,8 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
+  const watchBeneficiary = form.watch("beneficiary");
   const watchAmount = form.watch("amount");
-  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
@@ -329,7 +334,6 @@ export const TransferForm: FC<TransferFormProps> = ({
   ]);
 
   // Auto-set beneficiary when wallet connects or destination type changes
-  const watchBeneficiary = form.watch("beneficiary");
   useEffect(() => {
     if (destination.kind === "ethereum") {
       // For Ethereum destination, check if current beneficiary is a valid Ethereum address
@@ -401,71 +405,85 @@ export const TransferForm: FC<TransferFormProps> = ({
   useEffect(() => {
     let newDestinations = destinations;
     let newSource = source;
+
+    // Update source
     if (source.key !== watchSource) {
       newSource = locations.find((s) => s.key == watchSource)!;
       setSource(newSource);
-      if (newSource.kind === "polkadot") {
-        const accountType =
-          assetRegistry.parachains[`polkadot_${newSource.id}`].info.accountType;
-        const validAccounts = polkadotAccounts?.filter(
-          filterByAccountType(accountType),
-        );
-        // Check if current account is valid for the new chain
-        const currentAccountValid = validAccounts?.some(
-          (acc) => acc.address === watchSourceAccount,
-        );
-        if (!currentAccountValid) {
-          const newAccount =
-            validAccounts && validAccounts.length > 0
-              ? validAccounts[0].address
-              : "";
-          form.setValue("sourceAccount", newAccount);
-        }
-      }
-      // Note: Ethereum source account is handled by the auto-set useEffect
 
       newDestinations = Object.values(newSource.destinations).map(
         (destination) => getTransferLocation(assetRegistry, destination),
       );
       setDestinations(newDestinations);
     }
+
+    // Update destination
     const newDestination =
       newDestinations.find((d) => d.key == watchDestination) ??
       newDestinations[0];
     setDestination(newDestination);
     form.resetField("destination", { defaultValue: newDestination.key });
 
+    // Update Token
     const newTokens = newSource.destinations[newDestination.key].assets;
     const newToken =
       newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
       newTokens[0];
     setToken(newToken);
     form.resetField("token", { defaultValue: newToken });
+
+    // Update Source Account
+    if (newSource.kind === "polkadot") {
+      const accountType =
+        assetRegistry.parachains[`polkadot_${newSource.id}`].info.accountType;
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+      // Check if current account is valid for the new chain
+      const currentAccountValid = validAccounts?.some(
+        (acc) => acc.address === watchSourceAccount,
+      );
+      if (!currentAccountValid) {
+        const newAccount =
+          validAccounts && validAccounts.length > 0
+            ? validAccounts[0].address
+            : "";
+        form.setValue("sourceAccount", newAccount);
+      }
+    }
+
+    // Update beneficiary account
     if (formData?.beneficiary) {
       form.resetField("beneficiary", {
         defaultValue: formData.beneficiary,
       });
       form.setValue("beneficiary", formData.beneficiary);
     }
+
+    // Update Network Id
+    try {
+      const chainId = getChainId();
+      if (
+        newSource.kind === "ethereum" &&
+        chainId?.toString() !== newSource.id.toString()
+      ) {
+        switchNetwork(getEthereumNetwork(Number(newSource.id)));
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }, [
-    destination.kind,
+    assetRegistry,
     destinations,
-    environment,
-    ethereumAccount,
     form,
     formData?.beneficiary,
-    polkadotAccount?.address,
-    source.id,
-    source.kind,
+    locations,
+    polkadotAccounts,
+    source,
     watchDestination,
     watchSource,
-    watchToken,
     watchSourceAccount,
-    source,
-    locations,
-    assetRegistry,
-    polkadotAccounts,
-    firstSource.kind,
+    watchToken,
   ]);
 
   const tokenMetadata =
