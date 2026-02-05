@@ -33,7 +33,6 @@ import {
   SelectValue,
 } from "./ui/select";
 import { polkadotAccountsAtom, walletAtom } from "@/store/polkadot";
-import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import {
   filterByAccountType,
@@ -76,7 +75,6 @@ import { getTransferLocation } from "@snowbridge/registry";
 
 export const KusamaComponent: FC = () => {
   const router = useRouter();
-  const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotWallet = useAtomValue(walletAtom);
   const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
