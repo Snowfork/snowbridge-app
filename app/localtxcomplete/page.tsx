@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { historyV2, subsquidV2 } from "@snowbridge/api";
 import useSWR from "swr";
 import { subscanEventLink, subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { RegistryContext } from "../providers";
+import { BridgeInfoContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/registry";
@@ -40,11 +40,10 @@ function TxCard(props: TxCardProps) {
   const { transfer, refresh, registry } = props;
 
   const links: { text: string; url: string }[] = [];
-  const source = getTransferLocation(
-    registry,
-    transfer.sourceType,
-    transfer.submitted.sourceParachainId.toString(),
-  );
+  const source = getTransferLocation(registry, {
+    kind: transfer.kind,
+    id: transfer.submitted.sourceParachainId,
+  });
   links.push({
     text: `Submitted to ${source.name}`,
     url: subscanExtrinsicLink(
@@ -54,12 +53,12 @@ function TxCard(props: TxCardProps) {
     ),
   });
   if (transfer.destinationReceived) {
-    const destination = getTransferLocation(
-      registry,
-      transfer.sourceType,
-      transfer.info.destinationParachain?.toString() ??
-        transfer.destinationReceived.paraId.toString(),
-    );
+    const destination = getTransferLocation(registry, {
+      kind: transfer.kind,
+      id:
+        transfer.info.destinationParachain ??
+        transfer.destinationReceived.paraId,
+    });
     links.push({
       text: `Message received on ${destination.name}`,
       url: subscanEventLink(
@@ -131,7 +130,7 @@ function TxCard(props: TxCardProps) {
 
 function TxComponent() {
   const searchParams = useSearchParams();
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   const environment = getEnvironment();
 
   const [messageId, transfer] = useMemo(() => {
@@ -159,10 +158,11 @@ function TxComponent() {
           messageId,
         );
         if (delivered && delivered.length > 0) {
-          transfer.status = delivered[0].success
+          const tx = { ...transfer };
+          tx.status = delivered[0].success
             ? historyV2.TransferStatus.Complete
             : historyV2.TransferStatus.Failed;
-          transfer.destinationReceived = {
+          tx.destinationReceived = {
             blockNumber: delivered[0].blockNumber,
             block_timestamp: delivered[0].timestamp,
             messageId: delivered[0].messageId,
@@ -170,6 +170,7 @@ function TxComponent() {
             success: delivered[0].success,
             event_index: delivered[0].eventId.split("-")[1],
           };
+          return tx;
         }
       }
       return transfer;

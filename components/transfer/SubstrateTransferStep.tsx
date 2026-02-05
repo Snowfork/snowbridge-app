@@ -20,7 +20,7 @@ import { LucideLoaderCircle } from "lucide-react";
 import { useSubstrateTransfer } from "@/hooks/useSubstrateTransfer";
 import { parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 
 interface TransferStepData {
   id: number;
@@ -45,7 +45,7 @@ export function SubstrateTransferStep({
   const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
 
   const { transferAsset } = useSubstrateTransfer();
 
@@ -55,36 +55,36 @@ export function SubstrateTransferStep({
     text: string;
     link?: string;
   }
-  const [success, setSuccess] = useState<Message>();
-  const [error, setError] = useState<Message>();
-
   const targetInfo = useMemo(() => {
-    if (data.source.type === "ethereum" && data.destination.parachain) {
+    if (data.source.kind === "ethereum" && data.destination.parachain) {
       // Source is ethereum and destination is the parachain.
       return {
-        paraId: data.destination.parachain.parachainId,
+        paraId: data.destination.parachain.id,
         account: data.formData.beneficiary,
       };
-    } else if (data.destination.type === "ethereum" && data.source.parachain) {
+    } else if (data.destination.kind === "ethereum" && data.source.parachain) {
       // Destination is ethereum and source is the parachain.
       return {
-        paraId: data.source.parachain.parachainId,
+        paraId: data.source.parachain.id,
         account: data.formData.sourceAccount,
       };
     } else {
-      setError({
-        text: "Could not infer target parachain and beneficiary.",
-      });
-      return null;
+      return { text: "Could not infer target parachain and beneficiary." };
     }
   }, [
     data.destination.parachain,
-    data.destination.type,
+    data.destination.kind,
     data.formData.beneficiary,
     data.formData.sourceAccount,
     data.source.parachain,
-    data.source.type,
+    data.source.kind,
   ]);
+
+  const [success, setSuccess] = useState<Message>();
+  const [error, setError] = useState<Message | undefined>(
+    targetInfo?.text ? { text: targetInfo.text } : undefined,
+  );
+
   const [account, setAccount] = useState(
     targetInfo?.account ??
       polkadotAccount?.address ??
@@ -219,7 +219,7 @@ export function SubstrateTransferStep({
                       interior: {
                         X1: [
                           {
-                            Parachain: targetInfo.paraId,
+                            Parachain: targetInfo.paraId!,
                           },
                         ],
                       },

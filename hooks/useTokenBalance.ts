@@ -1,4 +1,4 @@
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { getTokenBalance } from "@/utils/balances";
 import { assetsV2, Context } from "@snowbridge/api";
@@ -44,7 +44,7 @@ export function useTokenBalance(
   token: string,
 ) {
   const context = useAtomValue(snowbridgeContextAtom);
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   return useSWR(
     [
       context,

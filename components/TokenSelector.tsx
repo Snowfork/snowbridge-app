@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState, useMemo, useContext } from "react";
+import { FC, useState, useMemo, useCallback } from "react";
 import { SelectItemWithIcon } from "./SelectItemWithIcon";
 import {
   Dialog,
@@ -11,7 +11,11 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { ImageWithFallback } from "./ui/image-with-fallback";
-import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { assetsV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
@@ -19,20 +23,16 @@ import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { ChevronsUpDown, ArrowUpRight } from "lucide-react";
 import { etherscanERC20TokenLink } from "@/lib/explorerLinks";
-import {
-  useEthereumTokenBalances,
-  usePolkadotTokenBalances,
-} from "@/hooks/useTokenBalances";
-import { RegistryContext } from "@/app/providers";
+import { useTokenBalances } from "@/hooks/useTokenBalances";
 import useSWR from "swr";
+import { Description } from "@radix-ui/react-dialog";
 
 type TokenSelectorProps = {
-  value: string | undefined;
-  onChange: (value: string) => void;
+  value?: string;
+  onChange: (_: string) => void;
   assets: string[];
   assetRegistry: AssetRegistry;
-  ethChainId: number;
-  sourceAccount: string | undefined;
+  sourceAccount?: string;
   source: TransferLocation;
   destination: TransferLocation;
 };
@@ -49,124 +49,31 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   onChange,
   assets,
   assetRegistry,
-  ethChainId,
   sourceAccount,
   source,
 }) => {
   const [tokenModalOpen, setTokenModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const context = useAtomValue(snowbridgeContextAtom);
-  const registry = useContext(RegistryContext);
 
-  // Use shared balance hooks based on source type
-  const isEthereumSource = source.type === "ethereum";
-  const sourceParachainId = source.parachain?.parachainId;
-
-  const { data: ethBalances } = useEthereumTokenBalances(
-    isEthereumSource ? sourceAccount : undefined,
-    context,
-    registry,
+  const assetMeta = useMemo(
+    () =>
+      Object.values(
+        assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`]
+          .assets,
+      ).filter((a) =>
+        assets.find((x) => x.toLowerCase() === a.token.toLowerCase()),
+      ),
+    [assets, assetRegistry],
   );
 
-  const { data: polkadotBalances } = usePolkadotTokenBalances(
-    !isEthereumSource ? sourceAccount : undefined,
-    context,
-    registry,
-    sourceParachainId,
+  const selectedAsset = assetMeta.find(
+    (x) => x.token.toLowerCase() === value?.toLowerCase(),
   );
-
-  // Use the appropriate balances based on source
-  const balances = isEthereumSource ? ethBalances : polkadotBalances;
-
-  // Fetch prices with SWR
-  const tokenSymbols = assets.map((t) => {
-    const asset =
-      assetRegistry.ethereumChains[ethChainId].assets[t.toLowerCase()];
-    return asset.symbol;
-  });
-
-  const { data: prices } = useSWR(
-    tokenSymbols.length > 0 ? ["token-prices", tokenSymbols.join(",")] : null,
-    () => fetchTokenPrices(tokenSymbols),
-    PRICE_SWR_CONFIG,
-  );
-
-  const selectedAsset = value
-    ? assetRegistry.ethereumChains[ethChainId].assets[value.toLowerCase()]
-    : null;
-
-  const filteredAssets = useMemo(() => {
-    let filtered = assets;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = assets.filter((t) => {
-        const asset =
-          assetRegistry.ethereumChains[ethChainId].assets[t.toLowerCase()];
-        return (
-          asset.name.toLowerCase().includes(query) ||
-          asset.symbol.toLowerCase().includes(query)
-        );
-      });
-    }
-
-    // Helper to get token info for sorting
-    const getTokenInfo = (tokenAddress: string) => {
-      const tokenBalance = balances?.[tokenAddress.toLowerCase()];
-      const balance = tokenBalance?.balance ?? 0n;
-      const hasBalance = balance > 0n;
-
-      let usdValue = 0;
-      if (hasBalance && tokenBalance) {
-        const asset =
-          assetRegistry.ethereumChains[ethChainId].assets[
-            tokenAddress.toLowerCase()
-          ];
-        const price = prices?.[asset.symbol.toUpperCase()] ?? 0;
-        const balanceInTokens =
-          Number(balance) / Math.pow(10, tokenBalance.decimals);
-        usdValue = balanceInTokens * price;
-      }
-
-      return { hasBalance, usdValue };
-    };
-
-    // Sort by: 1) USD value (highest first), 2) has balance but no price, 3) no balance
-    return [...filtered].sort((a, b) => {
-      const infoA = getTokenInfo(a);
-      const infoB = getTokenInfo(b);
-
-      // Both have USD value - sort by value descending
-      if (infoA.usdValue > 0 && infoB.usdValue > 0) {
-        return infoB.usdValue - infoA.usdValue;
-      }
-
-      // One has USD value, one doesn't - USD value comes first
-      if (infoA.usdValue > 0 && infoB.usdValue === 0) return -1;
-      if (infoB.usdValue > 0 && infoA.usdValue === 0) return 1;
-
-      // Neither has USD value - check if they have balance
-      // Tokens with balance come before tokens without balance
-      if (infoA.hasBalance && !infoB.hasBalance) return -1;
-      if (infoB.hasBalance && !infoA.hasBalance) return 1;
-
-      // Same category - sort alphabetically by name
-      const assetA =
-        assetRegistry.ethereumChains[ethChainId].assets[a.toLowerCase()];
-      const assetB =
-        assetRegistry.ethereumChains[ethChainId].assets[b.toLowerCase()];
-      return assetA.name.localeCompare(assetB.name);
-    });
-  }, [assets, searchQuery, assetRegistry, ethChainId, balances, prices]);
 
   return (
     <Dialog
       open={tokenModalOpen}
       onOpenChange={(open) => {
         setTokenModalOpen(open);
-        if (!open) {
-          setSearchQuery("");
-        }
       }}
     >
       <DialogTrigger asChild>
@@ -197,118 +104,216 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
         </button>
       </DialogTrigger>
       <DialogContent className="glass more-blur">
-        <DialogHeader>
-          <DialogTitle className="text-center font-medium text-primary">
-            Select Token
-          </DialogTitle>
-        </DialogHeader>
-        <div className="mb-4">
-          <Input
-            type="text"
-            placeholder="Search by name or symbol..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/80 dark:bg-slate-800/80 border-gray-200 dark:border-slate-600"
-          />
-        </div>
-        <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
-          {filteredAssets.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No tokens found
-            </div>
-          ) : (
-            filteredAssets.map((t) => {
-              const asset =
-                assetRegistry.ethereumChains[ethChainId].assets[
-                  t.toLowerCase()
-                ];
-              const tokenBalance = balances?.[t.toLowerCase()];
-
-              let formattedBalance: string;
-              if (tokenBalance && tokenBalance.balance > 0n) {
-                formattedBalance = formatBalance({
-                  number: tokenBalance.balance,
-                  decimals: tokenBalance.decimals,
-                  displayDecimals: 8,
-                });
-              } else {
-                formattedBalance = "0.00";
-              }
-
-              const truncatedAddress =
-                t.length > 10 ? `${t.substring(0, 10)}...` : t;
-
-              const tokenPrice = prices?.[asset.symbol.toUpperCase()];
-              let usdValue: string | null = null;
-              if (tokenBalance && tokenBalance.balance > 0n && tokenPrice) {
-                const balanceInTokens =
-                  Number(tokenBalance.balance) /
-                  Math.pow(10, tokenBalance.decimals);
-                const usdAmount = balanceInTokens * tokenPrice;
-                usdValue = formatUsdValue(usdAmount);
-              }
-
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => {
-                    onChange(t);
-                    setSearchQuery("");
-                    setTokenModalOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <SelectItemWithIcon
-                      label=""
-                      image={asset.symbol}
-                      altImage="token_generic"
-                    />
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium text-primary">
-                        {asset.symbol}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
-                        {asset.name}
-                        {t.toLowerCase() !==
-                          assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
-                          <span
-                            className="hover:underline cursor-pointer inline-flex items-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(
-                                etherscanERC20TokenLink(
-                                  assetRegistry.environment,
-                                  ethChainId,
-                                  t,
-                                ),
-                              );
-                            }}
-                          >
-                            ({truncatedAddress}
-                            <ArrowUpRight className="w-3 h-3" />)
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-sm font-medium text-primary">
-                      {formattedBalance}
-                    </span>
-                    {usdValue && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {usdValue}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })
+        <Description></Description>
+        <TokenList
+          source={source}
+          assetMeta={assetMeta}
+          registry={assetRegistry}
+          sourceAccount={sourceAccount}
+          onChange={useCallback(
+            (a: string) => {
+              onChange(a);
+              setTokenModalOpen(false);
+            },
+            [onChange],
           )}
-        </div>
+        />
       </DialogContent>
     </Dialog>
+  );
+};
+
+type TokenListProps = {
+  source: TransferLocation;
+  assetMeta: ERC20Metadata[];
+  sourceAccount?: string;
+  registry: AssetRegistry;
+  onChange: (_: string) => unknown;
+};
+const TokenList: FC<TokenListProps> = (props) => {
+  const { registry, source, assetMeta, sourceAccount, onChange } = props;
+
+  const context = useAtomValue(snowbridgeContextAtom)!;
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: balances } = useTokenBalances(
+    context,
+    registry,
+    source,
+    assetMeta,
+    sourceAccount,
+  );
+
+  const symbols = useMemo(() => assetMeta.map((a) => a.symbol), [assetMeta]);
+
+  const { data: prices } = useSWR(
+    ["token-prices", symbols],
+    () => fetchTokenPrices(symbols),
+    PRICE_SWR_CONFIG,
+  );
+
+  const filteredAssets = useMemo(() => {
+    let filtered = assetMeta;
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = assetMeta.filter((m) => {
+        return (
+          m.name.toLowerCase().includes(query) ||
+          m.symbol.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    // Helper to get token info for sorting
+    const getTokenInfo = (token: ERC20Metadata) => {
+      const tokenBalance = balances?.[token.token.toLowerCase()];
+      const balance = tokenBalance?.balance ?? 0n;
+      const hasBalance = balance > 0n;
+
+      let usdValue = 0;
+      if (hasBalance && tokenBalance) {
+        const price = prices?.[token.symbol.toUpperCase()] ?? 0;
+        const balanceInTokens =
+          Number(balance) / Math.pow(10, tokenBalance.decimals);
+        usdValue = balanceInTokens * price;
+      }
+
+      return { hasBalance, usdValue };
+    };
+
+    // Sort by: 1) USD value (highest first), 2) has balance but no price, 3) no balance
+    return [...filtered].sort((a, b) => {
+      const infoA = getTokenInfo(a);
+      const infoB = getTokenInfo(b);
+
+      // Both have USD value - sort by value descending
+      if (infoA.usdValue > 0 && infoB.usdValue > 0) {
+        return infoB.usdValue - infoA.usdValue;
+      }
+
+      // One has USD value, one doesn't - USD value comes first
+      if (infoA.usdValue > 0 && infoB.usdValue === 0) return -1;
+      if (infoB.usdValue > 0 && infoA.usdValue === 0) return 1;
+
+      // Neither has USD value - check if they have balance
+      // Tokens with balance come before tokens without balance
+      if (infoA.hasBalance && !infoB.hasBalance) return -1;
+      if (infoB.hasBalance && !infoA.hasBalance) return 1;
+
+      // Same category - sort alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+  }, [assetMeta, searchQuery, balances, prices]);
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle className="text-center font-medium text-primary">
+          Select Token
+        </DialogTitle>
+      </DialogHeader>
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Search by name or symbol..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-white/80 dark:bg-slate-800/80 border-gray-200 dark:border-slate-600"
+        />
+      </div>
+      <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
+        {filteredAssets.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">No tokens found</div>
+        ) : (
+          filteredAssets.map((asset) => {
+            const tokenBalance = balances?.[asset.token.toLowerCase()];
+
+            let formattedBalance: string;
+            if (tokenBalance && tokenBalance.balance > 0n) {
+              formattedBalance = formatBalance({
+                number: tokenBalance.balance,
+                decimals: tokenBalance.decimals,
+                displayDecimals: 8,
+              });
+            } else {
+              formattedBalance = "0.00";
+            }
+
+            const truncatedAddress =
+              asset.token.length > 10
+                ? `${asset.token.substring(0, 10)}...`
+                : asset.token;
+
+            const tokenPrice = prices?.[asset.symbol.toUpperCase()];
+            let usdValue: string | null = null;
+            if (tokenBalance && tokenBalance.balance > 0n && tokenPrice) {
+              const balanceInTokens =
+                Number(tokenBalance.balance) /
+                Math.pow(10, tokenBalance.decimals);
+              const usdAmount = balanceInTokens * tokenPrice;
+              usdValue = formatUsdValue(usdAmount);
+            }
+
+            return (
+              <button
+                key={asset.token}
+                type="button"
+                onClick={() => {
+                  onChange(asset.token);
+                }}
+                className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0"
+              >
+                <div className="flex items-center gap-3">
+                  <SelectItemWithIcon
+                    label=""
+                    image={asset.symbol}
+                    altImage="token_generic"
+                  />
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium text-primary">
+                      {asset.symbol}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
+                      {asset.name}
+                      {asset.token.toLowerCase() !==
+                        assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
+                        <span
+                          className="hover:underline cursor-pointer inline-flex items-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(
+                              etherscanERC20TokenLink(
+                                registry.environment,
+                                registry.ethChainId,
+                                asset.token,
+                              ),
+                            );
+                          }}
+                        >
+                          ({truncatedAddress}
+                          <ArrowUpRight className="w-3 h-3" />)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-medium text-primary">
+                    {formattedBalance}
+                  </span>
+                  {usdValue && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {usdValue}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </>
   );
 };

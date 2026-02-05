@@ -28,14 +28,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 import { TransferBusy } from "./TransferBusy";
 import { TransferError } from "./TransferError";
 import { TransferForm } from "./TransferForm";
 import { TransferSteps } from "./TransferSteps";
 import { useRouter } from "next/navigation";
 import base64url from "base64url";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
@@ -59,7 +59,7 @@ function sendResultToHistory(
     case "toEthereumV2": {
       const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {
-        sourceType: "substrate",
+        kind: "polkadot",
         id: messageId ?? sendResult.messageId,
         status: sendResult.success
           ? historyV2.TransferStatus.Pending
@@ -79,7 +79,7 @@ function sendResultToHistory(
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
           bridgeHubMessageId: "",
-          sourceParachainId: data.source.parachain!.parachainId,
+          sourceParachainId: data.source.parachain!.id,
         },
       };
 
@@ -88,7 +88,7 @@ function sendResultToHistory(
     case "toPolkadotV2": {
       const sendResult = result as toPolkadotV2.MessageReceipt;
       const transfer: historyV2.ToPolkadotTransferResult = {
-        sourceType: "ethereum",
+        kind: "ethereum",
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
@@ -97,7 +97,7 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain?.parachainId,
+          destinationParachain: data.destination.parachain?.id,
         },
         submitted: {
           blockNumber: sendResult.blockNumber ?? 0,
@@ -113,7 +113,7 @@ function sendResultToHistory(
     case "forInterParachain": {
       const sendResult = result as forInterParachain.MessageReceipt;
       const transfer: historyV2.InterParachainTransfer = {
-        sourceType: "substrate",
+        kind: "polkadot",
         id: messageId ?? sendResult.messageId,
         status: sendResult.success
           ? historyV2.TransferStatus.Pending
@@ -124,7 +124,7 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain!.parachainId,
+          destinationParachain: data.destination.parachain!.id,
         },
         submitted: {
           block_num: sendResult.blockNumber,
@@ -134,7 +134,7 @@ function sendResultToHistory(
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
           bridgeHubMessageId: "",
-          sourceParachainId: data.source.parachain!.parachainId,
+          sourceParachainId: data.source.parachain!.id,
         },
       };
       return { ...transfer, isWalletTransaction: true };
@@ -157,7 +157,7 @@ export const TransferComponent: FC = () => {
   };
   const [planSend, sendToken] = useSendToken();
   const router = useRouter();
-  const registry = useContext(RegistryContext)!;
+  const { registry, routes } = useContext(BridgeInfoContext)!;
 
   const { mutate: refreshHistory } = useTransferActivity();
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
@@ -236,18 +236,18 @@ export const TransferComponent: FC = () => {
 
       const messageId = result.messageId ?? "0x";
       const historyItem = sendResultToHistory(messageId, data, result);
-      if (historyItem !== null) {
-        addPendingTransaction({
-          kind: "add",
-          transfer: historyItem,
-        });
-        refreshHistory();
-      }
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);
       setBusy("Transfer successful...", true);
       const transferData = base64url.encode(JSON.stringify(historyItem));
       if (transferType !== "forInterParachain") {
+        if (historyItem !== null) {
+          addPendingTransaction({
+            kind: "add",
+            transfer: historyItem,
+          });
+          refreshHistory();
+        }
         router.push(`/txcomplete?transfer=${transferData}`);
       } else {
         router.push(`/localtxcomplete?transfer=${transferData}`);
@@ -337,6 +337,7 @@ export const TransferComponent: FC = () => {
         <TransferForm
           assetRegistry={registry}
           formData={validationData?.formData ?? formData}
+          routes={routes}
           onValidated={async (data) =>
             await validateAndSubmit(data, false, setSourceExecutionFee)
           }

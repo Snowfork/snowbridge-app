@@ -30,7 +30,7 @@ import {
   stellasSwapTokenLink,
   uniswapTokenLink,
 } from "@/lib/explorerLinks";
-import { RegistryContext } from "../providers";
+import { BridgeInfoContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { polkadotAccountsAtom } from "@/store/polkadot";
@@ -55,7 +55,7 @@ function TxCard(props: TxCardProps) {
   const links: { name: string; link: string }[] = [];
 
   const token =
-    registry.ethereumChains[registry.ethChainId].assets[
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
       transfer.info.tokenAddress.toLowerCase()
     ];
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -77,9 +77,9 @@ function TxCard(props: TxCardProps) {
     transfer.info.sourceAddress,
   ]);
 
-  switch (transfer.sourceType) {
+  switch (transfer.kind) {
     // Uniswap
-    case "substrate": {
+    case "polkadot": {
       const uniswap = {
         name: "Uniswap",
         link: uniswapTokenLink(
@@ -98,7 +98,7 @@ function TxCard(props: TxCardProps) {
         name: "Stella Swap",
         link: stellasSwapTokenLink(
           registry.environment,
-          destination.parachain!.parachainId,
+          destination.parachain!.id,
           transfer.info.tokenAddress,
         ),
       };
@@ -107,10 +107,7 @@ function TxCard(props: TxCardProps) {
       }
       const dapp = {
         name: `${destination.name} Dapp`,
-        link: getDappLink(
-          registry.environment,
-          destination.parachain!.parachainId,
-        ),
+        link: getDappLink(registry.environment, destination.parachain!.id),
       };
       if (!dapp.link.startsWith("#")) {
         links.push(dapp);
@@ -164,7 +161,7 @@ function TxCard(props: TxCardProps) {
             )}
           >
             Transfer can take up to{" "}
-            {destination.type !== "ethereum" ? "25 minutes" : "35-90 minutes"}
+            {destination.kind !== "ethereum" ? "25 minutes" : "35-90 minutes"}
           </div>
           <div
             className={
@@ -212,7 +209,7 @@ function TxCard(props: TxCardProps) {
 
 function TxComponent() {
   const searchParams = useSearchParams();
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   const environment = getEnvironment();
 
   const [messageId, sourceType, transfer] = useMemo(() => {
@@ -222,11 +219,7 @@ function TxComponent() {
     if (transferEncoded === null) return [messageId, sourceType];
 
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
-    return [
-      decoded?.id ?? messageId,
-      decoded.sourceType ?? sourceType,
-      decoded,
-    ];
+    return [decoded?.id ?? messageId, decoded.kind ?? sourceType, decoded];
   }, [searchParams]);
 
   const {
@@ -266,7 +259,7 @@ function TxComponent() {
                 inHistory: txData !== undefined,
               };
             }
-            case "substrate": {
+            case "polkadot": {
               const txData = await historyV2.toEthereumTransferById(
                 environment.indexerGraphQlUrl,
                 messageId,

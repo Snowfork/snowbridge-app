@@ -1,20 +1,23 @@
 "use client";
 
-import { AssetRegistry } from "@snowbridge/base-types";
+import { BridgeInfo } from "@snowbridge/base-types";
 import { Provider } from "jotai";
+import { ThemeProvider } from "next-themes";
 import { createContext } from "react";
 
-export const RegistryContext = createContext<AssetRegistry | null>(null);
+export const BridgeInfoContext = createContext<BridgeInfo | null>(null);
 
 interface ProviderParams {
   children: React.ReactNode;
-  registry: AssetRegistry;
+  info: BridgeInfo;
 }
 
-export function Providers({ children, registry }: ProviderParams) {
+export function Providers({ children, info }: ProviderParams) {
   return (
-    <RegistryContext.Provider value={registry}>
-      <Provider>{children}</Provider>
-    </RegistryContext.Provider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <BridgeInfoContext.Provider value={info}>
+        <Provider>{children}</Provider>
+      </BridgeInfoContext.Provider>
+    </ThemeProvider>
   );
 }

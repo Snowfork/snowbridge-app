@@ -1,9 +1,5 @@
-import { GetStartedComponent } from "@/components/transfer/GetStartedComponent";
 import { ContextComponent } from "@/components/Context";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
-import { TVLDisplay } from "@/components/home/TVLDisplay";
-import { ArchitectureSection } from "@/components/home/ArchitectureSection";
-import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
 import { TrustSection } from "@/components/home/TrustSection";
 import { HighlightSection } from "@/components/home/HighlightSection";

@@ -9,7 +9,7 @@ import { LucideClock, LucideInfo, LucideLoaderCircle } from "lucide-react";
 import { ImageWithFallback } from "../ui/image-with-fallback";
 import { formatUnits, parseUnits } from "ethers";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { toast } from "sonner";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { AssetRegistry } from "@snowbridge/base-types";
@@ -63,7 +63,7 @@ export function NeuroWebWrapStep({
 function reEncodeAddress(address: string | undefined, registry: AssetRegistry) {
   return encodeAddress(
     decodeAddress(address, false, registry.relaychain.ss58Format),
-    registry.parachains[NEURO_WEB_PARACHAIN].info.ss58Format,
+    registry.parachains[`polkadot_${NEURO_WEB_PARACHAIN}`].info.ss58Format,
   );
 }
 
@@ -98,7 +98,7 @@ export function NeuroWebUnwrapForm({
   description,
   nextStep,
 }: NeurowebUnwrap) {
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
 
   let beneficiaryHex;
   if (!isHex(beneficiaryAddress)) {
@@ -117,7 +117,7 @@ export function NeuroWebUnwrapForm({
   const { data: balanceData } = useNeuroWebBalance(beneficiary?.address);
   const { unwrap, wrap } = useNeuroWebWrapUnwrap();
   const token =
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
       tokenAddress.toLowerCase()
     ];
 

@@ -26,7 +26,9 @@ export const SendErrorDialog: FC<{
   onApproveSpend,
 }) => {
   const token =
-    registry.ethereumChains[registry.ethChainId].assets[formData.token]?.symbol;
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
+      formData.token
+    ]?.symbol;
 
   let errors = info?.errors ?? [];
   const insufficentAsset = errors.find(

@@ -38,14 +38,14 @@ import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import { disconnectWallet } from "@/lib/client/web3modal";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { EthereumTokenList, PolkadotTokenList } from "./WalletTokenList";
 
 export const Menu: FC = () => {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
 
   useEthereumProvider();
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
   const wallet = useAtomValue(walletAtom);
@@ -355,11 +355,6 @@ export const Menu: FC = () => {
           <Link href="/" className="flex items-center px-3 py-1.5">
             <p className="glimmer-text">Transfer</p>
           </Link>
-          {envName === "westend_sepolia" ? null : (
-            <Link href="/switch" className="flex items-center px-3 py-1.5">
-              <p className="glimmer-text">Polar Path</p>
-            </Link>
-          )}
           {envName === "polkadot_mainnet" ? (
             <Link href="/kusama" className="flex items-center px-3 py-1.5">
               <p className="glimmer-text">Kusama</p>
@@ -395,15 +390,6 @@ export const Menu: FC = () => {
             >
               Transfer
             </Link>
-            {envName === "westend_sepolia" ? null : (
-              <Link
-                href="/switch"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Polar Path
-              </Link>
-            )}
             {envName === "polkadot_mainnet" ? (
               <Link
                 href="/kusama"

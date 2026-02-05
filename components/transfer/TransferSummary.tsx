@@ -25,7 +25,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   let beneficiaryDisplay = data.formData.beneficiary;
   let sourceAccountLink: string;
   let beneficiaryLink: string;
-  if (data.source.id === "ethereum") {
+  if (data.source.kind === "ethereum" && data.destination.kind === "polkadot") {
     if (data.destination.parachain?.info.accountType === "AccountId32") {
       beneficiaryDisplay = encodeAddress(
         decodeAddress(beneficiaryDisplay),
@@ -40,7 +40,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     );
     beneficiaryLink = subscanAccountLink(
       data.assetRegistry.environment,
-      data.destination.parachain!.parachainId,
+      data.destination.parachain!.id,
       beneficiaryDisplay,
     );
   } else {
@@ -53,7 +53,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     }
     sourceAccountLink = subscanAccountLink(
       data.assetRegistry.environment,
-      data.source.parachain!.parachainId,
+      data.source.parachain!.id,
       sourceAccountDisplay,
     );
     beneficiaryLink = etherscanAddressLink(
@@ -65,14 +65,14 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
 
   let sourceTokenSymbol: string | null = null;
   let sourceTokenDecimals: number | null = null;
-  switch (data.source.type) {
+  switch (data.source.kind) {
     case "ethereum":
       sourceTokenSymbol = "ETH";
       sourceTokenDecimals = 18;
       break;
-    case "substrate":
-      sourceTokenSymbol = data.source.parachain?.info.tokenSymbols ?? null;
-      sourceTokenDecimals = data.source.parachain?.info.tokenDecimals ?? null;
+    case "polkadot":
+      sourceTokenSymbol = data.source.parachain.info.tokenSymbols ?? null;
+      sourceTokenDecimals = data.source.parachain.info.tokenDecimals ?? null;
       break;
   }
   const transferType = inferTransferType(data.source, data.destination);
@@ -137,7 +137,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       <p className="text-l my-2 glass-pill p-2 flex items-center justify-center gap-1 flex-wrap">
         Send {data.formData.amount} {data.tokenMetadata.symbol} from{" "}
         <Image
-          src={`/images/${data.source.id.toLowerCase()}.png`}
+          src={`/images/${data.source.key}.png`}
           width={20}
           height={20}
           alt={data.source.name}
@@ -145,7 +145,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
         />
         {data.source.name} to{" "}
         <Image
-          src={`/images/${data.destination.id.toLowerCase()}.png`}
+          src={`/images/${data.destination.key}.png`}
           width={20}
           height={20}
           alt={data.destination.name}
@@ -166,7 +166,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
             className="hover:underline cursor-pointer flex items-center gap-2"
           >
             <Image
-              src={`/images/${data.source.id.toLowerCase()}.png`}
+              src={`/images/${data.source.key}.png`}
               width={16}
               height={16}
               alt={data.source.name}
@@ -182,7 +182,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
             className="hover:underline cursor-pointer flex items-center gap-2"
           >
             <Image
-              src={`/images/${data.destination.id.toLowerCase()}.png`}
+              src={`/images/${data.destination.key}.png`}
               width={16}
               height={16}
               alt={data.destination.name}

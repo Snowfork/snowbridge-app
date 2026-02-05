@@ -19,7 +19,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -34,7 +33,6 @@ import {
   SelectValue,
 } from "./ui/select";
 import { polkadotAccountsAtom, walletAtom } from "@/store/polkadot";
-import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { useAtomValue } from "jotai";
 import {
   filterByAccountType,
@@ -68,18 +66,18 @@ import { BusyDialog } from "./BusyDialog";
 import { KusamaBalanceDisplay } from "@/components/KusamaBalanceDisplay";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { ArrowRight } from "lucide-react";
-import { KusamaTokenSelector } from "./KusamaTokenSelector";
 import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
 import { fetchTokenPrices } from "@/utils/coindesk";
+import { TokenSelector } from "./TokenSelector";
+import { getTransferLocation } from "@snowbridge/registry";
 
 export const KusamaComponent: FC = () => {
   const router = useRouter();
-  const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const polkadotWallet = useAtomValue(walletAtom);
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
 
   const [error, setError] = useState<ErrorInfo | null>(null);
   const [busyMessage, setBusyMessage] = useState("");
@@ -103,9 +101,15 @@ export const KusamaComponent: FC = () => {
   const amount = form.watch("amount");
   const watchSourceAccount = form.watch("sourceAccount");
   const watchToken = form.watch("token");
-  const tokens =
-    assetRegistry.kusama?.parachains[assetRegistry.kusama?.assetHubParaId]
-      .assets;
+
+  const [tokens] = useMemo(() => {
+    const tokens =
+      assetRegistry.kusama?.parachains[
+        `kusama_${assetRegistry.kusama?.assetHubParaId}`
+      ].assets ?? {};
+    return [tokens];
+  }, [assetRegistry]);
+
   const { data: feeInfo, error: _ } = useKusamaFeeInfo(sourceId, watchToken);
   const { data: balanceInfo } = useKusamaTokenBalance(
     watchSourceAccount,
@@ -118,9 +122,8 @@ export const KusamaComponent: FC = () => {
 
   // Get token metadata for USD calculation
   const tokenMetadata = watchToken
-    ? assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-        watchToken.toLowerCase()
-      ]
+    ? assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+        ?.assets?.[watchToken.toLowerCase()]
     : null;
 
   useEffect(() => {
@@ -236,9 +239,8 @@ export const KusamaComponent: FC = () => {
       }
 
       let asset =
-        assetRegistry.ethereumChains?.[assetRegistry.ethChainId]?.assets?.[
-          watchToken
-        ];
+        assetRegistry.ethereumChains?.[`ethereum_${assetRegistry.ethChainId}`]
+          ?.assets?.[watchToken];
 
       // Fallback to parachain metadata if decimals are missing or empty
       if (!asset?.decimals || asset.decimals === 0) {
@@ -404,14 +406,18 @@ export const KusamaComponent: FC = () => {
       });
     }
   }, [
-    context,
+    feeInfo,
+    watchToken,
+    tokens,
+    assetRegistry,
+    amount,
     sourceId,
     destinationId,
-    watchToken,
     watchSourceAccount,
     beneficiary,
-    amount,
-    feeInfo,
+    planSend,
+    sendToken,
+    router,
   ]);
 
   return (
@@ -456,7 +462,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Polkadot Asset Hub"
-                                    image={AssetHub.Polkadot}
+                                    image="polkadot_1000"
                                   />
                                 </SelectItem>
                                 <SelectItem
@@ -465,7 +471,7 @@ export const KusamaComponent: FC = () => {
                                 >
                                   <SelectItemWithIcon
                                     label="Kusama Asset Hub"
-                                    image={AssetHub.Kusama}
+                                    image="kusama_1000"
                                   />
                                 </SelectItem>
                               </SelectGroup>
@@ -514,7 +520,7 @@ export const KusamaComponent: FC = () => {
                                   >
                                     <SelectItemWithIcon
                                       label="Polkadot Asset Hub"
-                                      image={AssetHub.Polkadot}
+                                      image="polkadot_1000"
                                     />
                                   </SelectItem>
                                 ) : (
@@ -524,7 +530,7 @@ export const KusamaComponent: FC = () => {
                                   >
                                     <SelectItemWithIcon
                                       label="Kusama Asset Hub"
-                                      image={AssetHub.Kusama}
+                                      image="kusama_1000"
                                     />
                                   </SelectItem>
                                 )}
@@ -557,7 +563,11 @@ export const KusamaComponent: FC = () => {
                     </div>
                     <FormControl>
                       <SelectedPolkadotAccount
-                        source={sourceId}
+                        source={
+                          sourceId === AssetHub.Polkadot
+                            ? "polkadot_1000"
+                            : "kusama_1000"
+                        }
                         ss58Format={assetRegistry.relaychain.ss58Format}
                         polkadotAccounts={
                           polkadotAccounts?.filter(
@@ -662,13 +672,34 @@ export const KusamaComponent: FC = () => {
                               render={({ field }) => (
                                 <FormItem className="flex-shrink-0">
                                   <FormControl>
-                                    <KusamaTokenSelector
+                                    <TokenSelector
                                       value={field.value}
                                       onChange={field.onChange}
-                                      tokens={tokens}
+                                      assets={Object.keys(tokens)}
                                       assetRegistry={assetRegistry}
                                       sourceAccount={watchSourceAccount}
-                                      source={sourceId}
+                                      source={
+                                        sourceId === AssetHub.Polkadot
+                                          ? getTransferLocation(assetRegistry, {
+                                              kind: "polkadot",
+                                              id: 1000,
+                                            })
+                                          : getTransferLocation(assetRegistry, {
+                                              kind: "kusama",
+                                              id: 1000,
+                                            })
+                                      }
+                                      destination={
+                                        destinationId === AssetHub.Polkadot
+                                          ? getTransferLocation(assetRegistry, {
+                                              kind: "polkadot",
+                                              id: 1000,
+                                            })
+                                          : getTransferLocation(assetRegistry, {
+                                              kind: "kusama",
+                                              id: 1000,
+                                            })
+                                      }
                                     />
                                   </FormControl>
                                 </FormItem>

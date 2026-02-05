@@ -1,4 +1,4 @@
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { NEURO_WEB_PARACHAIN, SignerInfo } from "@/utils/types";
 import { ApiPromise } from "@polkadot/api";
@@ -85,7 +85,7 @@ export async function fetchNeuroWebBalance([context, registry, beneficiary]: [
 ]) {
   if (!beneficiary || !context) return undefined;
   const provider = await context.parachain(NEURO_WEB_PARACHAIN);
-  const info = registry.parachains[NEURO_WEB_PARACHAIN].info;
+  const info = registry.parachains[`polkadot_${NEURO_WEB_PARACHAIN}`].info;
   const para = new NeurowebParachain(
     provider,
     NEURO_WEB_PARACHAIN,
@@ -138,7 +138,7 @@ async function doUnwrap(
 
 export function useNeuroWebBalance(beneficiary?: string) {
   const context = useAtomValue(snowbridgeContextAtom)!;
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   return useSWR(
     [context, registry, beneficiary, "neuroWebBalance"],
     fetchNeuroWebBalance,

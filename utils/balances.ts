@@ -9,7 +9,6 @@ import {
   DOT_SYMBOL,
   KSM_DECIMALS,
   KSM_SYMBOL,
-  NEURO_WEB_PARACHAIN,
   RemoteAssetId,
 } from "./types";
 import { Option } from "@polkadot/types";
@@ -53,27 +52,26 @@ export async function getTokenBalance({
   dotTokenSymbol: string;
   dotTokenDecimals: number;
 }> {
-  if (destination.type === "ethereum" || source.type === "substrate") {
+  if (destination.kind === "ethereum" || source.kind === "polkadot") {
     const para = source.parachain!;
     const parachain =
-      para && context.hasParachain(para.parachainId)
-        ? await context.parachain(para.parachainId)
+      para && context.hasParachain(para.id)
+        ? await context.parachain(para.id)
         : await context.assetHub();
 
-    const sourceParaId = para.parachainId;
-    const sourceParachain = registry.parachains[sourceParaId];
+    const sourceParachain = registry.parachains[`polkadot_${para.id}`];
     const sourceAssetMetadata =
       sourceParachain && sourceParachain.assets[token.toLowerCase()];
     if (!sourceAssetMetadata) {
       throw Error(
-        `Token ${token} not registered on source parachain ${sourceParaId}.`,
+        `Token ${token} not registered on source parachain ${para.id}.`,
       );
     }
     const paraImp = await paraImplementation(parachain);
     let balance: any;
     // For DOT on AH, get it from the native balance pallet.
     if (
-      sourceParaId == registry.assetHubParaId &&
+      para.id == registry.assetHubParaId &&
       sourceAssetMetadata.location?.parents == 1 &&
       sourceAssetMetadata.location?.interior == "Here"
     ) {
@@ -107,7 +105,7 @@ export async function getTokenBalance({
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
-  } else if (destination.type === "substrate" && source.type === "ethereum") {
+  } else if (destination.kind === "polkadot" && source.kind === "ethereum") {
     const nativeBalance = await context.ethereum().getBalance(sourceAccount);
     let erc20Asset: { balance: bigint; gatewayAllowance?: bigint } = {
       balance: nativeBalance,
@@ -134,7 +132,7 @@ export async function getTokenBalance({
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
   } else {
-    throw Error(`Unknown source type ${source.type}.`);
+    throw Error(`Unknown source type ${source.kind}.`);
   }
 }
 
@@ -155,7 +153,7 @@ export async function getKusamaTokenBalance({
   if (source === AssetHub.Polkadot) {
     const parachain = await context.assetHub();
     const sourceParaId = registry.assetHubParaId;
-    const sourceMetadata = registry.parachains[sourceParaId];
+    const sourceMetadata = registry.parachains[`polkadot_${sourceParaId}`];
     if (!sourceMetadata) {
       throw Error(
         `Polkadot AssetHub parachain metadata not found (parachain ${sourceParaId}).`,
@@ -191,9 +189,11 @@ export async function getKusamaTokenBalance({
     let tokenSymbol = sourceAssetMetadata.symbol;
     if (!tokenDecimals || !tokenSymbol) {
       tokenDecimals =
-        registry.ethereumChains[registry.ethChainId].assets[token].decimals;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .decimals;
       tokenSymbol =
-        registry.ethereumChains[registry.ethChainId].assets[token].symbol;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .symbol;
     }
 
     return {
@@ -213,7 +213,8 @@ export async function getKusamaTokenBalance({
     if (!sourceParaId) {
       throw Error(`Kusama AssetHub parachain ID not set.`);
     }
-    const sourceMetadata = registry.kusama?.parachains[sourceParaId];
+    const sourceMetadata =
+      registry.kusama?.parachains[`kusama_${sourceParaId}`];
     if (!sourceMetadata) {
       throw Error(
         `Polkadot AssetHub parachain metadata not found (parachain ${sourceParaId}).`,
@@ -249,9 +250,11 @@ export async function getKusamaTokenBalance({
     let tokenSymbol = sourceAssetMetadata.symbol;
     if (!tokenDecimals || !tokenSymbol) {
       tokenDecimals =
-        registry.ethereumChains[registry.ethChainId].assets[token].decimals;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .decimals;
       tokenSymbol =
-        registry.ethereumChains[registry.ethChainId].assets[token].symbol;
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token]
+          .symbol;
     }
 
     return {

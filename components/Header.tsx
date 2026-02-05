@@ -42,12 +42,12 @@ import { useConnectPolkadotWallet } from "@/hooks/useConnectPolkadotWallet";
 import { useEthereumProvider } from "@/hooks/useEthereumProvider";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import { disconnectWallet } from "@/lib/client/web3modal";
-import { RegistryContext } from "@/app/providers";
+import { BridgeInfoContext } from "@/app/providers";
 import { EthereumTokenList, PolkadotTokenList } from "./WalletTokenList";
 
 const Wallet: FC = () => {
   useEthereumProvider();
-  const registry = useContext(RegistryContext)!;
+  const { registry } = useContext(BridgeInfoContext)!;
   useConnectPolkadotWallet(registry.relaychain.ss58Format ?? 42);
 
   const [wallet, setWallet] = useAtom(walletAtom);
@@ -494,14 +494,6 @@ export function Header() {
               >
                 Terms of Use
               </a>
-              {envName !== "westend_sepolia" && (
-                <Link
-                  href="/switch"
-                  className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Polar Path
-                </Link>
-              )}
               {envName === "polkadot_mainnet" && (
                 <Link
                   href="/kusama"
@@ -619,15 +611,6 @@ export function Header() {
             >
               Transfer
             </Link>
-            {envName === "westend_sepolia" ? null : (
-              <Link
-                href="/switch"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Polar Path
-              </Link>
-            )}
             {envName === "polkadot_mainnet" ? (
               <Link
                 href="/kusama"

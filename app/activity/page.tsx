@@ -46,13 +46,17 @@ import {
 import type { Transfer } from "@/store/transferActivity";
 import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
-import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  EthereumLocation,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useContext, useEffect, useMemo, useState } from "react";
-import { RegistryContext } from "../providers";
+import { BridgeInfoContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
@@ -71,7 +75,7 @@ const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
   if (t1.id === t2.id && t1.id.length > 0) return true;
 
   // For ToPolkadotTransferResult (E->P), match by transaction hash
-  if (t1.sourceType === "ethereum" && t2.sourceType === "ethereum") {
+  if (t1.kind === "ethereum" && t2.kind === "ethereum") {
     const t1Casted = t1 as historyV2.ToPolkadotTransferResult;
     const t2Casted = t2 as historyV2.ToPolkadotTransferResult;
     if (
@@ -84,7 +88,7 @@ const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
   }
 
   // For ToEthereumTransferResult (P->E), match by extrinsic hash
-  if (t1.sourceType === "substrate" && t2.sourceType === "substrate") {
+  if (t1.kind === "polkadot" && t2.kind === "polkadot") {
     const t1Casted = t1 as historyV2.ToEthereumTransferResult;
     const t2Casted = t2 as historyV2.ToEthereumTransferResult;
     if (
@@ -105,10 +109,10 @@ const getExplorerLinks = (
   destination: TransferLocation,
 ) => {
   const links: { text: string; url: string }[] = [];
-  if (transfer.sourceType == "kusama") {
-    const tx = transfer as historyV2.ToPolkadotTransferResult;
+  if (transfer.kind == "kusama") {
+    const tx = transfer;
     if (tx.destinationReceived) {
-      let sourceParaId: string = source.parachain!.parachainId.toString();
+      let sourceParaId: string = source.parachain!.id.toString();
       if (transfer.info.sourceNetwork == "kusama") {
         sourceParaId = "kusama_" + sourceParaId;
       }
@@ -134,13 +138,13 @@ const getExplorerLinks = (
       });
     }
     return links;
-  } else if (transfer.sourceType == "substrate") {
+  } else if (transfer.kind == "polkadot") {
     const tx = transfer as historyV2.ToEthereumTransferResult;
     links.push({
       text: `Submitted to ${source.name}`,
       url: subscanExtrinsicLink(
         registry.environment,
-        source.parachain!.parachainId,
+        source.parachain!.id,
         tx.submitted.extrinsic_hash,
       ),
     });
@@ -205,7 +209,7 @@ const getExplorerLinks = (
       });
     }
   }
-  if (destination?.type == "substrate") {
+  if (destination?.kind == "polkadot") {
     const tx = transfer as historyV2.ToPolkadotTransferResult;
     links.push({
       text: "Submitted to Snowbridge Gateway",
@@ -275,8 +279,8 @@ const transferDetail = (
 
   let sourceAddress = transfer.info.sourceAddress;
   if (
-    transfer.sourceType === "substrate" &&
-    destination.ethChain &&
+    transfer.kind === "polkadot" &&
+    destination.kind === "ethereum" &&
     source.parachain
   ) {
     if (source.parachain.info.accountType === "AccountId32") {
@@ -290,10 +294,11 @@ const transferDetail = (
   }
   let beneficiary = transfer.info.beneficiaryAddress;
   if (
-    transfer.sourceType === "ethereum" &&
-    source.ethChain &&
+    transfer.kind === "ethereum" &&
+    source.kind === "ethereum" &&
     destination.parachain
   ) {
+    console.log("AAAAA", transfer);
     if (destination.parachain.info.accountType === "AccountId32") {
       beneficiary = encodeAddress(
         beneficiary,
@@ -312,20 +317,20 @@ const transferDetail = (
   );
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
-  if (transfer.sourceType === "ethereum") {
+  if (transfer.kind === "ethereum" && source.kind === "ethereum") {
     sourceAccountUrl = etherscanAddressLink(
       registry.environment,
-      source.ethChain!.chainId,
+      source.ethChain.id,
       transfer.info.sourceAddress,
     );
     beneficiaryAccountUrl = subscanAccountLink(
       registry.environment,
-      destination.parachain!.parachainId,
+      destination.parachain!.id,
       beneficiary,
     );
-  } else if (transfer.sourceType === "kusama") {
-    let sourceParachain = source.parachain!.parachainId.toString();
-    let destParachain = destination.parachain!.parachainId.toString();
+  } else if (transfer.kind === "kusama") {
+    let sourceParachain = source.parachain!.id.toString();
+    let destParachain = destination.parachain!.id.toString();
     if (transfer.info.sourceNetwork == "kusama") {
       sourceParachain = "kusama_" + sourceParachain;
     }
@@ -345,18 +350,18 @@ const transferDetail = (
   } else {
     sourceAccountUrl = subscanAccountLink(
       registry.environment,
-      source.parachain!.parachainId,
+      source.parachain!.id,
       transfer.info.sourceAddress,
     );
     beneficiaryAccountUrl = etherscanAddressLink(
       registry.environment,
-      destination.ethChain!.chainId,
+      (destination as EthereumLocation).ethChain.id,
       beneficiary,
     );
   }
   const { tokenName, amount } = formatTokenData(
     transfer,
-    registry.ethereumChains[registry.ethChainId].assets,
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets,
   );
   const formattedDate = formatShortDate(new Date(transfer.info.when));
   return (
@@ -373,7 +378,7 @@ const transferDetail = (
               <td className="py-1 text-right">
                 <span className="inline-flex items-center gap-1">
                   <ImageWithFallback
-                    src={`/images/${source.id.toLowerCase().replace(/_/g, "")}.png`}
+                    src={`/images/${source.key}.png`}
                     fallbackSrc="/images/parachain_generic.png"
                     width={16}
                     height={16}
@@ -510,7 +515,7 @@ export default function Activity() {
     transfersPendingLocalAtom,
   );
 
-  const assetRegistry = useContext(RegistryContext)!;
+  const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
   const {
     data: transfers,
     mutate,
@@ -591,10 +596,10 @@ export default function Activity() {
       const id = getChainIdentifiers(transfer, assetRegistry);
       if (
         !id ||
-        (id.sourceType === "substrate" &&
-          !(id.sourceId in assetRegistry.parachains)) ||
-        (id.destinationType === "substrate" &&
-          !(id.destinationId in assetRegistry.parachains))
+        (id.sourceType === "polkadot" &&
+          !(`polkadot_${id.sourceId}` in assetRegistry.parachains)) ||
+        (id.destinationType === "polkadot" &&
+          !(`polkadot_${id.destinationId}` in assetRegistry.parachains))
       )
         continue;
 

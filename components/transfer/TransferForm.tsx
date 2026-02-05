@@ -18,14 +18,11 @@ import {
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assetsV2, Context } from "@snowbridge/api";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { BalanceDisplay } from "../BalanceDisplay";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
-import { SelectedEthereumWallet } from "../SelectedEthereumAccount";
-import { SelectedPolkadotAccount } from "../SelectedPolkadotAccount";
 import { Button } from "../ui/button";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import {
@@ -33,7 +30,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "../ui/form";
 import {
@@ -69,13 +65,18 @@ import {
   ERC20Metadata,
   TransferLocation,
   Source,
-  SourceType,
+  TransferRoute,
 } from "@snowbridge/base-types";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import {
   getTransferLocation,
   getTransferLocations,
 } from "@snowbridge/registry";
+import {
+  getChainId,
+  getEthereumNetwork,
+  switchNetwork,
+} from "@/lib/client/web3modal";
 
 function getBeneficiaries(
   destination: TransferLocation,
@@ -84,34 +85,34 @@ function getBeneficiaries(
   ss58Format: number,
 ) {
   const beneficiaries: AccountInfo[] = [];
-  if (destination.type === "substrate") {
+  if (destination.kind === "polkadot") {
     polkadotAccounts
       .filter(
-        (x: any) =>
-          (x.type === "ethereum" &&
+        (x) =>
+          ((x as any).type === "ethereum" &&
             destination.parachain?.info.accountType === "AccountId20") ||
-          (x.type !== "ethereum" &&
+          ((x as any).type !== "ethereum" &&
             destination.parachain?.info.accountType === "AccountId32"),
       )
-      .map((x: any) => {
-        if (x.type === "ethereum") {
+      .map((x) => {
+        if ((x as any).type === "ethereum") {
           return {
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as SourceType,
+            type: "ethereum" as const,
           };
         } else {
           return {
             key: transformSs58Format(x.address, ss58Format),
-            name: x.name,
-            type: destination.type,
+            name: x.name!,
+            type: "substrate" as const,
           };
         }
       })
       .forEach((x) => beneficiaries.push(x));
   }
   if (
-    destination.type === "ethereum" ||
+    destination.kind === "ethereum" ||
     destination.parachain?.info.accountType === "AccountId20"
   ) {
     ethereumAccounts?.forEach((x) => {
@@ -119,7 +120,7 @@ function getBeneficiaries(
         beneficiaries.push({
           key: x,
           name: x,
-          type: "ethereum" as SourceType,
+          type: "ethereum" as const,
         });
       }
     });
@@ -135,7 +136,7 @@ function getBeneficiaries(
           beneficiaries.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
-            type: "ethereum" as SourceType,
+            type: "ethereum" as const,
           });
         }
       });
@@ -149,6 +150,7 @@ interface TransferFormProps {
   onError: (form: TransferFormData, error: Error) => Promise<unknown> | unknown;
   formData?: TransferFormData;
   assetRegistry: AssetRegistry;
+  routes: readonly TransferRoute[];
 }
 
 function initialFormData(
@@ -161,7 +163,7 @@ function initialFormData(
   if (querySource) {
     const sourceLocation = locations.find(
       (l) =>
-        l.id.toLowerCase() === querySource.toLowerCase() ||
+        l.id.toString() === querySource ||
         l.key.toLowerCase() == querySource.toLowerCase(),
     );
     if (sourceLocation) {
@@ -169,12 +171,8 @@ function initialFormData(
     }
   }
 
-  const destinations = Object.keys(source.destinations).map((destination) =>
-    getTransferLocation(
-      registry,
-      source.destinations[destination].type,
-      destination,
-    ),
+  const destinations = Object.values(source.destinations).map((destination) =>
+    getTransferLocation(registry, destination),
   );
 
   let destination = destinations[0];
@@ -182,7 +180,7 @@ function initialFormData(
   if (queryDestination) {
     const destinationLocation = destinations.find(
       (l) =>
-        l.id.toLowerCase() === queryDestination.toLowerCase() ||
+        l.id.toString() === queryDestination ||
         l.key.toLowerCase() == queryDestination.toLowerCase(),
     );
     if (destinationLocation) {
@@ -190,7 +188,7 @@ function initialFormData(
     }
   }
   const assets = Object.keys(
-    registry.ethereumChains[registry.ethChainId].assets,
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets,
   );
 
   const tokens = source.destinations[destination.key].assets;
@@ -199,7 +197,9 @@ function initialFormData(
   if (queryToken) {
     const ethAsset = assets.find((asset) => {
       const assetMeta =
-        registry.ethereumChains[registry.ethChainId].assets[asset];
+        registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
+          asset
+        ];
       return (
         assetMeta.name.toLowerCase() === token.toLowerCase() ||
         assetMeta.symbol.toLowerCase() === queryToken.toLowerCase() ||
@@ -211,9 +211,9 @@ function initialFormData(
     }
   } else {
     const ethAsset = assets.find((asset) =>
-      registry.ethereumChains[registry.ethChainId].assets[asset].name.match(
-        /^Ether/,
-      ),
+      registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
+        asset
+      ].name.match(/^Ether/),
     );
     if (ethAsset) {
       token = ethAsset;
@@ -233,6 +233,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   onError,
   formData,
   assetRegistry,
+  routes,
 }) => {
   const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
@@ -248,10 +249,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const [sourceAccountSelectorOpen, setSourceAccountSelectorOpen] =
     useState(false);
 
-  const locations = useMemo(
-    () => getTransferLocations(assetRegistry),
-    [assetRegistry],
-  );
+  const locations = useMemo(() => getTransferLocations(routes), [routes]);
 
   const formParams = useSearchParams();
 
@@ -266,11 +264,11 @@ export const TransferForm: FC<TransferFormProps> = ({
   const queryAmount = formParams.get("amount");
 
   const [source, setSource] = useState(firstSource);
-  const [sourceAccount, setSourceAccount] = useState<string>();
   const [destinations, setDestinations] = useState(firstDestinations);
   const [destination, setDestination] = useState(firstDestination);
   const [token, setToken] = useState(firstToken);
   const [validating, setValidating] = useState(false);
+  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   const beneficiaries = getBeneficiaries(
     destination,
@@ -283,11 +281,11 @@ export const TransferForm: FC<TransferFormProps> = ({
   const form = useForm<TransferFormData>({
     resolver: zodResolver(transferFormSchema),
     defaultValues: {
-      source: formData?.source ?? source.id,
-      destination: formData?.destination ?? destination.id,
+      source: formData?.source ?? source.key,
+      destination: formData?.destination ?? destination.key,
       token: formData?.token ?? token,
       beneficiary: formData?.beneficiary,
-      sourceAccount: formData?.sourceAccount ?? sourceAccount,
+      sourceAccount: formData?.sourceAccount,
       amount: formData?.amount ?? (queryAmount || "0.0"),
     },
   });
@@ -296,18 +294,19 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
+  const watchBeneficiary = form.watch("beneficiary");
   const watchAmount = form.watch("amount");
-  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
-    if (source.type === "ethereum") {
+    if (source.kind === "ethereum") {
       // Set to Ethereum account if connected, otherwise clear
       form.setValue("sourceAccount", ethereumAccount ?? "");
-    } else if (source.type === "substrate") {
+    } else if (source.kind === "polkadot") {
       // For substrate sources, filter accounts by account type (AccountId20 vs AccountId32)
       const accountType =
-        assetRegistry.parachains[source.key]?.info.accountType ?? "AccountId32";
+        assetRegistry.parachains[`polkadot_${source.id}`]?.info.accountType ??
+        "AccountId32";
       const validAccounts = polkadotAccounts?.filter(
         filterByAccountType(accountType),
       );
@@ -325,19 +324,18 @@ export const TransferForm: FC<TransferFormProps> = ({
       }
     }
   }, [
-    source.type,
-    source.key,
+    source.kind,
     ethereumAccount,
     polkadotAccount?.address,
     polkadotAccounts,
     assetRegistry,
     form,
+    source.id,
   ]);
 
   // Auto-set beneficiary when wallet connects or destination type changes
-  const watchBeneficiary = form.watch("beneficiary");
   useEffect(() => {
-    if (destination.type === "ethereum") {
+    if (destination.kind === "ethereum") {
       // For Ethereum destination, check if current beneficiary is a valid Ethereum address
       const isValidEthAddress =
         watchBeneficiary?.startsWith("0x") && watchBeneficiary?.length === 42;
@@ -345,7 +343,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         // Set to Ethereum account if connected, otherwise clear
         form.setValue("beneficiary", ethereumAccount ?? "");
       }
-    } else if (destination.type === "substrate") {
+    } else if (destination.kind === "polkadot") {
       // For substrate destinations, filter accounts by account type (AccountId20 vs AccountId32)
       const accountType =
         destination.parachain?.info.accountType ?? "AccountId32";
@@ -379,7 +377,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       }
     }
   }, [
-    destination.type,
+    destination.kind,
     destination.parachain?.info.accountType,
     destination.key,
     ethereumAccount,
@@ -391,7 +389,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   ]);
 
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
-    getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source),
     destination,
     token,
   );
@@ -399,94 +397,97 @@ export const TransferForm: FC<TransferFormProps> = ({
   // Get balance for MAX button
   const { data: balanceInfo } = useTokenBalance(
     watchSourceAccount ?? "",
-    getTransferLocation(assetRegistry, source.type, source.key),
+    getTransferLocation(assetRegistry, source),
     destination,
     token,
   );
 
-  // Fetch balances for all tokens in the list
-  const availableTokens = source.destinations[destination.key].assets;
-
   useEffect(() => {
     let newDestinations = destinations;
     let newSource = source;
-    if (source.id !== watchSource) {
-      newSource = locations.find((s) => s.id == watchSource)!;
-      setSource(newSource);
-      // For substrate sources, validate account type (AccountId20 vs AccountId32)
-      if (newSource.type === "substrate") {
-        const accountType =
-          assetRegistry.parachains[newSource.key].info.accountType;
-        const validAccounts = polkadotAccounts?.filter(
-          filterByAccountType(accountType),
-        );
-        // Check if current account is valid for the new chain
-        const currentAccountValid = validAccounts?.some(
-          (acc) => acc.address === watchSourceAccount,
-        );
-        if (!currentAccountValid) {
-          const newAccount =
-            validAccounts && validAccounts.length > 0
-              ? validAccounts[0].address
-              : "";
-          form.setValue("sourceAccount", newAccount);
-        }
-      }
-      // Note: Ethereum source account is handled by the auto-set useEffect
 
-      newDestinations = Object.keys(newSource.destinations).map((destination) =>
-        getTransferLocation(
-          assetRegistry,
-          newSource.destinations[destination].type,
-          destination,
-        ),
+    // Update source
+    if (source.key !== watchSource) {
+      newSource = locations.find((s) => s.key == watchSource)!;
+      setSource(newSource);
+
+      newDestinations = Object.values(newSource.destinations).map(
+        (destination) => getTransferLocation(assetRegistry, destination),
       );
       setDestinations(newDestinations);
     }
+
+    // Update destination
     const newDestination =
-      newDestinations.find((d) => d.id == watchDestination) ??
+      newDestinations.find((d) => d.key == watchDestination) ??
       newDestinations[0];
     setDestination(newDestination);
-    form.resetField("destination", { defaultValue: newDestination.id });
+    form.resetField("destination", { defaultValue: newDestination.key });
 
+    // Update Token
     const newTokens = newSource.destinations[newDestination.key].assets;
     const newToken =
       newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
       newTokens[0];
     setToken(newToken);
     form.resetField("token", { defaultValue: newToken });
+
+    // Update Source Account
+    if (newSource.kind === "polkadot") {
+      const accountType =
+        assetRegistry.parachains[`polkadot_${newSource.id}`].info.accountType;
+      const validAccounts = polkadotAccounts?.filter(
+        filterByAccountType(accountType),
+      );
+      // Check if current account is valid for the new chain
+      const currentAccountValid = validAccounts?.some(
+        (acc) => acc.address === watchSourceAccount,
+      );
+      if (!currentAccountValid) {
+        const newAccount =
+          validAccounts && validAccounts.length > 0
+            ? validAccounts[0].address
+            : "";
+        form.setValue("sourceAccount", newAccount);
+      }
+    }
+
+    // Update beneficiary account
     if (formData?.beneficiary) {
       form.resetField("beneficiary", {
         defaultValue: formData.beneficiary,
       });
       form.setValue("beneficiary", formData.beneficiary);
     }
+
+    // Update Network Id
+    try {
+      const chainId = getChainId();
+      if (
+        newSource.kind === "ethereum" &&
+        chainId?.toString() !== newSource.id.toString()
+      ) {
+        switchNetwork(getEthereumNetwork(Number(newSource.id)));
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }, [
-    destination.type,
+    assetRegistry,
     destinations,
-    environment,
-    ethereumAccount,
     form,
     formData?.beneficiary,
-    polkadotAccount?.address,
-    source.id,
-    source.type,
+    locations,
+    polkadotAccounts,
+    source,
     watchDestination,
     watchSource,
-    watchToken,
     watchSourceAccount,
-    source,
-    locations,
-    assetRegistry,
-    polkadotAccounts,
-    firstSource.type,
+    watchToken,
   ]);
 
-  // Network switching is handled at transfer time, not on source change
-  // This prevents wallet disconnection issues during source selection
-
   const tokenMetadata =
-    assetRegistry.ethereumChains[assetRegistry.ethChainId].assets[
+    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
       token.toLowerCase()
     ];
 
@@ -532,7 +533,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         }
 
         if (
-          destination.type === "substrate" &&
+          destination.kind === "polkadot" &&
           destination.parachain!.info.accountType === "AccountId32"
         ) {
           if (!isHex(formData.beneficiary)) {
@@ -568,14 +569,13 @@ export const TransferForm: FC<TransferFormProps> = ({
         }
 
         let minimumTransferAmount = 1n;
-        if (destination.type === "substrate") {
+        if (destination.kind === "polkadot") {
           const ahMin =
             destination.parachain?.assets[formData.token.toLowerCase()]
               .minimumBalance ?? minimumTransferAmount;
           const dhMin =
-            assetRegistry.parachains[assetRegistry.assetHubParaId].assets[
-              formData.token.toLowerCase()
-            ].minimumBalance;
+            assetRegistry.parachains[`polkadot_${assetRegistry.assetHubParaId}`]
+              .assets[formData.token.toLowerCase()].minimumBalance;
           if (ahMin > minimumTransferAmount) minimumTransferAmount = ahMin;
           if (dhMin > minimumTransferAmount) minimumTransferAmount = dhMin;
         }
@@ -607,18 +607,18 @@ export const TransferForm: FC<TransferFormProps> = ({
           throw Error(`No delivery fee set. ${feeError}`);
         }
 
-        if (source.id !== formData.source) {
+        if (source.key !== formData.source) {
           throw Error(
-            `Invalid form state: source mismatch ${source.id} and ${formData.source}.`,
+            `Invalid form state: source mismatch ${source.key} and ${formData.source}.`,
           );
         }
-        if (destination.id !== formData.destination) {
+        if (destination.key !== formData.destination) {
           throw Error(
-            `Invalid form state: source mismatch ${destination.id} and ${formData.destination}.`,
+            `Invalid form state: source mismatch ${destination.key} and ${formData.destination}.`,
           );
         }
         await onValidated({
-          source: getTransferLocation(assetRegistry, source.type, source.key),
+          source: getTransferLocation(assetRegistry, source),
           destination,
           assetRegistry,
           formData,
@@ -662,24 +662,15 @@ export const TransferForm: FC<TransferFormProps> = ({
                     <SelectContent>
                       <SelectGroup>
                         {locations.map((s) => {
-                          let name: string;
-                          if (s.type === "ethereum") {
-                            const eth = assetRegistry.ethereumChains[s.key];
-                            if (!eth.evmParachainId) {
-                              name = "Ethereum";
-                            } else {
-                              const evmChain =
-                                assetRegistry.parachains[eth.evmParachainId];
-                              name = `${evmChain.info.name} (EVM)`;
-                            }
-                          } else {
-                            name = assetRegistry.parachains[s.key].info.name;
-                          }
+                          const location = getTransferLocation(
+                            assetRegistry,
+                            s,
+                          );
                           return (
-                            <SelectItem key={s.id} value={s.id}>
+                            <SelectItem key={s.key} value={s.key}>
                               <SelectItemWithIcon
-                                label={name}
-                                image={s.id}
+                                label={location.name}
+                                image={s.key}
                                 altImage="parachain_generic"
                               />
                             </SelectItem>
@@ -727,10 +718,10 @@ export const TransferForm: FC<TransferFormProps> = ({
                     <SelectContent>
                       <SelectGroup>
                         {destinations.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
+                          <SelectItem key={s.key} value={s.key}>
                             <SelectItemWithIcon
                               label={s.name}
-                              image={s.id}
+                              image={s.key}
                               altImage="parachain_generic"
                             />
                           </SelectItem>
@@ -758,13 +749,13 @@ export const TransferForm: FC<TransferFormProps> = ({
                         <span>Send</span>
                         {/* Only show account if wallet is connected for current source type */}
                         {watchSourceAccount &&
-                          ((source.type === "ethereum" && ethereumAccount) ||
-                            (source.type === "substrate" &&
+                          ((source.kind === "ethereum" && ethereumAccount) ||
+                            (source.kind === "polkadot" &&
                               polkadotAccount?.address)) && (
                             <button
                               type="button"
                               onClick={() => {
-                                if (source.type === "ethereum") {
+                                if (source.kind === "ethereum") {
                                   openEthereumWallet({ view: "Account" });
                                 } else {
                                   setSourceAccountSelectorOpen(true);
@@ -772,7 +763,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                               }}
                               className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
                             >
-                              {source.type === "ethereum" ? (
+                              {source.kind === "ethereum" ? (
                                 <Image
                                   src={
                                     ethereumWalletInfo?.icon ||
@@ -829,12 +820,10 @@ export const TransferForm: FC<TransferFormProps> = ({
                                     source.destinations[destination.key].assets
                                   }
                                   assetRegistry={assetRegistry}
-                                  ethChainId={assetRegistry.ethChainId}
                                   sourceAccount={watchSourceAccount}
                                   source={getTransferLocation(
                                     assetRegistry,
-                                    source.type,
-                                    source.key,
+                                    source,
                                   )}
                                   destination={destination}
                                 />
@@ -889,7 +878,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
                                 if (
                                   isEther &&
-                                  source.type === "ethereum" &&
+                                  source.kind === "ethereum" &&
                                   feeInfo
                                 ) {
                                   const feeBuffer =
@@ -902,7 +891,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 
                                 // If transferring native token from substrate, subtract the fee
                                 if (
-                                  source.type === "substrate" &&
+                                  source.kind === "polkadot" &&
                                   feeInfo &&
                                   tokenMetadata.symbol.toUpperCase() ===
                                     feeInfo.symbol.toUpperCase()
@@ -972,11 +961,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               <dd className="text-primary">
                 <FeeDisplay
                   className="inline"
-                  source={getTransferLocation(
-                    assetRegistry,
-                    source.type,
-                    source.key,
-                  )}
+                  source={getTransferLocation(assetRegistry, source)}
                   destination={destination}
                   token={token}
                   displayDecimals={8}
@@ -986,7 +971,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
               <dd className="text-primary">
-                {source.type === "ethereum" ? "~20 minutes" : "~35 minutes"}
+                {source.kind === "ethereum" ? "~20 minutes" : "~35 minutes"}
               </dd>
             </div>
           </div>
@@ -1026,9 +1011,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                   {polkadotAccounts
                     .filter(
                       filterByAccountType(
-                        source.type === "substrate"
-                          ? (assetRegistry.parachains[source.key]?.info
-                              .accountType ?? "AccountId32")
+                        source.kind === "polkadot"
+                          ? (assetRegistry.parachains[`polkadot_${source.id}`]
+                              ?.info.accountType ?? "AccountId32")
                           : "AccountId32",
                       ),
                     )
@@ -1124,26 +1109,26 @@ function SubmitButton({
 
   if (tokenMetadata !== null && context !== null) {
     // Check if Ethereum wallet is connected for Ethereum source
-    if (!ethereumAccount && source.type === "ethereum") {
+    if (!ethereumAccount && source.kind === "ethereum") {
       return <ConnectEthereumWalletButton variant="default" />;
     }
     // Check if Polkadot wallet is connected for Substrate source
     if (
       (polkadotAccounts === null || polkadotAccounts.length === 0) &&
-      source.type === "substrate"
+      source.kind === "polkadot"
     ) {
       return <ConnectPolkadotWalletButton variant="default" />;
     }
     // Check beneficiaries for destination
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
-      destination.type === "ethereum"
+      destination.kind === "ethereum"
     ) {
       return <ConnectEthereumWalletButton variant="default" />;
     }
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
-      destination.type === "substrate"
+      destination.kind === "polkadot"
     ) {
       return <ConnectPolkadotWalletButton variant="default" />;
     }
