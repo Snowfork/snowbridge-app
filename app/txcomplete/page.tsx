@@ -38,6 +38,7 @@ import { useAtomValue } from "jotai";
 import { walletTxChecker } from "@/utils/addresses";
 import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
 import { ethereumAccountsAtom } from "@/store/ethereum";
+import { chainName } from "@/utils/chainNames";
 
 const Loading = () => {
   return <SnowflakeLoader size="md" />;
@@ -106,7 +107,7 @@ function TxCard(props: TxCardProps) {
         links.push(stellasSwap);
       }
       const dapp = {
-        name: `${destination.name} Dapp`,
+        name: `${chainName(destination)} Dapp`,
         link: getDappLink(registry.environment, destination.parachain!.id),
       };
       if (!dapp.link.startsWith("#")) {

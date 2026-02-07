@@ -10,6 +10,7 @@ import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import Image from "next/image";
+import { chainName } from "@/utils/chainNames";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -140,18 +141,18 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
           src={`/images/${data.source.key}.png`}
           width={20}
           height={20}
-          alt={data.source.name}
+          alt={chainName(data.source)}
           className="inline-block rounded-full"
         />
-        {data.source.name} to{" "}
+        {chainName(data.source)} to{" "}
         <Image
           src={`/images/${data.destination.key}.png`}
           width={20}
           height={20}
-          alt={data.destination.name}
+          alt={chainName(data.destination)}
           className="inline-block rounded-full"
         />
-        {data.destination.name}
+        {chainName(data.destination)}
       </p>
 
       {/* Sender & Recipient Card */}
@@ -169,7 +170,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               src={`/images/${data.source.key}.png`}
               width={16}
               height={16}
-              alt={data.source.name}
+              alt={chainName(data.source)}
               className="rounded-full"
             />
             {sourceAccountDisplay}
@@ -185,7 +186,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               src={`/images/${data.destination.key}.png`}
               width={16}
               height={16}
-              alt={data.destination.name}
+              alt={chainName(data.destination)}
               className="rounded-full"
             />
             {beneficiaryDisplay}

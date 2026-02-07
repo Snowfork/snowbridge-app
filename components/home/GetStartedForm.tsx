@@ -29,6 +29,7 @@ import {
 } from "@snowbridge/registry";
 import { z } from "zod";
 import { formatUsdValue } from "@/utils/formatting";
+import { chainName } from "@/utils/chainNames";
 
 interface GetStartedFormProps {
   routes: readonly TransferRoute[];
@@ -182,7 +183,7 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
                           return (
                             <SelectItem key={s.key} value={s.key}>
                               <SelectItemWithIcon
-                                label={loc.name}
+                                label={chainName(loc)}
                                 image={s.key}
                                 altImage="parachain_generic"
                               />
@@ -226,7 +227,7 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
                         {destinations.map((s) => (
                           <SelectItem key={s.key} value={s.key}>
                             <SelectItemWithIcon
-                              label={s.name}
+                              label={chainName(s)}
                               image={s.key}
                               altImage="parachain_generic"
                             />

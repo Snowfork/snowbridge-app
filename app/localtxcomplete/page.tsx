@@ -26,6 +26,7 @@ import { AssetRegistry } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/registry";
 import { TransferTitle } from "@/components/activity/TransferTitle";
+import { chainName } from "@/utils/chainNames";
 
 const Loading = () => {
   return <SnowflakeLoader size="md" />;
@@ -45,7 +46,7 @@ function TxCard(props: TxCardProps) {
     id: transfer.submitted.sourceParachainId,
   });
   links.push({
-    text: `Submitted to ${source.name}`,
+    text: `Submitted to ${chainName(source)}`,
     url: subscanExtrinsicLink(
       registry.environment,
       transfer.submitted.sourceParachainId,
@@ -60,7 +61,7 @@ function TxCard(props: TxCardProps) {
         transfer.destinationReceived.paraId,
     });
     links.push({
-      text: `Message received on ${destination.name}`,
+      text: `Message received on ${chainName(destination)}`,
       url: subscanEventLink(
         registry.environment,
         transfer.destinationReceived.paraId,

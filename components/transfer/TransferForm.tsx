@@ -77,6 +77,7 @@ import {
   getEthereumNetwork,
   switchNetwork,
 } from "@/lib/client/web3modal";
+import { chainName } from "@/utils/chainNames";
 
 function getBeneficiaries(
   destination: TransferLocation,
@@ -669,7 +670,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           return (
                             <SelectItem key={s.key} value={s.key}>
                               <SelectItemWithIcon
-                                label={location.name}
+                                label={chainName(location)}
                                 image={s.key}
                                 altImage="parachain_generic"
                               />
@@ -720,7 +721,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                         {destinations.map((s) => (
                           <SelectItem key={s.key} value={s.key}>
                             <SelectItemWithIcon
-                              label={s.name}
+                              label={chainName(s)}
                               image={s.key}
                               altImage="parachain_generic"
                             />

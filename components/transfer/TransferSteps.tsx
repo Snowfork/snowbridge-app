@@ -17,6 +17,7 @@ import { assetsV2, toEthereumV2 } from "@snowbridge/api";
 import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { NeuroWebWrapStep } from "./NeuroWebUnwrapStep";
+import { chainName } from "@/utils/chainNames";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -70,7 +71,7 @@ function TransferFeeStep(step: StepData) {
 
   const transferFee = parseUnits("0.2", feeInfo.decimals);
   const fee = formatUnits(feeInfo.fee + transferFee, feeInfo.decimals);
-  const name = step.data.source.name;
+  const name = chainName(step.data.source);
   return (
     <SubstrateTransferStep
       {...step}
@@ -110,8 +111,8 @@ function TransferStepView(step: StepData) {
       return (
         <SubstrateTransferStep
           {...step}
-          title={`Missing existential deposit on ${step.data.destination.name}.`}
-          description={`Beneficiary account requires existential deposit on ${step.data.destination.name}. The existential deposit allows the account to remain open and hold assets. This step will transfer funds from the relaychain.`}
+          title={`Missing existential deposit on ${chainName(step.data.destination)}.`}
+          description={`Beneficiary account requires existential deposit on ${chainName(step.data.destination)}. The existential deposit allows the account to remain open and hold assets. This step will transfer funds from the relaychain.`}
           defaultAmount={"0.2"}
         />
       );

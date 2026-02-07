@@ -61,6 +61,7 @@ import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { chainName } from "@/utils/chainNames";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -121,7 +122,7 @@ const getExplorerLinks = (
         destinationParaId = "kusama_" + destinationParaId;
       }
       links.push({
-        text: `Submitted to ${source.name}`,
+        text: `Submitted to ${chainName(source)}`,
         url: subscanExtrinsicLink(
           registry.environment,
           sourceParaId,
@@ -129,7 +130,7 @@ const getExplorerLinks = (
         ),
       });
       links.push({
-        text: `Message received on ${destination.name}`,
+        text: `Message received on ${chainName(destination)}`,
         url: subscanEventLink(
           registry.environment,
           destinationParaId,
@@ -141,7 +142,7 @@ const getExplorerLinks = (
   } else if (transfer.kind == "polkadot") {
     const tx = transfer as historyV2.ToEthereumTransferResult;
     links.push({
-      text: `Submitted to ${source.name}`,
+      text: `Submitted to ${chainName(source)}`,
       url: subscanExtrinsicLink(
         registry.environment,
         source.parachain!.id,
@@ -252,7 +253,7 @@ const getExplorerLinks = (
     }
     if (tx.destinationReceived) {
       links.push({
-        text: `Message received on ${destination.name}`,
+        text: `Message received on ${chainName(destination)}`,
         url: subscanEventLink(
           registry.environment,
           tx.destinationReceived.paraId,
@@ -382,10 +383,10 @@ const transferDetail = (
                     fallbackSrc="/images/parachain_generic.png"
                     width={16}
                     height={16}
-                    alt={source.name}
+                    alt={chainName(source)}
                     className="rounded-full"
                   />
-                  {source.name}
+                  {chainName(source)}
                 </span>
               </td>
             </tr>

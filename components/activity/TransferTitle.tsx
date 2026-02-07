@@ -15,6 +15,7 @@ import type {
 } from "@snowbridge/base-types";
 import Image from "next/image";
 import { getTransferLocation } from "@snowbridge/registry";
+import { chainName } from "@/utils/chainNames";
 
 export function getChainIdentifiers(
   transfer: Transfer,
@@ -166,7 +167,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
       }
       width={18}
       height={18}
-      alt={destination?.name ?? "destination"}
+      alt={chainName(destination)}
       className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
       onError={() => setDestImageError(true)}
     />
@@ -181,7 +182,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
         </span>
         <span className="text-muted-foreground">→</span>
         {destIcon}
-        <span className="truncate">{destination?.name ?? "unknown"}</span>
+        <span className="truncate">{chainName(destination)}</span>
         <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
           {shortDate}
         </span>
@@ -201,7 +202,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
         </span>
         <span className="text-muted-foreground">→</span>
         {destIcon}
-        <span className="truncate">{destination?.name ?? "unknown"}</span>
+        <span className="truncate">{chainName(destination)}</span>
         <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
           {shortDate}
         </span>
