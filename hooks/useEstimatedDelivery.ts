@@ -58,12 +58,13 @@ export function estimateDelivery(
     return "Could not estimate";
   }
   switch (inferTransferType(source, destination)) {
-    case "toPolkadotV2":
+    case "ethereum->ethereum":
+    case "ethereum->polkadot":
       return formatTime(latency.toPolkadot, false);
-    case "toEthereumV2": {
+    case "polkadot->ethereum": {
       return formatTime(latency.toEthereum, false);
     }
-    case "forInterParachain": {
+    case "polkadot->polkadot": {
       // Inter parachain transfers takes 30s-1min. At most 2 minutes.
       return formatTime(120, false);
     }

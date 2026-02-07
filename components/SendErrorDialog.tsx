@@ -33,13 +33,13 @@ export const SendErrorDialog: FC<{
   let errors = info?.errors ?? [];
   const insufficentAsset = errors.find(
     (error) =>
-      error.errorKind === "toPolkadotV2" &&
+      error.errorKind === "ethereum->polkadot" &&
       error.reason === toPolkadotV2.ValidationReason.InsufficientTokenBalance,
   );
   errors = errors.filter(
     (error) =>
       !(
-        error.errorKind === "toPolkadotV2" &&
+        error.errorKind === "ethereum->polkadot" &&
         error.reason ===
           toPolkadotV2.ValidationReason.GatewaySpenderLimitReached &&
         insufficentAsset !== undefined
@@ -48,7 +48,7 @@ export const SendErrorDialog: FC<{
 
   const fixAction = (error: ValidationError): JSX.Element => {
     if (
-      error.errorKind === "toPolkadotV2" &&
+      error.errorKind === "ethereum->polkadot" &&
       error.reason === toPolkadotV2.ValidationReason.InsufficientTokenBalance &&
       token === "WETH"
     ) {
@@ -59,7 +59,7 @@ export const SendErrorDialog: FC<{
       );
     }
     if (
-      error.errorKind === "toPolkadotV2" &&
+      error.errorKind === "ethereum->polkadot" &&
       error.reason === toPolkadotV2.ValidationReason.GatewaySpenderLimitReached
     ) {
       return (

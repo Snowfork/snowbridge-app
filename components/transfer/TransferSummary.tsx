@@ -283,11 +283,12 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
             <span className="text-muted-foreground">
               {" "}
               (up to{" "}
-              {transferType === "toPolkadotV2"
+              {transferType === "ethereum->polkadot"
                 ? "25 min"
-                : transferType === "toEthereumV2"
+                : transferType === "polkadot->ethereum" ||
+                    transferType === "ethereum->ethereum"
                   ? "1h 30min"
-                  : transferType === "forInterParachain"
+                  : transferType === "polkadot->polkadot"
                     ? "5 min"
                     : "unknown"}
               )

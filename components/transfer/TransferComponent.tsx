@@ -56,7 +56,8 @@ function sendResultToHistory(
     beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
   }
   switch (inferTransferType(data.source, data.destination)) {
-    case "toEthereumV2": {
+    case "ethereum->ethereum":
+    case "polkadot->ethereum": {
       const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {
         kind: "polkadot",
@@ -85,7 +86,7 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
-    case "toPolkadotV2": {
+    case "ethereum->polkadot": {
       const sendResult = result as toPolkadotV2.MessageReceipt;
       const transfer: historyV2.ToPolkadotTransferResult = {
         kind: "ethereum",
@@ -110,7 +111,7 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
-    case "forInterParachain": {
+    case "polkadot->polkadot": {
       const sendResult = result as forInterParachain.MessageReceipt;
       const transfer: historyV2.InterParachainTransfer = {
         kind: "polkadot",
@@ -197,14 +198,14 @@ export const TransferComponent: FC = () => {
       if (requestId.current != req) return;
 
       switch (transferType) {
-        case "toPolkadotV2":
+        case "ethereum->polkadot":
           {
             const p = plan as toPolkadotV2.ValidationResult;
             setSourceExecutionFee(p.data.feeInfo?.executionFee ?? null);
           }
           break;
-        case "toEthereumV2":
-        case "forInterParachain":
+        case "polkadot->ethereum":
+        case "polkadot->polkadot":
           {
             const p = plan as
               | toEthereumV2.ValidationResult
@@ -240,7 +241,7 @@ export const TransferComponent: FC = () => {
       setSourceExecutionFee(null);
       setBusy("Transfer successful...", true);
       const transferData = base64url.encode(JSON.stringify(historyItem));
-      if (transferType !== "forInterParachain") {
+      if (transferType !== "polkadot->polkadot") {
         if (historyItem !== null) {
           addPendingTransaction({
             kind: "add",

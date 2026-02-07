@@ -32,15 +32,18 @@ export const KSM_SYMBOL = "KSM";
 export const NEURO_WEB_PARACHAIN = 2043;
 
 export type TransferType =
-  | "toPolkadotV2"
-  | "toEthereumV2"
-  | "forInterParachain";
+  | "ethereum->ethereum"
+  | "ethereum->polkadot"
+  | "polkadot->ethereum"
+  | "polkadot->polkadot";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
-  | ({ errorKind: "toPolkadotV2" } & toPolkadotV2.ValidationLog)
-  | ({ errorKind: "toEthereumV2" } & toEthereumV2.ValidationLog)
-  | ({ errorKind: "forKusama" } & forKusama.ValidationLog);
+  | ({ errorKind: "ethereum->polkadot" } & toPolkadotV2.ValidationLog)
+  | ({ errorKind: "polkadot->ethereum" } & toEthereumV2.ValidationLog)
+  | ({ errorKind: "ethereum->ethereum" } & toEthereumV2.ValidationLog)
+  | ({ errorKind: "polkadot->kusama" } & forKusama.ValidationLog)
+  | ({ errorKind: "kusama->polkadot" } & forKusama.ValidationLog);
 
 export type ErrorInfo = {
   title: string;

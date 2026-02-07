@@ -110,7 +110,7 @@ async function fetchBridgeFeeInfo([
   }
 
   switch (inferTransferType(source, destination)) {
-    case "toPolkadotV2": {
+    case "ethereum->polkadot": {
       const para = registry.parachains[`polkadot_${destination.id}`];
 
       const useV2 = assetsV2.supportsEthereumToPolkadotV2(para);
@@ -153,7 +153,7 @@ async function fetchBridgeFeeInfo([
         kind: source.kind,
       };
     }
-    case "toEthereumV2": {
+    case "polkadot->ethereum": {
       const useV2 = assetsV2.supportsPolkadotToEthereumV2(source.parachain!);
 
       let fee;
@@ -199,7 +199,7 @@ async function fetchBridgeFeeInfo([
         kind: source.kind,
       };
     }
-    case "forInterParachain": {
+    case "polkadot->polkadot": {
       const fee = await forInterParachain.getDeliveryFee(
         {
           context,

@@ -297,7 +297,10 @@ export const KusamaComponent: FC = () => {
         let errors: any[] = [];
         for (const planLog of plan.logs) {
           errors.push({
-            kind: "forKusama",
+            kind:
+              sourceId === AssetHub.Polkadot
+                ? "polkadot->kusama"
+                : "kusama->polkadot",
             reason: planLog.reason,
             message: planLog.message,
           });

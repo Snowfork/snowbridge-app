@@ -10,7 +10,7 @@ export function userFriendlyErrorMessage({
   error: ValidationError;
   formData: TransferFormData | FormDataSwitch;
 }) {
-  if (error.errorKind === "toPolkadotV2") {
+  if (error.errorKind === "ethereum->polkadot") {
     if (
       error.reason == toPolkadotV2.ValidationReason.AccountDoesNotExist &&
       formData.destination === "assethub"
@@ -21,7 +21,10 @@ export function userFriendlyErrorMessage({
       return "Insufficient ETH balance to pay transfer fees.";
     }
     return error.message;
-  } else if (error.errorKind === "toEthereumV2") {
+  } else if (
+    error.errorKind === "polkadot->ethereum" ||
+    error.errorKind === "ethereum->ethereum"
+  ) {
     if (error.reason == toEthereumV2.ValidationReason.InsufficientDotFee) {
       return "Insufficient DOT balance to pay transfer fees. Already have DOT on Polkadot? Teleport DOT to the source address on Asset Hub using your wallet.";
     }
