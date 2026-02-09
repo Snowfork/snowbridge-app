@@ -118,8 +118,8 @@ async function fetchBridgeFeeInfo([
     asset.decimals,
   );
 
-  const trasnferType = inferTransferType(source, destination);
-  switch (trasnferType) {
+  const transferType = inferTransferType(source, destination);
+  switch (transferType) {
     case "ethereum->polkadot": {
       const para = registry.parachains[`polkadot_${destination.id}`];
 
@@ -159,7 +159,7 @@ async function fetchBridgeFeeInfo([
           (await estimateExecutionFee(context, registry, para, fee)),
         decimals: 18,
         symbol: "ETH",
-        delivery: { kind: trasnferType, ...fee },
+        delivery: { kind: transferType, ...fee },
         kind: source.kind,
       };
     }
@@ -206,7 +206,7 @@ async function fetchBridgeFeeInfo([
         totalFee: feeValue,
         decimals,
         symbol,
-        delivery: { kind: trasnferType, ...fee },
+        delivery: { kind: transferType, ...fee },
         kind: source.kind,
       };
     }
@@ -228,43 +228,37 @@ async function fetchBridgeFeeInfo([
         totalFee: feeValue,
         decimals,
         symbol,
-        delivery: { kind: trasnferType, ...fee },
+        delivery: { kind: transferType, ...fee },
         kind: source.kind,
       };
     }
     case "polkadot->ethereum_l2": {
-      try {
-        const l2trasnfer =
-          toEthereumSnowbridgeV2.createL2TransferImplementation(
-            source.id,
-            registry,
-            token,
-          );
-        const fee = await l2trasnfer.getDeliveryFee(
-          context,
-          registry,
-          destination.id,
-          token,
-          amountInSmallestUnit,
-        );
-        let feeValue = fee.totalFeeInDot;
-        let decimals = registry.relaychain.tokenDecimals ?? 0;
-        let symbol = registry.relaychain.tokenSymbols ?? "";
-        return {
-          fee: feeValue,
-          totalFee: feeValue,
-          decimals,
-          symbol,
-          delivery: { kind: trasnferType, ...fee },
-          kind: source.kind,
-        };
-      } catch (err) {
-        console.error(err);
-        throw err;
-      }
+      const l2trasnfer = toEthereumSnowbridgeV2.createL2TransferImplementation(
+        source.id,
+        registry,
+        token,
+      );
+      const fee = await l2trasnfer.getDeliveryFee(
+        context,
+        registry,
+        destination.id,
+        token,
+        amountInSmallestUnit,
+      );
+      let feeValue = fee.totalFeeInDot;
+      let decimals = registry.relaychain.tokenDecimals ?? 0;
+      let symbol = registry.relaychain.tokenSymbols ?? "";
+      return {
+        fee: feeValue,
+        totalFee: feeValue,
+        decimals,
+        symbol,
+        delivery: { kind: transferType, ...fee },
+        kind: source.kind,
+      };
     }
     default:
-      throw Error(`Unknown transfer type ${trasnferType}`);
+      throw Error(`Unknown transfer type ${transferType}`);
   }
 }
 
