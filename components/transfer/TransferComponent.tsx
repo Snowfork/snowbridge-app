@@ -55,7 +55,8 @@ function sendResultToHistory(
   if (!isHex(beneficiaryAddress)) {
     beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
   }
-  switch (inferTransferType(data.source, data.destination)) {
+  const transferType = inferTransferType(data.source, data.destination);
+  switch (transferType) {
     case "ethereum->ethereum":
     case "polkadot->ethereum": {
       const sendResult = result as toEthereumV2.MessageReceipt;
@@ -140,6 +141,8 @@ function sendResultToHistory(
       };
       return { ...transfer, isWalletTransaction: true };
     }
+    default:
+      throw Error(`Does not support type ${transferType}`);
   }
 }
 
@@ -213,6 +216,8 @@ export const TransferComponent: FC = () => {
             setSourceExecutionFee(p.data.sourceExecutionFee);
           }
           break;
+        default:
+          throw Error(`Does not support ${transferType}`);
       }
 
       const steps = createStepsFromPlan(data, plan);

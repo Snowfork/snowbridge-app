@@ -10,7 +10,6 @@ import { Button } from "../ui/button";
 import { EthereumTxStep } from "./EthereumTxStep";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
-import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
 import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
 import { assetsV2, toEthereumV2 } from "@snowbridge/api";
@@ -41,18 +40,7 @@ interface StepData {
 
 function TransferFeeStep(step: StepData) {
   const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
-  const { data: feeInfo, error } = useBridgeFeeInfo(
-    step.data.source,
-    step.data.destination,
-    step.data.formData.token,
-  );
-  if (!feeInfo && error) {
-    return (
-      <div key={step.id} className="flex flex-col gap-4 justify-between">
-        Error fetching fee.
-      </div>
-    );
-  }
+  const feeInfo = step.data.fee;
   if (!feeInfo) {
     return (
       <div key={step.id} className="flex flex-col gap-4 justify-between">
@@ -137,7 +125,6 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   data,
   onBack,
   onRefreshTransfer,
-  registry,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep(currentStep + 1);

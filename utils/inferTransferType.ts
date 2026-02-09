@@ -14,6 +14,8 @@ export function inferTransferType(
     return `${source.kind}->${destination.kind}`;
   } else if (source.kind === "polkadot" && destination.kind === "polkadot") {
     return `${source.kind}->${destination.kind}`;
+  } else if (source.kind === "polkadot" && destination.kind === "ethereum_l2") {
+    return `${source.kind}->${destination.kind}`;
   } else {
     throw Error(
       `Could not infer transfer type for source:${source.kind} and destination:${destination.kind}.`,

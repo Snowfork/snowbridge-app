@@ -77,7 +77,22 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       break;
   }
   const transferType = inferTransferType(data.source, data.destination);
-
+  let transferTimeMax: string | undefined;
+  switch (transferType) {
+    case "ethereum->polkadot":
+      transferTimeMax = "25 min";
+      break;
+    case "polkadot->ethereum":
+    case "ethereum->ethereum":
+    case "polkadot->ethereum_l2":
+      transferTimeMax = "1h 30min";
+      break;
+    case "polkadot->polkadot":
+      transferTimeMax = "5 min";
+      break;
+    default:
+      console.warn(`Unknown type ${transferTimeMax}.`);
+  }
   // Fetch USD prices for tokens
   const [prices, setPrices] = useState<Record<string, number>>({});
 
@@ -281,17 +296,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
                     deliveryLatency,
                   )}
             <span className="text-muted-foreground">
-              {" "}
-              (up to{" "}
-              {transferType === "ethereum->polkadot"
-                ? "25 min"
-                : transferType === "polkadot->ethereum" ||
-                    transferType === "ethereum->ethereum"
-                  ? "1h 30min"
-                  : transferType === "polkadot->polkadot"
-                    ? "5 min"
-                    : "unknown"}
-              )
+              {transferTimeMax ? `Up to ${transferTimeMax}` : ""}
             </span>
           </span>
         </div>

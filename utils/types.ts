@@ -35,7 +35,8 @@ export type TransferType =
   | "ethereum->ethereum"
   | "ethereum->polkadot"
   | "polkadot->ethereum"
-  | "polkadot->polkadot";
+  | "polkadot->polkadot"
+  | "polkadot->ethereum_l2";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
@@ -43,7 +44,8 @@ export type ValidationError =
   | ({ errorKind: "polkadot->ethereum" } & toEthereumV2.ValidationLog)
   | ({ errorKind: "ethereum->ethereum" } & toEthereumV2.ValidationLog)
   | ({ errorKind: "polkadot->kusama" } & forKusama.ValidationLog)
-  | ({ errorKind: "kusama->polkadot" } & forKusama.ValidationLog);
+  | ({ errorKind: "kusama->polkadot" } & forKusama.ValidationLog)
+  | ({ errorKind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationLog);
 
 export type ErrorInfo = {
   title: string;
@@ -159,10 +161,12 @@ export type FeeInfo = {
   decimals: number;
   symbol: string;
   delivery:
-    | toEthereumV2.DeliveryFee
-    | toPolkadotV2.DeliveryFee
-    | toPolkadotSnowbridgeV2.DeliveryFee
-    | forInterParachain.DeliveryFee;
+    | ({ kind: "polkadot->ethereum" } & toEthereumV2.DeliveryFee)
+    | ({ kind: "ethereum->ethereum" } & toEthereumV2.DeliveryFee)
+    | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.DeliveryFee)
+    | ({ kind: "ethereum->polkadot" } & toPolkadotV2.DeliveryFee)
+    | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.DeliveryFee)
+    | ({ kind: "polkadot->polkadot" } & forInterParachain.DeliveryFee);
   kind: ChainKind;
 };
 

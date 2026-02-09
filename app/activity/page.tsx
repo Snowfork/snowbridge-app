@@ -299,7 +299,6 @@ const transferDetail = (
     source.kind === "ethereum" &&
     destination.parachain
   ) {
-    console.log("AAAAA", transfer);
     if (destination.parachain.info.accountType === "AccountId32") {
       beneficiary = encodeAddress(
         beneficiary,

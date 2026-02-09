@@ -18,7 +18,6 @@ export function chainName(location: TransferLocation): string {
       }
       return `Ethereum (${location.ethChain.name ?? "chainId: " + location.id})`;
     case "ethereum_l2":
-      console.log("aaaaaa", location.id);
       return `Ethereum L2 (${location.ethChain.name ?? "chainId: " + location.id})`;
     case "polkadot":
     case "kusama":

@@ -7,10 +7,7 @@ import {
   PolkadotAccount,
 } from "@/store/polkadot";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
-import {
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   filterByAccountType,
   TransferFormData,
@@ -236,7 +233,6 @@ export const TransferForm: FC<TransferFormProps> = ({
   assetRegistry,
   routes,
 }) => {
-  const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
@@ -392,7 +388,8 @@ export const TransferForm: FC<TransferFormProps> = ({
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     getTransferLocation(assetRegistry, source),
     destination,
-    token,
+    watchToken ?? token,
+    watchAmount,
   );
 
   // Get balance for MAX button
@@ -962,10 +959,12 @@ export const TransferForm: FC<TransferFormProps> = ({
               <dd className="text-primary">
                 <FeeDisplay
                   className="inline"
-                  source={getTransferLocation(assetRegistry, source)}
-                  destination={destination}
                   token={token}
                   displayDecimals={8}
+                  amount={watchAmount ?? "0"}
+                  feeInfo={feeInfo}
+                  feeError={feeError}
+                  registry={assetRegistry}
                 />
               </dd>
             </div>

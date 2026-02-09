@@ -21,6 +21,7 @@ import {
 } from "@snowbridge/base-types";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { getEnvironmentName } from "@/lib/snowbridge";
+import { parseUnits } from "ethers";
 
 async function estimateExecutionFee(
   context: Context,
@@ -97,6 +98,7 @@ async function fetchBridgeFeeInfo([
   destination,
   registry,
   token,
+  amount,
 ]: [
   Context | null,
   TransferLocation,
@@ -108,8 +110,16 @@ async function fetchBridgeFeeInfo([
   if (context === null) {
     return;
   }
+  const asset =
+    registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[token];
 
-  switch (inferTransferType(source, destination)) {
+  const amountInSmallestUnit = parseUnits(
+    amount || amount.trim() !== "" ? amount.trim() : "0",
+    asset.decimals,
+  );
+
+  const trasnferType = inferTransferType(source, destination);
+  switch (trasnferType) {
     case "ethereum->polkadot": {
       const para = registry.parachains[`polkadot_${destination.id}`];
 
@@ -149,10 +159,11 @@ async function fetchBridgeFeeInfo([
           (await estimateExecutionFee(context, registry, para, fee)),
         decimals: 18,
         symbol: "ETH",
-        delivery: fee,
+        delivery: { kind: trasnferType, ...fee },
         kind: source.kind,
       };
     }
+    case "ethereum->ethereum":
     case "polkadot->ethereum": {
       const useV2 = assetsV2.supportsPolkadotToEthereumV2(source.parachain!);
 
@@ -195,7 +206,7 @@ async function fetchBridgeFeeInfo([
         totalFee: feeValue,
         decimals,
         symbol,
-        delivery: fee,
+        delivery: { kind: trasnferType, ...fee },
         kind: source.kind,
       };
     }
@@ -217,10 +228,43 @@ async function fetchBridgeFeeInfo([
         totalFee: feeValue,
         decimals,
         symbol,
-        delivery: fee,
+        delivery: { kind: trasnferType, ...fee },
         kind: source.kind,
       };
     }
+    case "polkadot->ethereum_l2": {
+      try {
+        const l2trasnfer =
+          toEthereumSnowbridgeV2.createL2TransferImplementation(
+            source.id,
+            registry,
+            token,
+          );
+        const fee = await l2trasnfer.getDeliveryFee(
+          context,
+          registry,
+          destination.id,
+          token,
+          amountInSmallestUnit,
+        );
+        let feeValue = fee.totalFeeInDot;
+        let decimals = registry.relaychain.tokenDecimals ?? 0;
+        let symbol = registry.relaychain.tokenSymbols ?? "";
+        return {
+          fee: feeValue,
+          totalFee: feeValue,
+          decimals,
+          symbol,
+          delivery: { kind: trasnferType, ...fee },
+          kind: source.kind,
+        };
+      } catch (err) {
+        console.error(err);
+        throw err;
+      }
+    }
+    default:
+      throw Error(`Unknown transfer type ${trasnferType}`);
   }
 }
 
@@ -228,14 +272,16 @@ export function useBridgeFeeInfo(
   source: TransferLocation,
   destination: TransferLocation,
   token: string,
+  amount: string,
 ) {
+  if (amount === undefined) throw Error(`abc`);
   const context = useAtomValue(snowbridgeContextAtom);
   const { registry } = useContext(BridgeInfoContext)!;
   return useSWR(
-    [context, source, destination, registry, token, "feeInfo"],
+    [context, source, destination, registry, token, amount, "feeInfo"],
     fetchBridgeFeeInfo,
     {
-      errorRetryCount: 10,
+      errorRetryCount: 30,
     },
   );
 }
