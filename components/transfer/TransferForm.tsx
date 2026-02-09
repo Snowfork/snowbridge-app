@@ -111,6 +111,7 @@ function getBeneficiaries(
   }
   if (
     destination.kind === "ethereum" ||
+    destination.kind === "ethereum_l2" ||
     destination.parachain?.info.accountType === "AccountId20"
   ) {
     ethereumAccounts?.forEach((x) => {
@@ -934,25 +935,22 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           </div>
-          {/* Only show To account when beneficiaries are available */}
-          {beneficiaries && beneficiaries.length > 0 && (
-            <FormField
-              control={form.control}
-              name="beneficiary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <SelectAccount
-                      accounts={beneficiaries}
-                      field={field}
-                      allowManualInput={true}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="beneficiary"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <SelectAccount
+                    accounts={beneficiaries}
+                    field={field}
+                    allowManualInput={true}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <div className="glass-sub p-4 space-y-2 card-shadow">
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Delivery fee</dt>
@@ -961,7 +959,6 @@ export const TransferForm: FC<TransferFormProps> = ({
                   className="inline"
                   token={token}
                   displayDecimals={8}
-                  amount={watchAmount ?? "0"}
                   feeInfo={feeInfo}
                   feeError={feeError}
                   registry={assetRegistry}

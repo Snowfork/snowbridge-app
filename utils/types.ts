@@ -200,12 +200,14 @@ export interface KusamaValidationData {
 }
 
 export type ValidationResult =
-  | toEthereumV2.ValidationResult
-  | toEthereumFromEVMV2.ValidationResultEvm
-  | toPolkadotV2.ValidationResult
-  | toPolkadotSnowbridgeV2.ValidationResult
-  | forKusama.ValidationResult
-  | forInterParachain.ValidationResult;
+  | ({ kind: "polkadot->ethereum" } & toEthereumV2.ValidationResult)
+  | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationResult)
+  | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.ValidationResultEvm)
+  | ({ kind: "ethereum->polkadot" } & toPolkadotV2.ValidationResult)
+  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.ValidationResult)
+  | ({ kind: "polkadot->polkadot" } & forInterParachain.ValidationResult)
+  | ({ kind: "kusama->kusama" } & forKusama.ValidationResult)
+  | ({ kind: "polkadot->kusama" } & forKusama.ValidationResult);
 
 export type MessageReceipt =
   | toEthereumV2.MessageReceipt

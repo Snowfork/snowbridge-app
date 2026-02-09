@@ -200,21 +200,15 @@ export const TransferComponent: FC = () => {
       const plan = await planSend(data);
       if (requestId.current != req) return;
 
-      switch (transferType) {
+      switch (plan.kind) {
+        case "ethereum->ethereum":
         case "ethereum->polkadot":
-          {
-            const p = plan as toPolkadotV2.ValidationResult;
-            setSourceExecutionFee(p.data.feeInfo?.executionFee ?? null);
-          }
+          setSourceExecutionFee(plan.data.feeInfo?.executionFee ?? null);
           break;
         case "polkadot->ethereum":
+        case "polkadot->ethereum_l2":
         case "polkadot->polkadot":
-          {
-            const p = plan as
-              | toEthereumV2.ValidationResult
-              | forInterParachain.ValidationResult;
-            setSourceExecutionFee(p.data.sourceExecutionFee);
-          }
+          setSourceExecutionFee(plan.data.sourceExecutionFee);
           break;
         default:
           throw Error(`Does not support ${transferType}`);

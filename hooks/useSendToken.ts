@@ -9,7 +9,6 @@ import {
   ValidationResult,
 } from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
-import { form } from "@reown/appkit/networks";
 import {
   Context,
   toEthereumV2,
@@ -165,14 +164,7 @@ async function validateEthereumSigner(
 async function planSend(
   context: Context,
   data: ValidationData,
-): Promise<
-  | ({ kind: "polkadot->ethereum" } & toEthereumV2.ValidationResult)
-  | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationResult)
-  | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.ValidationResultEvm)
-  | ({ kind: "ethereum->polkadot" } & toPolkadotV2.ValidationResult)
-  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.ValidationResult)
-  | ({ kind: "polkadot->polkadot" } & forInterParachain.ValidationResult)
-> {
+): Promise<ValidationResult> {
   const {
     source,
     destination,
