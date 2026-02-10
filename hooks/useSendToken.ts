@@ -341,54 +341,17 @@ async function sendToken(
     });
   }
   const { source, destination } = data;
-  if (source.kind === "polkadot" && destination.kind === "polkadot") {
-    const { paraInfo, polkadotAccount } = validateSubstrateSigner(
-      data,
-      signerInfo,
-      true,
-    );
-    const tx = plan.transfer as forInterParachain.Transfer;
-    const result = await forInterParachain.signAndSend(
-      { sourceParaId: paraInfo.id, context },
-      tx,
-      polkadotAccount.address,
-      {
-        signer: polkadotAccount.signer! as Signer,
-        withSignedTransaction: true,
-      },
-    );
-    console.log(result);
-    return result;
-  } else if (source.kind === "ethereum" && destination.kind === "ethereum") {
-    const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
-    const transfer = plan.transfer as toEthereumFromEVMV2.TransferEvm;
-    const response = await signer.sendTransaction(transfer.tx);
-    const receipt = await response.wait();
-    if (!receipt) {
-      throw Error(`Could not fetch transaction receipt.`);
-    }
-    const result = await toEthereumFromEVMV2.getMessageReceipt(
-      { sourceParaId: source.parachain!.id, context },
-      receipt,
-    );
-    console.log(result);
-    return result;
-  } else if (source.kind === "polkadot" && destination.kind === "ethereum") {
-    const { paraInfo, polkadotAccount } = validateSubstrateSigner(
-      data,
-      signerInfo,
-      false,
-    );
 
-    const useV2 = assetsV2.supportsPolkadotToEthereumV2(paraInfo);
-    let result;
-    if (useV2) {
-      console.log(
-        `[sendToken] Snowbridge V2: Source parachain ${paraInfo.id} to Ethereum.`,
+  switch (plan.kind) {
+    case "polkadot->polkadot": {
+      const { paraInfo, polkadotAccount } = validateSubstrateSigner(
+        data,
+        signerInfo,
+        true,
       );
-      const tx = plan.transfer as toEthereumV2.Transfer;
-      result = await toEthereumSnowbridgeV2.signAndSend(
-        context,
+      const tx = plan.transfer as forInterParachain.Transfer;
+      const result = await forInterParachain.signAndSend(
+        { sourceParaId: paraInfo.id, context },
         tx,
         polkadotAccount.address,
         {
@@ -396,56 +359,103 @@ async function sendToken(
           withSignedTransaction: true,
         },
       );
-    } else {
-      const tx = plan.transfer as toEthereumV2.Transfer;
-      result = await toEthereumV2.signAndSend(
-        context,
-        tx,
-        polkadotAccount.address,
-        {
-          signer: polkadotAccount.signer! as Signer,
-          withSignedTransaction: true,
-        },
-      );
+      console.log(result);
+      return result;
     }
-    console.log(result);
-    return result;
-  } else if (source.kind === "ethereum" && destination.kind === "polkadot") {
-    const { signer, paraInfo } = await validateEthereumSigner(data, signerInfo);
+    case "ethereum->ethereum": {
+      const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
+      const transfer = plan.transfer as toEthereumFromEVMV2.TransferEvm;
+      const response = await signer.sendTransaction(transfer.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const result = await toEthereumFromEVMV2.getMessageReceipt(
+        { sourceParaId: source.parachain!.id, context },
+        receipt,
+      );
+      console.log(result);
+      return result;
+    }
+    case "polkadot->ethereum": {
+      const { paraInfo, polkadotAccount } = validateSubstrateSigner(
+        data,
+        signerInfo,
+        false,
+      );
 
-    const useV2 = assetsV2.supportsEthereumToPolkadotV2(paraInfo);
-    let result;
-    if (useV2) {
-      console.log(
-        `[sendToken] Snowbridge V2: Destination parachain ${paraInfo.id}`,
-      );
-      const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
-      const response = await signer.sendTransaction(transfer.tx);
-      const receipt = await response.wait();
-      if (!receipt) {
-        throw Error(`Could not fetch transaction receipt.`);
+      const useV2 = assetsV2.supportsPolkadotToEthereumV2(paraInfo);
+      let result;
+      if (useV2) {
+        console.log(
+          `[sendToken] Snowbridge V2: Source parachain ${paraInfo.id} to Ethereum.`,
+        );
+        const tx = plan.transfer as toEthereumV2.Transfer;
+        result = await toEthereumSnowbridgeV2.signAndSend(
+          context,
+          tx,
+          polkadotAccount.address,
+          {
+            signer: polkadotAccount.signer! as Signer,
+            withSignedTransaction: true,
+          },
+        );
+      } else {
+        const tx = plan.transfer as toEthereumV2.Transfer;
+        result = await toEthereumV2.signAndSend(
+          context,
+          tx,
+          polkadotAccount.address,
+          {
+            signer: polkadotAccount.signer! as Signer,
+            withSignedTransaction: true,
+          },
+        );
       }
-      result = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
-      if (!result) {
-        throw Error(`Could not fetch message receipt.`);
-      }
-      result = { ...result, messageId: receipt.hash, channelId: "" };
-    } else {
-      const transfer = plan.transfer as toPolkadotV2.Transfer;
-      const response = await signer.sendTransaction(transfer.tx);
-      const receipt = await response.wait();
-      if (!receipt) {
-        throw Error(`Could not fetch transaction receipt.`);
-      }
-      result = await toPolkadotV2.getMessageReceipt(receipt);
-      if (!result) {
-        throw Error(`Could not fetch message receipt.`);
-      }
+      console.log(result);
+      return result;
     }
-    console.log(result);
-    return result;
-  } else {
-    throw Error(`Invalid form state: cannot infer source type.`);
+    case "ethereum->polkadot": {
+      const { signer, paraInfo } = await validateEthereumSigner(
+        data,
+        signerInfo,
+      );
+
+      const useV2 = assetsV2.supportsEthereumToPolkadotV2(paraInfo);
+      let result;
+      if (useV2) {
+        console.log(
+          `[sendToken] Snowbridge V2: Destination parachain ${paraInfo.id}`,
+        );
+        const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
+        const response = await signer.sendTransaction(transfer.tx);
+        const receipt = await response.wait();
+        if (!receipt) {
+          throw Error(`Could not fetch transaction receipt.`);
+        }
+        result = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
+        if (!result) {
+          throw Error(`Could not fetch message receipt.`);
+        }
+        result = { ...result, messageId: receipt.hash, channelId: "" };
+      } else {
+        const transfer = plan.transfer as toPolkadotV2.Transfer;
+        const response = await signer.sendTransaction(transfer.tx);
+        const receipt = await response.wait();
+        if (!receipt) {
+          throw Error(`Could not fetch transaction receipt.`);
+        }
+        result = await toPolkadotV2.getMessageReceipt(receipt);
+        if (!result) {
+          throw Error(`Could not fetch message receipt.`);
+        }
+      }
+      console.log(result);
+      return result;
+    }
+    default: {
+      throw Error(`Invalid form state: cannot infer source type.`);
+    }
   }
 }
 
