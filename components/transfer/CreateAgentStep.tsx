@@ -1,25 +1,25 @@
 import { ContractResponse, TransferStep, ValidationData } from "@/utils/types";
 import { useState } from "react";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import { LucideLoaderCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { etherscanTxHashLink } from "@/lib/explorerLinks";
+import { chainName } from "@/utils/chainNames";
+import { encodeAddress } from "@polkadot/util-crypto";
 
-interface EthereumTxStepProps {
+interface CreateAgentStepProps {
   title: string;
   id: number;
   step: TransferStep;
   data: ValidationData;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
-  action: (_data: ValidationData, _amount: string) => Promise<ContractResponse>;
+  action: (_data: ValidationData) => Promise<ContractResponse>;
   errorMessage?: string;
   submitButtonText?: string;
   description?: string;
 }
 
-export function EthereumTxStep({
+export function CreateAgentStep({
   title,
   id,
   data,
@@ -29,8 +29,7 @@ export function EthereumTxStep({
   errorMessage,
   submitButtonText,
   description,
-}: EthereumTxStepProps) {
-  const [amount, setAmount] = useState(data.formData.amount);
+}: CreateAgentStepProps) {
   const [busy, setBusy] = useState(false);
   interface Message {
     text: string;
@@ -72,18 +71,20 @@ export function EthereumTxStep({
       </div>
       <div
         className={
-          "flex gap-2 place-items-center" +
+          "flex gap-2 place-items-center flex-wrap " +
           (currentStep !== id ? " hidden" : "")
         }
       >
-        <Label className="w-1/5">Amount</Label>
-        <Input
-          disabled={busy}
-          className="w-3/5"
-          type="number"
-          defaultValue={data.formData.amount}
-          onChange={(v) => setAmount(v.target.value)}
-        />
+        <div>
+          Create proxy for {chainName(data.source)} account{" "}
+          <span>
+            {encodeAddress(
+              data.formData.sourceAccount,
+              data.source.parachain?.info.ss58Format ??
+                data.assetRegistry.relaychain.ss58Format,
+            )}
+          </span>{" "}
+        </div>
         {busy ? (
           <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
         ) : (
@@ -94,7 +95,7 @@ export function EthereumTxStep({
               setBusy(true);
               setError(undefined);
               try {
-                const { receipt } = await action(data, amount);
+                const { receipt } = await action(data);
                 const etherscanLink = etherscanTxHashLink(
                   data.assetRegistry.environment,
                   data.assetRegistry.ethChainId,

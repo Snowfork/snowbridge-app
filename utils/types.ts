@@ -226,6 +226,7 @@ export enum TransferStepKind {
   SubstrateTransferFee,
   SubstrateTransferED,
   WrapNeuroWeb,
+  CreateAgent,
 }
 export interface TransferStep {
   displayOrder: number;

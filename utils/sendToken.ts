@@ -41,6 +41,17 @@ export function createStepsFromPlan(
           dryRunFailedLog = log;
           continue;
         }
+        if (
+          log.kind === toEthereumV2.ValidationKind.Error &&
+          log.reason ===
+            toEthereumV2.ValidationReason.ContractCallAgentNotRegistered
+        ) {
+          steps.push({
+            kind: TransferStepKind.CreateAgent,
+            displayOrder: 10,
+          });
+          continue;
+        }
         if (log.kind === toEthereumV2.ValidationKind.Warning) {
           console.warn("Plan validation warning: ", log.message);
           continue;

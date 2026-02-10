@@ -10,13 +10,15 @@ import { Button } from "../ui/button";
 import { EthereumTxStep } from "./EthereumTxStep";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
+import { useCreateAgent } from "@/hooks/useCreateAgent";
 import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
-import { assetsV2, toEthereumV2 } from "@snowbridge/api";
+import { toEthereumV2 } from "@snowbridge/api";
 import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { NeuroWebWrapStep } from "./NeuroWebUnwrapStep";
 import { chainName } from "@/utils/chainNames";
+import { CreateAgentStep } from "./CreateAgentStep";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -72,7 +74,20 @@ function TransferFeeStep(step: StepData) {
 
 function TransferStepView(step: StepData) {
   const { depositWeth, approveSpend } = useERC20DepositAndApprove();
+  const createAgent = useCreateAgent();
   switch (step.step.kind) {
+    case TransferStepKind.CreateAgent: {
+      return (
+        <CreateAgentStep
+          {...step}
+          title="Create an Proxy."
+          description="Create a proxy account on Ethereum to act on behalf of your Polkadot account."
+          action={createAgent}
+          errorMessage="Error submitting create."
+          submitButtonText="Create"
+        />
+      );
+    }
     case TransferStepKind.ApproveERC20:
       return (
         <EthereumTxStep
