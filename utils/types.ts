@@ -206,19 +206,21 @@ export type ValidationResult =
   | ({ kind: "ethereum->polkadot" } & toPolkadotV2.ValidationResult)
   | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.ValidationResult)
   | ({ kind: "polkadot->polkadot" } & forInterParachain.ValidationResult)
-  | ({ kind: "kusama->kusama" } & forKusama.ValidationResult)
+  | ({ kind: "kusama->polkadot" } & forKusama.ValidationResult)
   | ({ kind: "polkadot->kusama" } & forKusama.ValidationResult);
 
 export type MessageReceipt =
-  | toEthereumV2.MessageReceipt
-  | toEthereumFromEVMV2.MessageReceiptEvm
-  | toPolkadotV2.MessageReceipt
-  | (toPolkadotSnowbridgeV2.MessageReceipt & {
-      messageId: string;
-      channelId: string;
-    })
-  | forKusama.MessageReceipt
-  | forInterParachain.MessageReceipt;
+  | ({ kind: "polkadot->ethereum" } & toEthereumV2.MessageReceipt)
+  | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.MessageReceipt)
+  | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.MessageReceiptEvm)
+  | ({ kind: "ethereum->polkadot" } & toPolkadotV2.MessageReceipt)
+  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt & {
+        messageId: string;
+        channelId: string;
+      })
+  | ({ kind: "kusama->polkadot" } & forKusama.MessageReceipt)
+  | ({ kind: "polkadot->kusama" } & forKusama.MessageReceipt)
+  | ({ kind: "polkadot->polkadot" } & forInterParachain.MessageReceipt);
 
 export enum TransferStepKind {
   DepositWETH,

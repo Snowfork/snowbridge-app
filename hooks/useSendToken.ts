@@ -45,7 +45,7 @@ function validateSubstrateDestination({ source, destination }: ValidationData) {
   if (source.kind !== "polkadot") {
     throw Error(`Invalid form state: source type mismatch.`);
   }
-  if (destination.kind !== "ethereum") {
+  if (destination.kind !== "ethereum" && destination.kind !== "ethereum_l2") {
     throw Error(`Invalid form state: destination type mismatch.`);
   }
   if (source.parachain === undefined) {
@@ -325,7 +325,7 @@ async function planSend(
       return { kind: transferType, ...plan };
     }
     default:
-      throw Error(`Invalid form state: cannot infer source ${transferType}.`);
+      throw Error(`Cannot infer source ${transferType}.`);
   }
 }
 
@@ -340,7 +340,7 @@ async function sendToken(
       cause: plan,
     });
   }
-  const { source, destination } = data;
+  const { source } = data;
 
   switch (plan.kind) {
     case "polkadot->polkadot": {
@@ -360,7 +360,7 @@ async function sendToken(
         },
       );
       console.log(result);
-      return result;
+      return { kind: plan.kind, ...result };
     }
     case "ethereum->ethereum": {
       const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
@@ -375,7 +375,7 @@ async function sendToken(
         receipt,
       );
       console.log(result);
-      return result;
+      return { kind: plan.kind, ...result };
     }
     case "polkadot->ethereum": {
       const { paraInfo, polkadotAccount } = validateSubstrateSigner(
@@ -413,7 +413,7 @@ async function sendToken(
         );
       }
       console.log(result);
-      return result;
+      return { kind: plan.kind, ...result };
     }
     case "ethereum->polkadot": {
       const { signer, paraInfo } = await validateEthereumSigner(
@@ -451,7 +451,25 @@ async function sendToken(
         }
       }
       console.log(result);
-      return result;
+      return { kind: plan.kind, ...result };
+    }
+    case "polkadot->ethereum_l2": {
+      const { polkadotAccount } = validateSubstrateSigner(
+        data,
+        signerInfo,
+        false,
+      );
+      const result = await toEthereumSnowbridgeV2.signAndSend(
+        context,
+        plan.transfer,
+        polkadotAccount.address,
+        {
+          signer: polkadotAccount.signer! as Signer,
+          withSignedTransaction: true,
+        },
+      );
+      console.log(result);
+      return { kind: plan.kind, ...result };
     }
     default: {
       throw Error(`Invalid form state: cannot infer source type.`);
