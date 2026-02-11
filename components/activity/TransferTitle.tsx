@@ -37,6 +37,17 @@ export function getChainIdentifiers(
         destinationNetwork: tx.info.destinationNetwork ?? "kusama",
       };
     }
+    case "ethereum_l2": {
+      const tx = transfer;
+      return {
+        sourceType: transfer.kind,
+        destinationType: "polkadot" as const,
+        sourceId: registry.ethChainId.toString(),
+        destinationId:
+          tx.info.destinationParachain?.toString() ??
+          registry.assetHubParaId.toString(),
+      };
+    }
     case "ethereum": {
       const tx = transfer;
       return {

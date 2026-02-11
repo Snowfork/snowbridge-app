@@ -1,9 +1,10 @@
 "use client";
 
+import { initializeWeb3Modal } from "@/lib/client/web3modal";
 import { BridgeInfo } from "@snowbridge/base-types";
 import { Provider } from "jotai";
 import { ThemeProvider } from "next-themes";
-import { createContext } from "react";
+import { createContext, useEffect } from "react";
 
 export const BridgeInfoContext = createContext<BridgeInfo | null>(null);
 
@@ -13,6 +14,8 @@ interface ProviderParams {
 }
 
 export function Providers({ children, info }: ProviderParams) {
+  initializeWeb3Modal();
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <BridgeInfoContext.Provider value={info}>

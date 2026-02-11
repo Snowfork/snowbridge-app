@@ -463,10 +463,11 @@ export const TransferForm: FC<TransferFormProps> = ({
     try {
       const chainId = getChainId();
       if (
-        newSource.kind === "ethereum" &&
+        (newSource.kind === "ethereum" || newSource.kind === "ethereum_l2") &&
         chainId?.toString() !== newSource.id.toString()
       ) {
-        switchNetwork(getEthereumNetwork(Number(newSource.id)));
+        console.log(`switching wallet network to ${newSource.id}`);
+        switchNetwork(getEthereumNetwork(newSource.id));
       }
     } catch (error) {
       console.error(error);
@@ -748,13 +749,18 @@ export const TransferForm: FC<TransferFormProps> = ({
                         <span>Send</span>
                         {/* Only show account if wallet is connected for current source type */}
                         {watchSourceAccount &&
-                          ((source.kind === "ethereum" && ethereumAccount) ||
+                          (source.kind === "ethereum" ||
+                            (source.kind === "ethereum_l2" &&
+                              ethereumAccount) ||
                             (source.kind === "polkadot" &&
                               polkadotAccount?.address)) && (
                             <button
                               type="button"
                               onClick={() => {
-                                if (source.kind === "ethereum") {
+                                if (
+                                  source.kind === "ethereum" ||
+                                  source.kind === "ethereum_l2"
+                                ) {
                                   openEthereumWallet({ view: "Account" });
                                 } else {
                                   setSourceAccountSelectorOpen(true);
@@ -1107,7 +1113,9 @@ function SubmitButton({
   if (tokenMetadata !== null && context !== null) {
     // Check if Ethereum wallet is connected for Ethereum source
     if (!ethereumAccount && source.kind === "ethereum") {
-      return <ConnectEthereumWalletButton variant="default" />;
+      return (
+        <ConnectEthereumWalletButton variant="default" networkId={source.id} />
+      );
     }
     // Check if Polkadot wallet is connected for Substrate source
     if (
@@ -1121,7 +1129,12 @@ function SubmitButton({
       (beneficiaries === null || beneficiaries.length === 0) &&
       destination.kind === "ethereum"
     ) {
-      return <ConnectEthereumWalletButton variant="default" />;
+      return (
+        <ConnectEthereumWalletButton
+          variant="default"
+          networkId={destination.id}
+        />
+      );
     }
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&

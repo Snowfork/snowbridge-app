@@ -6,12 +6,12 @@ import { windowEthereumErrorAtom } from "@/store/ethereum";
 import { walletSheetOpenAtom } from "@/store/polkadot";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { track } from "@vercel/analytics";
-import { getEnvironment } from "@/lib/snowbridge";
 import { cn } from "@/lib/utils";
-import { getEnvEthereumNetwork } from "@/lib/client/web3modal";
+import { getEthereumNetwork } from "@/lib/client/web3modal";
 
 interface ConnectEthereumWalletButtonProps {
   className?: string;
+  networkId: number;
   variant?:
     | "default"
     | "destructive"
@@ -25,8 +25,8 @@ interface ConnectEthereumWalletButtonProps {
 export function ConnectEthereumWalletButton({
   className,
   variant,
+  networkId,
 }: ConnectEthereumWalletButtonProps) {
-  const env = getEnvironment();
   const setWalletSheetOpen = useSetAtom(walletSheetOpenAtom);
 
   const [windowEthereumError, setWindowEthereumError] = useAtom(
@@ -35,7 +35,7 @@ export function ConnectEthereumWalletButton({
   const { switchNetwork } = useAppKitNetwork();
 
   const { account, chainId } = useConnectEthereumWallet();
-  if (account !== null && (chainId === null || chainId !== env.ethChainId)) {
+  if (account !== null && (chainId === null || chainId !== networkId)) {
     return (
       <>
         <Button
@@ -43,7 +43,7 @@ export function ConnectEthereumWalletButton({
           type="button"
           variant="default"
           onClick={async (_) => {
-            switchNetwork(getEnvEthereumNetwork());
+            switchNetwork(getEthereumNetwork(networkId));
             track("Switch Network");
           }}
         >

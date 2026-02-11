@@ -36,6 +36,7 @@ export type TransferType =
   | "ethereum->polkadot"
   | "polkadot->ethereum"
   | "polkadot->polkadot"
+  | "ethereum_l2->polkadot"
   | "polkadot->ethereum_l2";
 
 export type AppRouter = ReturnType<typeof useRouter>;
@@ -166,6 +167,7 @@ export type FeeInfo = {
     | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.DeliveryFee)
     | ({ kind: "ethereum->polkadot" } & toPolkadotV2.DeliveryFee)
     | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.DeliveryFee)
+    | ({ kind: "ethereum_l2->polkadot" } & toPolkadotSnowbridgeV2.DeliveryFee)
     | ({ kind: "polkadot->polkadot" } & forInterParachain.DeliveryFee);
   kind: ChainKind;
 };

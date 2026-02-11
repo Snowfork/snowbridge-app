@@ -28,6 +28,10 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   const [usdValue, setUsdValue] = useState<string | null>(null);
 
   useEffect(() => {
+    if (feeError) {
+      console.error(feeError);
+    }
+
     if (!feeInfo) {
       setUsdValue(null);
       return;
@@ -51,7 +55,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     };
 
     fetchPrice();
-  }, [feeInfo]);
+  }, [feeInfo, feeError]);
 
   if (feeError && !feeInfo) {
     let message = "Error";

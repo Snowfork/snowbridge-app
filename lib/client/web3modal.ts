@@ -1,15 +1,18 @@
 "use client";
 
-import { getEnvironment } from "@/lib/snowbridge";
+import { getEnvironmentName } from "@/lib/snowbridge";
 import { metadata } from "@/lib/metadata";
 import { AppKit, createAppKit } from "@reown/appkit/react";
 import {
   AppKitNetwork,
+  base,
+  baseSepolia,
   mainnet,
   moonbeam,
   sepolia,
 } from "@reown/appkit/networks";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
+import { bridgeInfoFor } from "@snowbridge/registry";
 
 const walletConnectProjectId = () => {
   const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID;
@@ -21,16 +24,13 @@ const walletConnectProjectId = () => {
   return projectId;
 };
 
-export const supportedEthNetworks: AppKitNetwork[] = [
+const supportedEthNetworks: AppKitNetwork[] = [
   mainnet,
   sepolia,
   moonbeam,
+  base,
+  baseSepolia,
 ];
-
-export function getEnvEthereumNetwork() {
-  const { ethChainId } = getEnvironment();
-  return getEthereumNetwork(ethChainId);
-}
 
 export function getEthereumNetwork(chainId: number) {
   const network = supportedEthNetworks.find((n) => n.id === chainId) ?? null;
@@ -47,11 +47,21 @@ export const initializeWeb3Modal = () => {
   if (initialized) {
     return;
   }
-  const network = getEnvEthereumNetwork();
+
+  const {
+    registry: { ethereumChains, ethChainId },
+  } = bridgeInfoFor(getEnvironmentName());
+
+  const ethereumL1 = getEthereumNetwork(ethChainId);
+  const networks = [];
+  for (const chain of Object.values(ethereumChains)) {
+    if (chain.id === ethChainId) continue; // Skip main L1, we have to add it manually
+    networks.push(getEthereumNetwork(chain.id));
+  }
 
   modal = createAppKit({
     adapters: [new EthersAdapter()],
-    networks: [network, moonbeam],
+    networks: [ethereumL1, ...networks],
     themeMode: "light",
     customRpcUrls: {
       "eip155:1284": [{ url: "https://rpc.api.moonbeam.network" }],

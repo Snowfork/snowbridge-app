@@ -105,15 +105,20 @@ export async function getTokenBalance({
       dotTokenDecimals: registry.relaychain.tokenDecimals,
       dotTokenSymbol: registry.relaychain.tokenSymbols,
     };
-  } else if (destination.kind === "polkadot" && source.kind === "ethereum") {
-    const nativeBalance = await context.ethereum().getBalance(sourceAccount);
+  } else if (
+    destination.kind === "polkadot" &&
+    (source.kind === "ethereum" || source.kind === "ethereum_l2")
+  ) {
+    const nativeBalance = await context
+      .ethChain(source.id)
+      .getBalance(sourceAccount);
     let erc20Asset: { balance: bigint; gatewayAllowance?: bigint } = {
       balance: nativeBalance,
     };
     let isNativeTransfer = true;
     if (token !== assetsV2.ETHER_TOKEN_ADDRESS) {
       erc20Asset = await assetsV2.erc20Balance(
-        context.ethereum(),
+        context.ethChain(source.id),
         token,
         sourceAccount,
         context.environment.gatewayContract,

@@ -232,13 +232,37 @@ async function fetchBridgeFeeInfo([
         kind: source.kind,
       };
     }
+    case "ethereum_l2->polkadot": {
+      const l2transfer = toPolkadotSnowbridgeV2.createL2TransferImplementation(
+        source.id,
+        destination.id,
+        registry,
+        token,
+      );
+      const fee = await l2transfer.getDeliveryFee(
+        context,
+        registry,
+        source.id,
+        token,
+        amountInSmallestUnit,
+        destination.id,
+      );
+      return {
+        fee: fee.totalFeeInWei,
+        totalFee: fee.totalFeeInWei,
+        decimals: 18,
+        symbol: "ETH",
+        delivery: { kind: transferType, ...fee },
+        kind: source.kind,
+      };
+    }
     case "polkadot->ethereum_l2": {
-      const l2trasnfer = toEthereumSnowbridgeV2.createL2TransferImplementation(
+      const l2transfer = toEthereumSnowbridgeV2.createL2TransferImplementation(
         source.id,
         registry,
         token,
       );
-      const fee = await l2trasnfer.getDeliveryFee(
+      const fee = await l2transfer.getDeliveryFee(
         context,
         registry,
         destination.id,
