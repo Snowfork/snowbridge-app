@@ -76,21 +76,21 @@ import {
 } from "@/lib/client/web3modal";
 import { chainName } from "@/utils/chainNames";
 
-function getBeneficiaries(
-  destination: TransferLocation,
+function getLocationAccounts(
+  location: TransferLocation,
   polkadotAccounts: PolkadotAccount[],
   ethereumAccounts: string[],
   ss58Format: number,
 ) {
-  const beneficiaries: AccountInfo[] = [];
-  if (destination.kind === "polkadot") {
+  const accounts: AccountInfo[] = [];
+  if (location.kind === "polkadot") {
     polkadotAccounts
       .filter(
         (x) =>
           ((x as any).type === "ethereum" &&
-            destination.parachain?.info.accountType === "AccountId20") ||
+            location.parachain?.info.accountType === "AccountId20") ||
           ((x as any).type !== "ethereum" &&
-            destination.parachain?.info.accountType === "AccountId32"),
+            location.parachain?.info.accountType === "AccountId32"),
       )
       .map((x) => {
         if ((x as any).type === "ethereum") {
@@ -107,16 +107,16 @@ function getBeneficiaries(
           };
         }
       })
-      .forEach((x) => beneficiaries.push(x));
+      .forEach((x) => accounts.push(x));
   }
   if (
-    destination.kind === "ethereum" ||
-    destination.kind === "ethereum_l2" ||
-    destination.parachain?.info.accountType === "AccountId20"
+    location.kind === "ethereum" ||
+    location.kind === "ethereum_l2" ||
+    location.parachain?.info.accountType === "AccountId20"
   ) {
     ethereumAccounts?.forEach((x) => {
-      if (!beneficiaries.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
-        beneficiaries.push({
+      if (!accounts.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
+        accounts.push({
           key: x,
           name: x,
           type: "ethereum" as const,
@@ -128,11 +128,9 @@ function getBeneficiaries(
       .filter((x: any) => x.type === "ethereum")
       .forEach((x) => {
         if (
-          !beneficiaries.find(
-            (b) => b.key.toLowerCase() === x.address.toLowerCase(),
-          )
+          !accounts.find((b) => b.key.toLowerCase() === x.address.toLowerCase())
         ) {
-          beneficiaries.push({
+          accounts.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
             type: "ethereum" as const,
@@ -141,7 +139,7 @@ function getBeneficiaries(
       });
   }
 
-  return beneficiaries;
+  return accounts;
 }
 
 interface TransferFormProps {
@@ -268,13 +266,16 @@ export const TransferForm: FC<TransferFormProps> = ({
   const [validating, setValidating] = useState(false);
   const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
-  const beneficiaries = getBeneficiaries(
-    destination,
-    polkadotAccounts ?? [],
-    ethereumAccounts,
-    destination.parachain?.info.ss58Format ??
-      assetRegistry.relaychain.ss58Format,
-  );
+  const beneficiaries = useMemo(() => {
+    const beneficiaries = getLocationAccounts(
+      destination,
+      polkadotAccounts ?? [],
+      ethereumAccounts,
+      destination.parachain?.info.ss58Format ??
+        assetRegistry.relaychain.ss58Format,
+    );
+    return beneficiaries;
+  }, [destination, polkadotAccounts, ethereumAccounts, assetRegistry]);
 
   const form = useForm<TransferFormData>({
     resolver: zodResolver(transferFormSchema),
@@ -297,7 +298,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
-    if (source.kind === "ethereum") {
+    if (source.kind === "ethereum" || source.kind === "ethereum_l2") {
       // Set to Ethereum account if connected, otherwise clear
       form.setValue("sourceAccount", ethereumAccount ?? "");
     } else if (source.kind === "polkadot") {
@@ -333,7 +334,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   // Auto-set beneficiary when wallet connects or destination type changes
   useEffect(() => {
-    if (destination.kind === "ethereum") {
+    if (destination.kind === "ethereum" || destination.kind === "ethereum_l2") {
       // For Ethereum destination, check if current beneficiary is a valid Ethereum address
       const isValidEthAddress =
         watchBeneficiary?.startsWith("0x") && watchBeneficiary?.length === 42;
@@ -749,9 +750,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                         <span>Send</span>
                         {/* Only show account if wallet is connected for current source type */}
                         {watchSourceAccount &&
-                          (source.kind === "ethereum" ||
-                            (source.kind === "ethereum_l2" &&
-                              ethereumAccount) ||
+                          (((source.kind === "ethereum" ||
+                            source.kind === "ethereum_l2") &&
+                            ethereumAccount) ||
                             (source.kind === "polkadot" &&
                               polkadotAccount?.address)) && (
                             <button
@@ -768,10 +769,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                               }}
                               className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
                             >
-                              {source.kind === "ethereum" ? (
+                              {source.kind === "ethereum" ||
+                              source.kind === "ethereum_l2" ? (
                                 <Image
                                   src={
-                                    ethereumWalletInfo?.icon ||
+                                    ethereumWalletInfo?.icon ??
                                     "/images/ethereum.png"
                                   }
                                   width={16}
@@ -782,7 +784,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                               ) : (
                                 <Image
                                   src={
-                                    polkadotWallet?.logo?.src ||
+                                    polkadotWallet?.logo?.src ??
                                     "/images/polkadot.png"
                                   }
                                   width={16}
@@ -883,7 +885,8 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
                                 if (
                                   isEther &&
-                                  source.kind === "ethereum" &&
+                                  (source.kind === "ethereum" ||
+                                    source.kind === "ethereum_l2") &&
                                   feeInfo
                                 ) {
                                   const feeBuffer =
@@ -974,7 +977,9 @@ export const TransferForm: FC<TransferFormProps> = ({
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
               <dd className="text-primary">
-                {source.kind === "ethereum" ? "~20 minutes" : "~35 minutes"}
+                {source.kind === "ethereum" || source.kind === "ethereum_l2"
+                  ? "~20 minutes"
+                  : "~35 minutes"}
               </dd>
             </div>
           </div>
@@ -1112,7 +1117,10 @@ function SubmitButton({
 
   if (tokenMetadata !== null && context !== null) {
     // Check if Ethereum wallet is connected for Ethereum source
-    if (!ethereumAccount && source.kind === "ethereum") {
+    if (
+      !ethereumAccount &&
+      (source.kind === "ethereum" || source.kind === "ethereum_l2")
+    ) {
       return (
         <ConnectEthereumWalletButton variant="default" networkId={source.id} />
       );
@@ -1127,7 +1135,7 @@ function SubmitButton({
     // Check beneficiaries for destination
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
-      destination.kind === "ethereum"
+      (destination.kind === "ethereum" || destination.kind === "ethereum_l2")
     ) {
       return (
         <ConnectEthereumWalletButton
