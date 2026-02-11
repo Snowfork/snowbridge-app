@@ -58,6 +58,7 @@ function sendResultToHistory(
   const transferType = inferTransferType(data.source, data.destination);
   switch (transferType) {
     case "ethereum->ethereum":
+    case "polkadot->ethereum_l2":
     case "polkadot->ethereum": {
       const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {

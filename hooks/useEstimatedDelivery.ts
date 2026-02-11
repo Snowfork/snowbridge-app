@@ -61,7 +61,8 @@ export function estimateDelivery(
     case "ethereum->ethereum":
     case "ethereum->polkadot":
       return formatTime(latency.toPolkadot, false);
-    case "polkadot->ethereum": {
+    case "polkadot->ethereum":
+    case "polkadot->ethereum_l2": {
       return formatTime(latency.toEthereum, false);
     }
     case "polkadot->polkadot": {
