@@ -150,7 +150,7 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
         const price = prices[tokenMetadata.symbol.toUpperCase()];
         if (price) {
           const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(`≈ $${formatUsdValue(usdAmount)}`);
+          setAmountUsdValue(`≈ ${formatUsdValue(usdAmount)}`);
         } else {
           setAmountUsdValue(null);
         }
