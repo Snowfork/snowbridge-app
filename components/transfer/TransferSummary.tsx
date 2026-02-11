@@ -26,7 +26,10 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   let beneficiaryDisplay = data.formData.beneficiary;
   let sourceAccountLink: string;
   let beneficiaryLink: string;
-  if (data.source.kind === "ethereum" && data.destination.kind === "polkadot") {
+  if (
+    (data.source.kind === "ethereum" || data.source.kind === "ethereum_l2") &&
+    data.destination.kind === "polkadot"
+  ) {
     if (data.destination.parachain?.info.accountType === "AccountId32") {
       beneficiaryDisplay = encodeAddress(
         decodeAddress(beneficiaryDisplay),
@@ -68,6 +71,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   let sourceTokenDecimals: number | null = null;
   switch (data.source.kind) {
     case "ethereum":
+    case "ethereum_l2":
       sourceTokenSymbol = "ETH";
       sourceTokenDecimals = 18;
       break;
@@ -79,6 +83,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   const transferType = inferTransferType(data.source, data.destination);
   let transferTimeMax: string | undefined;
   switch (transferType) {
+    case "ethereum_l2->polkadot":
     case "ethereum->polkadot":
       transferTimeMax = "25 min";
       break;

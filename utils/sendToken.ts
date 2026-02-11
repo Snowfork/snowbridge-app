@@ -93,6 +93,7 @@ export function createStepsFromPlan(
         plan,
       };
     }
+    case "ethereum_l2->polkadot":
     case "ethereum->polkadot": {
       if (data.destination.kind !== "polkadot") throw Error(`Invalid state`);
       for (const log of plan.logs) {

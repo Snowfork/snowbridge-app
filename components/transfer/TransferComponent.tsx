@@ -204,6 +204,7 @@ export const TransferComponent: FC = () => {
       switch (plan.kind) {
         case "ethereum->ethereum":
         case "ethereum->polkadot":
+        case "ethereum_l2->polkadot":
           setSourceExecutionFee(plan.data.feeInfo?.executionFee ?? null);
           break;
         case "polkadot->ethereum":

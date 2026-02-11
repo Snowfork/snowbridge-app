@@ -152,11 +152,15 @@ async function fetchBridgeFeeInfo([
         );
       }
 
+      const estimatedExecution: bigint = await estimateExecutionFee(
+        context,
+        registry,
+        para,
+        fee,
+      );
       return {
         fee: fee.totalFeeInWei,
-        totalFee:
-          fee.totalFeeInWei +
-          (await estimateExecutionFee(context, registry, para, fee)),
+        totalFee: fee.totalFeeInWei + estimatedExecution,
         decimals: 18,
         symbol: "ETH",
         delivery: { kind: transferType, ...fee },
@@ -233,6 +237,13 @@ async function fetchBridgeFeeInfo([
       };
     }
     case "ethereum_l2->polkadot": {
+      if (source.kind !== "ethereum_l2")
+        throw `Invalid source ${source.key}, expected ethereum_l2 source.`;
+      const l2asset = Object.values(source.ethChain.assets).find(
+        (x) => x.swapTokenAddress?.toLowerCase() === token.toLowerCase(),
+      );
+      if (!l2asset)
+        throw Error(`Could not find l2 token for l1 token ${token}`);
       const l2transfer = toPolkadotSnowbridgeV2.createL2TransferImplementation(
         source.id,
         destination.id,
@@ -243,10 +254,13 @@ async function fetchBridgeFeeInfo([
         context,
         registry,
         source.id,
-        token,
+        l2asset.token,
         amountInSmallestUnit,
         destination.id,
       );
+      // TODO: fee information
+      //fee.bridgeFeeInL2Token
+      //fee.swapFeeInL1Token
       return {
         fee: fee.totalFeeInWei,
         totalFee: fee.totalFeeInWei,

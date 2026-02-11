@@ -207,6 +207,9 @@ export type ValidationResult =
   | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.ValidationResultEvm)
   | ({ kind: "ethereum->polkadot" } & toPolkadotV2.ValidationResult)
   | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.ValidationResult)
+  | ({
+      kind: "ethereum_l2->polkadot";
+    } & toPolkadotSnowbridgeV2.ValidationResult)
   | ({ kind: "polkadot->polkadot" } & forInterParachain.ValidationResult)
   | ({ kind: "kusama->polkadot" } & forKusama.ValidationResult)
   | ({ kind: "polkadot->kusama" } & forKusama.ValidationResult);
@@ -216,6 +219,12 @@ export type MessageReceipt =
   | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.MessageReceipt)
   | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.MessageReceiptEvm)
   | ({ kind: "ethereum->polkadot" } & toPolkadotV2.MessageReceipt)
+  | ({
+      kind: "ethereum_l2->polkadot";
+    } & toPolkadotSnowbridgeV2.MessageReceipt & {
+        messageId: string;
+        channelId: string;
+      })
   | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt & {
         messageId: string;
         channelId: string;

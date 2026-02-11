@@ -156,8 +156,18 @@ async function validateEthereumSigner(
   return {
     ethereumAccount,
     ethereumProvider,
-    paraInfo: validateEthereumDestination(data),
     signer,
+  };
+}
+
+async function validateEthereumSignerWithParachain(
+  data: ValidationData,
+  info: SignerInfo,
+) {
+  const signer = await validateEthereumSigner(data, info);
+  return {
+    ...signer,
+    paraInfo: validateEthereumDestination(data),
   };
 }
 
@@ -324,6 +334,37 @@ async function planSend(
       console.log(plan);
       return { kind: transferType, ...plan };
     }
+    case "ethereum_l2->polkadot": {
+      if (source.kind !== "ethereum_l2")
+        throw `Invalid source ${source.key}, expected ethereum_l2 source.`;
+      const l2asset = Object.values(source.ethChain.assets).find(
+        (x) =>
+          x.swapTokenAddress?.toLowerCase() === formData.token.toLowerCase(),
+      );
+      if (!l2asset)
+        throw Error(`Could not find l2 token for l1 token ${formData.token}`);
+
+      const l2transfer = toPolkadotSnowbridgeV2.createL2TransferImplementation(
+        source.id,
+        destination.id,
+        assetRegistry,
+        l2asset.token,
+      );
+      const tx = await l2transfer.createTransfer(
+        context,
+        assetRegistry,
+        source.id,
+        l2asset.token,
+        amountInSmallestUnit,
+        destination.id,
+        formData.sourceAccount,
+        formData.beneficiary,
+        fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
+      );
+      const plan = await l2transfer.validateTransfer(context, tx);
+      console.log(plan);
+      return { kind: transferType, ...plan };
+    }
     default:
       throw Error(`Cannot infer source ${transferType}.`);
   }
@@ -416,7 +457,7 @@ async function sendToken(
       return { kind: plan.kind, ...result };
     }
     case "ethereum->polkadot": {
-      const { signer, paraInfo } = await validateEthereumSigner(
+      const { signer, paraInfo } = await validateEthereumSignerWithParachain(
         data,
         signerInfo,
       );
@@ -468,6 +509,22 @@ async function sendToken(
           withSignedTransaction: true,
         },
       );
+      console.log(result);
+      return { kind: plan.kind, ...result };
+    }
+    case "ethereum_l2->polkadot": {
+      const { signer } = await validateEthereumSigner(data, signerInfo);
+      const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
+      const response = await signer.sendTransaction(transfer.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const message = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
+      if (!message) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      const result = { ...message, messageId: receipt.hash, channelId: "" };
       console.log(result);
       return { kind: plan.kind, ...result };
     }
