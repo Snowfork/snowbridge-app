@@ -38,7 +38,6 @@ import {
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  transferActivityCacheAtom,
   transferActivityShowGlobal,
   transfersPendingLocalAtom,
 } from "@/store/transferActivity";
@@ -47,8 +46,6 @@ import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import {
   AssetRegistry,
-  EthereumLocation,
-  ParachainKind,
   ParachainLocation,
   TransferLocation,
 } from "@snowbridge/base-types";
@@ -595,9 +592,6 @@ export default function Activity() {
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  const [transferActivityCache, setTransferActivityCache] = useAtom(
-    transferActivityCacheAtom,
-  );
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
   );
@@ -625,25 +619,18 @@ export default function Activity() {
       setTransfersErrorMessage(
         "The activity service is under heavy load, so this may take a while...",
       );
-    } else {
+    } else if (transfersErrorMessage) {
       setTransfersErrorMessage(null);
     }
-  }, [transfersError, setTransfersErrorMessage]);
+  }, [transfersError, setTransfersErrorMessage, transfersErrorMessage]);
 
   const hashItem = useWindowHash();
-
-  useEffect(() => {
-    if (transfers === null) return;
-    setTransferActivityCache(transfers);
-  }, [transfers, setTransferActivityCache]);
 
   useEffect(() => {
     const oldTransferCutoff = new Date().getTime() - 4 * 60 * 60 * 1000; // 4 hours
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
-        transferActivityCache.find((h) =>
-          isSameTransfer(h, transfersPendingLocal[i]),
-        ) ||
+        transfers.find((h) => isSameTransfer(h, transfersPendingLocal[i])) ||
         new Date(transfersPendingLocal[i].info.when).getTime() <
           oldTransferCutoff
       ) {
@@ -655,7 +642,7 @@ export default function Activity() {
     }
     // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transferActivityCache, setTransfersPendingLocal]);
+  }, [setTransfersPendingLocal]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -666,29 +653,26 @@ export default function Activity() {
       ...(polkadotAccounts ?? []).map((acc) => acc.address),
       ...ethereumAccounts,
     ]);
-    const allTransfers: Transfer[] = [];
+    const allTransfers: (Transfer & { isWalletTransaction: boolean })[] = [];
     for (const pending of transfersPendingLocal) {
       // Check if this pending transfer already exists in the cache
       // Match by ID, transaction hash, or message ID to handle V2 transfers
-      const isDuplicate = transferActivityCache.find((t) =>
-        isSameTransfer(t, pending),
-      );
+      const isDuplicate = transfers.find((t) => isSameTransfer(t, pending));
 
       if (isDuplicate) {
         continue;
       }
-      allTransfers.push(pending);
+      allTransfers.push({ isWalletTransaction: true, ...pending });
     }
-    for (const transfer of transferActivityCache) {
-      transfer.isWalletTransaction = isWalletTransaction(
+    for (let transfer of transfers) {
+      const walletTx = isWalletTransaction(
         transfer.info.sourceAddress,
         transfer.info.beneficiaryAddress,
       );
       const isLinkedTransaction = hashItem && transfer.id === hashItem;
-      if (!showGlobal && !transfer.isWalletTransaction && !isLinkedTransaction)
-        continue;
+      if (!showGlobal && !walletTx && !isLinkedTransaction) continue;
 
-      allTransfers.push(transfer);
+      allTransfers.push({ isWalletTransaction: walletTx, ...transfer });
     }
     const pages: Transfer[][] = [];
     for (let i = 0; i < allTransfers.length; i += ITEMS_PER_PAGE) {
@@ -696,15 +680,15 @@ export default function Activity() {
     }
     return pages;
   }, [
-    transfersPendingLocal,
-    transferActivityCache,
     polkadotAccounts,
     ethereumAccounts,
-    showGlobal,
+    transfersPendingLocal,
+    transfers,
     hashItem,
+    showGlobal,
   ]);
 
-  useMemo(() => {
+  useEffect(() => {
     if (pages === null || pages.length == 0) {
       setPage(0);
       setSelectedItem(null);
@@ -726,14 +710,9 @@ export default function Activity() {
     }
     setPage(0);
     setSelectedItem(null);
-    return;
   }, [pages, setSelectedItem, setPage, hashItem]);
 
-  if (
-    pages.length === 0 &&
-    isTransfersLoading &&
-    transferActivityCache.length === 0
-  ) {
+  if (isTransfersLoading || pages.length === 0) {
     return <Loading />;
   }
 

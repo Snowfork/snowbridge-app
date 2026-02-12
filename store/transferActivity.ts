@@ -42,9 +42,4 @@ export const transfersPendingLocalAtom = atom(
   },
 );
 
-export const transferActivityCacheAtom = atomWithStorage<Transfer[]>(
-  "transfer_activity_cache",
-  [],
-);
-
 export const transferActivityShowGlobal = atom(false);

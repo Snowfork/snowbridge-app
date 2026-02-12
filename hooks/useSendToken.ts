@@ -521,8 +521,9 @@ async function sendToken(
         throw Error(`Could not fetch transaction receipt.`);
       }
       const message = {
-        nonce: 1n,
+        nonce: 0n,
         payload: "",
+        messageId: transfer.computed.topic,
         blockNumber: receipt.blockNumber,
         blockHash: receipt.blockHash,
         txHash: receipt.hash,
