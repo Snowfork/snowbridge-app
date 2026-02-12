@@ -234,48 +234,23 @@ function TxComponent() {
     isLoading,
     isValidating,
   } = useSWR(
-    [registry.environment, "completedtx", sourceType, messageId],
-    async ([, , sourceType, messageId]) => {
+    [registry.environment, "completedtx", messageId],
+    async ([, , messageId]) => {
       if (messageId !== null) {
-        if (sourceType === null) {
-          const [toP, toE] = await Promise.all([
-            historyV2.toPolkadotTransferById(
-              environment.indexerGraphQlUrl,
-              messageId,
-            ),
-            historyV2.toEthereumTransferById(
-              environment.indexerGraphQlUrl,
-              messageId,
-            ),
-          ]);
-          return {
-            txData: toP ?? toE ?? transfer,
-            inHistory: (toP ?? toE) !== undefined,
-          };
-        } else {
-          switch (sourceType) {
-            case "ethereum": {
-              const txData = await historyV2.toPolkadotTransferById(
-                environment.indexerGraphQlUrl,
-                messageId,
-              );
-              return {
-                txData: txData ?? transfer,
-                inHistory: txData !== undefined,
-              };
-            }
-            case "polkadot": {
-              const txData = await historyV2.toEthereumTransferById(
-                environment.indexerGraphQlUrl,
-                messageId,
-              );
-              return {
-                txData: txData ?? transfer,
-                inHistory: txData !== undefined,
-              };
-            }
-          }
-        }
+        const [toP, toE] = await Promise.all([
+          historyV2.toPolkadotTransferById(
+            environment.indexerGraphQlUrl,
+            messageId,
+          ),
+          historyV2.toEthereumTransferById(
+            environment.indexerGraphQlUrl,
+            messageId,
+          ),
+        ]);
+        return {
+          txData: toP ?? toE ?? transfer,
+          inHistory: (toP ?? toE) !== undefined,
+        };
       }
       return { txData: transfer, inHistory: false };
     },
