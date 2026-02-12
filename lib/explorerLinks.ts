@@ -139,7 +139,7 @@ export const stellasSwapTokenLink = (
   chainId: number,
   token: string,
 ) => {
-  const baseUrl = EXPLORERS[envName][`uniswap_${chainId}`];
+  const baseUrl = EXPLORERS[envName][`stellaswap_${chainId}`];
   if (!baseUrl) {
     return `#no-stellaswap-url-for-token-${chainId}`;
   }

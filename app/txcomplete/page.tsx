@@ -85,7 +85,7 @@ function TxCard(props: TxCardProps) {
         name: "Uniswap",
         link: uniswapTokenLink(
           registry.environment,
-          registry.ethChainId,
+          destination.id,
           transfer.info.tokenAddress,
         ),
       };
