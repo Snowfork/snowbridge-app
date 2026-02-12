@@ -78,7 +78,7 @@ function TxCard(props: TxCardProps) {
     transfer.info.sourceAddress,
   ]);
 
-  switch (transfer.kind) {
+  switch (transfer.sourceKind) {
     // Uniswap
     case "polkadot": {
       const uniswap = {
@@ -120,7 +120,7 @@ function TxCard(props: TxCardProps) {
   let neuroWeb;
   if (
     isWalletTransaction &&
-    transfer.info.destinationParachain === 2043 &&
+    transfer.destinationId === 2043 &&
     token.symbol === "TRAC"
   ) {
     neuroWeb = (
@@ -220,7 +220,11 @@ function TxComponent() {
     if (transferEncoded === null) return [messageId, sourceType];
 
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
-    return [decoded?.id ?? messageId, decoded.kind ?? sourceType, decoded];
+    return [
+      decoded?.id ?? messageId,
+      decoded.sourceKind ?? sourceType,
+      decoded,
+    ];
   }, [searchParams]);
 
   const {

@@ -11,6 +11,7 @@ import { inferTransferType } from "@/utils/inferTransferType";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import Image from "next/image";
 import { chainName } from "@/utils/chainNames";
+import { ParachainLocation } from "@snowbridge/base-types";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -44,7 +45,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     );
     beneficiaryLink = subscanAccountLink(
       data.assetRegistry.environment,
-      data.destination.parachain!.id,
+      data.destination.key,
       beneficiaryDisplay,
     );
   } else {
@@ -57,7 +58,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     }
     sourceAccountLink = subscanAccountLink(
       data.assetRegistry.environment,
-      data.source.parachain!.id,
+      (data.source as ParachainLocation).key,
       sourceAccountDisplay,
     );
     beneficiaryLink = etherscanAddressLink(

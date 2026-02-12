@@ -520,7 +520,14 @@ async function sendToken(
       if (!receipt) {
         throw Error(`Could not fetch transaction receipt.`);
       }
-      const message = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
+      const message = {
+        nonce: 1n,
+        payload: "",
+        blockNumber: receipt.blockNumber,
+        blockHash: receipt.blockHash,
+        txHash: receipt.hash,
+        txIndex: receipt.index,
+      };
       if (!message) {
         throw Error(`Could not fetch message receipt.`);
       }

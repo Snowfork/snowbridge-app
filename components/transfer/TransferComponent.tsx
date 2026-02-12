@@ -41,6 +41,7 @@ import { TransferSummary } from "./TransferSummary";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { isHex, u8aToHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
+import { EthereumKind, ParachainKind } from "@snowbridge/base-types";
 
 function sendResultToHistory(
   messageId: string,
@@ -56,13 +57,16 @@ function sendResultToHistory(
     beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
   }
   const transferType = inferTransferType(data.source, data.destination);
-  switch (transferType) {
+  switch (`${data.source.kind}->${data.destination.kind}`) {
     case "ethereum->ethereum":
     case "polkadot->ethereum_l2":
     case "polkadot->ethereum": {
       const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {
-        kind: "polkadot",
+        sourceId: data.source.id,
+        sourceKind: data.source.kind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as EthereumKind,
         id: messageId ?? sendResult.messageId,
         status: sendResult.success
           ? historyV2.TransferStatus.Pending
@@ -88,10 +92,14 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
+    case "ethereum_l2->polkadot":
     case "ethereum->polkadot": {
       const sendResult = result as toPolkadotV2.MessageReceipt;
       const transfer: historyV2.ToPolkadotTransferResult = {
-        kind: "ethereum",
+        sourceId: data.source.id,
+        sourceKind: data.source.kind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
@@ -100,7 +108,6 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain?.id,
         },
         submitted: {
           blockNumber: sendResult.blockNumber ?? 0,
@@ -116,7 +123,10 @@ function sendResultToHistory(
     case "polkadot->polkadot": {
       const sendResult = result as forInterParachain.MessageReceipt;
       const transfer: historyV2.InterParachainTransfer = {
-        kind: "polkadot",
+        sourceId: data.source.id,
+        sourceKind: data.source.kind as ParachainKind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
         id: messageId ?? sendResult.messageId,
         status: sendResult.success
           ? historyV2.TransferStatus.Pending
@@ -127,7 +137,6 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain!.id,
         },
         submitted: {
           block_num: sendResult.blockNumber,

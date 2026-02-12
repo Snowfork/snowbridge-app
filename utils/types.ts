@@ -37,7 +37,9 @@ export type TransferType =
   | "polkadot->ethereum"
   | "polkadot->polkadot"
   | "ethereum_l2->polkadot"
-  | "polkadot->ethereum_l2";
+  | "polkadot->ethereum_l2"
+  | "kusama->polkadot"
+  | "polkadot->kusama";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
