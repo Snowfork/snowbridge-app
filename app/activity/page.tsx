@@ -61,6 +61,7 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { chainName } from "@/utils/chainNames";
 import { inferKindFromTransfer } from "@/utils/inferTransferType";
+import { getTransferLocation } from "@snowbridge/registry";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -208,7 +209,10 @@ const getExplorerLinks = (
       }
       if (tx.ethereumMessageDispatched) {
         links.push({
-          text: "Message arrived on Ethereum L1",
+          text:
+            tx.destinationKind === "ethereum_l2"
+              ? `Message arrived on ${chainName(getTransferLocation(registry, { kind: "ethereum", id: registry.ethChainId }))}`
+              : "Message arrived on Snowbridge Gateway",
           url: etherscanTxHashLink(
             registry.environment,
             registry.ethChainId,
