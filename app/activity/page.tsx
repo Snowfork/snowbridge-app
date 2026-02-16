@@ -4,7 +4,6 @@ import { ErrorDialog } from "@/components/ErrorDialog";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
   formatTokenData,
-  getEnvDetail,
   TransferTitle,
 } from "@/components/activity/TransferTitle";
 import {
@@ -60,8 +59,9 @@ import { formatShortDate, trimAccount } from "@/utils/formatting";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { chainName } from "@/utils/chainNames";
-import { inferKindFromTransfer } from "@/utils/inferTransferType";
+import { inferTransferDetails } from "@/utils/inferTransferType";
 import { getTransferLocation } from "@snowbridge/registry";
+import { TransferType } from "@/utils/types";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -71,12 +71,16 @@ const ITEMS_PER_PAGE = 5;
  * created transfers use messageId/txHash as ID. This function matches by
  * transaction hash or extrinsic hash to handle this case.
  */
-const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
+const isSameTransfer = (
+  t1: Transfer,
+  t2: Transfer,
+  registry: AssetRegistry,
+): boolean => {
   // Match by ID if both have non-empty IDs
   if (t1.id === t2.id && t1.id.length > 0) return true;
 
-  const t1Kind = inferKindFromTransfer(t1);
-  const t2Kind = inferKindFromTransfer(t2);
+  const { kind: t1Kind } = inferTransferDetails(t1, registry);
+  const { kind: t2Kind } = inferTransferDetails(t2, registry);
   // For ToPolkadotTransferResult (E->P), match by transaction hash
   if (
     t1Kind === "ethereum->polkadot" ||
@@ -113,11 +117,11 @@ const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
 
 const getExplorerLinks = (
   transfer: Transfer,
+  transferKind: TransferType,
   source: TransferLocation,
   registry: AssetRegistry,
   destination: TransferLocation,
 ) => {
-  const transferKind = inferKindFromTransfer(transfer);
   switch (transferKind) {
     case "polkadot->polkadot":
     case "kusama->polkadot":
@@ -360,9 +364,14 @@ const transferDetail = (
   registry: AssetRegistry,
   router: AppRouterInstance,
 ): JSX.Element => {
-  const { source, destination } = getEnvDetail(transfer, registry);
+  const {
+    kind: transferType,
+    source,
+    destination,
+  } = inferTransferDetails(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
     transfer,
+    transferType,
     source,
     registry,
     destination,
@@ -399,7 +408,6 @@ const transferDetail = (
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
 
-  const transferType = inferKindFromTransfer(transfer);
   switch (transferType) {
     case "ethereum_l2->polkadot":
     case "ethereum->polkadot": {
@@ -634,7 +642,9 @@ export default function Activity() {
     const oldTransferCutoff = new Date().getTime() - 4 * 60 * 60 * 1000; // 4 hours
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
-        transfers.find((h) => isSameTransfer(h, transfersPendingLocal[i])) ||
+        transfers.find((h) =>
+          isSameTransfer(h, transfersPendingLocal[i], assetRegistry),
+        ) ||
         new Date(transfersPendingLocal[i].info.when).getTime() <
           oldTransferCutoff
       ) {
@@ -646,7 +656,7 @@ export default function Activity() {
     }
     // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setTransfersPendingLocal]);
+  }, [setTransfersPendingLocal, assetRegistry]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -661,7 +671,9 @@ export default function Activity() {
     for (const pending of transfersPendingLocal) {
       // Check if this pending transfer already exists in the cache
       // Match by ID, transaction hash, or message ID to handle V2 transfers
-      const isDuplicate = transfers.find((t) => isSameTransfer(t, pending));
+      const isDuplicate = transfers.find((t) =>
+        isSameTransfer(t, pending, assetRegistry),
+      );
 
       if (isDuplicate) {
         continue;
@@ -690,6 +702,7 @@ export default function Activity() {
     transfers,
     hashItem,
     showGlobal,
+    assetRegistry,
   ]);
 
   useEffect(() => {

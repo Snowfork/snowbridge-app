@@ -1,42 +1,79 @@
 import { Transfer } from "@/store/transferActivity";
 import { TransferType } from "./types";
-import { TransferLocation } from "@snowbridge/base-types";
+import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
+import { getTransferLocation } from "@snowbridge/registry";
 
-export function inferKindFromTransfer(transfer: Transfer): TransferType {
-  const { sourceKind: source, destinationKind: destination } = transfer;
-  if (source === "kusama" && destination === "polkadot") {
-    return `${source}->${destination}`;
-  } else if (source === "polkadot" && destination === "kusama") {
-    return `${source}->${destination}`;
-  } else if (source === "polkadot" && destination === "ethereum") {
-    return `${source}->${destination}`;
-  } else if (source === "polkadot" && destination === "ethereum_l2") {
-    return `${source}->${destination}`;
-  } else if (source === "polkadot" && destination === "polkadot") {
-    return `${source}->${destination}`;
-  } else if (source === "ethereum" && destination === "polkadot") {
-    return `${source}->${destination}`;
-  } else if (source === "ethereum_l2" && destination === "polkadot") {
-    return `${source}->${destination}`;
-  } else if (source === "ethereum" && destination === "ethereum") {
-    // This should never be the case, even though eth to eth transfers are supported between
-    // moonbeam and ethereum, the indexer picks up moonbeam as a polkadot chain
-    throw Error(`Unexpected ${source}->${destination}.`);
-  } else {
+type TransferDetail = {
+  source: TransferLocation;
+  destination: TransferLocation;
+  kind: TransferType;
+};
+export function inferTransferDetails(
+  transfer: Transfer,
+  registry: AssetRegistry,
+): TransferDetail {
+  let { sourceKind, sourceId, destinationKind, destinationId } = transfer;
+  if (!sourceKind && sourceId) {
+    if (`polkadot_${sourceId}` in registry.parachains) sourceKind = "polkadot";
+    if (`ethereum_${sourceId}` in registry.ethereumChains)
+      sourceKind = "ethereum";
+    if (`ethereum_l2_${sourceId}` in registry.ethereumChains)
+      sourceKind = "ethereum_l2";
+  }
+  if (!destinationKind && destinationId) {
+    if (`polkadot_${destinationId}` in registry.parachains)
+      destinationKind = "polkadot";
+    if (`ethereum_${destinationId}` in registry.ethereumChains)
+      destinationKind = "ethereum";
+    if (`ethereum_l2_${destinationId}` in registry.ethereumChains)
+      destinationKind = "ethereum_l2";
+  }
+
+  if (!destinationKind) {
+    if (sourceKind === "ethereum" || sourceKind === "ethereum_l2") {
+      destinationKind = "polkadot";
+    }
+    if (sourceKind === "polkadot") {
+      destinationKind = "ethereum";
+    }
+    if (sourceKind === "kusama") {
+      destinationKind = "polkadot";
+    }
+  }
+  if (sourceKind === "ethereum" && !sourceId) {
+    sourceId = registry.ethChainId;
+  }
+  if (destinationKind === "ethereum" && !destinationId) {
+    destinationId = registry.ethChainId;
+  }
+  if (!sourceKind || !sourceId) {
     throw Error(
-      `Could not infer transfer type for source:${source} and destination:${destination}.`,
+      `Could not infer source ${sourceKind} ${sourceId} from transfer ${transfer.sourceKind} ${transfer.sourceId} id: ${transfer.id}`,
     );
   }
+  if (!destinationKind || !destinationId) {
+    throw Error(
+      `Could not infer destination ${destinationKind} ${destinationId} from transfer ${transfer.destinationKind} ${transfer.destinationId} id: ${transfer.id}`,
+    );
+  }
+  const source = getTransferLocation(registry, {
+    kind: sourceKind,
+    id: sourceId,
+  });
+  const destination = getTransferLocation(registry, {
+    kind: destinationKind,
+    id: destinationId,
+  });
+
+  return { source, destination, kind: inferTransferType(source, destination) };
 }
 
-// TODO: Delete
 export function inferTransferType(
   source: TransferLocation,
   destination: TransferLocation,
 ): TransferType {
   if (source.kind === "ethereum" && destination.kind === "polkadot") {
     return `${source.kind}->${destination.kind}`;
-    // source ethereum and destination is substrate so its a standard transfer.
   } else if (source.kind === "polkadot" && destination.kind === "ethereum") {
     return `${source.kind}->${destination.kind}`;
   } else if (source.kind === "ethereum" && destination.kind === "ethereum") {
@@ -46,6 +83,10 @@ export function inferTransferType(
   } else if (source.kind === "polkadot" && destination.kind === "ethereum_l2") {
     return `${source.kind}->${destination.kind}`;
   } else if (source.kind === "ethereum_l2" && destination.kind === "polkadot") {
+    return `${source.kind}->${destination.kind}`;
+  } else if (source.kind === "kusama" && destination.kind === "polkadot") {
+    return `${source.kind}->${destination.kind}`;
+  } else if (source.kind === "polkadot" && destination.kind === "kusama") {
     return `${source.kind}->${destination.kind}`;
   } else {
     throw Error(

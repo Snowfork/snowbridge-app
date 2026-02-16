@@ -1,10 +1,7 @@
 "use client";
 
 import { ContextComponent } from "@/components/Context";
-import {
-  getEnvDetail,
-  TransferTitle,
-} from "@/components/activity/TransferTitle";
+import { TransferTitle } from "@/components/activity/TransferTitle";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
@@ -39,6 +36,7 @@ import { walletTxChecker } from "@/utils/addresses";
 import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { chainName } from "@/utils/chainNames";
+import { inferTransferDetails } from "@/utils/inferTransferType";
 
 const Loading = () => {
   return <SnowflakeLoader size="md" />;
@@ -52,7 +50,7 @@ interface TxCardProps {
 }
 function TxCard(props: TxCardProps) {
   const { transfer, refresh, inHistory, registry } = props;
-  const { destination } = getEnvDetail(transfer, registry);
+  const { destination } = inferTransferDetails(transfer, registry);
   const links: { name: string; link: string }[] = [];
 
   const token =

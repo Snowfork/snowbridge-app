@@ -38,10 +38,10 @@ import base64url from "base64url";
 import { BridgeInfoContext } from "@/app/providers";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import { TransferSummary } from "./TransferSummary";
-import { inferTransferType } from "@/utils/inferTransferType";
 import { isHex, u8aToHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { EthereumKind, ParachainKind } from "@snowbridge/base-types";
+import { inferTransferType } from "@/utils/inferTransferType";
 
 function sendResultToHistory(
   messageId: string,

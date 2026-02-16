@@ -6,6 +6,8 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
   paseo_sepolia: {
     etherscan_11155111: "https://sepolia.etherscan.io/",
     etherscan_84532: "https://sepolia.basescan.org/",
+    etherscan_421614: "https://sepolia.arbiscan.io/",
+    etherscan_11155420: "https://sepolia-optimism.etherscan.io/",
     subscan_polkadot_1000: "https://assethub-paseo.subscan.io/",
     subscan_polkadot_1002: "https://bridgehub-paseo.subscan.io/",
     subscan_polkadot_2043: "https://neuroweb-testnet.subscan.io/",
@@ -16,6 +18,8 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
   polkadot_mainnet: {
     etherscan_1: "https://etherscan.io/",
     etherscan_8453: "https://basescan.org/",
+    etherscan_42161: "https://arbiscan.io/",
+    etherscan_10: "https://optimistic.etherscan.io/",
     uniswap_1: "https://app.uniswap.org/",
     stellaswap_2004: "https://app.stellaswap.com/exchange/swap",
     dapp_polkadot_2034: "https://app.hydration.net/",
@@ -35,6 +39,8 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
   westend_sepolia: {
     etherscan_11155111: "https://sepolia.etherscan.io/",
     etherscan_84532: "https://sepolia.basescan.org/",
+    etherscan_421614: "https://sepolia.arbiscan.io/",
+    etherscan_11155420: "https://sepolia-optimism.etherscan.io/",
     subscan_polkadot_1000: "https://assethub-westend.subscan.io/",
     subscan_polkadot_1002: "https://bridgehub-westend.subscan.io/",
     subscan_relaychain: "https://westend.subscan.io/",

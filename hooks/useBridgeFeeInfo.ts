@@ -19,9 +19,9 @@ import {
   Parachain,
   TransferLocation,
 } from "@snowbridge/base-types";
-import { inferTransferType } from "@/utils/inferTransferType";
 import { getEnvironmentName } from "@/lib/snowbridge";
 import { parseUnits } from "ethers";
+import { inferTransferType } from "@/utils/inferTransferType";
 
 async function estimateExecutionFee(
   context: Context,

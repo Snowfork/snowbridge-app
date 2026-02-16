@@ -8,120 +8,15 @@ import { parseUnits } from "ethers";
 import { TransferStatusBadge } from "./TransferStatusBadge";
 import { useContext, useState } from "react";
 import { BridgeInfoContext } from "@/app/providers";
-import type { AssetRegistry, ERC20Metadata } from "@snowbridge/base-types";
+import type {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import Image from "next/image";
 import { getTransferLocation } from "@snowbridge/registry";
 import { chainName } from "@/utils/chainNames";
-
-// export function getChainIdentifiers(
-//   transfer: Transfer,
-//   registry: AssetRegistry,
-// ) {
-//   switch (transfer.sourceKind) {
-//     case "kusama": {
-//       const tx = transfer;
-//       return {
-//         sourceType: transfer.kind,
-//         destinationType: "kusama" as const,
-//         sourceId:
-//           tx.info.sourceParachain?.toString() ??
-//           registry.assetHubParaId.toString(),
-//         destinationId:
-//           tx.info.destinationParachain?.toString() ??
-//           registry.assetHubParaId.toString(),
-//         sourceNetwork: tx.info.destinationNetwork ?? "kusama",
-//         destinationNetwork: tx.info.destinationNetwork ?? "kusama",
-//       };
-//     }
-//     case "ethereum_l2": {
-//       const tx = transfer;
-//       return {
-//         sourceType: transfer.kind,
-//         destinationType: "polkadot" as const,
-//         sourceId: registry.ethChainId.toString(),
-//         destinationId:
-//           tx.info.destinationParachain?.toString() ??
-//           registry.assetHubParaId.toString(),
-//       };
-//     }
-//     case "ethereum": {
-//       const tx = transfer;
-//       return {
-//         sourceType: transfer.kind,
-//         destinationType: "polkadot" as const,
-//         sourceId: registry.ethChainId.toString(),
-//         destinationId:
-//           tx.info.destinationParachain?.toString() ??
-//           registry.assetHubParaId.toString(),
-//       };
-//     }
-//     case "polkadot": {
-//       if (transfer.info.destinationParachain) {
-//         const tx = transfer;
-//         return {
-//           sourceType: transfer.kind,
-//           destinationType: transfer.kind,
-//           sourceId: tx.submitted.sourceParachainId.toString(),
-//           destinationId: transfer.info.destinationParachain.toString(),
-//         };
-//       } else {
-//         const tx = transfer;
-//         return {
-//           sourceType: transfer.kind,
-//           destinationType: "ethereum" as const,
-//           sourceId: tx.submitted.sourceParachainId.toString(),
-//           destinationId: registry.ethChainId.toString(),
-//         };
-//       }
-//     }
-//   }
-//   return null;
-// }
-
-export function getEnvDetail(transfer: Transfer, registry: AssetRegistry) {
-  let { sourceKind, sourceId, destinationKind, destinationId } = transfer;
-  if (sourceKind === "ethereum" && !sourceId) {
-    // Default to mainnet
-    sourceId = registry.ethChainId;
-  }
-  if (destinationKind === "ethereum" && !destinationId) {
-    // Default to mainnet
-    destinationId = registry.ethChainId;
-  }
-  const source = getTransferLocation(registry, {
-    kind: sourceKind,
-    id: sourceId,
-  });
-  const destination = getTransferLocation(registry, {
-    kind: destinationKind,
-    id: destinationId,
-  });
-
-  // if (!id) {
-  //   console.error("Unknown transfer", transfer);
-  //   throw Error(`Unknown transfer type ${transfer.kind}`);
-  // }
-  // if (id.sourceType === "kusama") {
-  //   const source = getTransferLocation(registry, {
-  //     kind: transfer.info.sourceNetwork! as ChainKind,
-  //     id: Number(id.sourceId),
-  //   });
-  //   const destination = getTransferLocation(registry, {
-  //     kind: transfer.info.destinationNetwork! as ChainKind,
-  //     id: Number(id.destinationId),
-  //   });
-  //   return { source, destination };
-  // } else {
-  //   const source = getTransferLocation(registry, {
-  //     kind: id.sourceType,
-  //     id: Number(id.sourceId),
-  //   });
-  //   const destination = getTransferLocation(registry, {
-  //     kind: id.destinationType as ChainKind,
-  //     id: Number(id.destinationId),
-  //   });
-  return { source, destination };
-}
+import { inferTransferDetails } from "@/utils/inferTransferType";
 
 export function formatTokenData(
   transfer: Transfer,
@@ -158,7 +53,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
   const [tokenImageError, setTokenImageError] = useState(false);
   const [destImageError, setDestImageError] = useState(false);
 
-  const { destination } = getEnvDetail(transfer, assetRegistry);
+  const { destination } = inferTransferDetails(transfer, assetRegistry);
   const shortDate = formatShortDate(new Date(transfer.info.when));
 
   const { tokenName, amount: rawAmount } = formatTokenData(
