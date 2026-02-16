@@ -40,7 +40,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     }
     sourceAccountLink = etherscanAddressLink(
       data.assetRegistry.environment,
-      data.assetRegistry.ethChainId,
+      data.source.id,
       sourceAccountDisplay,
     );
     beneficiaryLink = subscanAccountLink(
@@ -63,7 +63,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     );
     beneficiaryLink = etherscanAddressLink(
       data.assetRegistry.environment,
-      data.assetRegistry.ethChainId,
+      data.destination.id,
       data.formData.beneficiary,
     );
   }

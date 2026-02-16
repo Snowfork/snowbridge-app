@@ -97,7 +97,7 @@ export function EthereumTxStep({
                 const { receipt } = await action(data, amount);
                 const etherscanLink = etherscanTxHashLink(
                   data.assetRegistry.environment,
-                  data.assetRegistry.ethChainId,
+                  data.source.id,
                   receipt?.hash ?? "",
                 );
                 if (receipt?.status === 1) {

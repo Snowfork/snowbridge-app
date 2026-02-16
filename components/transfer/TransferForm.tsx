@@ -1024,7 +1024,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             }
             className="text-xs text-muted-foreground text-center"
           >
-            * L2 transfers powered by Snowbridge Message Passing and{" "}
+            * L2 transfers powered by Snowbridge V2 Message Passing and{" "}
             <a href="https://across.to" target="_blank" className="underline">
               Across.to
             </a>

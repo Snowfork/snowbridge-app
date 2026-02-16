@@ -5,6 +5,7 @@ import { toPolkadotV2 } from "@snowbridge/api";
 import { parseUnits } from "ethers";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
+import { IERC20__factory, WETH9__factory } from "@snowbridge/contract-types";
 
 export function useERC20DepositAndApprove(): {
   approveSpend: (
@@ -38,12 +39,31 @@ export function useERC20DepositAndApprove(): {
       ) {
         throw Error("Selected signer does not match source address.");
       }
-      const approveTx = await toPolkadotV2.approveTokenSpend(
-        context,
-        signerAddress,
-        data.formData.token,
-        parseUnits(amount, data.tokenMetadata.decimals),
+      // for ethereum l1 use the gateway, for l2 use the wrapper
+      const amountInSmallestUnit = parseUnits(
+        amount,
+        data.tokenMetadata.decimals,
       );
+      let token = data.formData.token;
+      let spender = context.environment.gatewayContract;
+      if (data.source.kind === "ethereum_l2") {
+        const adapter =
+          context.environment.l2Bridge?.l2Chains[data.source.id]
+            ?.adapterAddress;
+        if (!adapter) throw Error(`Could not find l2 adapter contract.`);
+        spender = adapter;
+        const l2Asset = Object.values(data.source.ethChain.assets).find(
+          (a) => a.swapTokenAddress?.toLowerCase() === token.toLowerCase(),
+        );
+        if (!l2Asset) throw Error(`Could not find l2 token.`);
+        token = l2Asset.token;
+      }
+
+      const approveTx = await IERC20__factory.connect(token)
+        .getFunction("approve")
+        .populateTransaction(spender, amountInSmallestUnit, {
+          from: signerAddress,
+        });
 
       const response = await signer.sendTransaction(approveTx);
 
@@ -73,11 +93,16 @@ export function useERC20DepositAndApprove(): {
       ) {
         throw Error("Selected signer does not match source address.");
       }
-      const depositTx = await toPolkadotV2.depositWeth(
-        signerAddress,
-        data.formData.token,
-        parseUnits(amount, data.tokenMetadata.decimals),
+      const amountInSmallestUnit = parseUnits(
+        amount,
+        data.tokenMetadata.decimals,
       );
+      const depositTx = await WETH9__factory.connect(data.formData.token)
+        .getFunction("deposit")
+        .populateTransaction({
+          from: signerAddress,
+          value: amountInSmallestUnit,
+        });
       const response = await signer.sendTransaction(depositTx);
       console.log("deposit response", response);
       const FIVE_MINUTES = 60_000 * 5;
