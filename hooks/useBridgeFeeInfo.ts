@@ -248,7 +248,7 @@ async function fetchBridgeFeeInfo([
         source.id,
         destination.id,
         registry,
-        token,
+        l2asset.token,
       );
       const fee = await l2transfer.getDeliveryFee(
         context,

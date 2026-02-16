@@ -302,7 +302,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
                     deliveryLatency,
                   )}
             <span className="text-muted-foreground">
-              {transferTimeMax ? `Up to ${transferTimeMax}` : ""}
+              {transferTimeMax ? `(Up to ${transferTimeMax})` : ""}
             </span>
           </span>
         </div>

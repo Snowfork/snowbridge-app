@@ -21,7 +21,6 @@ import { useForm } from "react-hook-form";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
 import { Button } from "../ui/button";
-import { useTokenBalance } from "@/hooks/useTokenBalance";
 import {
   Form,
   FormControl,
@@ -75,6 +74,8 @@ import {
   switchNetwork,
 } from "@/lib/client/web3modal";
 import { chainName } from "@/utils/chainNames";
+import useSWR from "swr";
+import { useTokenBalances } from "@/hooks/useTokenBalances";
 
 function getLocationAccounts(
   location: TransferLocation,
@@ -264,7 +265,6 @@ export const TransferForm: FC<TransferFormProps> = ({
   const [destination, setDestination] = useState(firstDestination);
   const [token, setToken] = useState(firstToken);
   const [validating, setValidating] = useState(false);
-  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   const beneficiaries = useMemo(() => {
     const beneficiaries = getLocationAccounts(
@@ -394,12 +394,18 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchAmount,
   );
 
+  const tokenMetadata =
+    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
+      token.toLowerCase()
+    ];
+
   // Get balance for MAX button
-  const { data: balanceInfo } = useTokenBalance(
-    watchSourceAccount ?? "",
+  const { data: balanceInfos } = useTokenBalances(
+    context!,
+    assetRegistry,
     getTransferLocation(assetRegistry, source),
-    destination,
-    token,
+    [tokenMetadata],
+    ethereumAccount ?? watchSourceAccount ?? "",
   );
 
   useEffect(() => {
@@ -487,35 +493,21 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchToken,
   ]);
 
-  const tokenMetadata =
-    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
-      token.toLowerCase()
-    ];
-
-  // Calculate USD value for amount
-  useEffect(() => {
-    if (!watchAmount || !tokenMetadata || Number(watchAmount) === 0) {
-      setAmountUsdValue(null);
-      return;
-    }
-
-    const calculateUsd = async () => {
-      try {
-        const prices = await fetchTokenPrices([tokenMetadata.symbol]);
-        const price = prices[tokenMetadata.symbol.toUpperCase()];
-        if (price) {
-          const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(formatUsdValue(usdAmount));
-        } else {
-          setAmountUsdValue(null);
-        }
-      } catch {
-        setAmountUsdValue(null);
-      }
-    };
-
-    calculateUsd();
-  }, [watchAmount, tokenMetadata]);
+  const { data: tokenPrice } = useSWR(
+    ["transfer-from-token-price", tokenMetadata],
+    async ([, t]: [string, ERC20Metadata]) => {
+      const prices = await fetchTokenPrices([t.symbol]);
+      return prices[t.symbol.toUpperCase()];
+    },
+    {
+      fallbackData: 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60 * 1000,
+      refreshInterval: 60 * 1000,
+    },
+  );
+  const tokenValueUsd = Number(watchAmount ?? 0n) * (tokenPrice ?? 0);
 
   const submit = useCallback(
     async (formData: TransferFormData) => {
@@ -531,6 +523,20 @@ export const TransferForm: FC<TransferFormProps> = ({
           form.setError("amount", { message: errorMessage });
           setValidating(false);
           return;
+        }
+
+        if (
+          source.kind === "ethereum_l2" ||
+          destination.kind === "ethereum_l2"
+        ) {
+          // TODO: L2's in beta so limit to $100 transfer
+          const usdLimit = 100;
+          if (tokenValueUsd > usdLimit) {
+            const errorMessage = `Token value must be under $${100}.`;
+            form.setError("amount", { message: errorMessage });
+            setValidating(false);
+            return;
+          }
         }
 
         if (
@@ -626,6 +632,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           tokenMetadata,
           amountInSmallestUnit,
           fee: feeInfo,
+          tokenValueUsd,
         });
         setValidating(false);
       } catch (err: unknown) {
@@ -644,6 +651,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       assetRegistry,
       feeError,
       onError,
+      tokenValueUsd,
     ],
   );
   return (
@@ -795,9 +803,13 @@ export const TransferForm: FC<TransferFormProps> = ({
                               )}
                               <span>{trimAccount(watchSourceAccount, 12)}</span>
                               <span>
-                                {balanceInfo && tokenMetadata
+                                {balanceInfos &&
+                                tokenMetadata &&
+                                balanceInfos[tokenMetadata.token]
                                   ? `${formatBalance({
-                                      number: balanceInfo.balance,
+                                      number:
+                                        balanceInfos[tokenMetadata.token]
+                                          .balance,
                                       decimals: Number(tokenMetadata.decimals),
                                       displayDecimals: 4,
                                     })} ${tokenMetadata.symbol}`
@@ -842,7 +854,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                       {/* Row 3: USD value + percentage buttons */}
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          {amountUsdValue ?? "\u00A0"}
+                          {tokenValueUsd !== 0
+                            ? formatUsdValue(tokenValueUsd)
+                            : "\u00A0"}
                         </div>
                         <div className="flex items-center gap-1">
                           {[25, 50, 75].map((percent) => (
@@ -852,9 +866,14 @@ export const TransferForm: FC<TransferFormProps> = ({
                               variant="clean"
                               className="h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill"
                               onClick={() => {
-                                if (balanceInfo && tokenMetadata) {
+                                if (
+                                  balanceInfos &&
+                                  tokenMetadata &&
+                                  balanceInfos[tokenMetadata.token]
+                                ) {
                                   const percentAmount =
-                                    (balanceInfo.balance * BigInt(percent)) /
+                                    (balanceInfos[tokenMetadata.token].balance *
+                                      BigInt(percent)) /
                                     100n;
                                   const formatted = formatBalance({
                                     number: percentAmount,
@@ -866,7 +885,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   form.setValue("amount", formatted);
                                 }
                               }}
-                              disabled={!balanceInfo || !tokenMetadata}
+                              disabled={
+                                !balanceInfos ||
+                                !tokenMetadata ||
+                                !balanceInfos[tokenMetadata.token]
+                              }
                             >
                               {percent}%
                             </Button>
@@ -876,8 +899,13 @@ export const TransferForm: FC<TransferFormProps> = ({
                             variant="clean"
                             className="h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill"
                             onClick={() => {
-                              if (balanceInfo && tokenMetadata) {
-                                let maxAmount = balanceInfo.balance;
+                              if (
+                                balanceInfos &&
+                                tokenMetadata &&
+                                balanceInfos[tokenMetadata.token]
+                              ) {
+                                let maxAmount =
+                                  balanceInfos[tokenMetadata.token].balance;
 
                                 // If transferring ETH from Ethereum, subtract the fee
                                 const isEther =
@@ -922,7 +950,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                                 form.setValue("amount", maxBalance);
                               }
                             }}
-                            disabled={!balanceInfo || !tokenMetadata}
+                            disabled={
+                              !balanceInfos ||
+                              !tokenMetadata ||
+                              !balanceInfos[tokenMetadata.token]
+                            }
                           >
                             Max
                           </Button>
@@ -982,6 +1014,20 @@ export const TransferForm: FC<TransferFormProps> = ({
                   : "~35 minutes"}
               </dd>
             </div>
+          </div>
+          <div
+            hidden={
+              !(
+                source.kind === "ethereum_l2" ||
+                destination.kind === "ethereum_l2"
+              )
+            }
+            className="text-xs text-muted-foreground text-center"
+          >
+            * L2 transfers powered by Snowbridge Message Passing and{" "}
+            <a href="https://across.to" target="_blank" className="underline">
+              Across.to
+            </a>
           </div>
           <SubmitButton
             ethereumAccount={ethereumAccount}

@@ -189,6 +189,7 @@ export interface ValidationData {
   tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
   fee: FeeInfo;
+  tokenValueUsd?: number;
 }
 
 export interface KusamaValidationData {

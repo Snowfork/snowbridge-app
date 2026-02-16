@@ -7,6 +7,10 @@ const chainNames: Record<ChainKey<ChainKind>, string> = {
   ethereum_11155111: "Sepolia",
   ethereum_l2_8453: "Base",
   ethereum_l2_84532: "Base (Sepolia)",
+  ethereum_l2_10: "Optimism",
+  ethereum_l2_11155420: "Optimism (Sepolia)",
+  ethereum_l2_42161: "Arbitrum",
+  ethereum_l2_421614: "Arbitrum (Sepolia)",
 } as const;
 
 export function chainName(location: TransferLocation): string {
