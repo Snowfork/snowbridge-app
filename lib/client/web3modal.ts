@@ -5,10 +5,14 @@ import { metadata } from "@/lib/metadata";
 import { AppKit, createAppKit } from "@reown/appkit/react";
 import {
   AppKitNetwork,
+  arbitrum,
+  arbitrumSepolia,
   base,
   baseSepolia,
   mainnet,
   moonbeam,
+  optimism,
+  optimismSepolia,
   sepolia,
 } from "@reown/appkit/networks";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
@@ -30,6 +34,10 @@ const supportedEthNetworks: AppKitNetwork[] = [
   moonbeam,
   base,
   baseSepolia,
+  optimism,
+  optimismSepolia,
+  arbitrum,
+  arbitrumSepolia,
 ];
 
 export function getEthereumNetwork(chainId: number) {
