@@ -40,7 +40,6 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
       return await fetchTokenPrices([t.symbol, f?.symbol]);
     },
     {
-      fallbackData: 0,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60 * 1000,
