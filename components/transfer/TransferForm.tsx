@@ -534,7 +534,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           // TODO: L2's in beta so limit to $100 transfer
           const usdLimit = 100;
           if (tokenValueUsd > usdLimit) {
-            const errorMessage = `Token value must be under $${100}.`;
+            const errorMessage = `Token value must be under $${usdLimit} while in BETA.`;
             form.setError("amount", { message: errorMessage });
             setValidating(false);
             return;
@@ -995,19 +995,13 @@ export const TransferForm: FC<TransferFormProps> = ({
             )}
           />
           <div className="glass-sub p-4 space-y-2 card-shadow">
-            <div className="flex items-center justify-between text-sm">
-              <dt className="text-muted-glass">Delivery fee</dt>
-              <dd className="text-primary">
-                <FeeDisplay
-                  className="inline"
-                  token={token}
-                  displayDecimals={8}
-                  feeInfo={feeInfo}
-                  feeError={feeError}
-                  registry={assetRegistry}
-                />
-              </dd>
-            </div>
+            <FeeDisplay
+              token={token}
+              displayDecimals={8}
+              feeInfo={feeInfo}
+              feeError={feeError}
+              registry={assetRegistry}
+            />
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
               <dd className="text-primary">
@@ -1026,7 +1020,7 @@ export const TransferForm: FC<TransferFormProps> = ({
             }
             className="text-xs text-muted-foreground text-center"
           >
-            * L2 transfers powered by Snowbridge V2 Message Passing and{" "}
+            * BETA: L2 transfers powered by Snowbridge V2 Message Passing and{" "}
             <a href="https://across.to" target="_blank" className="underline">
               Across.to
             </a>

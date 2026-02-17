@@ -1,14 +1,19 @@
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { FC, useEffect, useState } from "react";
-import { AssetRegistry, FeeEstimateError } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  FeeEstimateError,
+} from "@snowbridge/base-types";
 import { FeeInfo } from "@/utils/types";
+import useSWR from "swr";
+import { formatUnits } from "ethers";
 
 interface FeeDisplayProps {
   token: string;
   displayDecimals: number;
   registry: AssetRegistry;
-  className?: string;
   feeInfo?: FeeInfo;
   feeError?: unknown;
 }
@@ -16,7 +21,6 @@ interface FeeDisplayProps {
 export const FeeDisplay: FC<FeeDisplayProps> = ({
   token,
   displayDecimals,
-  className,
   registry,
   feeInfo,
   feeError,
@@ -25,37 +29,20 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
       token.toLowerCase()
     ];
-  const [usdValue, setUsdValue] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (feeError) {
-      console.error(feeError);
-    }
-
-    if (!feeInfo) {
-      setUsdValue(null);
-      return;
-    }
-
-    const fetchPrice = async () => {
-      try {
-        const prices = await fetchTokenPrices([feeInfo.symbol]);
-        const price = prices[feeInfo.symbol.toUpperCase()];
-        if (price) {
-          const feeInTokens =
-            Number(feeInfo.totalFee) / Math.pow(10, feeInfo.decimals);
-          const usdAmount = feeInTokens * price;
-          setUsdValue(formatUsdValue(usdAmount));
-        } else {
-          setUsdValue(null);
-        }
-      } catch {
-        setUsdValue(null);
-      }
-    };
-
-    fetchPrice();
-  }, [feeInfo, feeError]);
+  const { data: prices } = useSWR(
+    ["fee-info-token-prices", asset, feeInfo],
+    async ([, t, f]: [string, ERC20Metadata, FeeInfo]) => {
+      return await fetchTokenPrices([t.symbol, f?.symbol]);
+    },
+    {
+      fallbackData: 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60 * 1000,
+      refreshInterval: 60 * 1000,
+    },
+  );
 
   if (feeError && !feeInfo) {
     let message = "Error";
@@ -74,37 +61,127 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     if (feeError instanceof TypeError) {
       message = "Invalid send amount";
     }
-    return <div className={className}>{message}...</div>;
+    return (
+      <LayoutRow name="Delivery Fee">
+        <div className="inline  text-red-700">{message}...</div>
+      </LayoutRow>
+    );
   }
   if (feeInfo === undefined) {
-    return <div className={className}>Fetching...</div>;
+    return (
+      <LayoutRow name="Delivery Fee">
+        <div className="inline">Fetching...</div>
+      </LayoutRow>
+    );
   }
-  const balance = formatBalance({
-    number: feeInfo.totalFee,
-    decimals: feeInfo.decimals,
-    displayDecimals: displayDecimals,
-  });
-  let acrossFee: string = "";
-  let acrossUsdFee: string | undefined;
-  if (feeInfo.delivery.kind === "polkadot->ethereum_l2") {
-    const acrossBalance = formatBalance({
-      number: feeInfo.delivery.l2BridgeFeeInL1Token ?? 0n,
-      decimals: asset.decimals,
-      displayDecimals: displayDecimals,
-    });
-    acrossFee = `${acrossBalance} ${asset.symbol} `;
-  }
+  const feeUsd =
+    Number(formatUnits(feeInfo.totalFee, feeInfo.decimals)) *
+    (prices && prices[feeInfo.symbol] ? prices[feeInfo.symbol] : 0);
+  if (
+    feeInfo.delivery.kind === "polkadot->ethereum_l2" ||
+    feeInfo.delivery.kind === "ethereum_l2->polkadot"
+  ) {
+    let acrossFee = 0n;
+    if (feeInfo.delivery.kind === "polkadot->ethereum_l2") {
+      acrossFee = feeInfo.delivery.l2BridgeFeeInL1Token ?? 0n;
+    } else if (feeInfo.delivery.kind === "ethereum_l2->polkadot") {
+      acrossFee =
+        (feeInfo.delivery.swapFeeInL1Token ?? 0n) +
+        (feeInfo.delivery.bridgeFeeInL2Token ?? 0n);
+    }
+    let acrossUsdFee: number =
+      Number(formatUnits(acrossFee, asset.decimals)) *
+      (prices && prices[asset.symbol] ? prices[asset.symbol] : 0);
 
-  return (
-    <div className={className}>
-      {acrossFee}
-      {acrossUsdFee && (
-        <span className="text-muted-foreground m-1">({acrossUsdFee})</span>
-      )}
-      {balance} {feeInfo.symbol}
-      {usdValue && (
-        <span className="text-muted-foreground m-1">({usdValue})</span>
-      )}
-    </div>
-  );
+    let totalFeeUsd = acrossUsdFee + feeUsd;
+    let snowbridgeFee = feeUsd;
+    let totalFee = `${asset.symbol} + ${feeInfo.symbol} `;
+    if (asset.symbol === feeInfo.symbol) {
+      totalFeeUsd = feeUsd;
+      snowbridgeFee = feeUsd - acrossUsdFee;
+      totalFee = `${formatBalance({
+        number: feeInfo.totalFee,
+        decimals: feeInfo.decimals,
+        displayDecimals: displayDecimals,
+      })} ${feeInfo.symbol}`;
+    }
+    return (
+      <>
+        <LayoutRow name="Delivery Fee">
+          <div className="inline">
+            {totalFee}
+            {prices && prices[feeInfo.symbol] && (
+              <span className="text-muted-foreground m-1">
+                ({formatUsdValue(totalFeeUsd)})
+              </span>
+            )}
+          </div>
+        </LayoutRow>
+        <LayoutRow name="• Snowbridge Fee">
+          <div className="inline">
+            {formatBalance({
+              number: feeInfo.totalFee - acrossFee,
+              decimals: feeInfo.decimals,
+              displayDecimals: displayDecimals,
+            })}{" "}
+            {feeInfo.symbol}
+            {prices && prices[feeInfo.symbol] && (
+              <span className="text-muted-foreground m-1">
+                ({formatUsdValue(snowbridgeFee)})
+              </span>
+            )}
+          </div>
+        </LayoutRow>
+        <LayoutRow name="• Across.to Fee">
+          <div className="inline">
+            {`${formatBalance({
+              number: acrossFee,
+              decimals: asset.decimals,
+              displayDecimals: displayDecimals,
+            })} ${asset.symbol} `}
+            <span className="text-muted-foreground m-1">
+              ({formatUsdValue(acrossUsdFee)})
+            </span>
+          </div>
+        </LayoutRow>
+      </>
+    );
+  } else {
+    return (
+      <>
+        <LayoutRow name="Delivery Fee">
+          <div className="inline">
+            {formatBalance({
+              number: feeInfo.totalFee,
+              decimals: feeInfo.decimals,
+              displayDecimals: displayDecimals,
+            })}{" "}
+            {feeInfo.symbol}
+            {prices && prices[feeInfo.symbol] && (
+              <span className="text-muted-foreground m-1">
+                ({formatUsdValue(feeUsd)})
+              </span>
+            )}
+          </div>
+        </LayoutRow>{" "}
+      </>
+    );
+  }
 };
+
+function LayoutRow({
+  children,
+  name,
+}: Readonly<{
+  children: React.ReactNode;
+  name: string;
+}>) {
+  return (
+    <>
+      <div className="flex items-center justify-between text-sm">
+        <dt className="text-muted-glass">{name}</dt>
+        <dd className="text-primary">{children}</dd>
+      </div>
+    </>
+  );
+}
