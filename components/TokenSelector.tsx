@@ -286,7 +286,7 @@ const TokenList: FC<TokenListProps> = (props) => {
                             window.open(
                               etherscanERC20TokenLink(
                                 registry.environment,
-                                source.id,
+                                registry.ethChainId,
                                 asset.token,
                               ),
                             );

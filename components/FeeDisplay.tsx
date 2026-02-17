@@ -1,6 +1,6 @@
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { fetchTokenPrices } from "@/utils/coindesk";
-import { FC, useEffect, useState } from "react";
+import { FC } from "react";
 import {
   AssetRegistry,
   ERC20Metadata,
@@ -16,6 +16,8 @@ interface FeeDisplayProps {
   registry: AssetRegistry;
   feeInfo?: FeeInfo;
   feeError?: unknown;
+  feeLabelTextClassName?: string;
+  feeTextClassName?: string;
 }
 
 export const FeeDisplay: FC<FeeDisplayProps> = ({
@@ -24,6 +26,8 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   registry,
   feeInfo,
   feeError,
+  feeLabelTextClassName,
+  feeTextClassName,
 }) => {
   const asset =
     registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
@@ -94,12 +98,14 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
       (prices && prices[asset.symbol] ? prices[asset.symbol] : 0);
 
     let totalFeeUsd = acrossUsdFee + feeUsd;
-    let snowbridgeFee = feeUsd;
-    let totalFee = `${asset.symbol} + ${feeInfo.symbol} `;
+    let snowbridgeUsdFee = feeUsd;
+    let totalFee = feeInfo.totalFee;
+    let totalFeeFmt = `${asset.symbol} + ${feeInfo.symbol} `;
     if (asset.symbol === feeInfo.symbol) {
+      totalFee = feeInfo.totalFee - acrossFee;
       totalFeeUsd = feeUsd;
-      snowbridgeFee = feeUsd - acrossUsdFee;
-      totalFee = `${formatBalance({
+      snowbridgeUsdFee = feeUsd - acrossUsdFee;
+      totalFeeFmt = `${formatBalance({
         number: feeInfo.totalFee,
         decimals: feeInfo.decimals,
         displayDecimals: displayDecimals,
@@ -107,39 +113,51 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     }
     return (
       <>
-        <LayoutRow name="Delivery Fee">
+        <LayoutRow
+          name="Delivery Fee"
+          feeLabelTextClassName={feeLabelTextClassName}
+          feeTextClassName={feeTextClassName}
+        >
           <div className="inline">
-            {totalFee}
+            {totalFeeFmt}
             {prices && prices[feeInfo.symbol] && (
-              <span className="text-muted-foreground m-1">
+              <span className="text-muted-foreground ml-1">
                 ({formatUsdValue(totalFeeUsd)})
               </span>
             )}
           </div>
         </LayoutRow>
-        <LayoutRow name="• Snowbridge Fee">
+        <LayoutRow
+          name="• Snowbridge Fee"
+          feeLabelTextClassName={feeLabelTextClassName}
+          feeTextClassName={feeTextClassName}
+        >
           <div className="inline">
             {formatBalance({
-              number: feeInfo.totalFee - acrossFee,
+              number: totalFee,
               decimals: feeInfo.decimals,
               displayDecimals: displayDecimals,
             })}{" "}
             {feeInfo.symbol}
             {prices && prices[feeInfo.symbol] && (
-              <span className="text-muted-foreground m-1">
-                ({formatUsdValue(snowbridgeFee)})
+              <span className="text-muted-foreground ml-1">
+                ({formatUsdValue(snowbridgeUsdFee)})
               </span>
             )}
           </div>
         </LayoutRow>
-        <LayoutRow name="• Across.to Fee">
+        <LayoutRow
+          name="• Across.to Fee"
+          feeLabelTextClassName={feeLabelTextClassName}
+          feeTextClassName={feeTextClassName}
+        >
           <div className="inline">
             {`${formatBalance({
               number: acrossFee,
               decimals: asset.decimals,
               displayDecimals: displayDecimals,
             })} ${asset.symbol} `}
-            <span className="text-muted-foreground m-1">
+            <span className="text-muted-foreground ml-1 justify-end">
               ({formatUsdValue(acrossUsdFee)})
             </span>
           </div>
@@ -149,7 +167,11 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   } else {
     return (
       <>
-        <LayoutRow name="Delivery Fee">
+        <LayoutRow
+          name="Delivery Fee"
+          feeLabelTextClassName={feeLabelTextClassName}
+          feeTextClassName={feeTextClassName}
+        >
           <div className="inline">
             {formatBalance({
               number: feeInfo.totalFee,
@@ -158,7 +180,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
             })}{" "}
             {feeInfo.symbol}
             {prices && prices[feeInfo.symbol] && (
-              <span className="text-muted-foreground m-1">
+              <span className="text-muted-foreground ml-1">
                 ({formatUsdValue(feeUsd)})
               </span>
             )}
@@ -172,15 +194,19 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
 function LayoutRow({
   children,
   name,
+  feeLabelTextClassName,
+  feeTextClassName,
 }: Readonly<{
+  feeLabelTextClassName?: string;
+  feeTextClassName?: string;
   children: React.ReactNode;
   name: string;
 }>) {
   return (
     <>
       <div className="flex items-center justify-between text-sm">
-        <dt className="text-muted-glass">{name}</dt>
-        <dd className="text-primary">{children}</dd>
+        <dt className={feeLabelTextClassName ?? "text-muted-glass"}>{name}</dt>
+        <dd className={feeTextClassName ?? "text-primary"}>{children}</dd>
       </div>
     </>
   );

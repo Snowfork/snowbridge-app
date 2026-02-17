@@ -12,6 +12,7 @@ import { fetchTokenPrices } from "@/utils/coindesk";
 import Image from "next/image";
 import { chainName } from "@/utils/chainNames";
 import { ParachainLocation } from "@snowbridge/base-types";
+import { FeeDisplay } from "../FeeDisplay";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -268,21 +269,14 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
             )}
           </span>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">Delivery Fee</span>
-          <span>
-            {formatBalance({
-              number: data.fee.fee,
-              decimals: data.fee.decimals,
-            })}{" "}
-            {data.fee.symbol}
-            {deliveryFeeUsd && (
-              <span className="text-muted-foreground ml-1">
-                ({deliveryFeeUsd})
-              </span>
-            )}
-          </span>
-        </div>
+        <FeeDisplay
+          displayDecimals={10}
+          registry={data.assetRegistry}
+          token={data.tokenMetadata.token}
+          feeInfo={data.fee}
+          feeLabelTextClassName="font-medium"
+          feeTextClassName=""
+        />
       </div>
 
       <div className="glass-sub p-4 space-y-3">
