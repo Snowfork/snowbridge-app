@@ -813,7 +813,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                                         balanceInfos[tokenMetadata.token]
                                           .balance,
                                       decimals: Number(tokenMetadata.decimals),
-                                      displayDecimals: 4,
+                                      displayDecimals: 6,
                                     })} ${tokenMetadata.symbol}`
                                   : "..."}
                               </span>
