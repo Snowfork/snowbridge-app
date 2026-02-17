@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { etherscanTxHashLink } from "@/lib/explorerLinks";
 import { chainName } from "@/utils/chainNames";
 import { encodeAddress } from "@polkadot/util-crypto";
+import { Label } from "../ui/label";
 
 interface CreateAgentStepProps {
   title: string;
@@ -71,22 +72,24 @@ export function CreateAgentStep({
       </div>
       <div
         className={
-          "flex gap-2 place-items-center flex-wrap " +
+          "grid grid-cols-[max-content_1fr] items-center gap-2 " +
           (currentStep !== id ? " hidden" : "")
         }
       >
-        <div>
-          Create proxy for {chainName(data.source)} account{" "}
-          <span>
-            {encodeAddress(
-              data.formData.sourceAccount,
-              data.source.parachain?.info.ss58Format ??
-                data.assetRegistry.relaychain.ss58Format,
-            )}
-          </span>{" "}
+        <Label>Chain</Label>
+        <div className="text-sm">{chainName(data.source)}</div>
+        <Label>Account</Label>
+        <div className="text-sm">
+          {encodeAddress(
+            data.formData.sourceAccount,
+            data.source.parachain?.info.ss58Format ??
+              data.assetRegistry.relaychain.ss58Format,
+          )}
         </div>
+      </div>
+      <div className="flex justify-end">
         {busy ? (
-          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground w-1/5" />
         ) : (
           <Button
             className="w-1/5 action-button"

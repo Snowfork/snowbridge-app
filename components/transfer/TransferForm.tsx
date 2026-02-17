@@ -15,7 +15,7 @@ import {
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assetsV2, Context } from "@snowbridge/api";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { FeeDisplay } from "../FeeDisplay";
@@ -236,7 +236,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const polkadotWallet = useAtomValue(walletAtom);
 
@@ -405,7 +405,9 @@ export const TransferForm: FC<TransferFormProps> = ({
     assetRegistry,
     getTransferLocation(assetRegistry, source),
     [tokenMetadata],
-    ethereumAccount ?? watchSourceAccount ?? "",
+    source.kind === "ethereum" || source.kind === "ethereum_l2"
+      ? (watchSourceAccount ?? ethereumAccount ?? "")
+      : (watchSourceAccount ?? polkadotAccount?.address ?? ""),
   );
 
   useEffect(() => {
@@ -1077,6 +1079,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                         type="button"
                         onClick={() => {
                           form.setValue("sourceAccount", account.address);
+                          setPolkadotAccount(account.address);
                           setSourceAccountSelectorOpen(false);
                         }}
                         className={`w-full flex items-center gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
