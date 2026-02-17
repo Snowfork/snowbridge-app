@@ -1,16 +1,23 @@
-import { ContractResponse, TransferStep, ValidationData } from "@/utils/types";
+import {
+  ContractResponse,
+  TransferStep,
+  ValidationData,
+  ValidationResult,
+} from "@/utils/types";
 import { useState } from "react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { LucideLoaderCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { etherscanTxHashLink } from "@/lib/explorerLinks";
+import { formatUnits } from "ethers";
 
 interface EthereumTxStepProps {
   title: string;
   id: number;
   step: TransferStep;
   data: ValidationData;
+  plan: ValidationResult;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
   action: (_data: ValidationData, _amount: string) => Promise<ContractResponse>;
@@ -23,6 +30,7 @@ export function EthereumTxStep({
   title,
   id,
   data,
+  plan,
   currentStep,
   nextStep,
   action,
@@ -30,7 +38,14 @@ export function EthereumTxStep({
   submitButtonText,
   description,
 }: EthereumTxStepProps) {
-  const [amount, setAmount] = useState(data.formData.amount);
+  let defaultAmount = data.formData.amount;
+  if (plan.kind === "ethereum_l2->polkadot" && plan.data.totalInputAmount) {
+    defaultAmount = formatUnits(
+      plan.data.totalInputAmount,
+      data.tokenMetadata.decimals,
+    );
+  }
+  const [amount, setAmount] = useState(defaultAmount);
   const [busy, setBusy] = useState(false);
   interface Message {
     text: string;
@@ -81,7 +96,7 @@ export function EthereumTxStep({
           disabled={busy}
           className="w-3/5"
           type="number"
-          defaultValue={data.formData.amount}
+          defaultValue={amount}
           onChange={(v) => setAmount(v.target.value)}
         />
         {busy ? (
