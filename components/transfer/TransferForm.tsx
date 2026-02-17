@@ -7,10 +7,7 @@ import {
   PolkadotAccount,
 } from "@/store/polkadot";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
-import {
-  snowbridgeContextAtom,
-  snowbridgeEnvironmentAtom,
-} from "@/store/snowbridge";
+import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   filterByAccountType,
   TransferFormData,
@@ -18,13 +15,12 @@ import {
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
 import { assetsV2, Context } from "@snowbridge/api";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
 import { Button } from "../ui/button";
-import { useTokenBalance } from "@/hooks/useTokenBalance";
 import {
   Form,
   FormControl,
@@ -77,22 +73,25 @@ import {
   getEthereumNetwork,
   switchNetwork,
 } from "@/lib/client/web3modal";
+import { chainName } from "@/utils/chainNames";
+import useSWR from "swr";
+import { useTokenBalances } from "@/hooks/useTokenBalances";
 
-function getBeneficiaries(
-  destination: TransferLocation,
+function getLocationAccounts(
+  location: TransferLocation,
   polkadotAccounts: PolkadotAccount[],
   ethereumAccounts: string[],
   ss58Format: number,
 ) {
-  const beneficiaries: AccountInfo[] = [];
-  if (destination.kind === "polkadot") {
+  const accounts: AccountInfo[] = [];
+  if (location.kind === "polkadot") {
     polkadotAccounts
       .filter(
         (x) =>
           ((x as any).type === "ethereum" &&
-            destination.parachain?.info.accountType === "AccountId20") ||
+            location.parachain?.info.accountType === "AccountId20") ||
           ((x as any).type !== "ethereum" &&
-            destination.parachain?.info.accountType === "AccountId32"),
+            location.parachain?.info.accountType === "AccountId32"),
       )
       .map((x) => {
         if ((x as any).type === "ethereum") {
@@ -109,15 +108,16 @@ function getBeneficiaries(
           };
         }
       })
-      .forEach((x) => beneficiaries.push(x));
+      .forEach((x) => accounts.push(x));
   }
   if (
-    destination.kind === "ethereum" ||
-    destination.parachain?.info.accountType === "AccountId20"
+    location.kind === "ethereum" ||
+    location.kind === "ethereum_l2" ||
+    location.parachain?.info.accountType === "AccountId20"
   ) {
     ethereumAccounts?.forEach((x) => {
-      if (!beneficiaries.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
-        beneficiaries.push({
+      if (!accounts.find((b) => b.key.toLowerCase() === x.toLowerCase())) {
+        accounts.push({
           key: x,
           name: x,
           type: "ethereum" as const,
@@ -129,11 +129,9 @@ function getBeneficiaries(
       .filter((x: any) => x.type === "ethereum")
       .forEach((x) => {
         if (
-          !beneficiaries.find(
-            (b) => b.key.toLowerCase() === x.address.toLowerCase(),
-          )
+          !accounts.find((b) => b.key.toLowerCase() === x.address.toLowerCase())
         ) {
-          beneficiaries.push({
+          accounts.push({
             key: x.address,
             name: `${x.name} (${trimAccount(x.address, 20)})`,
             type: "ethereum" as const,
@@ -142,7 +140,7 @@ function getBeneficiaries(
       });
   }
 
-  return beneficiaries;
+  return accounts;
 }
 
 interface TransferFormProps {
@@ -235,11 +233,10 @@ export const TransferForm: FC<TransferFormProps> = ({
   assetRegistry,
   routes,
 }) => {
-  const environment = useAtomValue(snowbridgeEnvironmentAtom);
   const context = useAtomValue(snowbridgeContextAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
-  const polkadotAccount = useAtomValue(polkadotAccountAtom);
+  const [polkadotAccount, setPolkadotAccount] = useAtom(polkadotAccountAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const polkadotWallet = useAtomValue(walletAtom);
 
@@ -268,15 +265,17 @@ export const TransferForm: FC<TransferFormProps> = ({
   const [destination, setDestination] = useState(firstDestination);
   const [token, setToken] = useState(firstToken);
   const [validating, setValidating] = useState(false);
-  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
-  const beneficiaries = getBeneficiaries(
-    destination,
-    polkadotAccounts ?? [],
-    ethereumAccounts,
-    destination.parachain?.info.ss58Format ??
-      assetRegistry.relaychain.ss58Format,
-  );
+  const beneficiaries = useMemo(() => {
+    const beneficiaries = getLocationAccounts(
+      destination,
+      polkadotAccounts ?? [],
+      ethereumAccounts,
+      destination.parachain?.info.ss58Format ??
+        assetRegistry.relaychain.ss58Format,
+    );
+    return beneficiaries;
+  }, [destination, polkadotAccounts, ethereumAccounts, assetRegistry]);
 
   const form = useForm<TransferFormData>({
     resolver: zodResolver(transferFormSchema),
@@ -299,7 +298,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
-    if (source.kind === "ethereum") {
+    if (source.kind === "ethereum" || source.kind === "ethereum_l2") {
       // Set to Ethereum account if connected, otherwise clear
       form.setValue("sourceAccount", ethereumAccount ?? "");
     } else if (source.kind === "polkadot") {
@@ -335,7 +334,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 
   // Auto-set beneficiary when wallet connects or destination type changes
   useEffect(() => {
-    if (destination.kind === "ethereum") {
+    if (destination.kind === "ethereum" || destination.kind === "ethereum_l2") {
       // For Ethereum destination, check if current beneficiary is a valid Ethereum address
       const isValidEthAddress =
         watchBeneficiary?.startsWith("0x") && watchBeneficiary?.length === 42;
@@ -391,15 +390,24 @@ export const TransferForm: FC<TransferFormProps> = ({
   const { data: feeInfo, error: feeError } = useBridgeFeeInfo(
     getTransferLocation(assetRegistry, source),
     destination,
-    token,
+    watchToken ?? token,
+    watchAmount,
   );
 
+  const tokenMetadata =
+    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
+      token.toLowerCase()
+    ];
+
   // Get balance for MAX button
-  const { data: balanceInfo } = useTokenBalance(
-    watchSourceAccount ?? "",
+  const { data: balanceInfos } = useTokenBalances(
+    context!,
+    assetRegistry,
     getTransferLocation(assetRegistry, source),
-    destination,
-    token,
+    [tokenMetadata],
+    source.kind === "ethereum" || source.kind === "ethereum_l2"
+      ? (watchSourceAccount ?? ethereumAccount ?? "")
+      : (watchSourceAccount ?? polkadotAccount?.address ?? ""),
   );
 
   useEffect(() => {
@@ -464,10 +472,11 @@ export const TransferForm: FC<TransferFormProps> = ({
     try {
       const chainId = getChainId();
       if (
-        newSource.kind === "ethereum" &&
+        (newSource.kind === "ethereum" || newSource.kind === "ethereum_l2") &&
         chainId?.toString() !== newSource.id.toString()
       ) {
-        switchNetwork(getEthereumNetwork(Number(newSource.id)));
+        console.log(`switching wallet network to ${newSource.id}`);
+        switchNetwork(getEthereumNetwork(newSource.id));
       }
     } catch (error) {
       console.error(error);
@@ -486,35 +495,21 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchToken,
   ]);
 
-  const tokenMetadata =
-    assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
-      token.toLowerCase()
-    ];
-
-  // Calculate USD value for amount
-  useEffect(() => {
-    if (!watchAmount || !tokenMetadata || Number(watchAmount) === 0) {
-      setAmountUsdValue(null);
-      return;
-    }
-
-    const calculateUsd = async () => {
-      try {
-        const prices = await fetchTokenPrices([tokenMetadata.symbol]);
-        const price = prices[tokenMetadata.symbol.toUpperCase()];
-        if (price) {
-          const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(formatUsdValue(usdAmount));
-        } else {
-          setAmountUsdValue(null);
-        }
-      } catch {
-        setAmountUsdValue(null);
-      }
-    };
-
-    calculateUsd();
-  }, [watchAmount, tokenMetadata]);
+  const { data: tokenPrice } = useSWR(
+    ["transfer-from-token-price", tokenMetadata],
+    async ([, t]: [string, ERC20Metadata]) => {
+      const prices = await fetchTokenPrices([t.symbol]);
+      return prices[t.symbol.toUpperCase()];
+    },
+    {
+      fallbackData: 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60 * 1000,
+      refreshInterval: 60 * 1000,
+    },
+  );
+  const tokenValueUsd = Number(watchAmount ?? 0n) * (tokenPrice ?? 0);
 
   const submit = useCallback(
     async (formData: TransferFormData) => {
@@ -530,6 +525,20 @@ export const TransferForm: FC<TransferFormProps> = ({
           form.setError("amount", { message: errorMessage });
           setValidating(false);
           return;
+        }
+
+        if (
+          source.kind === "ethereum_l2" ||
+          destination.kind === "ethereum_l2"
+        ) {
+          // TODO: L2's in beta so limit to $100 transfer
+          const usdLimit = 100;
+          if (tokenValueUsd > usdLimit) {
+            const errorMessage = `Token value must be under $${usdLimit} while in BETA.`;
+            form.setError("amount", { message: errorMessage });
+            setValidating(false);
+            return;
+          }
         }
 
         if (
@@ -625,6 +634,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           tokenMetadata,
           amountInSmallestUnit,
           fee: feeInfo,
+          tokenValueUsd,
         });
         setValidating(false);
       } catch (err: unknown) {
@@ -643,6 +653,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       assetRegistry,
       feeError,
       onError,
+      tokenValueUsd,
     ],
   );
   return (
@@ -669,7 +680,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                           return (
                             <SelectItem key={s.key} value={s.key}>
                               <SelectItemWithIcon
-                                label={location.name}
+                                label={chainName(location)}
                                 image={s.key}
                                 altImage="parachain_generic"
                               />
@@ -720,7 +731,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                         {destinations.map((s) => (
                           <SelectItem key={s.key} value={s.key}>
                             <SelectItemWithIcon
-                              label={s.name}
+                              label={chainName(s)}
                               image={s.key}
                               altImage="parachain_generic"
                             />
@@ -749,13 +760,18 @@ export const TransferForm: FC<TransferFormProps> = ({
                         <span>Send</span>
                         {/* Only show account if wallet is connected for current source type */}
                         {watchSourceAccount &&
-                          ((source.kind === "ethereum" && ethereumAccount) ||
+                          (((source.kind === "ethereum" ||
+                            source.kind === "ethereum_l2") &&
+                            ethereumAccount) ||
                             (source.kind === "polkadot" &&
                               polkadotAccount?.address)) && (
                             <button
                               type="button"
                               onClick={() => {
-                                if (source.kind === "ethereum") {
+                                if (
+                                  source.kind === "ethereum" ||
+                                  source.kind === "ethereum_l2"
+                                ) {
                                   openEthereumWallet({ view: "Account" });
                                 } else {
                                   setSourceAccountSelectorOpen(true);
@@ -763,10 +779,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                               }}
                               className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
                             >
-                              {source.kind === "ethereum" ? (
+                              {source.kind === "ethereum" ||
+                              source.kind === "ethereum_l2" ? (
                                 <Image
                                   src={
-                                    ethereumWalletInfo?.icon ||
+                                    ethereumWalletInfo?.icon ??
                                     "/images/ethereum.png"
                                   }
                                   width={16}
@@ -777,7 +794,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                               ) : (
                                 <Image
                                   src={
-                                    polkadotWallet?.logo?.src ||
+                                    polkadotWallet?.logo?.src ??
                                     "/images/polkadot.png"
                                   }
                                   width={16}
@@ -788,11 +805,15 @@ export const TransferForm: FC<TransferFormProps> = ({
                               )}
                               <span>{trimAccount(watchSourceAccount, 12)}</span>
                               <span>
-                                {balanceInfo && tokenMetadata
+                                {balanceInfos &&
+                                tokenMetadata &&
+                                balanceInfos[tokenMetadata.token]
                                   ? `${formatBalance({
-                                      number: balanceInfo.balance,
+                                      number:
+                                        balanceInfos[tokenMetadata.token]
+                                          .balance,
                                       decimals: Number(tokenMetadata.decimals),
-                                      displayDecimals: 4,
+                                      displayDecimals: 6,
                                     })} ${tokenMetadata.symbol}`
                                   : "..."}
                               </span>
@@ -835,7 +856,9 @@ export const TransferForm: FC<TransferFormProps> = ({
                       {/* Row 3: USD value + percentage buttons */}
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          {amountUsdValue ?? "\u00A0"}
+                          {tokenValueUsd !== 0
+                            ? formatUsdValue(tokenValueUsd)
+                            : "\u00A0"}
                         </div>
                         <div className="flex items-center gap-1">
                           {[25, 50, 75].map((percent) => (
@@ -845,9 +868,14 @@ export const TransferForm: FC<TransferFormProps> = ({
                               variant="clean"
                               className="h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill"
                               onClick={() => {
-                                if (balanceInfo && tokenMetadata) {
+                                if (
+                                  balanceInfos &&
+                                  tokenMetadata &&
+                                  balanceInfos[tokenMetadata.token]
+                                ) {
                                   const percentAmount =
-                                    (balanceInfo.balance * BigInt(percent)) /
+                                    (balanceInfos[tokenMetadata.token].balance *
+                                      BigInt(percent)) /
                                     100n;
                                   const formatted = formatBalance({
                                     number: percentAmount,
@@ -859,7 +887,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   form.setValue("amount", formatted);
                                 }
                               }}
-                              disabled={!balanceInfo || !tokenMetadata}
+                              disabled={
+                                !balanceInfos ||
+                                !tokenMetadata ||
+                                !balanceInfos[tokenMetadata.token]
+                              }
                             >
                               {percent}%
                             </Button>
@@ -869,8 +901,13 @@ export const TransferForm: FC<TransferFormProps> = ({
                             variant="clean"
                             className="h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill"
                             onClick={() => {
-                              if (balanceInfo && tokenMetadata) {
-                                let maxAmount = balanceInfo.balance;
+                              if (
+                                balanceInfos &&
+                                tokenMetadata &&
+                                balanceInfos[tokenMetadata.token]
+                              ) {
+                                let maxAmount =
+                                  balanceInfos[tokenMetadata.token].balance;
 
                                 // If transferring ETH from Ethereum, subtract the fee
                                 const isEther =
@@ -878,7 +915,8 @@ export const TransferForm: FC<TransferFormProps> = ({
                                   assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase();
                                 if (
                                   isEther &&
-                                  source.kind === "ethereum" &&
+                                  (source.kind === "ethereum" ||
+                                    source.kind === "ethereum_l2") &&
                                   feeInfo
                                 ) {
                                   const feeBuffer =
@@ -914,7 +952,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                                 form.setValue("amount", maxBalance);
                               }
                             }}
-                            disabled={!balanceInfo || !tokenMetadata}
+                            disabled={
+                              !balanceInfos ||
+                              !tokenMetadata ||
+                              !balanceInfos[tokenMetadata.token]
+                            }
                           >
                             Max
                           </Button>
@@ -936,44 +978,52 @@ export const TransferForm: FC<TransferFormProps> = ({
               )}
             />
           </div>
-          {/* Only show To account when beneficiaries are available */}
-          {beneficiaries && beneficiaries.length > 0 && (
-            <FormField
-              control={form.control}
-              name="beneficiary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <SelectAccount
-                      accounts={beneficiaries}
-                      field={field}
-                      allowManualInput={true}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="beneficiary"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <SelectAccount
+                    accounts={beneficiaries}
+                    field={field}
+                    allowManualInput={true}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <div className="glass-sub p-4 space-y-2 card-shadow">
-            <div className="flex items-center justify-between text-sm">
-              <dt className="text-muted-glass">Delivery fee</dt>
-              <dd className="text-primary">
-                <FeeDisplay
-                  className="inline"
-                  source={getTransferLocation(assetRegistry, source)}
-                  destination={destination}
-                  token={token}
-                  displayDecimals={8}
-                />
-              </dd>
-            </div>
+            <FeeDisplay
+              token={token}
+              displayDecimals={8}
+              feeInfo={feeInfo}
+              feeError={feeError}
+              registry={assetRegistry}
+            />
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
               <dd className="text-primary">
-                {source.kind === "ethereum" ? "~20 minutes" : "~35 minutes"}
+                {source.kind === "ethereum" || source.kind === "ethereum_l2"
+                  ? "~20 minutes"
+                  : "~35 minutes"}
               </dd>
             </div>
+          </div>
+          <div
+            hidden={
+              !(
+                source.kind === "ethereum_l2" ||
+                destination.kind === "ethereum_l2"
+              )
+            }
+            className="text-xs text-muted-foreground text-center"
+          >
+            * BETA: L2 transfers powered by Snowbridge V2 Message Passing and{" "}
+            <a href="https://across.to" target="_blank" className="underline">
+              Across.to
+            </a>
           </div>
           <SubmitButton
             ethereumAccount={ethereumAccount}
@@ -1023,6 +1073,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                         type="button"
                         onClick={() => {
                           form.setValue("sourceAccount", account.address);
+                          setPolkadotAccount(account.address);
                           setSourceAccountSelectorOpen(false);
                         }}
                         className={`w-full flex items-center gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
@@ -1109,8 +1160,13 @@ function SubmitButton({
 
   if (tokenMetadata !== null && context !== null) {
     // Check if Ethereum wallet is connected for Ethereum source
-    if (!ethereumAccount && source.kind === "ethereum") {
-      return <ConnectEthereumWalletButton variant="default" />;
+    if (
+      !ethereumAccount &&
+      (source.kind === "ethereum" || source.kind === "ethereum_l2")
+    ) {
+      return (
+        <ConnectEthereumWalletButton variant="default" networkId={source.id} />
+      );
     }
     // Check if Polkadot wallet is connected for Substrate source
     if (
@@ -1122,9 +1178,14 @@ function SubmitButton({
     // Check beneficiaries for destination
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
-      destination.kind === "ethereum"
+      (destination.kind === "ethereum" || destination.kind === "ethereum_l2")
     ) {
-      return <ConnectEthereumWalletButton variant="default" />;
+      return (
+        <ConnectEthereumWalletButton
+          variant="default"
+          networkId={destination.id}
+        />
+      );
     }
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&

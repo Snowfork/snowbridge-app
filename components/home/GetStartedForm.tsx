@@ -1,5 +1,5 @@
 import { FC, useEffect, useMemo, useState } from "react";
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import {
@@ -22,13 +22,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
 import { ArrowRight, LucideAlertCircle } from "lucide-react";
-import { AssetRegistry, TransferRoute } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferRoute,
+} from "@snowbridge/base-types";
 import {
   getTransferLocation,
   getTransferLocations,
 } from "@snowbridge/registry";
 import { z } from "zod";
 import { formatUsdValue } from "@/utils/formatting";
+import { chainName } from "@/utils/chainNames";
+import useSWR from "swr";
 
 interface GetStartedFormProps {
   routes: readonly TransferRoute[];
@@ -95,7 +101,6 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchAmount = form.watch("amount");
-  const [amountUsdValue, setAmountUsdValue] = useState<string | null>(null);
 
   useEffect(() => {
     let newDestinations = destinations;
@@ -136,31 +141,22 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
       token.toLowerCase()
     ];
 
-  // Calculate USD value for amount
-  useEffect(() => {
-    if (!watchAmount || !tokenMetadata || Number(watchAmount) === 0) {
-      setAmountUsdValue(null);
-      return;
-    }
+  const { data: tokenPrice } = useSWR(
+    ["transfer-from-token-price", tokenMetadata],
+    async ([, t]: [string, ERC20Metadata]) => {
+      const prices = await fetchTokenPrices([t.symbol]);
+      return prices[t.symbol.toUpperCase()];
+    },
+    {
+      fallbackData: 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60 * 1000,
+      refreshInterval: 60 * 1000,
+    },
+  );
 
-    const calculateUsd = async () => {
-      try {
-        const prices = await fetchTokenPrices([tokenMetadata.symbol]);
-        const price = prices[tokenMetadata.symbol.toUpperCase()];
-        if (price) {
-          const usdAmount = Number(watchAmount) * price;
-          setAmountUsdValue(`≈ $${formatUsdValue(usdAmount)}`);
-        } else {
-          setAmountUsdValue(null);
-        }
-      } catch {
-        setAmountUsdValue(null);
-      }
-    };
-
-    calculateUsd();
-  }, [watchAmount, tokenMetadata]);
-
+  const tokenValueUsd = Number(watchAmount ?? 0n) * (tokenPrice ?? 0);
   return (
     <Form {...form}>
       <form className="space-y-2">
@@ -182,7 +178,7 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
                           return (
                             <SelectItem key={s.key} value={s.key}>
                               <SelectItemWithIcon
-                                label={loc.name}
+                                label={chainName(loc)}
                                 image={s.key}
                                 altImage="parachain_generic"
                               />
@@ -226,7 +222,7 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
                         {destinations.map((s) => (
                           <SelectItem key={s.key} value={s.key}>
                             <SelectItemWithIcon
-                              label={s.name}
+                              label={chainName(s)}
                               image={s.key}
                               altImage="parachain_generic"
                             />
@@ -257,11 +253,11 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
                         placeholder="0.0"
                         {...field}
                       />
-                      {amountUsdValue && (
-                        <div className="text-sm text-muted-foreground pl-2">
-                          {amountUsdValue}
-                        </div>
-                      )}
+                      <div className="text-sm text-muted-foreground pl-2">
+                        {tokenValueUsd !== 0
+                          ? formatUsdValue(tokenValueUsd)
+                          : ""}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 justify-end">
                       <Button

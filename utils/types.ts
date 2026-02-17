@@ -32,15 +32,23 @@ export const KSM_SYMBOL = "KSM";
 export const NEURO_WEB_PARACHAIN = 2043;
 
 export type TransferType =
-  | "toPolkadotV2"
-  | "toEthereumV2"
-  | "forInterParachain";
+  | "ethereum->ethereum"
+  | "ethereum->polkadot"
+  | "polkadot->ethereum"
+  | "polkadot->polkadot"
+  | "ethereum_l2->polkadot"
+  | "polkadot->ethereum_l2"
+  | "kusama->polkadot"
+  | "polkadot->kusama";
 
 export type AppRouter = ReturnType<typeof useRouter>;
 export type ValidationError =
-  | ({ errorKind: "toPolkadotV2" } & toPolkadotV2.ValidationLog)
-  | ({ errorKind: "toEthereumV2" } & toEthereumV2.ValidationLog)
-  | ({ errorKind: "forKusama" } & forKusama.ValidationLog);
+  | ({ errorKind: "ethereum->polkadot" } & toPolkadotV2.ValidationLog)
+  | ({ errorKind: "polkadot->ethereum" } & toEthereumV2.ValidationLog)
+  | ({ errorKind: "ethereum->ethereum" } & toEthereumV2.ValidationLog)
+  | ({ errorKind: "polkadot->kusama" } & forKusama.ValidationLog)
+  | ({ errorKind: "kusama->polkadot" } & forKusama.ValidationLog)
+  | ({ errorKind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationLog);
 
 export type ErrorInfo = {
   title: string;
@@ -156,10 +164,13 @@ export type FeeInfo = {
   decimals: number;
   symbol: string;
   delivery:
-    | toEthereumV2.DeliveryFee
-    | toPolkadotV2.DeliveryFee
-    | toPolkadotSnowbridgeV2.DeliveryFee
-    | forInterParachain.DeliveryFee;
+    | ({ kind: "polkadot->ethereum" } & toEthereumV2.DeliveryFee)
+    | ({ kind: "ethereum->ethereum" } & toEthereumV2.DeliveryFee)
+    | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.DeliveryFee)
+    | ({ kind: "ethereum->polkadot" } & toPolkadotV2.DeliveryFee)
+    | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.DeliveryFee)
+    | ({ kind: "ethereum_l2->polkadot" } & toPolkadotSnowbridgeV2.DeliveryFee)
+    | ({ kind: "polkadot->polkadot" } & forInterParachain.DeliveryFee);
   kind: ChainKind;
 };
 
@@ -178,6 +189,7 @@ export interface ValidationData {
   tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
   fee: FeeInfo;
+  tokenValueUsd?: number;
 }
 
 export interface KusamaValidationData {
@@ -193,23 +205,36 @@ export interface KusamaValidationData {
 }
 
 export type ValidationResult =
-  | toEthereumV2.ValidationResult
-  | toEthereumFromEVMV2.ValidationResultEvm
-  | toPolkadotV2.ValidationResult
-  | toPolkadotSnowbridgeV2.ValidationResult
-  | forKusama.ValidationResult
-  | forInterParachain.ValidationResult;
+  | ({ kind: "polkadot->ethereum" } & toEthereumV2.ValidationResult)
+  | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationResult)
+  | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.ValidationResultEvm)
+  | ({ kind: "ethereum->polkadot" } & toPolkadotV2.ValidationResult)
+  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.ValidationResult)
+  | ({
+      kind: "ethereum_l2->polkadot";
+    } & toPolkadotSnowbridgeV2.ValidationResult)
+  | ({ kind: "polkadot->polkadot" } & forInterParachain.ValidationResult)
+  | ({ kind: "kusama->polkadot" } & forKusama.ValidationResult)
+  | ({ kind: "polkadot->kusama" } & forKusama.ValidationResult);
 
 export type MessageReceipt =
-  | toEthereumV2.MessageReceipt
-  | toEthereumFromEVMV2.MessageReceiptEvm
-  | toPolkadotV2.MessageReceipt
-  | (toPolkadotSnowbridgeV2.MessageReceipt & {
-      messageId: string;
-      channelId: string;
-    })
-  | forKusama.MessageReceipt
-  | forInterParachain.MessageReceipt;
+  | ({ kind: "polkadot->ethereum" } & toEthereumV2.MessageReceipt)
+  | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.MessageReceipt)
+  | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.MessageReceiptEvm)
+  | ({ kind: "ethereum->polkadot" } & toPolkadotV2.MessageReceipt)
+  | ({
+      kind: "ethereum_l2->polkadot";
+    } & toPolkadotSnowbridgeV2.MessageReceipt & {
+        messageId: string;
+        channelId: string;
+      })
+  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt & {
+        messageId: string;
+        channelId: string;
+      })
+  | ({ kind: "kusama->polkadot" } & forKusama.MessageReceipt)
+  | ({ kind: "polkadot->kusama" } & forKusama.MessageReceipt)
+  | ({ kind: "polkadot->polkadot" } & forInterParachain.MessageReceipt);
 
 export enum TransferStepKind {
   DepositWETH,
@@ -217,6 +242,7 @@ export enum TransferStepKind {
   SubstrateTransferFee,
   SubstrateTransferED,
   WrapNeuroWeb,
+  CreateAgent,
 }
 export interface TransferStep {
   displayOrder: number;

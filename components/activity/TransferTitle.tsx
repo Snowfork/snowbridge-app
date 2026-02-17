@@ -10,94 +10,13 @@ import { useContext, useState } from "react";
 import { BridgeInfoContext } from "@/app/providers";
 import type {
   AssetRegistry,
-  ChainKind,
   ERC20Metadata,
+  TransferLocation,
 } from "@snowbridge/base-types";
 import Image from "next/image";
 import { getTransferLocation } from "@snowbridge/registry";
-
-export function getChainIdentifiers(
-  transfer: Transfer,
-  registry: AssetRegistry,
-) {
-  switch (transfer.kind) {
-    case "kusama": {
-      const tx = transfer;
-      return {
-        sourceType: transfer.kind,
-        destinationType: "kusama" as const,
-        sourceId:
-          tx.info.sourceParachain?.toString() ??
-          registry.assetHubParaId.toString(),
-        destinationId:
-          tx.info.destinationParachain?.toString() ??
-          registry.assetHubParaId.toString(),
-        sourceNetwork: tx.info.destinationNetwork ?? "kusama",
-        destinationNetwork: tx.info.destinationNetwork ?? "kusama",
-      };
-    }
-    case "ethereum": {
-      const tx = transfer;
-      return {
-        sourceType: transfer.kind,
-        destinationType: "polkadot" as const,
-        sourceId: registry.ethChainId.toString(),
-        destinationId:
-          tx.info.destinationParachain?.toString() ??
-          registry.assetHubParaId.toString(),
-      };
-    }
-    case "polkadot": {
-      if (transfer.info.destinationParachain) {
-        const tx = transfer;
-        return {
-          sourceType: transfer.kind,
-          destinationType: transfer.kind,
-          sourceId: tx.submitted.sourceParachainId.toString(),
-          destinationId: transfer.info.destinationParachain.toString(),
-        };
-      } else {
-        const tx = transfer;
-        return {
-          sourceType: transfer.kind,
-          destinationType: "ethereum" as const,
-          sourceId: tx.submitted.sourceParachainId.toString(),
-          destinationId: registry.ethChainId.toString(),
-        };
-      }
-    }
-  }
-  return null;
-}
-
-export function getEnvDetail(transfer: Transfer, registry: AssetRegistry) {
-  const id = getChainIdentifiers(transfer, registry);
-  if (!id) {
-    console.error("Unknown transfer", transfer);
-    throw Error(`Unknown transfer type ${transfer.kind}`);
-  }
-  if (id.sourceType === "kusama") {
-    const source = getTransferLocation(registry, {
-      kind: transfer.info.sourceNetwork! as ChainKind,
-      id: Number(id.sourceId),
-    });
-    const destination = getTransferLocation(registry, {
-      kind: transfer.info.destinationNetwork! as ChainKind,
-      id: Number(id.destinationId),
-    });
-    return { source, destination };
-  } else {
-    const source = getTransferLocation(registry, {
-      kind: id.sourceType,
-      id: Number(id.sourceId),
-    });
-    const destination = getTransferLocation(registry, {
-      kind: id.destinationType as ChainKind,
-      id: Number(id.destinationId),
-    });
-    return { source, destination };
-  }
-}
+import { chainName } from "@/utils/chainNames";
+import { inferTransferDetails } from "@/utils/inferTransferType";
 
 export function formatTokenData(
   transfer: Transfer,
@@ -134,7 +53,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
   const [tokenImageError, setTokenImageError] = useState(false);
   const [destImageError, setDestImageError] = useState(false);
 
-  const { destination } = getEnvDetail(transfer, assetRegistry);
+  const { destination } = inferTransferDetails(transfer, assetRegistry);
   const shortDate = formatShortDate(new Date(transfer.info.when));
 
   const { tokenName, amount: rawAmount } = formatTokenData(
@@ -166,7 +85,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
       }
       width={18}
       height={18}
-      alt={destination?.name ?? "destination"}
+      alt={chainName(destination)}
       className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
       onError={() => setDestImageError(true)}
     />
@@ -181,7 +100,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
         </span>
         <span className="text-muted-foreground">→</span>
         {destIcon}
-        <span className="truncate">{destination?.name ?? "unknown"}</span>
+        <span className="truncate">{chainName(destination)}</span>
         <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
           {shortDate}
         </span>
@@ -201,7 +120,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
         </span>
         <span className="text-muted-foreground">→</span>
         {destIcon}
-        <span className="truncate">{destination?.name ?? "unknown"}</span>
+        <span className="truncate">{chainName(destination)}</span>
         <span className="text-muted-foreground text-xs ml-1 hidden sm:inline">
           {shortDate}
         </span>

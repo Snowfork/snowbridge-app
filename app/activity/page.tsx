@@ -4,8 +4,6 @@ import { ErrorDialog } from "@/components/ErrorDialog";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
   formatTokenData,
-  getChainIdentifiers,
-  getEnvDetail,
   TransferTitle,
 } from "@/components/activity/TransferTitle";
 import {
@@ -39,7 +37,6 @@ import {
 import { ethereumAccountsAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import {
-  transferActivityCacheAtom,
   transferActivityShowGlobal,
   transfersPendingLocalAtom,
 } from "@/store/transferActivity";
@@ -48,7 +45,7 @@ import { encodeAddress } from "@polkadot/util-crypto";
 import { assetsV2, historyV2 } from "@snowbridge/api";
 import {
   AssetRegistry,
-  EthereumLocation,
+  ParachainLocation,
   TransferLocation,
 } from "@snowbridge/base-types";
 import { track } from "@vercel/analytics";
@@ -61,6 +58,10 @@ import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+import { chainName } from "@/utils/chainNames";
+import { inferTransferDetails } from "@/utils/inferTransferType";
+import { getTransferLocation } from "@snowbridge/registry";
+import { TransferType } from "@/utils/types";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -70,198 +71,292 @@ const ITEMS_PER_PAGE = 5;
  * created transfers use messageId/txHash as ID. This function matches by
  * transaction hash or extrinsic hash to handle this case.
  */
-const isSameTransfer = (t1: Transfer, t2: Transfer): boolean => {
+const isSameTransfer = (
+  t1: Transfer,
+  t2: Transfer,
+  registry: AssetRegistry,
+): boolean => {
   // Match by ID if both have non-empty IDs
   if (t1.id === t2.id && t1.id.length > 0) return true;
 
+  const { kind: t1Kind } = inferTransferDetails(t1, registry);
+  const { kind: t2Kind } = inferTransferDetails(t2, registry);
   // For ToPolkadotTransferResult (E->P), match by transaction hash
-  if (t1.kind === "ethereum" && t2.kind === "ethereum") {
+  if (
+    t1Kind === "ethereum->polkadot" ||
+    t1Kind === "polkadot->polkadot" ||
+    t1Kind === "polkadot->kusama" ||
+    t1Kind === "kusama->polkadot" ||
+    t1Kind === "ethereum_l2->polkadot"
+  ) {
     const t1Casted = t1 as historyV2.ToPolkadotTransferResult;
     const t2Casted = t2 as historyV2.ToPolkadotTransferResult;
-    if (
+    return (
+      t1Kind === t2Kind &&
       t1Casted.submitted.transactionHash ===
         t2Casted.submitted.transactionHash &&
       t1Casted.submitted.transactionHash.length > 0
-    ) {
-      return true;
-    }
-  }
-
-  // For ToEthereumTransferResult (P->E), match by extrinsic hash
-  if (t1.kind === "polkadot" && t2.kind === "polkadot") {
+    );
+  } else if (
+    t1Kind === "ethereum->ethereum" ||
+    t1Kind === "polkadot->ethereum" ||
+    t1Kind === "polkadot->ethereum_l2"
+  ) {
+    // For ToEthereumTransferResult (P->E), match by extrinsic hash
     const t1Casted = t1 as historyV2.ToEthereumTransferResult;
     const t2Casted = t2 as historyV2.ToEthereumTransferResult;
-    if (
+    return (
+      t1Kind === t2Kind &&
       t1Casted.submitted.extrinsic_hash === t2Casted.submitted.extrinsic_hash &&
       t1Casted.submitted.extrinsic_hash.length > 0
-    ) {
-      return true;
-    }
+    );
+  } else {
+    throw Error(`Unknown kind ${t1Kind}`);
   }
-
-  return false;
 };
 
 const getExplorerLinks = (
   transfer: Transfer,
+  transferKind: TransferType,
   source: TransferLocation,
   registry: AssetRegistry,
   destination: TransferLocation,
 ) => {
-  const links: { text: string; url: string }[] = [];
-  if (transfer.kind == "kusama") {
-    const tx = transfer;
-    if (tx.destinationReceived) {
-      let sourceParaId: string = source.parachain!.id.toString();
-      if (transfer.info.sourceNetwork == "kusama") {
-        sourceParaId = "kusama_" + sourceParaId;
+  switch (transferKind) {
+    case "polkadot->polkadot":
+    case "kusama->polkadot":
+    case "polkadot->kusama": {
+      const links: { text: string; url: string }[] = [];
+      const tx = transfer as historyV2.ToPolkadotTransferResult;
+      if (tx.destinationReceived) {
+        links.push({
+          text: `Submitted to ${chainName(source)}`,
+          url: subscanExtrinsicLink(
+            registry.environment,
+            (source as ParachainLocation).key,
+            tx.submitted.transactionHash,
+          ),
+        });
+        links.push({
+          text: `Message received on ${chainName(destination)}`,
+          url: subscanEventLink(
+            registry.environment,
+            (destination as ParachainLocation).key,
+            tx.destinationReceived.event_index,
+          ),
+        });
       }
-      let destinationParaId: string = tx.destinationReceived.paraId.toString();
-      if (transfer.info.sourceNetwork == "polkadot") {
-        destinationParaId = "kusama_" + destinationParaId;
-      }
+      return links;
+    }
+    case "ethereum->ethereum":
+    case "polkadot->ethereum":
+    case "polkadot->ethereum_l2": {
+      const links: { text: string; url: string }[] = [];
+      const tx = transfer as historyV2.ToEthereumTransferResult;
       links.push({
-        text: `Submitted to ${source.name}`,
+        text: `Submitted to ${chainName(source)}`,
         url: subscanExtrinsicLink(
           registry.environment,
-          sourceParaId,
+          (source as ParachainLocation).key,
+          tx.submitted.extrinsic_hash,
+        ),
+      });
+      if (tx.bridgeHubXcmDelivered) {
+        links.push({
+          text: "Bridge Hub received XCM from Asset Hub",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.bridgeHubXcmDelivered.event_index,
+          ),
+        });
+      }
+      if (tx.bridgeHubChannelDelivered) {
+        links.push({
+          text: "Message delivered to Snowbridge Message Queue",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.bridgeHubChannelDelivered.event_index,
+          ),
+        });
+      }
+      if (tx.bridgeHubMessageQueued) {
+        links.push({
+          text: "Message queued on Asset Hub Channel",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.bridgeHubMessageQueued.event_index,
+          ),
+        });
+      }
+      if (tx.bridgeHubMessageAccepted) {
+        links.push({
+          text: "Message accepted by Asset Hub Channel",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.bridgeHubMessageAccepted.event_index,
+          ),
+        });
+      }
+      if (tx.ethereumBeefyIncluded) {
+        links.push({
+          text: "Message included by beefy client",
+          url: etherscanTxHashLink(
+            registry.environment,
+            registry.ethChainId,
+            tx.ethereumBeefyIncluded.transactionHash,
+          ),
+        });
+      }
+      if (tx.ethereumMessageDispatched) {
+        links.push({
+          text:
+            tx.destinationKind === "ethereum_l2"
+              ? `Message arrived on ${chainName(getTransferLocation(registry, { kind: "ethereum", id: registry.ethChainId }))}`
+              : "Message arrived on Snowbridge Gateway",
+          url: etherscanTxHashLink(
+            registry.environment,
+            registry.ethChainId,
+            tx.ethereumMessageDispatched.transactionHash,
+          ),
+        });
+      }
+      if (tx.toEthereumL2) {
+        links.push({
+          text: `Funds arrived on ${chainName(destination)}`,
+          url: etherscanTxHashLink(
+            registry.environment,
+            destination.id,
+            tx.toEthereumL2.txHash,
+          ),
+        });
+      }
+      return links;
+    }
+    case "ethereum_l2->polkadot": {
+      const links: { text: string; url: string }[] = [];
+      const tx = transfer as historyV2.ToPolkadotTransferResult;
+      links.push({
+        text: "Submitted to Snowbridge Wrapper",
+        url: etherscanTxHashLink(
+          registry.environment,
+          source.id,
           tx.submitted.transactionHash,
         ),
       });
-      links.push({
-        text: `Message received on ${destination.name}`,
-        url: subscanEventLink(
-          registry.environment,
-          destinationParaId,
-          tx.destinationReceived.event_index,
-        ),
-      });
-    }
-    return links;
-  } else if (transfer.kind == "polkadot") {
-    const tx = transfer as historyV2.ToEthereumTransferResult;
-    links.push({
-      text: `Submitted to ${source.name}`,
-      url: subscanExtrinsicLink(
-        registry.environment,
-        source.parachain!.id,
-        tx.submitted.extrinsic_hash,
-      ),
-    });
-    if (tx.bridgeHubXcmDelivered) {
-      links.push({
-        text: "Bridge Hub received XCM from Asset Hub",
-        url: subscanEventLink(
-          registry.environment,
-          registry.bridgeHubParaId,
-          tx.bridgeHubXcmDelivered.event_index,
-        ),
-      });
-    }
-    if (tx.bridgeHubChannelDelivered) {
-      links.push({
-        text: "Message delivered to Snowbridge Message Queue",
-        url: subscanEventLink(
-          registry.environment,
-          registry.bridgeHubParaId,
-          tx.bridgeHubChannelDelivered.event_index,
-        ),
-      });
-    }
-    if (tx.bridgeHubMessageQueued) {
-      links.push({
-        text: "Message queued on Asset Hub Channel",
-        url: subscanEventLink(
-          registry.environment,
-          registry.bridgeHubParaId,
-          tx.bridgeHubMessageQueued.event_index,
-        ),
-      });
-    }
-    if (tx.bridgeHubMessageAccepted) {
-      links.push({
-        text: "Message accepted by Asset Hub Channel",
-        url: subscanEventLink(
-          registry.environment,
-          registry.bridgeHubParaId,
-          tx.bridgeHubMessageAccepted.event_index,
-        ),
-      });
-    }
-    if (tx.ethereumBeefyIncluded) {
-      links.push({
-        text: "Message included by beefy client",
-        url: etherscanTxHashLink(
-          registry.environment,
-          registry.ethChainId,
-          tx.ethereumBeefyIncluded.transactionHash,
-        ),
-      });
-    }
-    if (tx.ethereumMessageDispatched) {
-      links.push({
-        text: "Message dispatched on Ethereum",
-        url: etherscanTxHashLink(
-          registry.environment,
-          registry.ethChainId,
-          tx.ethereumMessageDispatched.transactionHash,
-        ),
-      });
-    }
-  }
-  if (destination?.kind == "polkadot") {
-    const tx = transfer as historyV2.ToPolkadotTransferResult;
-    links.push({
-      text: "Submitted to Snowbridge Gateway",
-      url: etherscanTxHashLink(
-        registry.environment,
-        registry.ethChainId,
-        tx.submitted.transactionHash,
-      ),
-    });
 
-    if (tx.beaconClientIncluded) {
+      if (tx.beaconClientIncluded) {
+        links.push({
+          text: "Included by light client on Bridge Hub",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.beaconClientIncluded.event_index,
+          ),
+        });
+      }
+      if (tx.inboundMessageReceived) {
+        links.push({
+          text: "Inbound message received on Asset Hub channel",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.inboundMessageReceived.event_index,
+          ),
+        });
+      }
+      if (tx.assetHubMessageProcessed) {
+        links.push({
+          text: "Message dispatched on Asset Hub",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.assetHubParaId}`,
+            tx.assetHubMessageProcessed.event_index,
+          ),
+        });
+      }
+      if (tx.destinationReceived) {
+        links.push({
+          text: `Message received on ${chainName(destination)}`,
+          url: subscanEventLink(
+            registry.environment,
+            (destination as ParachainLocation).key,
+            tx.destinationReceived.event_index,
+          ),
+        });
+      }
+      if (tx.destinationReceived) {
+        links.push({
+          text: `Message received on ${chainName(destination)}`,
+          url: subscanEventLink(
+            registry.environment,
+            (destination as ParachainLocation).key,
+            tx.destinationReceived.event_index,
+          ),
+        });
+      }
+      return links;
+    }
+    case "ethereum->polkadot": {
+      const links: { text: string; url: string }[] = [];
+      const tx = transfer as historyV2.ToPolkadotTransferResult;
       links.push({
-        text: "Included by light client on Bridge Hub",
-        url: subscanEventLink(
+        text: "Submitted to Snowbridge Gateway",
+        url: etherscanTxHashLink(
           registry.environment,
-          registry.bridgeHubParaId,
-          tx.beaconClientIncluded.event_index,
+          registry.ethChainId,
+          tx.submitted.transactionHash,
         ),
       });
+
+      if (tx.beaconClientIncluded) {
+        links.push({
+          text: "Included by light client on Bridge Hub",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.beaconClientIncluded.event_index,
+          ),
+        });
+      }
+      if (tx.inboundMessageReceived) {
+        links.push({
+          text: "Inbound message received on Asset Hub channel",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.bridgeHubParaId}`,
+            tx.inboundMessageReceived.event_index,
+          ),
+        });
+      }
+      if (tx.assetHubMessageProcessed) {
+        links.push({
+          text: "Message dispatched on Asset Hub",
+          url: subscanEventLink(
+            registry.environment,
+            `polkadot_${registry.assetHubParaId}`,
+            tx.assetHubMessageProcessed.event_index,
+          ),
+        });
+      }
+      if (tx.destinationReceived) {
+        links.push({
+          text: `Message received on ${chainName(destination)}`,
+          url: subscanEventLink(
+            registry.environment,
+            (destination as ParachainLocation).key,
+            tx.destinationReceived.event_index,
+          ),
+        });
+      }
+      return links;
     }
-    if (tx.inboundMessageReceived) {
-      links.push({
-        text: "Inbound message received on Asset Hub channel",
-        url: subscanEventLink(
-          registry.environment,
-          registry.bridgeHubParaId,
-          tx.inboundMessageReceived.event_index,
-        ),
-      });
-    }
-    if (tx.assetHubMessageProcessed) {
-      links.push({
-        text: "Message dispatched on Asset Hub",
-        url: subscanEventLink(
-          registry.environment,
-          registry.assetHubParaId,
-          tx.assetHubMessageProcessed.event_index,
-        ),
-      });
-    }
-    if (tx.destinationReceived) {
-      links.push({
-        text: `Message received on ${destination.name}`,
-        url: subscanEventLink(
-          registry.environment,
-          tx.destinationReceived.paraId,
-          tx.destinationReceived.event_index,
-        ),
-      });
-    }
+    default:
+      throw Error(`Unknown transfer kind ${transferKind}`);
   }
-  return links;
 };
 
 const transferDetail = (
@@ -269,47 +364,42 @@ const transferDetail = (
   registry: AssetRegistry,
   router: AppRouterInstance,
 ): JSX.Element => {
-  const { source, destination } = getEnvDetail(transfer, registry);
+  const {
+    kind: transferType,
+    source,
+    destination,
+  } = inferTransferDetails(transfer, registry);
   const links: { text: string; url: string }[] = getExplorerLinks(
     transfer,
+    transferType,
     source,
     registry,
     destination,
   );
 
-  let sourceAddress = transfer.info.sourceAddress;
-  if (
-    transfer.kind === "polkadot" &&
-    destination.kind === "ethereum" &&
-    source.parachain
-  ) {
-    if (source.parachain.info.accountType === "AccountId32") {
-      sourceAddress = encodeAddress(
-        sourceAddress,
-        source.parachain.info.ss58Format,
-      );
-    } else {
-      sourceAddress = sourceAddress.substring(0, 42);
-    }
-  }
   let beneficiary = transfer.info.beneficiaryAddress;
-  if (
-    transfer.kind === "ethereum" &&
-    source.kind === "ethereum" &&
-    destination.parachain
-  ) {
-    console.log("AAAAA", transfer);
-    if (destination.parachain.info.accountType === "AccountId32") {
-      beneficiary = encodeAddress(
-        beneficiary,
-        destination.parachain?.info.ss58Format ??
-          registry.relaychain.ss58Format,
-      );
-    } else {
-      // 20 byte address
-      beneficiary = beneficiary.substring(0, 42);
-    }
+  let sourceAddress = transfer.info.sourceAddress;
+  if (source.parachain && source.parachain.info.accountType === "AccountId32") {
+    sourceAddress = encodeAddress(
+      sourceAddress,
+      source.parachain!.info.ss58Format,
+    );
+  } else {
+    sourceAddress = sourceAddress.substring(0, 42);
   }
+  if (
+    destination.parachain &&
+    destination.parachain.info.accountType === "AccountId32"
+  ) {
+    beneficiary = encodeAddress(
+      beneficiary,
+      destination.parachain?.info.ss58Format ?? registry.relaychain.ss58Format,
+    );
+  } else {
+    // 20 byte address
+    beneficiary = beneficiary.substring(0, 42);
+  }
+
   const tokenUrl = etherscanERC20TokenLink(
     registry.environment,
     registry.ethChainId,
@@ -317,48 +407,54 @@ const transferDetail = (
   );
   let sourceAccountUrl;
   let beneficiaryAccountUrl;
-  if (transfer.kind === "ethereum" && source.kind === "ethereum") {
-    sourceAccountUrl = etherscanAddressLink(
-      registry.environment,
-      source.ethChain.id,
-      transfer.info.sourceAddress,
-    );
-    beneficiaryAccountUrl = subscanAccountLink(
-      registry.environment,
-      destination.parachain!.id,
-      beneficiary,
-    );
-  } else if (transfer.kind === "kusama") {
-    let sourceParachain = source.parachain!.id.toString();
-    let destParachain = destination.parachain!.id.toString();
-    if (transfer.info.sourceNetwork == "kusama") {
-      sourceParachain = "kusama_" + sourceParachain;
+
+  switch (transferType) {
+    case "ethereum_l2->polkadot":
+    case "ethereum->polkadot": {
+      sourceAccountUrl = etherscanAddressLink(
+        registry.environment,
+        source.id,
+        transfer.info.sourceAddress,
+      );
+      beneficiaryAccountUrl = subscanAccountLink(
+        registry.environment,
+        (destination as ParachainLocation).key,
+        beneficiary,
+      );
+      break;
     }
-    if (transfer.info.destinationNetwork == "kusama") {
-      destParachain = "kusama_" + sourceParachain;
+    case "polkadot->ethereum_l2":
+    case "polkadot->ethereum": {
+      sourceAccountUrl = subscanAccountLink(
+        registry.environment,
+        (source as ParachainLocation).key,
+        transfer.info.sourceAddress,
+      );
+      beneficiaryAccountUrl = etherscanAddressLink(
+        registry.environment,
+        destination.id,
+        beneficiary,
+      );
+      break;
     }
-    sourceAccountUrl = subscanAccountLink(
-      registry.environment,
-      sourceParachain,
-      transfer.info.sourceAddress,
-    );
-    beneficiaryAccountUrl = subscanAccountLink(
-      registry.environment,
-      destParachain,
-      beneficiary,
-    );
-  } else {
-    sourceAccountUrl = subscanAccountLink(
-      registry.environment,
-      source.parachain!.id,
-      transfer.info.sourceAddress,
-    );
-    beneficiaryAccountUrl = etherscanAddressLink(
-      registry.environment,
-      (destination as EthereumLocation).ethChain.id,
-      beneficiary,
-    );
+    case "kusama->polkadot":
+    case "polkadot->kusama": {
+      sourceAccountUrl = subscanAccountLink(
+        registry.environment,
+        (source as ParachainLocation).key,
+        transfer.info.sourceAddress,
+      );
+      beneficiaryAccountUrl = subscanAccountLink(
+        registry.environment,
+        (destination as ParachainLocation).key,
+        beneficiary,
+      );
+      break;
+    }
+    default:
+      throw Error(`Could not handle case ${transferType}`);
   }
+
   const { tokenName, amount } = formatTokenData(
     transfer,
     registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets,
@@ -382,10 +478,10 @@ const transferDetail = (
                     fallbackSrc="/images/parachain_generic.png"
                     width={16}
                     height={16}
-                    alt={source.name}
+                    alt={chainName(source)}
                     className="rounded-full"
                   />
-                  {source.name}
+                  {chainName(source)}
                 </span>
               </td>
             </tr>
@@ -508,9 +604,6 @@ export default function Activity() {
   const ethereumAccounts = useAtomValue(ethereumAccountsAtom);
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
 
-  const [transferActivityCache, setTransferActivityCache] = useAtom(
-    transferActivityCacheAtom,
-  );
   const [transfersPendingLocal, setTransfersPendingLocal] = useAtom(
     transfersPendingLocalAtom,
   );
@@ -538,24 +631,19 @@ export default function Activity() {
       setTransfersErrorMessage(
         "The activity service is under heavy load, so this may take a while...",
       );
-    } else {
+    } else if (transfersErrorMessage) {
       setTransfersErrorMessage(null);
     }
-  }, [transfersError, setTransfersErrorMessage]);
+  }, [transfersError, setTransfersErrorMessage, transfersErrorMessage]);
 
   const hashItem = useWindowHash();
-
-  useEffect(() => {
-    if (transfers === null) return;
-    setTransferActivityCache(transfers);
-  }, [transfers, setTransferActivityCache]);
 
   useEffect(() => {
     const oldTransferCutoff = new Date().getTime() - 4 * 60 * 60 * 1000; // 4 hours
     for (let i = 0; i < transfersPendingLocal.length; ++i) {
       if (
-        transferActivityCache.find((h) =>
-          isSameTransfer(h, transfersPendingLocal[i]),
+        transfers.find((h) =>
+          isSameTransfer(h, transfersPendingLocal[i], assetRegistry),
         ) ||
         new Date(transfersPendingLocal[i].info.when).getTime() <
           oldTransferCutoff
@@ -568,7 +656,7 @@ export default function Activity() {
     }
     // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transferActivityCache, setTransfersPendingLocal]);
+  }, [setTransfersPendingLocal, assetRegistry]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -579,39 +667,28 @@ export default function Activity() {
       ...(polkadotAccounts ?? []).map((acc) => acc.address),
       ...ethereumAccounts,
     ]);
-    const allTransfers: Transfer[] = [];
+    const allTransfers: (Transfer & { isWalletTransaction: boolean })[] = [];
     for (const pending of transfersPendingLocal) {
       // Check if this pending transfer already exists in the cache
       // Match by ID, transaction hash, or message ID to handle V2 transfers
-      const isDuplicate = transferActivityCache.find((t) =>
-        isSameTransfer(t, pending),
+      const isDuplicate = transfers.find((t) =>
+        isSameTransfer(t, pending, assetRegistry),
       );
 
       if (isDuplicate) {
         continue;
       }
-      allTransfers.push(pending);
+      allTransfers.push({ isWalletTransaction: true, ...pending });
     }
-    for (const transfer of transferActivityCache) {
-      const id = getChainIdentifiers(transfer, assetRegistry);
-      if (
-        !id ||
-        (id.sourceType === "polkadot" &&
-          !(`polkadot_${id.sourceId}` in assetRegistry.parachains)) ||
-        (id.destinationType === "polkadot" &&
-          !(`polkadot_${id.destinationId}` in assetRegistry.parachains))
-      )
-        continue;
-
-      transfer.isWalletTransaction = isWalletTransaction(
+    for (let transfer of transfers) {
+      const walletTx = isWalletTransaction(
         transfer.info.sourceAddress,
         transfer.info.beneficiaryAddress,
       );
       const isLinkedTransaction = hashItem && transfer.id === hashItem;
-      if (!showGlobal && !transfer.isWalletTransaction && !isLinkedTransaction)
-        continue;
+      if (!showGlobal && !walletTx && !isLinkedTransaction) continue;
 
-      allTransfers.push(transfer);
+      allTransfers.push({ isWalletTransaction: walletTx, ...transfer });
     }
     const pages: Transfer[][] = [];
     for (let i = 0; i < allTransfers.length; i += ITEMS_PER_PAGE) {
@@ -619,16 +696,16 @@ export default function Activity() {
     }
     return pages;
   }, [
-    transfersPendingLocal,
-    transferActivityCache,
-    assetRegistry,
     polkadotAccounts,
     ethereumAccounts,
-    showGlobal,
+    transfersPendingLocal,
+    transfers,
     hashItem,
+    showGlobal,
+    assetRegistry,
   ]);
 
-  useMemo(() => {
+  useEffect(() => {
     if (pages === null || pages.length == 0) {
       setPage(0);
       setSelectedItem(null);
@@ -650,14 +727,9 @@ export default function Activity() {
     }
     setPage(0);
     setSelectedItem(null);
-    return;
   }, [pages, setSelectedItem, setPage, hashItem]);
 
-  if (
-    pages.length === 0 &&
-    isTransfersLoading &&
-    transferActivityCache.length === 0
-  ) {
+  if (isTransfersLoading || pages.length === 0) {
     return <Loading />;
   }
 

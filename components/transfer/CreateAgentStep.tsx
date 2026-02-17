@@ -1,51 +1,36 @@
-import {
-  ContractResponse,
-  TransferStep,
-  ValidationData,
-  ValidationResult,
-} from "@/utils/types";
+import { ContractResponse, TransferStep, ValidationData } from "@/utils/types";
 import { useState } from "react";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import { LucideLoaderCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { etherscanTxHashLink } from "@/lib/explorerLinks";
-import { formatUnits } from "ethers";
+import { chainName } from "@/utils/chainNames";
+import { encodeAddress } from "@polkadot/util-crypto";
+import { Label } from "../ui/label";
 
-interface EthereumTxStepProps {
+interface CreateAgentStepProps {
   title: string;
   id: number;
   step: TransferStep;
   data: ValidationData;
-  plan: ValidationResult;
   currentStep: number;
   nextStep: () => Promise<unknown> | unknown;
-  action: (_data: ValidationData, _amount: string) => Promise<ContractResponse>;
+  action: (_data: ValidationData) => Promise<ContractResponse>;
   errorMessage?: string;
   submitButtonText?: string;
   description?: string;
 }
 
-export function EthereumTxStep({
+export function CreateAgentStep({
   title,
   id,
   data,
-  plan,
   currentStep,
   nextStep,
   action,
   errorMessage,
   submitButtonText,
   description,
-}: EthereumTxStepProps) {
-  let defaultAmount = data.formData.amount;
-  if (plan.kind === "ethereum_l2->polkadot" && plan.data.totalInputAmount) {
-    defaultAmount = formatUnits(
-      plan.data.totalInputAmount,
-      data.tokenMetadata.decimals,
-    );
-  }
-  const [amount, setAmount] = useState(defaultAmount);
+}: CreateAgentStepProps) {
   const [busy, setBusy] = useState(false);
   interface Message {
     text: string;
@@ -87,20 +72,24 @@ export function EthereumTxStep({
       </div>
       <div
         className={
-          "flex gap-2 place-items-center" +
+          "grid grid-cols-[max-content_1fr] items-center gap-2 " +
           (currentStep !== id ? " hidden" : "")
         }
       >
-        <Label className="w-1/5">Amount</Label>
-        <Input
-          disabled={busy}
-          className="w-3/5"
-          type="number"
-          defaultValue={amount}
-          onChange={(v) => setAmount(v.target.value)}
-        />
+        <Label>Chain</Label>
+        <div className="text-sm">{chainName(data.source)}</div>
+        <Label>Account</Label>
+        <div className="text-sm">
+          {encodeAddress(
+            data.formData.sourceAccount,
+            data.source.parachain?.info.ss58Format ??
+              data.assetRegistry.relaychain.ss58Format,
+          )}
+        </div>
+      </div>
+      <div className="flex justify-end">
         {busy ? (
-          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground" />
+          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground w-1/5" />
         ) : (
           <Button
             className="w-1/5 action-button"
@@ -109,10 +98,10 @@ export function EthereumTxStep({
               setBusy(true);
               setError(undefined);
               try {
-                const { receipt } = await action(data, amount);
+                const { receipt } = await action(data);
                 const etherscanLink = etherscanTxHashLink(
                   data.assetRegistry.environment,
-                  data.source.id,
+                  data.assetRegistry.ethChainId,
                   receipt?.hash ?? "",
                 );
                 if (receipt?.status === 1) {

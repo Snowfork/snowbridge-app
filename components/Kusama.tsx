@@ -292,12 +292,22 @@ export const KusamaComponent: FC = () => {
       const plan = await planSend(data);
       setBusyMessage("");
 
+      if (
+        plan.kind !== "kusama->polkadot" &&
+        plan.kind !== "polkadot->kusama"
+      ) {
+        throw Error(`Invalid state.`);
+      }
+
       console.log("plan", plan);
       if (!plan.success) {
         let errors: any[] = [];
         for (const planLog of plan.logs) {
           errors.push({
-            kind: "forKusama",
+            kind:
+              sourceId === AssetHub.Polkadot
+                ? "polkadot->kusama"
+                : "kusama->polkadot",
             reason: planLog.reason,
             message: planLog.message,
           });
@@ -352,6 +362,12 @@ export const KusamaComponent: FC = () => {
       setBusyMessage("Sending transaction");
       const result = await sendToken(data, plan);
       console.log("result", result);
+      if (
+        result.kind !== "kusama->polkadot" &&
+        result.kind !== "polkadot->kusama"
+      ) {
+        throw Error(`Invalid state.`);
+      }
 
       const subscanHost =
         sourceId === AssetHub.Polkadot

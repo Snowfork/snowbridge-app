@@ -19,6 +19,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const info = bridgeInfoFor(getEnvironmentName());
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

@@ -10,6 +10,9 @@ import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { inferTransferType } from "@/utils/inferTransferType";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import Image from "next/image";
+import { chainName } from "@/utils/chainNames";
+import { ParachainLocation } from "@snowbridge/base-types";
+import { FeeDisplay } from "../FeeDisplay";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -25,7 +28,10 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   let beneficiaryDisplay = data.formData.beneficiary;
   let sourceAccountLink: string;
   let beneficiaryLink: string;
-  if (data.source.kind === "ethereum" && data.destination.kind === "polkadot") {
+  if (
+    (data.source.kind === "ethereum" || data.source.kind === "ethereum_l2") &&
+    data.destination.kind === "polkadot"
+  ) {
     if (data.destination.parachain?.info.accountType === "AccountId32") {
       beneficiaryDisplay = encodeAddress(
         decodeAddress(beneficiaryDisplay),
@@ -35,12 +41,12 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     }
     sourceAccountLink = etherscanAddressLink(
       data.assetRegistry.environment,
-      data.assetRegistry.ethChainId,
+      data.source.id,
       sourceAccountDisplay,
     );
     beneficiaryLink = subscanAccountLink(
       data.assetRegistry.environment,
-      data.destination.parachain!.id,
+      data.destination.key,
       beneficiaryDisplay,
     );
   } else {
@@ -53,12 +59,12 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     }
     sourceAccountLink = subscanAccountLink(
       data.assetRegistry.environment,
-      data.source.parachain!.id,
+      (data.source as ParachainLocation).key,
       sourceAccountDisplay,
     );
     beneficiaryLink = etherscanAddressLink(
       data.assetRegistry.environment,
-      data.assetRegistry.ethChainId,
+      data.destination.id,
       data.formData.beneficiary,
     );
   }
@@ -67,6 +73,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
   let sourceTokenDecimals: number | null = null;
   switch (data.source.kind) {
     case "ethereum":
+    case "ethereum_l2":
       sourceTokenSymbol = "ETH";
       sourceTokenDecimals = 18;
       break;
@@ -76,7 +83,23 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       break;
   }
   const transferType = inferTransferType(data.source, data.destination);
-
+  let transferTimeMax: string | undefined;
+  switch (transferType) {
+    case "ethereum_l2->polkadot":
+    case "ethereum->polkadot":
+      transferTimeMax = "25 min";
+      break;
+    case "polkadot->ethereum":
+    case "ethereum->ethereum":
+    case "polkadot->ethereum_l2":
+      transferTimeMax = "1h 30min";
+      break;
+    case "polkadot->polkadot":
+      transferTimeMax = "5 min";
+      break;
+    default:
+      console.warn(`Unknown type ${transferTimeMax}.`);
+  }
   // Fetch USD prices for tokens
   const [prices, setPrices] = useState<Record<string, number>>({});
 
@@ -140,18 +163,18 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
           src={`/images/${data.source.key}.png`}
           width={20}
           height={20}
-          alt={data.source.name}
+          alt={chainName(data.source)}
           className="inline-block rounded-full"
         />
-        {data.source.name} to{" "}
+        {chainName(data.source)} to{" "}
         <Image
           src={`/images/${data.destination.key}.png`}
           width={20}
           height={20}
-          alt={data.destination.name}
+          alt={chainName(data.destination)}
           className="inline-block rounded-full"
         />
-        {data.destination.name}
+        {chainName(data.destination)}
       </p>
 
       {/* Sender & Recipient Card */}
@@ -169,7 +192,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               src={`/images/${data.source.key}.png`}
               width={16}
               height={16}
-              alt={data.source.name}
+              alt={chainName(data.source)}
               className="rounded-full"
             />
             {sourceAccountDisplay}
@@ -185,7 +208,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               src={`/images/${data.destination.key}.png`}
               width={16}
               height={16}
-              alt={data.destination.name}
+              alt={chainName(data.destination)}
               className="rounded-full"
             />
             {beneficiaryDisplay}
@@ -246,21 +269,14 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
             )}
           </span>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">Delivery Fee</span>
-          <span>
-            {formatBalance({
-              number: data.fee.fee,
-              decimals: data.fee.decimals,
-            })}{" "}
-            {data.fee.symbol}
-            {deliveryFeeUsd && (
-              <span className="text-muted-foreground ml-1">
-                ({deliveryFeeUsd})
-              </span>
-            )}
-          </span>
-        </div>
+        <FeeDisplay
+          displayDecimals={10}
+          registry={data.assetRegistry}
+          token={data.tokenMetadata.token}
+          feeInfo={data.fee}
+          feeLabelTextClassName="font-medium"
+          feeTextClassName=""
+        />
       </div>
 
       <div className="glass-sub p-4 space-y-3">
@@ -280,16 +296,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
                     deliveryLatency,
                   )}
             <span className="text-muted-foreground">
-              {" "}
-              (up to{" "}
-              {transferType === "toPolkadotV2"
-                ? "25 min"
-                : transferType === "toEthereumV2"
-                  ? "1h 30min"
-                  : transferType === "forInterParachain"
-                    ? "5 min"
-                    : "unknown"}
-              )
+              {transferTimeMax ? `(Up to ${transferTimeMax})` : ""}
             </span>
           </span>
         </div>

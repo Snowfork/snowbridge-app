@@ -22,10 +22,11 @@ import { historyV2, subsquidV2 } from "@snowbridge/api";
 import useSWR from "swr";
 import { subscanEventLink, subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { BridgeInfoContext } from "../providers";
-import { AssetRegistry } from "@snowbridge/base-types";
+import { AssetRegistry, ParachainLocation } from "@snowbridge/base-types";
 import { getEnvironment } from "@/lib/snowbridge";
 import { getTransferLocation } from "@snowbridge/registry";
 import { TransferTitle } from "@/components/activity/TransferTitle";
+import { chainName } from "@/utils/chainNames";
 
 const Loading = () => {
   return <SnowflakeLoader size="md" />;
@@ -41,29 +42,27 @@ function TxCard(props: TxCardProps) {
 
   const links: { text: string; url: string }[] = [];
   const source = getTransferLocation(registry, {
-    kind: transfer.kind,
+    kind: transfer.sourceKind,
     id: transfer.submitted.sourceParachainId,
   });
   links.push({
-    text: `Submitted to ${source.name}`,
+    text: `Submitted to ${chainName(source)}`,
     url: subscanExtrinsicLink(
       registry.environment,
-      transfer.submitted.sourceParachainId,
+      (source as ParachainLocation).key,
       transfer.submitted.extrinsic_hash,
     ),
   });
   if (transfer.destinationReceived) {
     const destination = getTransferLocation(registry, {
-      kind: transfer.kind,
-      id:
-        transfer.info.destinationParachain ??
-        transfer.destinationReceived.paraId,
+      kind: transfer.sourceKind,
+      id: transfer.destinationId ?? transfer.destinationReceived.paraId,
     });
     links.push({
-      text: `Message received on ${destination.name}`,
+      text: `Message received on ${chainName(destination)}`,
       url: subscanEventLink(
         registry.environment,
-        transfer.destinationReceived.paraId,
+        (destination as ParachainLocation).key,
         `${transfer.destinationReceived.blockNumber}-${transfer.destinationReceived.event_index}`,
       ),
     });

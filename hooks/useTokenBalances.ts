@@ -38,9 +38,9 @@ async function getEthereumBalance(
   asset: ERC20Metadata,
   account: string,
 ): Promise<bigint> {
-  const token = asset.token.toLowerCase();
   if (source.kind === "ethereum" && source.id === registry.ethChainId) {
     // Ethereum Mainnet
+    const token = asset.token.toLowerCase();
     if (token.toLowerCase() === assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()) {
       try {
         return await provider.getBalance(account);
@@ -63,12 +63,13 @@ async function getEthereumBalance(
     }
   } else if (source.kind === "ethereum" && source.parachain) {
     // Substrate EVM
-    const asset = source.parachain.assets[token.toLowerCase()];
+    const token = asset.token.toLowerCase();
+    const parachainAsset = source.parachain.assets[token.toLowerCase()];
     try {
       return (
         await assetsV2.erc20Balance(
           provider,
-          asset?.xc20 ?? token,
+          parachainAsset?.xc20 ?? token,
           account,
           context.environment.gatewayContract,
         )
@@ -77,8 +78,33 @@ async function getEthereumBalance(
       return 0n;
     }
   } else if (source.kind === "ethereum_l2") {
-    // L2
-    throw Error(`Not Implemented`);
+    // Ethereum Mainnet
+    const l2Asset =
+      Object.values(source.ethChain.assets).find(
+        (a) => a.swapTokenAddress?.toLowerCase() === asset.token.toLowerCase(),
+      ) ?? asset;
+    if (
+      l2Asset.token.toLowerCase() === assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()
+    ) {
+      try {
+        return await provider.getBalance(account);
+      } catch {
+        return 0n;
+      }
+    } else {
+      let b: { balance: bigint };
+      try {
+        b = await assetsV2.erc20Balance(
+          provider,
+          l2Asset.token,
+          account,
+          context.environment.gatewayContract,
+        );
+      } catch {
+        b = { balance: 0n };
+      }
+      return b.balance;
+    }
   } else {
     console.log(
       `Warning could not infer ${source.kind} ${source.id} to get token balances.`,

@@ -1,10 +1,7 @@
 "use client";
 
 import { ContextComponent } from "@/components/Context";
-import {
-  getEnvDetail,
-  TransferTitle,
-} from "@/components/activity/TransferTitle";
+import { TransferTitle } from "@/components/activity/TransferTitle";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import {
@@ -38,6 +35,8 @@ import { useAtomValue } from "jotai";
 import { walletTxChecker } from "@/utils/addresses";
 import { NeuroWebUnwrapForm } from "@/components/transfer/NeuroWebUnwrapStep";
 import { ethereumAccountsAtom } from "@/store/ethereum";
+import { chainName } from "@/utils/chainNames";
+import { inferTransferDetails } from "@/utils/inferTransferType";
 
 const Loading = () => {
   return <SnowflakeLoader size="md" />;
@@ -51,7 +50,7 @@ interface TxCardProps {
 }
 function TxCard(props: TxCardProps) {
   const { transfer, refresh, inHistory, registry } = props;
-  const { destination } = getEnvDetail(transfer, registry);
+  const { destination } = inferTransferDetails(transfer, registry);
   const links: { name: string; link: string }[] = [];
 
   const token =
@@ -77,14 +76,14 @@ function TxCard(props: TxCardProps) {
     transfer.info.sourceAddress,
   ]);
 
-  switch (transfer.kind) {
+  switch (transfer.sourceKind) {
     // Uniswap
     case "polkadot": {
       const uniswap = {
         name: "Uniswap",
         link: uniswapTokenLink(
           registry.environment,
-          registry.ethChainId,
+          destination.id,
           transfer.info.tokenAddress,
         ),
       };
@@ -106,7 +105,7 @@ function TxCard(props: TxCardProps) {
         links.push(stellasSwap);
       }
       const dapp = {
-        name: `${destination.name} Dapp`,
+        name: `${chainName(destination)} Dapp`,
         link: getDappLink(registry.environment, destination.parachain!.id),
       };
       if (!dapp.link.startsWith("#")) {
@@ -119,7 +118,7 @@ function TxCard(props: TxCardProps) {
   let neuroWeb;
   if (
     isWalletTransaction &&
-    transfer.info.destinationParachain === 2043 &&
+    transfer.destinationId === 2043 &&
     token.symbol === "TRAC"
   ) {
     neuroWeb = (
@@ -219,7 +218,11 @@ function TxComponent() {
     if (transferEncoded === null) return [messageId, sourceType];
 
     const decoded = JSON.parse(base64url.decode(transferEncoded)) as Transfer;
-    return [decoded?.id ?? messageId, decoded.kind ?? sourceType, decoded];
+    return [
+      decoded?.id ?? messageId,
+      decoded.sourceKind ?? sourceType,
+      decoded,
+    ];
   }, [searchParams]);
 
   const {
@@ -229,48 +232,23 @@ function TxComponent() {
     isLoading,
     isValidating,
   } = useSWR(
-    [registry.environment, "completedtx", sourceType, messageId],
-    async ([, , sourceType, messageId]) => {
+    [registry.environment, "completedtx", messageId],
+    async ([, , messageId]) => {
       if (messageId !== null) {
-        if (sourceType === null) {
-          const [toP, toE] = await Promise.all([
-            historyV2.toPolkadotTransferById(
-              environment.indexerGraphQlUrl,
-              messageId,
-            ),
-            historyV2.toEthereumTransferById(
-              environment.indexerGraphQlUrl,
-              messageId,
-            ),
-          ]);
-          return {
-            txData: toP ?? toE ?? transfer,
-            inHistory: (toP ?? toE) !== undefined,
-          };
-        } else {
-          switch (sourceType) {
-            case "ethereum": {
-              const txData = await historyV2.toPolkadotTransferById(
-                environment.indexerGraphQlUrl,
-                messageId,
-              );
-              return {
-                txData: txData ?? transfer,
-                inHistory: txData !== undefined,
-              };
-            }
-            case "polkadot": {
-              const txData = await historyV2.toEthereumTransferById(
-                environment.indexerGraphQlUrl,
-                messageId,
-              );
-              return {
-                txData: txData ?? transfer,
-                inHistory: txData !== undefined,
-              };
-            }
-          }
-        }
+        const [toP, toE] = await Promise.all([
+          historyV2.toPolkadotTransferById(
+            environment.indexerGraphQlUrl,
+            messageId,
+          ),
+          historyV2.toEthereumTransferById(
+            environment.indexerGraphQlUrl,
+            messageId,
+          ),
+        ]);
+        return {
+          txData: toP ?? toE ?? transfer,
+          inHistory: (toP ?? toE) !== undefined,
+        };
       }
       return { txData: transfer, inHistory: false };
     },

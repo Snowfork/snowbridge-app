@@ -38,9 +38,10 @@ import base64url from "base64url";
 import { BridgeInfoContext } from "@/app/providers";
 import { SnowflakeLoader } from "@/components/SnowflakeLoader";
 import { TransferSummary } from "./TransferSummary";
-import { inferTransferType } from "@/utils/inferTransferType";
 import { isHex, u8aToHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
+import { EthereumKind, ParachainKind } from "@snowbridge/base-types";
+import { inferTransferType } from "@/utils/inferTransferType";
 
 function sendResultToHistory(
   messageId: string,
@@ -55,11 +56,17 @@ function sendResultToHistory(
   if (!isHex(beneficiaryAddress)) {
     beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
   }
-  switch (inferTransferType(data.source, data.destination)) {
-    case "toEthereumV2": {
+  const transferType = inferTransferType(data.source, data.destination);
+  switch (`${data.source.kind}->${data.destination.kind}`) {
+    case "ethereum->ethereum":
+    case "polkadot->ethereum_l2":
+    case "polkadot->ethereum": {
       const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {
-        kind: "polkadot",
+        sourceId: data.source.id,
+        sourceKind: data.source.kind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as EthereumKind,
         id: messageId ?? sendResult.messageId,
         status: sendResult.success
           ? historyV2.TransferStatus.Pending
@@ -85,10 +92,14 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
-    case "toPolkadotV2": {
+    case "ethereum_l2->polkadot":
+    case "ethereum->polkadot": {
       const sendResult = result as toPolkadotV2.MessageReceipt;
       const transfer: historyV2.ToPolkadotTransferResult = {
-        kind: "ethereum",
+        sourceId: data.source.id,
+        sourceKind: data.source.kind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
         id: messageId ?? sendResult.messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
@@ -97,7 +108,6 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain?.id,
         },
         submitted: {
           blockNumber: sendResult.blockNumber ?? 0,
@@ -110,10 +120,13 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
-    case "forInterParachain": {
+    case "polkadot->polkadot": {
       const sendResult = result as forInterParachain.MessageReceipt;
       const transfer: historyV2.InterParachainTransfer = {
-        kind: "polkadot",
+        sourceId: data.source.id,
+        sourceKind: data.source.kind as ParachainKind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
         id: messageId ?? sendResult.messageId,
         status: sendResult.success
           ? historyV2.TransferStatus.Pending
@@ -124,7 +137,6 @@ function sendResultToHistory(
           beneficiaryAddress,
           tokenAddress: data.formData.token,
           when: new Date(),
-          destinationParachain: data.destination.parachain!.id,
         },
         submitted: {
           block_num: sendResult.blockNumber,
@@ -139,6 +151,8 @@ function sendResultToHistory(
       };
       return { ...transfer, isWalletTransaction: true };
     }
+    default:
+      throw Error(`Does not support type ${transferType}`);
   }
 }
 
@@ -196,22 +210,19 @@ export const TransferComponent: FC = () => {
       const plan = await planSend(data);
       if (requestId.current != req) return;
 
-      switch (transferType) {
-        case "toPolkadotV2":
-          {
-            const p = plan as toPolkadotV2.ValidationResult;
-            setSourceExecutionFee(p.data.feeInfo?.executionFee ?? null);
-          }
+      switch (plan.kind) {
+        case "ethereum->ethereum":
+        case "ethereum->polkadot":
+        case "ethereum_l2->polkadot":
+          setSourceExecutionFee(plan.data.feeInfo?.executionFee ?? null);
           break;
-        case "toEthereumV2":
-        case "forInterParachain":
-          {
-            const p = plan as
-              | toEthereumV2.ValidationResult
-              | forInterParachain.ValidationResult;
-            setSourceExecutionFee(p.data.sourceExecutionFee);
-          }
+        case "polkadot->ethereum":
+        case "polkadot->ethereum_l2":
+        case "polkadot->polkadot":
+          setSourceExecutionFee(plan.data.sourceExecutionFee);
           break;
+        default:
+          throw Error(`Does not support ${transferType}`);
       }
 
       const steps = createStepsFromPlan(data, plan);
@@ -240,7 +251,7 @@ export const TransferComponent: FC = () => {
       setSourceExecutionFee(null);
       setBusy("Transfer successful...", true);
       const transferData = base64url.encode(JSON.stringify(historyItem));
-      if (transferType !== "forInterParachain") {
+      if (transferType !== "polkadot->polkadot") {
         if (historyItem !== null) {
           addPendingTransaction({
             kind: "add",

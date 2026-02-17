@@ -1,38 +1,48 @@
 import { ETHER_TOKEN_ADDRESS } from "@snowbridge/api/dist/assets_v2";
+import { ChainKey, ParachainKind } from "@snowbridge/base-types";
 
-export const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
+const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
   local_e2e: {},
   paseo_sepolia: {
     etherscan_11155111: "https://sepolia.etherscan.io/",
-    subscan_1000: "https://assethub-paseo.subscan.io/",
-    subscan_1002: "https://bridgehub-paseo.subscan.io/",
-    subscan_2043: "https://neuroweb-testnet.subscan.io/",
+    etherscan_84532: "https://sepolia.basescan.org/",
+    etherscan_421614: "https://sepolia.arbiscan.io/",
+    etherscan_11155420: "https://sepolia-optimism.etherscan.io/",
+    subscan_polkadot_1000: "https://assethub-paseo.subscan.io/",
+    subscan_polkadot_1002: "https://bridgehub-paseo.subscan.io/",
+    subscan_polkadot_2043: "https://neuroweb-testnet.subscan.io/",
     subscan_relaychain: "https://paseo.subscan.io/",
     polkadot_js_2086:
       "https://polkadot.js.org/apps/?rpc=wss://peregrine.kilt.io/parachain-public-ws/",
   },
   polkadot_mainnet: {
     etherscan_1: "https://etherscan.io/",
+    etherscan_8453: "https://basescan.org/",
+    etherscan_42161: "https://arbiscan.io/",
+    etherscan_10: "https://optimistic.etherscan.io/",
     uniswap_1: "https://app.uniswap.org/",
     stellaswap_2004: "https://app.stellaswap.com/exchange/swap",
-    dapp_2034: "https://app.hydration.net/",
-    dapp_2004: "https://apps.moonbeam.network/moonbeam",
-    dapp_2030: "https://app.bifrost.io/",
-    subscan_1000: "https://assethub-polkadot.subscan.io/",
-    subscan_1002: "https://bridgehub-polkadot.subscan.io/",
-    subscan_2034: "https://hydration.subscan.io/",
-    subscan_2004: "https://moonbeam.subscan.io/",
-    subscan_2030: "https://bifrost.subscan.io/",
-    subscan_3369: "https://mythos.subscan.io/",
-    subscan_2043: "https://neuroweb.subscan.io/",
+    dapp_polkadot_2034: "https://app.hydration.net/",
+    dapp_polkadot_2004: "https://apps.moonbeam.network/moonbeam",
+    dapp_polkadot_2030: "https://app.bifrost.io/",
+    subscan_polkadot_1000: "https://assethub-polkadot.subscan.io/",
+    subscan_polkadot_1002: "https://bridgehub-polkadot.subscan.io/",
+    subscan_polkadot_2034: "https://hydration.subscan.io/",
+    subscan_polkadot_2004: "https://moonbeam.subscan.io/",
+    subscan_polkadot_2030: "https://bifrost.subscan.io/",
+    subscan_polkadot_3369: "https://mythos.subscan.io/",
+    subscan_polkadot_2043: "https://neuroweb.subscan.io/",
+    subscan_polkadot_2086: "https://spiritnet.subscan.io/",
     subscan_relaychain: "https://polkadot.subscan.io/",
-    subscan_2086: "https://spiritnet.subscan.io/",
     subscan_kusama_1000: "https://assethub-kusama.subscan.io/",
   },
   westend_sepolia: {
     etherscan_11155111: "https://sepolia.etherscan.io/",
-    subscan_1000: "https://assethub-westend.subscan.io/",
-    subscan_1002: "https://bridgehub-westend.subscan.io/",
+    etherscan_84532: "https://sepolia.basescan.org/",
+    etherscan_421614: "https://sepolia.arbiscan.io/",
+    etherscan_11155420: "https://sepolia-optimism.etherscan.io/",
+    subscan_polkadot_1000: "https://assethub-westend.subscan.io/",
+    subscan_polkadot_1002: "https://bridgehub-westend.subscan.io/",
     subscan_relaychain: "https://westend.subscan.io/",
   },
 };
@@ -78,7 +88,7 @@ export const etherscanERC20TokenLink = (
 
 export const subscanExtrinsicLink = (
   envName: string,
-  para: number | "relaychain" | string,
+  para: ChainKey<ParachainKind> | "relaychain",
   extrinsicIndex: string,
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
@@ -91,7 +101,7 @@ export const subscanExtrinsicLink = (
 
 export const subscanEventLink = (
   envName: string,
-  para: number | string,
+  para: ChainKey<ParachainKind> | "relaychain",
   eventIndex: string,
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
@@ -105,7 +115,7 @@ export const subscanEventLink = (
 
 export const subscanAccountLink = (
   envName: string,
-  para: number | string,
+  para: ChainKey<ParachainKind> | "relaychain",
   address: string,
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
@@ -135,7 +145,7 @@ export const stellasSwapTokenLink = (
   chainId: number,
   token: string,
 ) => {
-  const baseUrl = EXPLORERS[envName][`uniswap_${chainId}`];
+  const baseUrl = EXPLORERS[envName][`stellaswap_${chainId}`];
   if (!baseUrl) {
     return `#no-stellaswap-url-for-token-${chainId}`;
   }

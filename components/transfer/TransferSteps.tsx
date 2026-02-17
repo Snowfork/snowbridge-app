@@ -10,13 +10,15 @@ import { Button } from "../ui/button";
 import { EthereumTxStep } from "./EthereumTxStep";
 import { SubstrateTransferStep } from "./SubstrateTransferStep";
 import { useERC20DepositAndApprove } from "@/hooks/useERC20DepositAndApprove";
-import { useBridgeFeeInfo } from "@/hooks/useBridgeFeeInfo";
+import { useCreateAgent } from "@/hooks/useCreateAgent";
 import { formatUnits, parseUnits } from "ethers";
 import { RefreshButton } from "../RefreshButton";
-import { assetsV2, toEthereumV2 } from "@snowbridge/api";
+import { toEthereumV2 } from "@snowbridge/api";
 import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { NeuroWebWrapStep } from "./NeuroWebUnwrapStep";
+import { chainName } from "@/utils/chainNames";
+import { CreateAgentStep } from "./CreateAgentStep";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -40,18 +42,7 @@ interface StepData {
 
 function TransferFeeStep(step: StepData) {
   const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
-  const { data: feeInfo, error } = useBridgeFeeInfo(
-    step.data.source,
-    step.data.destination,
-    step.data.formData.token,
-  );
-  if (!feeInfo && error) {
-    return (
-      <div key={step.id} className="flex flex-col gap-4 justify-between">
-        Error fetching fee.
-      </div>
-    );
-  }
+  const feeInfo = step.data.fee;
   if (!feeInfo) {
     return (
       <div key={step.id} className="flex flex-col gap-4 justify-between">
@@ -70,7 +61,7 @@ function TransferFeeStep(step: StepData) {
 
   const transferFee = parseUnits("0.2", feeInfo.decimals);
   const fee = formatUnits(feeInfo.fee + transferFee, feeInfo.decimals);
-  const name = step.data.source.name;
+  const name = chainName(step.data.source);
   return (
     <SubstrateTransferStep
       {...step}
@@ -83,7 +74,20 @@ function TransferFeeStep(step: StepData) {
 
 function TransferStepView(step: StepData) {
   const { depositWeth, approveSpend } = useERC20DepositAndApprove();
+  const createAgent = useCreateAgent();
   switch (step.step.kind) {
+    case TransferStepKind.CreateAgent: {
+      return (
+        <CreateAgentStep
+          {...step}
+          title="Create an Proxy."
+          description="Create a proxy account on Ethereum to act on behalf of your Polkadot account."
+          action={createAgent}
+          errorMessage="Error submitting create."
+          submitButtonText="Create"
+        />
+      );
+    }
     case TransferStepKind.ApproveERC20:
       return (
         <EthereumTxStep
@@ -110,8 +114,8 @@ function TransferStepView(step: StepData) {
       return (
         <SubstrateTransferStep
           {...step}
-          title={`Missing existential deposit on ${step.data.destination.name}.`}
-          description={`Beneficiary account requires existential deposit on ${step.data.destination.name}. The existential deposit allows the account to remain open and hold assets. This step will transfer funds from the relaychain.`}
+          title={`Missing existential deposit on ${chainName(step.data.destination)}.`}
+          description={`Beneficiary account requires existential deposit on ${chainName(step.data.destination)}. The existential deposit allows the account to remain open and hold assets. This step will transfer funds from the relaychain.`}
           defaultAmount={"0.2"}
         />
       );
@@ -136,7 +140,6 @@ export const TransferSteps: FC<TransferStepsProps> = ({
   data,
   onBack,
   onRefreshTransfer,
-  registry,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep(currentStep + 1);

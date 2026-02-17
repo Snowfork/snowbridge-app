@@ -6,6 +6,7 @@ import {
   KusamaValidationData,
   MessageReceipt,
   SignerInfo,
+  ValidationResult,
 } from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
 import { Context, forKusama } from "@snowbridge/api";
@@ -46,7 +47,7 @@ function validateSubstrateSigner(
 async function planSend(
   context: Context,
   data: KusamaValidationData,
-): Promise<forKusama.ValidationResult> {
+): Promise<ValidationResult> {
   const {
     source,
     destination,
@@ -91,7 +92,7 @@ async function planSend(
       tx,
     );
     console.log(plan);
-    return plan;
+    return { kind: "polkadot->kusama", ...plan };
   } else if (source == AssetHub.Kusama && destination === AssetHub.Polkadot) {
     validateSubstrateDestination(data);
     const sourceAssetHub = await context.kusamaAssetHub();
@@ -126,7 +127,7 @@ async function planSend(
       tx,
     );
     console.log(plan);
-    return plan;
+    return { kind: "kusama->polkadot", ...plan };
   } else {
     throw Error(`Invalid form state: cannot infer source type.`);
   }
@@ -135,44 +136,43 @@ async function planSend(
 async function sendToken(
   context: Context,
   data: KusamaValidationData,
-  plan: forKusama.ValidationResult,
+  plan: ValidationResult,
   signerInfo: SignerInfo,
-): Promise<forKusama.MessageReceipt> {
+): Promise<MessageReceipt> {
   if (!plan.success) {
     throw Error(`Cannot execute a failed plan.`, {
       cause: plan,
     });
   }
-  const { source, destination } = data;
-  const { paraInfo, polkadotAccount } = validateSubstrateSigner(
-    data,
-    signerInfo,
-  );
+  if (plan.kind !== "kusama->polkadot" && plan.kind !== "polkadot->kusama") {
+    throw Error(`Invalid state.`);
+  }
+  const { source } = data;
+  const { polkadotAccount } = validateSubstrateSigner(data, signerInfo);
   let sourceAssetHub: any;
   if (source == AssetHub.Polkadot) {
     sourceAssetHub = await context.assetHub();
   } else {
     sourceAssetHub = await context.kusamaAssetHub();
   }
-  const tx = plan.transfer as forKusama.Transfer;
   const result = await forKusama.signAndSend(
     sourceAssetHub,
-    tx,
+    plan.transfer,
     polkadotAccount.address,
     {
       signer: polkadotAccount.signer! as Signer,
       withSignedTransaction: false, // should be true, but there is a bug with Talisman: https://github.com/TalismanSociety/talisman/issues/2180
     },
   );
-  return result;
+  return { kind: plan.kind, ...result };
 }
 
 export function useSendKusamaToken(): [
-  (data: KusamaValidationData) => Promise<forKusama.ValidationResult>,
+  (data: KusamaValidationData) => Promise<ValidationResult>,
   (
     data: KusamaValidationData,
-    plan: forKusama.ValidationResult,
-  ) => Promise<forKusama.MessageReceipt>,
+    plan: ValidationResult,
+  ) => Promise<MessageReceipt>,
 ] {
   const context = useAtomValue(snowbridgeContextAtom);
   const plan = useCallback(
@@ -187,7 +187,7 @@ export function useSendKusamaToken(): [
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const send = useCallback(
-    async (data: KusamaValidationData, plan: forKusama.ValidationResult) => {
+    async (data: KusamaValidationData, plan: ValidationResult) => {
       if (context === null) throw Error("No context");
       return await sendToken(context, data, plan, {
         polkadotAccount: (polkadotAccounts ?? []).find(

@@ -1,4 +1,4 @@
-import { getModalError, initializeWeb3Modal } from "@/lib/client/web3modal";
+import { getModalError } from "@/lib/client/web3modal";
 import {
   ethersProviderAtom,
   windowEthereumAtom,
@@ -10,8 +10,6 @@ import { useAtom } from "jotai";
 import { useEffect } from "react";
 
 export function useEthereumProvider() {
-  initializeWeb3Modal();
-
   const [ethereumProvider, setEthereumProvider] = useAtom(windowEthereumAtom);
   const [ethereumProviderError, setEthereumProviderError] = useAtom(
     windowEthereumErrorAtom,

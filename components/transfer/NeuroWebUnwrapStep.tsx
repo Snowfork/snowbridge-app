@@ -288,7 +288,7 @@ export function NeuroWebUnwrapForm({
                   setBusy(false);
                   const link = subscanExtrinsicLink(
                     assetRegistry.environment,
-                    NEURO_WEB_PARACHAIN,
+                    `polkadot_${NEURO_WEB_PARACHAIN}`,
                     `${result.blockNumber}-${result.txIndex}`,
                   );
 
