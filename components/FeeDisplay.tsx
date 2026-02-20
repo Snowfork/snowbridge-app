@@ -52,11 +52,11 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     if (feeError instanceof FeeEstimateError) {
       switch (feeError.details.code) {
         case "AMOUNT_TOO_LOW": {
-          message = "Send amount to low";
+          message = "Send amount too low";
           break;
         }
         case "AMOUNT_TOO_HIGH": {
-          message = "Send amount to high";
+          message = "Send amount too high";
           break;
         }
       }
