@@ -1,6 +1,6 @@
 "use client";
 import { toPolkadotV2 } from "@snowbridge/api";
-import { FC } from "react";
+import { FC, type JSX } from "react";
 import { ErrorDialog } from "./ErrorDialog";
 import { Button } from "./ui/button";
 import { userFriendlyErrorMessage } from "../utils/userFriendlyErrorMessage";

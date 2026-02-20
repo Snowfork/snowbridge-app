@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { middleware } from "@/middleware";
+import { proxy } from "@/proxy";
 import { NextURL } from "next/dist/server/web/next-url";
 import { NextRequest } from "next/server"; // it's ok to import next/server here
 import { instance, mock, reset, when } from "ts-mockito";
@@ -31,7 +31,7 @@ function countryBlockCase(
     if (region) headers.set(REGION_HEADER_NAME, region);
     when(mockedRequest.headers).thenReturn(headers);
 
-    const result = middleware(instance(mockedRequest));
+    const result = proxy(instance(mockedRequest));
     if (!blocked) {
       expect(result).toBeUndefined();
     }

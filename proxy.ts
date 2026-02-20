@@ -22,7 +22,7 @@ export const config = {
   matcher: "/((?!api|_next/static|not-found|blocked|favicon.ico).*)",
 };
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const geo = geolocation(req);
 
   const country = geo.country ?? "unknown";

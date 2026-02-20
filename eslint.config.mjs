@@ -1,3 +1,5 @@
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 import js from "@eslint/js";
 import nextConfig from "eslint-config-next";
 import prettier from "eslint-plugin-prettier";
@@ -17,61 +19,53 @@ const mergedIgnores = Array.from(
   ]),
 );
 
-const config = [
-  { ignores: mergedIgnores },
-  {
-    files: ["**/*.{js,jsx,ts,tsx}"],
-    languageOptions: {
-      globals: {
-        React: "readonly",
-        JSX: "readonly",
+const config = [...nextCoreWebVitals, ...nextTypescript, { ignores: mergedIgnores }, {
+  files: ["**/*.{js,jsx,ts,tsx}"],
+  languageOptions: {
+    globals: {
+      React: "readonly",
+      JSX: "readonly",
+    },
+  },
+}, js.configs.recommended, nextBaseConfig, nextTypescriptConfig, {
+  files: ["**/__tests__/**/*.{js,jsx,ts,tsx}"],
+  languageOptions: {
+    globals: {
+      describe: "readonly",
+      test: "readonly",
+      expect: "readonly",
+      beforeEach: "readonly",
+      afterEach: "readonly",
+      beforeAll: "readonly",
+      afterAll: "readonly",
+      jest: "readonly",
+    },
+  },
+}, {
+  files: ["**/*.{js,jsx,ts,tsx}"],
+  plugins: {
+    prettier,
+  },
+  rules: {
+    "prettier/prettier": [
+      "error",
+      {
+        singleQuote: false,
+        trailingComma: "all",
+        semi: true,
       },
-    },
-  },
-  js.configs.recommended,
-  nextBaseConfig,
-  nextTypescriptConfig,
-  {
-    files: ["**/__tests__/**/*.{js,jsx,ts,tsx}"],
-    languageOptions: {
-      globals: {
-        describe: "readonly",
-        test: "readonly",
-        expect: "readonly",
-        beforeEach: "readonly",
-        afterEach: "readonly",
-        beforeAll: "readonly",
-        afterAll: "readonly",
-        jest: "readonly",
+    ],
+    quotes: [
+      "error",
+      "double",
+      {
+        allowTemplateLiterals: true,
+        avoidEscape: true,
       },
-    },
+    ],
+    semi: ["error", "always"],
+    "comma-dangle": ["error", "always-multiline"],
   },
-  {
-    files: ["**/*.{js,jsx,ts,tsx}"],
-    plugins: {
-      prettier,
-    },
-    rules: {
-      "prettier/prettier": [
-        "error",
-        {
-          singleQuote: false,
-          trailingComma: "all",
-          semi: true,
-        },
-      ],
-      quotes: [
-        "error",
-        "double",
-        {
-          allowTemplateLiterals: true,
-          avoidEscape: true,
-        },
-      ],
-      semi: ["error", "always"],
-      "comma-dangle": ["error", "always-multiline"],
-    },
-  },
-];
+}];
 
 export default config;

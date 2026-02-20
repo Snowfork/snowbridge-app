@@ -52,7 +52,7 @@ import { track } from "@vercel/analytics";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Suspense, useContext, useEffect, useMemo, useState } from "react";
+import { Suspense, useContext, useEffect, useMemo, useState, type JSX } from "react";
 import { BridgeInfoContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
