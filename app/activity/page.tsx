@@ -288,16 +288,6 @@ const getExplorerLinks = (
           ),
         });
       }
-      if (tx.destinationReceived) {
-        links.push({
-          text: `Message received on ${chainName(destination)}`,
-          url: subscanEventLink(
-            registry.environment,
-            (destination as ParachainLocation).key,
-            tx.destinationReceived.event_index,
-          ),
-        });
-      }
       return links;
     }
     case "ethereum->polkadot": {
