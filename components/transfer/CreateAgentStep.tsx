@@ -86,7 +86,7 @@ export function CreateAgentStep({
               data.assetRegistry.relaychain.ss58Format,
           )}
         </div>
-        <div className="flex justify-end">
+        <div className="col-span-2 flex justify-end">
           {busy ? (
             <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground w-1/5" />
           ) : (
