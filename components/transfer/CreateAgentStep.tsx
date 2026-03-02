@@ -86,43 +86,43 @@ export function CreateAgentStep({
               data.assetRegistry.relaychain.ss58Format,
           )}
         </div>
-      </div>
-      <div className="flex justify-end">
-        {busy ? (
-          <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground w-1/5" />
-        ) : (
-          <Button
-            className="w-1/5 action-button"
-            size="sm"
-            onClick={async () => {
-              setBusy(true);
-              setError(undefined);
-              try {
-                const { receipt } = await action(data);
-                const etherscanLink = etherscanTxHashLink(
-                  data.assetRegistry.environment,
-                  data.assetRegistry.ethChainId,
-                  receipt?.hash ?? "",
-                );
-                if (receipt?.status === 1) {
-                  setSuccess({ text: "Success", link: etherscanLink });
-                  nextStep();
-                } else {
-                  setError({
-                    text: errorMessage ?? "Error submtting tx.",
-                    link: etherscanLink,
-                  });
+        <div className="flex justify-end">
+          {busy ? (
+            <LucideLoaderCircle className="animate-spin mx-1 text-secondary-foreground w-1/5" />
+          ) : (
+            <Button
+              className="w-1/5 action-button"
+              size="sm"
+              onClick={async () => {
+                setBusy(true);
+                setError(undefined);
+                try {
+                  const { receipt } = await action(data);
+                  const etherscanLink = etherscanTxHashLink(
+                    data.assetRegistry.environment,
+                    data.assetRegistry.ethChainId,
+                    receipt?.hash ?? "",
+                  );
+                  if (receipt?.status === 1) {
+                    setSuccess({ text: "Success", link: etherscanLink });
+                    nextStep();
+                  } else {
+                    setError({
+                      text: errorMessage ?? "Error submtting tx.",
+                      link: etherscanLink,
+                    });
+                  }
+                } catch (error: any) {
+                  console.error(error);
+                  setError({ text: errorMessage ?? "Error submitting tx." });
                 }
-              } catch (error: any) {
-                console.error(error);
-                setError({ text: errorMessage ?? "Error submitting tx." });
-              }
-              setBusy(false);
-            }}
-          >
-            {submitButtonText ?? "Submit"}
-          </Button>
-        )}
+                setBusy(false);
+              }}
+            >
+              {submitButtonText ?? "Submit"}
+            </Button>
+          )}
+        </div>
       </div>
       <div className="text-red-500 dark:text-red-400 text-sm" hidden={!error}>
         {error?.text}{" "}
