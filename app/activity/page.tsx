@@ -719,7 +719,7 @@ export default function Activity() {
     setSelectedItem(null);
   }, [pages, setSelectedItem, setPage, hashItem]);
 
-  if (isTransfersLoading || pages.length === 0) {
+  if (isTransfersLoading) {
     return <Loading />;
   }
 
