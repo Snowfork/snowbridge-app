@@ -134,7 +134,7 @@ export function HighlightSection() {
               <p className="text-sm md:text-base font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                 Dashboard
               </p>
-              <p className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
+              <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">
                 View full stats →
               </p>
             </div>
