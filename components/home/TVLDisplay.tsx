@@ -5,14 +5,8 @@ import Image from "next/image";
 
 interface TVLData {
   success: boolean;
-  data?: {
-    result?: {
-      rows?: Array<{
-        total_value_usd?: number;
-        [key: string]: any;
-      }>;
-    };
-  };
+  tvlUsd?: number | null;
+  data?: any;
   error?: string;
 }
 
@@ -35,14 +29,14 @@ export function TVLDisplay() {
 
         const result: TVLData = await response.json();
 
-        if (result.success && result.data) {
-          // Extract the total value from the Dune query result
-          const totalValue = result.data.result?.rows?.[0]?.total_value_usd;
+        if (result.success) {
+          const totalValue =
+            typeof result.tvlUsd === "number" ? result.tvlUsd : null;
 
-          if (typeof totalValue === "number") {
+          if (totalValue !== null) {
             setTvl(totalValue);
           } else {
-            console.warn("TVL value not found in response", result.data);
+            console.warn("TVL value not found in response", result);
             setTvl(null);
           }
         } else {
@@ -114,7 +108,14 @@ export function TVLDisplay() {
         </p>
         <p className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
           {tvl !== null ? (
-            <span>${(tvl / 1_000_000).toFixed(1)}M</span>
+            <span>
+              $
+              {tvl >= 1_000_000
+                ? `${(tvl / 1_000_000).toFixed(1)}M`
+                : tvl.toLocaleString("en-US", {
+                    maximumFractionDigits: 0,
+                  })}
+            </span>
           ) : (
             <span className="text-gray-400 dark:text-gray-500">N/A</span>
           )}
