@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-/** Item from https://dashboard.snowbridge.network/api/volumn-by-month */
+/** Item from https://dashboard.snowbridge.network/api/volume-by-month */
 interface VolumeByMonthItem {
   month: string;
   volumeUsd: number;
@@ -61,7 +61,7 @@ export async function GET() {
 
   try {
     const res = await fetch(
-      "https://dashboard.snowbridge.network/api/volumn-by-month",
+      "https://dashboard.snowbridge.network/api/volume-by-month",
       { next: { revalidate: 300 } },
     );
     if (!res.ok) {
