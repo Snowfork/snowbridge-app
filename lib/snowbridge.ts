@@ -2,6 +2,12 @@ import { Context, historyV2 } from "@snowbridge/api";
 import { Environment } from "@snowbridge/base-types";
 import { bridgeInfoFor } from "@snowbridge/registry";
 import { AbstractProvider } from "ethers";
+import {
+  EthersEthereumProvider,
+  EthersProviderTypes,
+} from "@snowbridge/provider-ethers";
+
+export type AppContext = Context<EthersProviderTypes>;
 
 export function getEnvironmentName() {
   const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
@@ -55,7 +61,8 @@ export async function createContext(
   overrideEnv.parachains = allParachains;
   overrideEnv.relaychainUrl = overrides?.relaychain ?? env.relaychainUrl;
 
-  const context = new Context(overrideEnv);
+  const ethersProvider = new EthersEthereumProvider();
+  const context = new Context(overrideEnv, ethersProvider);
   context.setEthProvider(env.ethChainId, ethereumProvider);
   return context;
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { assetsV2, Context } from "@snowbridge/api";
+import { assetsV2 } from "@snowbridge/api";
+import { AppContext } from "@/lib/snowbridge";
 import {
   ParachainBase,
   paraImplementation,
@@ -31,7 +32,7 @@ const SWR_CONFIG = {
 };
 
 async function getEthereumBalance(
-  context: Context,
+  context: AppContext,
   registry: AssetRegistry,
   source: TransferLocation,
   provider: AbstractProvider,
@@ -50,7 +51,7 @@ async function getEthereumBalance(
     } else {
       let b: { balance: bigint };
       try {
-        b = await assetsV2.erc20Balance(
+        b = await context.ethereumProvider.erc20Balance(
           provider,
           token,
           account,
@@ -67,7 +68,7 @@ async function getEthereumBalance(
     const parachainAsset = source.parachain.assets[token.toLowerCase()];
     try {
       return (
-        await assetsV2.erc20Balance(
+        await context.ethereumProvider.erc20Balance(
           provider,
           parachainAsset?.xc20 ?? token,
           account,
@@ -94,7 +95,7 @@ async function getEthereumBalance(
     } else {
       let b: { balance: bigint };
       try {
-        b = await assetsV2.erc20Balance(
+        b = await context.ethereumProvider.erc20Balance(
           provider,
           l2Asset.token,
           account,
@@ -114,7 +115,7 @@ async function getEthereumBalance(
 }
 
 async function fetchEthereumTokenBalances(
-  context: Context,
+  context: AppContext,
   registry: AssetRegistry,
   source: EthereumLocation,
   assets: ERC20Metadata[],
@@ -146,7 +147,7 @@ async function fetchEthereumTokenBalances(
 }
 
 async function getPolkadotBalance(
-  context: Context,
+  context: AppContext,
   registry: AssetRegistry,
   source: ParachainLocation,
   paraImpl: ParachainBase,
@@ -214,7 +215,7 @@ async function getPolkadotBalance(
 }
 
 async function fetchPolkadotTokenBalances(
-  context: Context,
+  context: AppContext,
   registry: AssetRegistry,
   source: ParachainLocation,
   assets: ERC20Metadata[],
@@ -293,7 +294,7 @@ async function fetchTokenBalances([
   account,
 ]: [
   string,
-  Context,
+  AppContext,
   AssetRegistry,
   TransferLocation,
   ERC20Metadata[],
@@ -322,7 +323,7 @@ async function fetchTokenBalances([
 }
 
 export function useTokenBalances(
-  context: Context,
+  context: AppContext,
   registry: AssetRegistry,
   source: TransferLocation,
   assets: ERC20Metadata[],

@@ -20,7 +20,7 @@ export function createStepsFromPlan(
   data: ValidationData,
   plan: ValidationResult,
 ): TransferPlanSteps {
-  const errors = [];
+  const errors: (toEthereumV2.ValidationLog | toPolkadotV2.ValidationLog | forInterParachain.ValidationLog)[] = [];
   const steps: TransferStep[] = [];
 
   let dryRunFailedLog:
@@ -69,7 +69,7 @@ export function createStepsFromPlan(
         if (
           log.reason ===
             toEthereumV2.ValidationReason.InsufficientTokenBalance &&
-          plan.transfer.computed.sourceParaId === NEURO_WEB_PARACHAIN // NeureWeb
+          (plan as any).computed?.sourceParaId === NEURO_WEB_PARACHAIN // NeureWeb
         ) {
           steps.push({
             kind: TransferStepKind.WrapNeuroWeb,
@@ -160,13 +160,64 @@ export function createStepsFromPlan(
       };
     }
     case "polkadot->polkadot": {
-      const p = plan as forInterParachain.ValidationResult;
+      const p = plan as forInterParachain.ValidatedTransfer;
       for (const log of p.logs) {
         if (log.kind === toPolkadotV2.ValidationKind.Warning) {
           console.warn("Plan validation warning: ", log.message);
           continue;
         }
         errors.push(log);
+      }
+      return {
+        steps,
+        errors,
+        plan,
+      };
+    }
+    case "ethereum->kusama": {
+      for (const log of plan.logs) {
+        if (log.kind === toPolkadotV2.ValidationKind.Warning) {
+          console.warn("Plan validation warning: ", log.message);
+          continue;
+        }
+        switch (log.reason) {
+          case toPolkadotV2.ValidationReason.GatewaySpenderLimitReached: {
+            steps.push({
+              kind: TransferStepKind.ApproveERC20,
+              displayOrder: 30,
+            });
+            break;
+          }
+          case toPolkadotV2.ValidationReason.InsufficientTokenBalance: {
+            if (data.tokenMetadata.symbol.toLowerCase() === "weth") {
+              steps.push({
+                kind: TransferStepKind.DepositWETH,
+                displayOrder: 20,
+              });
+            } else {
+              errors.push(log);
+            }
+            break;
+          }
+          default:
+            errors.push(log);
+            break;
+        }
+      }
+      steps.sort((a, b) => a.displayOrder - b.displayOrder);
+      return {
+        steps,
+        errors,
+        plan,
+      };
+    }
+    case "kusama->ethereum": {
+      for (const log of plan.logs) {
+        if (log.kind === toPolkadotV2.ValidationKind.Warning) {
+          console.warn("Plan validation warning: ", log.message);
+          continue;
+        }
+        errors.push(log as unknown as toEthereumV2.ValidationLog);
       }
       return {
         steps,

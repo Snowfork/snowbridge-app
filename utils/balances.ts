@@ -1,5 +1,5 @@
 "use client";
-import { Context } from "@snowbridge/api";
+import { AppContext } from "@/lib/snowbridge";
 import { paraImplementation } from "@snowbridge/api/dist/parachains";
 import {
   AssetHub,
@@ -11,7 +11,7 @@ import {
 import { AssetRegistry } from "@snowbridge/base-types";
 
 interface TokenBalanceKusamaProps {
-  context: Context;
+  context: AppContext;
   token: string;
   source: string;
   registry: AssetRegistry;

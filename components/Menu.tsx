@@ -14,7 +14,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { Pencil, LogOut, Menu as MenuIcon, X } from "lucide-react";
 import Link from "next/link";
@@ -42,7 +41,6 @@ import { BridgeInfoContext } from "@/app/providers";
 import { EthereumTokenList, PolkadotTokenList } from "./WalletTokenList";
 
 export const Menu: FC = () => {
-  const envName = useAtomValue(snowbridgeEnvNameAtom);
 
   useEthereumProvider();
   const { registry } = useContext(BridgeInfoContext)!;
@@ -355,11 +353,6 @@ export const Menu: FC = () => {
           <Link href="/" className="flex items-center px-3 py-1.5">
             <p className="glimmer-text">Transfer</p>
           </Link>
-          {envName === "polkadot_mainnet" ? (
-            <Link href="/kusama" className="flex items-center px-3 py-1.5">
-              <p className="glimmer-text">Kusama</p>
-            </Link>
-          ) : null}
           <Link href="/history" className="flex items-center px-3 py-1.5">
             <p className="glimmer-text">History</p>
           </Link>
@@ -390,15 +383,6 @@ export const Menu: FC = () => {
             >
               Transfer
             </Link>
-            {envName === "polkadot_mainnet" ? (
-              <Link
-                href="/kusama"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Kusama
-              </Link>
-            ) : null}
             <Link
               href="/history"
               className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"

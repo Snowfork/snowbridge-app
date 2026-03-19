@@ -280,6 +280,7 @@ export const KusamaComponent: FC = () => {
           decimals: asset.decimals,
           symbol: asset.symbol,
           delivery: {
+            kind: sourceId === AssetHub.Polkadot ? "polkadot->kusama" as const : "kusama->polkadot" as const,
             totalFeeInNative: feeInfo.fee,
             destinationFee: feeInfo.delivery.destinationFee,
             xcmBridgeFee: feeInfo.delivery.xcmBridgeFee,

@@ -1,9 +1,8 @@
-import { Context } from "@snowbridge/api";
 import { getDefaultProvider } from "ethers";
-import { createContext, getEnvironment } from "@/lib/snowbridge";
+import { AppContext, createContext, getEnvironment } from "@/lib/snowbridge";
 
-let context: Context | null = null;
-export async function getServerContext(): Promise<Context> {
+let context: AppContext | null = null;
+export async function getServerContext(): Promise<AppContext> {
   if (context) return context;
   const env = getEnvironment();
 

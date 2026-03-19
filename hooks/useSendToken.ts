@@ -8,19 +8,35 @@ import {
   ValidationData,
   ValidationResult,
 } from "@/utils/types";
-import { Signer } from "@polkadot/api/types";
+import { AppContext, getEnvironmentName } from "@/lib/snowbridge";
 import {
-  Context,
   toEthereumV2,
   toEthereumFromEVMV2,
   toPolkadotV2,
   forInterParachain,
   toEthereumSnowbridgeV2,
   toPolkadotSnowbridgeV2,
+  toKusamaSnowbridgeV2,
+  fromKusamaSnowbridgeV2,
   assetsV2,
 } from "@snowbridge/api";
+import { bridgeInfoFor } from "@snowbridge/registry";
+import { ERC20FromAH as ERC20FromAHToL2 } from "@snowbridge/api/src/transfers/polkadotToL2/erc20ToL2";
+import { ERC20ToAH as ERC20FromL2ToAH } from "@snowbridge/api/src/transfers/l2ToPolkadot/erc20ToAH";
+import { EthersProviderTypes } from "@snowbridge/provider-ethers";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
+
+function buildRoute(
+  source: { kind: string; id: number },
+  destination: { kind: string; id: number },
+) {
+  return {
+    from: { kind: source.kind, id: source.id },
+    to: { kind: destination.kind, id: destination.id },
+    assets: [],
+  };
+}
 
 function validateEvmSubstrateDestination({
   source,
@@ -172,7 +188,7 @@ async function validateEthereumSignerWithParachain(
 }
 
 async function planSend(
-  context: Context,
+  context: AppContext,
   data: ValidationData,
 ): Promise<ValidationResult> {
   const {
@@ -184,186 +200,244 @@ async function planSend(
     fee,
   } = data;
   const transferType = inferTransferType(source, destination);
+  const route = buildRoute(source, destination);
+
   switch (transferType) {
     case "ethereum->ethereum": {
-      const { parachain } = validateEvmSubstrateDestination(data);
-      const tx = await toEthereumFromEVMV2.createTransferEvm(
-        { sourceParaId: parachain.id, context },
+      const { parachain, ethChain } = validateEvmSubstrateDestination(data);
+      const sourceEthChain =
+        assetRegistry.ethereumChains[`ethereum_${source.id}`];
+      const destinationEthChain =
+        assetRegistry.ethereumChains[`ethereum_${destination.id}`];
+      const transferImpl = new toEthereumFromEVMV2.V1ToEthereumEvmAdapter(
+        context,
         assetRegistry,
+        route as any,
+        sourceEthChain,
+        destinationEthChain,
+      );
+      const tx = await transferImpl.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
         fee.delivery as toEthereumV2.DeliveryFee,
       );
-      const plan = await toEthereumFromEVMV2.validateTransferEvm(context, tx);
+      const plan = await transferImpl.validate(tx);
       console.log(plan);
-      return { kind: transferType, ...plan };
+      return { ...plan, kind: transferType };
     }
     case "polkadot->ethereum": {
       const parachain = validateSubstrateDestination(data);
+      const destinationEthChain =
+        assetRegistry.ethereumChains[`ethereum_${destination.id}`];
 
       const useV2 = assetsV2.supportsPolkadotToEthereumV2(parachain);
-      let plan;
+      let transferImpl: toEthereumSnowbridgeV2.TransferToEthereum<EthersProviderTypes> | toEthereumV2.V1ToEthereumAdapter<EthersProviderTypes>;
       if (useV2) {
         console.log(
           `[planSend] Snowbridge V2: Source parachain ${parachain.id} to Ethereum.`,
         );
-        const transferImpl =
-          toEthereumSnowbridgeV2.createTransferImplementation(
-            parachain.id,
-            assetRegistry,
-            formData.token,
-          );
-        const tx = await transferImpl.createTransfer(
-          { sourceParaId: parachain.id, context },
+        transferImpl = new toEthereumSnowbridgeV2.TransferToEthereum(
+          context,
+          route as any,
           assetRegistry,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          amountInSmallestUnit,
-          fee.delivery as toEthereumV2.DeliveryFee,
+          parachain,
+          destinationEthChain,
         );
-        plan = await transferImpl.validateTransfer(context, tx);
       } else {
-        const tx = await toEthereumV2.createTransfer(
-          { sourceParaId: parachain.id, context },
+        transferImpl = new toEthereumV2.V1ToEthereumAdapter(
+          context,
           assetRegistry,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          amountInSmallestUnit,
-          fee.delivery as toEthereumV2.DeliveryFee,
+          route as any,
+          parachain,
+          destinationEthChain,
         );
-        plan = await toEthereumV2.validateTransfer(context, tx);
       }
+      const tx = await transferImpl.tx(
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toEthereumV2.DeliveryFee,
+      );
+      const plan = await transferImpl.validate(tx);
       console.log(plan);
-      return { kind: transferType, ...plan };
+      return { ...plan, kind: transferType };
     }
     case "ethereum->polkadot": {
       const paraInfo = validateEthereumDestination(data);
+      const sourceEthChain =
+        assetRegistry.ethereumChains[`ethereum_${source.id}`];
 
       const useV2 = assetsV2.supportsEthereumToPolkadotV2(paraInfo);
-      let plan;
+      let transferImpl: toPolkadotSnowbridgeV2.TransferToPolkadot<EthersProviderTypes> | toPolkadotV2.V1ToPolkadotAdapter<EthersProviderTypes>;
       if (useV2) {
         console.log(
           `[planSend] Snowbridge V2: Ethereum to Destination parachain ${paraInfo.id}.`,
         );
-        const transferImpl =
-          toPolkadotSnowbridgeV2.createTransferImplementation(
-            paraInfo.id,
-            assetRegistry,
-            formData.token,
-          );
-        const tx = await transferImpl.createTransfer(
+        transferImpl = new toPolkadotSnowbridgeV2.TransferToPolkadot(
+          context,
+          route as any,
+          assetRegistry,
+          sourceEthChain,
+          paraInfo,
+        );
+      } else {
+        transferImpl = new toPolkadotV2.V1ToPolkadotAdapter(
           context,
           assetRegistry,
-          paraInfo.id,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          amountInSmallestUnit,
-          fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
-        );
-        plan = await transferImpl.validateTransfer(context, tx);
-      } else {
-        const tx = await toPolkadotV2.createTransfer(
-          assetRegistry,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          paraInfo.id,
-          amountInSmallestUnit,
-          fee.delivery as toPolkadotV2.DeliveryFee,
-        );
-        plan = await toPolkadotV2.validateTransfer(
-          {
-            assetHub: await context.assetHub(),
-            bridgeHub: await context.bridgeHub(),
-            ethereum: context.ethereum(),
-            gateway: context.gateway(),
-            destParachain: await context.parachain(paraInfo.id),
-          },
-          tx,
+          route as any,
+          sourceEthChain,
+          paraInfo,
         );
       }
+      const tx = await transferImpl.tx(
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
+      );
+      const plan = await transferImpl.validate(tx);
       console.log(plan);
-      return { kind: transferType, ...plan };
+      return { ...plan, kind: transferType };
     }
     case "polkadot->polkadot": {
       const { source: s, destination: d } =
         validateInterParachainTransfer(data);
-      const tx = await forInterParachain.createTransfer(
-        { sourceParaId: s.id, context },
-        assetRegistry,
+      const info = bridgeInfoFor(getEnvironmentName());
+      const transferImpl = new forInterParachain.InterParachainTransfer(
+        info,
+        context,
+        route as any,
+        s,
+        d,
+      );
+      const tx = await transferImpl.tx(
         formData.sourceAccount,
         formData.beneficiary,
-        d.id,
         formData.token,
         amountInSmallestUnit,
         fee.delivery as forInterParachain.DeliveryFee,
       );
-      const plan = await forInterParachain.validateTransfer(
-        {
-          sourceParaId: s.id,
-          destinationParaId: d.id,
-          context,
-        },
-        tx,
-      );
+      const plan = await transferImpl.validate(tx);
       console.log(plan);
-      return { kind: transferType, ...plan };
+      return { ...plan, kind: transferType };
+    }
+    case "ethereum->kusama": {
+      const kusamaPara =
+        assetRegistry.kusama?.parachains[`kusama_${destination.id}`];
+      if (!kusamaPara)
+        throw Error(`Kusama parachain ${destination.id} not found in registry.`);
+
+      const transferImpl = new toKusamaSnowbridgeV2.TransferToKusama(
+        context,
+        route as any,
+        assetRegistry,
+        assetRegistry.ethereumChains[`ethereum_${source.id}`],
+        kusamaPara,
+      );
+      const deliveryFee = await transferImpl.fee(formData.token);
+      const tx = await transferImpl.tx(
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        deliveryFee,
+      );
+      const plan = await transferImpl.validate(tx);
+      console.log(plan);
+      return { ...plan, kind: transferType };
+    }
+    case "kusama->ethereum": {
+      const kusamaPara =
+        assetRegistry.kusama?.parachains[`kusama_${source.id}`];
+      if (!kusamaPara)
+        throw Error(`Kusama parachain ${source.id} not found in registry.`);
+
+      const transferImpl = new fromKusamaSnowbridgeV2.TransferFromKusama(
+        context,
+        route as any,
+        assetRegistry,
+        kusamaPara,
+        assetRegistry.ethereumChains[`ethereum_${destination.id}`],
+      );
+      const deliveryFee = await transferImpl.fee(formData.token);
+      const tx = await transferImpl.tx(
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        deliveryFee,
+      );
+      const plan = await transferImpl.validate(tx);
+      console.log(plan);
+      return { ...plan, kind: transferType };
     }
     case "polkadot->ethereum_l2": {
-      const l2transfer = toEthereumSnowbridgeV2.createL2TransferImplementation(
-        source.id,
+      const parachain = validateSubstrateDestination(data);
+      const destinationEthChain =
+        assetRegistry.ethereumChains[`ethereum_l2_${destination.id}`];
+      if (!destinationEthChain)
+        throw Error(
+          `Ethereum L2 chain ${destination.id} not found in registry.`,
+        );
+
+      const transferImpl = new ERC20FromAHToL2(
+        context as any,
         assetRegistry,
-        formData.token,
+        route as any,
+        parachain,
+        destinationEthChain,
       );
-      const tx = await l2transfer.createTransfer(
-        context,
-        assetRegistry,
-        destination.id,
+      const tx = await transferImpl.tx(
         formData.token,
         amountInSmallestUnit,
         formData.sourceAccount,
         formData.beneficiary,
         fee.delivery as toEthereumV2.DeliveryFee,
       );
-      const plan = await l2transfer.validateTransfer(context, tx);
+      const plan = await transferImpl.validate(tx);
       console.log(plan);
-      return { kind: transferType, ...plan };
+      return { ...plan, kind: transferType };
     }
     case "ethereum_l2->polkadot": {
       if (source.kind !== "ethereum_l2")
         throw `Invalid source ${source.key}, expected ethereum_l2 source.`;
-      const l2asset = Object.values(source.ethChain.assets).find(
+      const l2asset = Object.values(source.ethChain!.assets).find(
         (x) =>
           x.swapTokenAddress?.toLowerCase() === formData.token.toLowerCase(),
       );
       if (!l2asset)
         throw Error(`Could not find l2 token for l1 token ${formData.token}`);
 
-      const l2transfer = toPolkadotSnowbridgeV2.createL2TransferImplementation(
-        source.id,
-        destination.id,
+      const sourceEthChain =
+        assetRegistry.ethereumChains[`ethereum_l2_${source.id}`];
+      if (!sourceEthChain)
+        throw Error(`Ethereum L2 chain ${source.id} not found in registry.`);
+      const destParachain =
+        assetRegistry.parachains[`polkadot_${destination.id}`];
+      if (!destParachain)
+        throw Error(`Parachain ${destination.id} not found in registry.`);
+
+      const transferImpl = new ERC20FromL2ToAH(
+        context as any,
         assetRegistry,
-        l2asset.token,
+        route as any,
+        sourceEthChain,
+        destParachain,
       );
-      const tx = await l2transfer.createTransfer(
-        context,
-        assetRegistry,
-        source.id,
+      const tx = await transferImpl.tx(
         l2asset.token,
         amountInSmallestUnit,
-        destination.id,
         formData.sourceAccount,
         formData.beneficiary,
         fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
       );
-      const plan = await l2transfer.validateTransfer(context, tx);
+      const plan = await transferImpl.validate(tx);
       console.log(plan);
-      return { kind: transferType, ...plan };
+      return { ...plan, kind: transferType };
     }
     default:
       throw Error(`Cannot infer source ${transferType}.`);
@@ -371,7 +445,7 @@ async function planSend(
 }
 
 async function sendToken(
-  context: Context,
+  context: AppContext,
   data: ValidationData,
   plan: ValidationResult,
   signerInfo: SignerInfo,
@@ -381,7 +455,8 @@ async function sendToken(
       cause: plan,
     });
   }
-  const { source } = data;
+  const { source, destination, assetRegistry } = data;
+  const route = buildRoute(source, destination);
 
   switch (plan.kind) {
     case "polkadot->polkadot": {
@@ -390,13 +465,21 @@ async function sendToken(
         signerInfo,
         true,
       );
-      const tx = plan.transfer as forInterParachain.Transfer;
-      const result = await forInterParachain.signAndSend(
-        { sourceParaId: paraInfo.id, context },
+      const { destination: d } = validateInterParachainTransfer(data);
+      const info = bridgeInfoFor(getEnvironmentName());
+      const transferImpl = new forInterParachain.InterParachainTransfer(
+        info,
+        context,
+        route as any,
+        paraInfo,
+        d,
+      );
+      const tx = plan as unknown as forInterParachain.Transfer;
+      const result = await transferImpl.signAndSend(
         tx,
         polkadotAccount.address,
         {
-          signer: polkadotAccount.signer! as Signer,
+          signer: polkadotAccount.signer! as any,
           withSignedTransaction: true,
         },
       );
@@ -405,16 +488,23 @@ async function sendToken(
     }
     case "ethereum->ethereum": {
       const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
-      const transfer = plan.transfer as toEthereumFromEVMV2.TransferEvm;
-      const response = await signer.sendTransaction(transfer.tx);
+      const sourceEthChain =
+        assetRegistry.ethereumChains[`ethereum_${source.id}`];
+      const destinationEthChain =
+        assetRegistry.ethereumChains[`ethereum_${destination.id}`];
+      const transferImpl = new toEthereumFromEVMV2.V1ToEthereumEvmAdapter(
+        context,
+        assetRegistry,
+        route as any,
+        sourceEthChain,
+        destinationEthChain,
+      );
+      const response = await signer.sendTransaction((plan as any).tx);
       const receipt = await response.wait();
       if (!receipt) {
         throw Error(`Could not fetch transaction receipt.`);
       }
-      const result = await toEthereumFromEVMV2.getMessageReceipt(
-        { sourceParaId: source.parachain!.id, context },
-        receipt,
-      );
+      const result = await transferImpl.messageId(receipt);
       console.log(result);
       return { kind: plan.kind, ...result };
     }
@@ -424,35 +514,40 @@ async function sendToken(
         signerInfo,
         false,
       );
+      const destinationEthChain =
+        assetRegistry.ethereumChains[`ethereum_${destination.id}`];
 
       const useV2 = assetsV2.supportsPolkadotToEthereumV2(paraInfo);
-      let result;
+      let transferImpl: toEthereumSnowbridgeV2.TransferToEthereum<EthersProviderTypes> | toEthereumV2.V1ToEthereumAdapter<EthersProviderTypes>;
       if (useV2) {
         console.log(
           `[sendToken] Snowbridge V2: Source parachain ${paraInfo.id} to Ethereum.`,
         );
-        const tx = plan.transfer as toEthereumV2.Transfer;
-        result = await toEthereumSnowbridgeV2.signAndSend(
+        transferImpl = new toEthereumSnowbridgeV2.TransferToEthereum(
           context,
-          tx,
-          polkadotAccount.address,
-          {
-            signer: polkadotAccount.signer! as Signer,
-            withSignedTransaction: true,
-          },
+          route as any,
+          assetRegistry,
+          paraInfo,
+          destinationEthChain,
         );
       } else {
-        const tx = plan.transfer as toEthereumV2.Transfer;
-        result = await toEthereumV2.signAndSend(
+        transferImpl = new toEthereumV2.V1ToEthereumAdapter(
           context,
-          tx,
-          polkadotAccount.address,
-          {
-            signer: polkadotAccount.signer! as Signer,
-            withSignedTransaction: true,
-          },
+          assetRegistry,
+          route as any,
+          paraInfo,
+          destinationEthChain,
         );
       }
+      const tx = plan as unknown as toEthereumV2.Transfer;
+      const result = await transferImpl.signAndSend(
+        tx,
+        polkadotAccount.address,
+        {
+          signer: polkadotAccount.signer! as any,
+          withSignedTransaction: true,
+        },
+      );
       console.log(result);
       return { kind: plan.kind, ...result };
     }
@@ -461,36 +556,102 @@ async function sendToken(
         data,
         signerInfo,
       );
+      const sourceEthChain =
+        assetRegistry.ethereumChains[`ethereum_${source.id}`];
 
       const useV2 = assetsV2.supportsEthereumToPolkadotV2(paraInfo);
-      let result;
+      let transferImpl: toPolkadotSnowbridgeV2.TransferToPolkadot<EthersProviderTypes> | toPolkadotV2.V1ToPolkadotAdapter<EthersProviderTypes>;
       if (useV2) {
         console.log(
           `[sendToken] Snowbridge V2: Destination parachain ${paraInfo.id}`,
         );
-        const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
-        const response = await signer.sendTransaction(transfer.tx);
-        const receipt = await response.wait();
-        if (!receipt) {
-          throw Error(`Could not fetch transaction receipt.`);
-        }
-        result = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
-        if (!result) {
-          throw Error(`Could not fetch message receipt.`);
-        }
-        result = { ...result, messageId: receipt.hash, channelId: "" };
+        transferImpl = new toPolkadotSnowbridgeV2.TransferToPolkadot(
+          context,
+          route as any,
+          assetRegistry,
+          sourceEthChain,
+          paraInfo,
+        );
       } else {
-        const transfer = plan.transfer as toPolkadotV2.Transfer;
-        const response = await signer.sendTransaction(transfer.tx);
-        const receipt = await response.wait();
-        if (!receipt) {
-          throw Error(`Could not fetch transaction receipt.`);
-        }
-        result = await toPolkadotV2.getMessageReceipt(receipt);
-        if (!result) {
-          throw Error(`Could not fetch message receipt.`);
-        }
+        transferImpl = new toPolkadotV2.V1ToPolkadotAdapter(
+          context,
+          assetRegistry,
+          route as any,
+          sourceEthChain,
+          paraInfo,
+        );
       }
+      const transfer = plan as unknown as toPolkadotSnowbridgeV2.Transfer<EthersProviderTypes>;
+      const response = await signer.sendTransaction(transfer.tx as any);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const messageReceipt = await transferImpl.messageId(receipt);
+      if (!messageReceipt) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      let result;
+      if (useV2) {
+        result = {
+          ...messageReceipt,
+          messageId: (messageReceipt as any).messageId ?? receipt.hash,
+          channelId: (messageReceipt as any).channelId ?? "",
+        };
+      } else {
+        result = messageReceipt;
+      }
+      console.log(result);
+      return { kind: plan.kind, ...result } as MessageReceipt;
+    }
+    case "ethereum->kusama": {
+      const { signer } = await validateEthereumSigner(data, signerInfo);
+      const transfer = plan as unknown as toKusamaSnowbridgeV2.Transfer<any>;
+      const response = await signer.sendTransaction(transfer.tx as any);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const kusamaPara =
+        data.assetRegistry.kusama?.parachains[`kusama_${data.destination.id}`];
+      if (!kusamaPara) throw Error(`Kusama parachain not found.`);
+      const transferImpl = new toKusamaSnowbridgeV2.TransferToKusama(
+        context,
+        route as any,
+        data.assetRegistry,
+        data.assetRegistry.ethereumChains[`ethereum_${data.source.id}`],
+        kusamaPara,
+      );
+      const messageReceipt = await transferImpl.messageId(receipt);
+      if (!messageReceipt) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      console.log(messageReceipt);
+      return { kind: plan.kind, ...messageReceipt };
+    }
+    case "kusama->ethereum": {
+      if (!signerInfo.polkadotAccount) {
+        throw Error(`Polkadot Wallet not connected.`);
+      }
+      const kusamaPara =
+        data.assetRegistry.kusama?.parachains[`kusama_${data.source.id}`];
+      if (!kusamaPara) throw Error(`Kusama parachain not found.`);
+      const transferImpl = new fromKusamaSnowbridgeV2.TransferFromKusama(
+        context,
+        route as any,
+        data.assetRegistry,
+        kusamaPara,
+        data.assetRegistry.ethereumChains[`ethereum_${data.destination.id}`],
+      );
+      const transfer = plan as unknown as fromKusamaSnowbridgeV2.Transfer;
+      const result = await transferImpl.signAndSend(
+        transfer,
+        signerInfo.polkadotAccount.address,
+        {
+          signer: signerInfo.polkadotAccount.signer! as any,
+          withSignedTransaction: true,
+        },
+      );
       console.log(result);
       return { kind: plan.kind, ...result };
     }
@@ -500,12 +661,26 @@ async function sendToken(
         signerInfo,
         false,
       );
-      const result = await toEthereumSnowbridgeV2.signAndSend(
-        context,
-        plan.transfer,
+      const parachain = validateSubstrateDestination(data);
+      const destinationEthChain =
+        assetRegistry.ethereumChains[`ethereum_l2_${destination.id}`];
+      if (!destinationEthChain)
+        throw Error(
+          `Ethereum L2 chain ${destination.id} not found in registry.`,
+        );
+
+      const transferImpl = new ERC20FromAHToL2(
+        context as any,
+        assetRegistry,
+        route as any,
+        parachain,
+        destinationEthChain,
+      );
+      const result = await transferImpl.signAndSend(
+        plan as unknown as toEthereumV2.Transfer,
         polkadotAccount.address,
         {
-          signer: polkadotAccount.signer! as Signer,
+          signer: polkadotAccount.signer! as any,
           withSignedTransaction: true,
         },
       );
@@ -514,25 +689,48 @@ async function sendToken(
     }
     case "ethereum_l2->polkadot": {
       const { signer } = await validateEthereumSigner(data, signerInfo);
-      const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
-      const response = await signer.sendTransaction(transfer.tx);
+      const sourceEthChain =
+        assetRegistry.ethereumChains[`ethereum_l2_${source.id}`];
+      if (!sourceEthChain)
+        throw Error(`Ethereum L2 chain ${source.id} not found in registry.`);
+      const destParachain =
+        assetRegistry.parachains[`polkadot_${destination.id}`];
+      if (!destParachain)
+        throw Error(`Parachain ${destination.id} not found in registry.`);
+
+      const transferImpl = new ERC20FromL2ToAH(
+        context as any,
+        assetRegistry,
+        route as any,
+        sourceEthChain,
+        destParachain,
+      );
+      const transfer = plan as unknown as toPolkadotSnowbridgeV2.Transfer<EthersProviderTypes>;
+      const response = await signer.sendTransaction(transfer.tx as any);
       const receipt = await response.wait();
       if (!receipt) {
         throw Error(`Could not fetch transaction receipt.`);
       }
-      const message = {
-        nonce: 0n,
-        payload: "",
-        messageId: transfer.computed.topic,
-        blockNumber: receipt.blockNumber,
-        blockHash: receipt.blockHash,
-        txHash: receipt.hash,
-        txIndex: receipt.index,
-      };
-      if (!message) {
-        throw Error(`Could not fetch message receipt.`);
+      const messageReceipt = await transferImpl.messageId(receipt);
+      let result;
+      if (messageReceipt) {
+        result = {
+          ...messageReceipt,
+          messageId: (messageReceipt as any).messageId ?? receipt.hash,
+          channelId: "",
+        };
+      } else {
+        result = {
+          nonce: 0n,
+          payload: "",
+          messageId: (transfer as any).computed?.topic ?? receipt.hash,
+          blockNumber: receipt.blockNumber,
+          blockHash: receipt.blockHash,
+          txHash: receipt.hash,
+          txIndex: receipt.index,
+          channelId: "",
+        };
       }
-      const result = { ...message, messageId: receipt.hash, channelId: "" };
       console.log(result);
       return { kind: plan.kind, ...result };
     }

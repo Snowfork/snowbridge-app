@@ -1,5 +1,8 @@
-import { getEnvironment, getEnvironmentName } from "@/lib/snowbridge";
-import { Context } from "@snowbridge/api";
+import {
+  getEnvironment,
+  getEnvironmentName,
+  AppContext,
+} from "@/lib/snowbridge";
 import { atom } from "jotai";
 
 (() => {
@@ -10,6 +13,6 @@ import { atom } from "jotai";
   }
 })();
 
-export const snowbridgeContextAtom = atom<Context | null>(null);
+export const snowbridgeContextAtom = atom<AppContext | null>(null);
 export const snowbridgeEnvNameAtom = atom((_) => getEnvironmentName());
 export const snowbridgeEnvironmentAtom = atom((_) => getEnvironment());

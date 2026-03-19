@@ -6,7 +6,7 @@ import { SignerOptions, SubmittableExtrinsic } from "@polkadot/api/types";
 import { EventRecord } from "@polkadot/types/interfaces";
 import { ISubmittableResult, Signer } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util";
-import { Context } from "@snowbridge/api";
+import { AppContext } from "@/lib/snowbridge";
 import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
@@ -79,7 +79,7 @@ async function signAndSend(
 }
 
 export async function fetchNeuroWebBalance([context, registry, beneficiary]: [
-  Context,
+  AppContext,
   AssetRegistry,
   string?,
 ]) {
@@ -103,14 +103,14 @@ export async function fetchNeuroWebBalance([context, registry, beneficiary]: [
 }
 
 async function doWrap(
-  context: Context,
+  context: AppContext,
   { polkadotAccount }: SignerInfo,
   amount: bigint,
 ) {
   if (!polkadotAccount) {
     throw Error(`Polkadot Wallet not connected.`);
   }
-  const provider = await context.parachain(NEURO_WEB_PARACHAIN);
+  const provider = await context.parachain(NEURO_WEB_PARACHAIN) as any;
   const tx = provider.tx.wrapper.tracWrap(amount);
   const result = await signAndSend(provider, tx, polkadotAccount.address, {
     signer: polkadotAccount.signer! as Signer,
@@ -120,14 +120,14 @@ async function doWrap(
 }
 
 async function doUnwrap(
-  context: Context,
+  context: AppContext,
   { polkadotAccount }: SignerInfo,
   amount: bigint,
 ) {
   if (!polkadotAccount) {
     throw Error(`Polkadot Wallet not connected.`);
   }
-  const provider = await context.parachain(NEURO_WEB_PARACHAIN);
+  const provider = await context.parachain(NEURO_WEB_PARACHAIN) as any;
   const tx = provider.tx.wrapper.tracUnwrap(amount);
   const result = await signAndSend(provider, tx, polkadotAccount.address, {
     signer: polkadotAccount.signer! as Signer,

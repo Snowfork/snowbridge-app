@@ -1,5 +1,6 @@
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { assetsV2, Context, forKusama } from "@snowbridge/api";
+import { forKusama } from "@snowbridge/api";
+import { AppContext } from "@/lib/snowbridge";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 import {
@@ -11,14 +12,15 @@ import {
   KusamaFeeInfo,
 } from "@/utils/types";
 
-import { ApiPromise } from "@polkadot/api";
 import { Direction } from "@snowbridge/api/dist/forKusama";
 import { useContext } from "react";
 import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
+import { bridgeInfoFor } from "@snowbridge/registry";
+import { getEnvironmentName } from "@/lib/snowbridge";
 
 async function fetchKusamaFeeInfo([context, registry, direction, token]: [
-  Context | null,
+  AppContext | null,
   AssetRegistry,
   Direction,
   string,
@@ -26,27 +28,26 @@ async function fetchKusamaFeeInfo([context, registry, direction, token]: [
   if (context === null) {
     return;
   }
-  let sourceAssetHub: ApiPromise | undefined;
-  let destAssetHub: ApiPromise | undefined;
-  if (direction == Direction.ToPolkadot) {
-    sourceAssetHub = await context.kusamaAssetHub();
-    destAssetHub = await context.assetHub();
-  } else {
-    sourceAssetHub = await context.assetHub();
-    destAssetHub = await context.kusamaAssetHub();
-  }
 
-  if (!sourceAssetHub || !destAssetHub) {
+  const info = bridgeInfoFor(getEnvironmentName());
+  let sourceParachain, destParachain;
+  if (direction == Direction.ToKusama) {
+    sourceParachain = registry.parachains[`polkadot_${registry.assetHubParaId}`];
+    destParachain = registry.kusama?.parachains[`kusama_${registry.kusama?.assetHubParaId}`];
+  } else {
+    sourceParachain = registry.kusama?.parachains[`kusama_${registry.kusama?.assetHubParaId}`];
+    destParachain = registry.parachains[`polkadot_${registry.assetHubParaId}`];
+  }
+  if (!sourceParachain || !destParachain) {
     return;
   }
-
-  const deliveryFee = await forKusama.getDeliveryFee(
-    sourceAssetHub,
-    destAssetHub,
-    direction,
-    registry,
-    token,
-  );
+  const route = {
+    from: { kind: direction === Direction.ToKusama ? "polkadot" as const : "kusama" as const, id: direction === Direction.ToKusama ? registry.assetHubParaId : registry.kusama!.assetHubParaId },
+    to: { kind: direction === Direction.ToKusama ? "kusama" as const : "polkadot" as const, id: direction === Direction.ToKusama ? registry.kusama!.assetHubParaId : registry.assetHubParaId },
+    assets: [],
+  };
+  const kusamaTransfer = new forKusama.KusamaTransfer(info, context, route, sourceParachain, destParachain);
+  const deliveryFee = await kusamaTransfer.fee(token);
   const isPolkadot = direction == Direction.ToKusama;
   const tokenSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
   const tokenDecimals = isPolkadot ? DOT_DECIMALS : KSM_DECIMALS;

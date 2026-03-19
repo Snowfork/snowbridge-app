@@ -3,6 +3,7 @@ import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { ContractResponse, ValidationData } from "@/utils/types";
 import { toEthereumSnowbridgeV2 } from "@snowbridge/api";
+import { CreateAgent } from "@snowbridge/api/src/registration/agent/createAgent";
 import { useAtomValue } from "jotai";
 import { useCallback, useContext } from "react";
 import { isHex, u8aToHex } from "@polkadot/util";
@@ -29,19 +30,18 @@ export function useCreateAgent(): (
       if (!isHex(accountInHex)) {
         accountInHex = u8aToHex(decodeAddress(accountInHex));
       }
-      const ca = toEthereumSnowbridgeV2.createAgentCreationImplementation();
-      const tx = await ca.createAgentCreation(
-        context,
-        registry,
+      const ca = new CreateAgent(context as any, registry);
+      const agentId = await toEthereumSnowbridgeV2.sourceAgentId(
+        context as any,
+        data.source.id,
+        accountInHex,
+      );
+      const tx = await ca.tx(
         data.formData.beneficiary,
-        await toEthereumSnowbridgeV2.sourceAgentId(
-          context,
-          data.source.id,
-          accountInHex,
-        ),
+        agentId,
       );
 
-      const plan = await ca.validateAgentCreation(context, tx);
+      const plan = await ca.validate(tx);
       if (!plan.success)
         throw Error(`Could not create agent ${JSON.stringify(plan.logs)}`);
 
@@ -54,7 +54,7 @@ export function useCreateAgent(): (
       ) {
         throw Error("Selected signer does not match source address.");
       }
-      const response = await signer.sendTransaction(tx.tx);
+      const response = await signer.sendTransaction(tx.tx as any);
 
       console.log("create agent response", response);
       const FIVE_MINUTES = 60_000 * 5;

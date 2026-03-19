@@ -16,6 +16,8 @@ import {
   historyV2,
   toEthereumV2,
   toPolkadotV2,
+  toKusamaSnowbridgeV2,
+  fromKusamaSnowbridgeV2,
 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
@@ -151,6 +153,63 @@ function sendResultToHistory(
       };
       return { ...transfer, isWalletTransaction: true };
     }
+    case "ethereum->kusama": {
+      const sendResult = result as toKusamaSnowbridgeV2.MessageReceipt;
+      const transfer: historyV2.ToPolkadotTransferResult = {
+        sourceId: data.source.id,
+        sourceKind: data.source.kind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
+        id: messageId,
+        status: historyV2.TransferStatus.Pending,
+        info: {
+          amount: data.amountInSmallestUnit.toString(),
+          sourceAddress,
+          beneficiaryAddress,
+          tokenAddress: data.formData.token,
+          when: new Date(),
+        },
+        submitted: {
+          blockNumber: sendResult.blockNumber ?? 0,
+          channelId: "",
+          messageId,
+          transactionHash: sendResult.txHash ?? "",
+          nonce: Number(sendResult.nonce.toString()),
+        },
+      };
+      return { ...transfer, isWalletTransaction: true };
+    }
+    case "kusama->ethereum": {
+      const sendResult = result as fromKusamaSnowbridgeV2.MessageReceipt;
+      const transfer: historyV2.ToEthereumTransferResult = {
+        sourceId: data.source.id,
+        sourceKind: data.source.kind as ParachainKind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as EthereumKind,
+        id: messageId ?? sendResult.messageId ?? "",
+        status: sendResult.success
+          ? historyV2.TransferStatus.Pending
+          : historyV2.TransferStatus.Failed,
+        info: {
+          amount: data.amountInSmallestUnit.toString(),
+          sourceAddress,
+          beneficiaryAddress,
+          tokenAddress: data.formData.token,
+          when: new Date(),
+        },
+        submitted: {
+          block_num: sendResult.blockNumber,
+          block_timestamp: 0,
+          messageId: messageId ?? sendResult.messageId ?? "",
+          account_id: sourceAddress,
+          extrinsic_hash: sendResult.txHash,
+          success: sendResult.success,
+          bridgeHubMessageId: "",
+          sourceParachainId: data.source.parachain!.id,
+        },
+      };
+      return { ...transfer, isWalletTransaction: true };
+    }
     default:
       throw Error(`Does not support type ${transferType}`);
   }
@@ -214,11 +273,13 @@ export const TransferComponent: FC = () => {
         case "ethereum->ethereum":
         case "ethereum->polkadot":
         case "ethereum_l2->polkadot":
+        case "ethereum->kusama":
           setSourceExecutionFee(plan.data.feeInfo?.executionFee ?? null);
           break;
         case "polkadot->ethereum":
         case "polkadot->ethereum_l2":
         case "polkadot->polkadot":
+        case "kusama->ethereum":
           setSourceExecutionFee(plan.data.sourceExecutionFee);
           break;
         default:
@@ -245,7 +306,7 @@ export const TransferComponent: FC = () => {
       const result = await sendToken(data, plan);
       if (requestId.current != req) return;
 
-      const messageId = result.messageId ?? "0x";
+      const messageId = (result as any).messageId ?? "0x";
       const historyItem = sendResultToHistory(messageId, data, result);
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);

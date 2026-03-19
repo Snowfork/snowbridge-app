@@ -14,7 +14,8 @@ import {
   transferFormSchema,
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
-import { assetsV2, Context } from "@snowbridge/api";
+import { assetsV2 } from "@snowbridge/api";
+import { AppContext } from "@/lib/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -84,7 +85,7 @@ function getLocationAccounts(
   ss58Format: number,
 ) {
   const accounts: AccountInfo[] = [];
-  if (location.kind === "polkadot") {
+  if (location.kind === "polkadot" || location.kind === "kusama") {
     polkadotAccounts
       .filter(
         (x) =>
@@ -301,11 +302,13 @@ export const TransferForm: FC<TransferFormProps> = ({
     if (source.kind === "ethereum" || source.kind === "ethereum_l2") {
       // Set to Ethereum account if connected, otherwise clear
       form.setValue("sourceAccount", ethereumAccount ?? "");
-    } else if (source.kind === "polkadot") {
+    } else if (source.kind === "polkadot" || source.kind === "kusama") {
       // For substrate sources, filter accounts by account type (AccountId20 vs AccountId32)
-      const accountType =
-        assetRegistry.parachains[`polkadot_${source.id}`]?.info.accountType ??
-        "AccountId32";
+      const paraInfo =
+        source.kind === "kusama"
+          ? assetRegistry.kusama?.parachains[`kusama_${source.id}`]
+          : assetRegistry.parachains[`polkadot_${source.id}`];
+      const accountType = paraInfo?.info.accountType ?? "AccountId32";
       const validAccounts = polkadotAccounts?.filter(
         filterByAccountType(accountType),
       );
@@ -342,7 +345,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         // Set to Ethereum account if connected, otherwise clear
         form.setValue("beneficiary", ethereumAccount ?? "");
       }
-    } else if (destination.kind === "polkadot") {
+    } else if (destination.kind === "polkadot" || destination.kind === "kusama") {
       // For substrate destinations, filter accounts by account type (AccountId20 vs AccountId32)
       const accountType =
         destination.parachain?.info.accountType ?? "AccountId32";
@@ -441,9 +444,12 @@ export const TransferForm: FC<TransferFormProps> = ({
     form.resetField("token", { defaultValue: newToken });
 
     // Update Source Account
-    if (newSource.kind === "polkadot") {
-      const accountType =
-        assetRegistry.parachains[`polkadot_${newSource.id}`].info.accountType;
+    if (newSource.kind === "polkadot" || newSource.kind === "kusama") {
+      const paraInfo =
+        newSource.kind === "kusama"
+          ? assetRegistry.kusama?.parachains[`kusama_${newSource.id}`]
+          : assetRegistry.parachains[`polkadot_${newSource.id}`];
+      const accountType = paraInfo?.info.accountType ?? "AccountId32";
       const validAccounts = polkadotAccounts?.filter(
         filterByAccountType(accountType),
       );
@@ -542,7 +548,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         }
 
         if (
-          destination.kind === "polkadot" &&
+          (destination.kind === "polkadot" || destination.kind === "kusama") &&
           destination.parachain!.info.accountType === "AccountId32"
         ) {
           if (!isHex(formData.beneficiary)) {
@@ -587,6 +593,13 @@ export const TransferForm: FC<TransferFormProps> = ({
               .assets[formData.token.toLowerCase()].minimumBalance;
           if (ahMin > minimumTransferAmount) minimumTransferAmount = ahMin;
           if (dhMin > minimumTransferAmount) minimumTransferAmount = dhMin;
+        } else if (destination.kind === "kusama") {
+          const kusamaAssets =
+            destination.parachain?.assets[formData.token.toLowerCase()];
+          if (kusamaAssets) {
+            const kusamaMin = kusamaAssets.minimumBalance ?? minimumTransferAmount;
+            if (kusamaMin > minimumTransferAmount) minimumTransferAmount = kusamaMin;
+          }
         }
         if (amountInSmallestUnit < minimumTransferAmount) {
           const errorMessage = `Cannot send less than minimum value of ${formatBalance(
@@ -763,7 +776,8 @@ export const TransferForm: FC<TransferFormProps> = ({
                           (((source.kind === "ethereum" ||
                             source.kind === "ethereum_l2") &&
                             ethereumAccount) ||
-                            (source.kind === "polkadot" &&
+                            ((source.kind === "polkadot" ||
+                              source.kind === "kusama") &&
                               polkadotAccount?.address)) && (
                             <button
                               type="button"
@@ -929,7 +943,8 @@ export const TransferForm: FC<TransferFormProps> = ({
 
                                 // If transferring native token from substrate, subtract the fee
                                 if (
-                                  source.kind === "polkadot" &&
+                                  (source.kind === "polkadot" ||
+                                    source.kind === "kusama") &&
                                   feeInfo &&
                                   tokenMetadata.symbol.toUpperCase() ===
                                     feeInfo.symbol.toUpperCase()
@@ -1064,7 +1079,11 @@ export const TransferForm: FC<TransferFormProps> = ({
                         source.kind === "polkadot"
                           ? (assetRegistry.parachains[`polkadot_${source.id}`]
                               ?.info.accountType ?? "AccountId32")
-                          : "AccountId32",
+                          : source.kind === "kusama"
+                            ? (assetRegistry.kusama?.parachains[
+                                `kusama_${source.id}`
+                              ]?.info.accountType ?? "AccountId32")
+                            : "AccountId32",
                       ),
                     )
                     .map((account, i) => (
@@ -1126,7 +1145,7 @@ interface SubmitButtonProps {
   tokenMetadata: ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
-  context: Context | null;
+  context: AppContext | null;
 }
 
 function SubmitButton({
@@ -1171,7 +1190,7 @@ function SubmitButton({
     // Check if Polkadot wallet is connected for Substrate source
     if (
       (polkadotAccounts === null || polkadotAccounts.length === 0) &&
-      source.kind === "polkadot"
+      (source.kind === "polkadot" || source.kind === "kusama")
     ) {
       return <ConnectPolkadotWalletButton variant="default" />;
     }
@@ -1189,7 +1208,7 @@ function SubmitButton({
     }
     if (
       (beneficiaries === null || beneficiaries.length === 0) &&
-      destination.kind === "polkadot"
+      (destination.kind === "polkadot" || destination.kind === "kusama")
     ) {
       return <ConnectPolkadotWalletButton variant="default" />;
     }

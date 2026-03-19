@@ -9,7 +9,9 @@ import {
   ValidationResult,
 } from "@/utils/types";
 import { Signer } from "@polkadot/api/types";
-import { Context, forKusama } from "@snowbridge/api";
+import { forKusama } from "@snowbridge/api";
+import { AppContext, getEnvironmentName } from "@/lib/snowbridge";
+import { bridgeInfoFor } from "@snowbridge/registry";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 import { Direction } from "@snowbridge/api/dist/forKusama";
@@ -45,7 +47,7 @@ function validateSubstrateSigner(
 }
 
 async function planSend(
-  context: Context,
+  context: AppContext,
   data: KusamaValidationData,
 ): Promise<ValidationResult> {
   const {
@@ -60,81 +62,77 @@ async function planSend(
   } = data;
   if (source == AssetHub.Polkadot && destination == AssetHub.Kusama) {
     validateSubstrateDestination(data);
-    const sourceAssetHub = await context.assetHub();
-    const destAssetHub = await context.kusamaAssetHub();
-    if (!destAssetHub) {
+    const info = bridgeInfoFor(getEnvironmentName());
+    const sourceParachain = assetRegistry.parachains[`polkadot_${assetRegistry.assetHubParaId}`];
+    const destParachain = assetRegistry.kusama?.parachains[`kusama_${assetRegistry.kusama?.assetHubParaId}`];
+    if (!destParachain) {
       throw Error(`Kusama AssetHub could not connect`);
     }
+    const route = {
+      from: { kind: "polkadot" as const, id: assetRegistry.assetHubParaId },
+      to: { kind: "kusama" as const, id: assetRegistry.kusama!.assetHubParaId },
+      assets: [],
+    };
+    const kusamaTransfer = new forKusama.KusamaTransfer(info, context, route, sourceParachain, destParachain);
     // Create a new delivery fee object
     const deliveryFee: forKusama.DeliveryFee = {
+      kind: "polkadot->kusama",
       bridgeHubDeliveryFee: fee.delivery.bridgeHubDeliveryFee,
       xcmBridgeFee: fee.delivery.xcmBridgeFee,
       destinationFee: fee.delivery.destinationFee,
       totalFeeInNative: fee.fee,
     };
 
-    const tx = await forKusama.createTransfer(
-      sourceAssetHub,
-      Direction.ToKusama,
-      assetRegistry,
+    const tx = await kusamaTransfer.tx(
       sourceAccount,
       beneficiary,
       token,
       amountInSmallestUnit,
       deliveryFee,
     );
-    const plan = await forKusama.validateTransfer(
-      {
-        sourceAssetHub: sourceAssetHub,
-        destAssetHub: destAssetHub,
-      },
-      Direction.ToKusama,
-      tx,
-    );
+    const plan = await kusamaTransfer.validate(tx);
     console.log(plan);
-    return { kind: "polkadot->kusama", ...plan };
+    return { ...plan, kind: "polkadot->kusama" };
   } else if (source == AssetHub.Kusama && destination === AssetHub.Polkadot) {
     validateSubstrateDestination(data);
-    const sourceAssetHub = await context.kusamaAssetHub();
-    const destAssetHub = await context.assetHub();
-    if (!sourceAssetHub) {
+    const info = bridgeInfoFor(getEnvironmentName());
+    const sourceParachain = assetRegistry.kusama?.parachains[`kusama_${assetRegistry.kusama?.assetHubParaId}`];
+    const destParachain = assetRegistry.parachains[`polkadot_${assetRegistry.assetHubParaId}`];
+    if (!sourceParachain) {
       throw Error(`Kusama AssetHub could not connect`);
     }
+    const route = {
+      from: { kind: "kusama" as const, id: assetRegistry.kusama!.assetHubParaId },
+      to: { kind: "polkadot" as const, id: assetRegistry.assetHubParaId },
+      assets: [],
+    };
+    const kusamaTransfer = new forKusama.KusamaTransfer(info, context, route, sourceParachain, destParachain);
     // Create a new delivery fee object
     const deliveryFee: forKusama.DeliveryFee = {
+      kind: "kusama->polkadot",
       bridgeHubDeliveryFee: fee.delivery.bridgeHubDeliveryFee,
       xcmBridgeFee: fee.delivery.xcmBridgeFee,
       destinationFee: fee.delivery.destinationFee,
       totalFeeInNative: fee.fee,
     };
 
-    const tx = await forKusama.createTransfer(
-      sourceAssetHub,
-      Direction.ToPolkadot,
-      assetRegistry,
+    const tx = await kusamaTransfer.tx(
       sourceAccount,
       beneficiary,
       token,
       amountInSmallestUnit,
       deliveryFee,
     );
-    const plan = await forKusama.validateTransfer(
-      {
-        sourceAssetHub: sourceAssetHub,
-        destAssetHub: destAssetHub,
-      },
-      Direction.ToPolkadot,
-      tx,
-    );
+    const plan = await kusamaTransfer.validate(tx);
     console.log(plan);
-    return { kind: "kusama->polkadot", ...plan };
+    return { ...plan, kind: "kusama->polkadot" };
   } else {
     throw Error(`Invalid form state: cannot infer source type.`);
   }
 }
 
 async function sendToken(
-  context: Context,
+  context: AppContext,
   data: KusamaValidationData,
   plan: ValidationResult,
   signerInfo: SignerInfo,
@@ -147,20 +145,37 @@ async function sendToken(
   if (plan.kind !== "kusama->polkadot" && plan.kind !== "polkadot->kusama") {
     throw Error(`Invalid state.`);
   }
-  const { source } = data;
+  const { source, assetRegistry } = data;
   const { polkadotAccount } = validateSubstrateSigner(data, signerInfo);
-  let sourceAssetHub: any;
+  const info = bridgeInfoFor(getEnvironmentName());
+  let sourceParachain, destParachain, route;
   if (source == AssetHub.Polkadot) {
-    sourceAssetHub = await context.assetHub();
+    sourceParachain = assetRegistry.parachains[`polkadot_${assetRegistry.assetHubParaId}`];
+    destParachain = assetRegistry.kusama?.parachains[`kusama_${assetRegistry.kusama?.assetHubParaId}`];
+    route = {
+      from: { kind: "polkadot" as const, id: assetRegistry.assetHubParaId },
+      to: { kind: "kusama" as const, id: assetRegistry.kusama!.assetHubParaId },
+      assets: [],
+    };
   } else {
-    sourceAssetHub = await context.kusamaAssetHub();
+    sourceParachain = assetRegistry.kusama?.parachains[`kusama_${assetRegistry.kusama?.assetHubParaId}`];
+    destParachain = assetRegistry.parachains[`polkadot_${assetRegistry.assetHubParaId}`];
+    route = {
+      from: { kind: "kusama" as const, id: assetRegistry.kusama!.assetHubParaId },
+      to: { kind: "polkadot" as const, id: assetRegistry.assetHubParaId },
+      assets: [],
+    };
   }
-  const result = await forKusama.signAndSend(
-    sourceAssetHub,
-    plan.transfer,
+  if (!sourceParachain || !destParachain) {
+    throw Error(`Cannot resolve parachains.`);
+  }
+  const kusamaTransfer = new forKusama.KusamaTransfer(info, context, route, sourceParachain, destParachain);
+  const transfer = plan as forKusama.ValidatedTransfer;
+  const result = await kusamaTransfer.signAndSend(
+    transfer,
     polkadotAccount.address,
     {
-      signer: polkadotAccount.signer! as Signer,
+      signer: polkadotAccount.signer! as any,
       withSignedTransaction: false, // should be true, but there is a bug with Talisman: https://github.com/TalismanSociety/talisman/issues/2180
     },
   );

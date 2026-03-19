@@ -7,7 +7,6 @@ import { useTheme } from "next-themes";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 import { useSetAtom, useAtomValue, useAtom } from "jotai";
 import { termsOfUseModalOpenAtom } from "@/store/termsOfUse";
-import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { Menu as MenuIcon, X, Pencil, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useState, useEffect, useContext, FC } from "react";
@@ -417,7 +416,6 @@ const Wallet: FC = () => {
 
 export function Header() {
   const setTermsModalOpen = useSetAtom(termsOfUseModalOpenAtom);
-  const envName = useAtomValue(snowbridgeEnvNameAtom);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
@@ -494,14 +492,6 @@ export function Header() {
               >
                 Terms of Use
               </a>
-              {envName === "polkadot_mainnet" && (
-                <Link
-                  href="/kusama"
-                  className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Kusama
-                </Link>
-              )}
             </div>
             <div className="absolute bottom-3 right-3 flex gap-2">
               <a
@@ -611,15 +601,6 @@ export function Header() {
             >
               Transfer
             </Link>
-            {envName === "polkadot_mainnet" ? (
-              <Link
-                href="/kusama"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Kusama
-              </Link>
-            ) : null}
             <Link
               href="/activity"
               className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"

@@ -2,11 +2,10 @@ import {
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
 } from "@/store/snowbridge";
-import { Context } from "@snowbridge/api";
+import { AppContext, createContext } from "@/lib/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 import { getDefaultProvider } from "ethers";
-import { createContext } from "@/lib/snowbridge";
 import {
   parachainConfigs,
   SnowbridgeEnvironmentNames,
@@ -38,7 +37,7 @@ const createSnowbridgeContext = async (
 };
 
 export const useSnowbridgeContext = (): [
-  Context | null,
+  AppContext | null,
   boolean,
   string | null,
 ] => {
