@@ -3,7 +3,7 @@ import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { KusamaComponent } from "@/components/Kusama";
 import { FC } from "react";
 import { bridgeInfoFor } from "@snowbridge/registry";
-import { getEnvironmentName } from "@/lib/snowbridge";
+import { getEnvironmentName } from "@/lib/snowbridgeEnv";
 
 export default function Kusama() {
   const { registry } = bridgeInfoFor(getEnvironmentName())!;

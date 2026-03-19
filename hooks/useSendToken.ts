@@ -165,65 +165,83 @@ async function planSend(
   data: ValidationData,
 ): Promise<ValidationResult> {
   const { source, destination, amountInSmallestUnit, formData, fee } = data;
-  const sender = api.sender(
-    { kind: source.kind, id: source.id },
-    { kind: destination.kind, id: destination.id },
-  );
+  const sender = api.sender(source, destination);
 
   switch (sender.kind) {
     case "ethereum->ethereum": {
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery as any,
+        fee.delivery,
       );
       return await sender.validate(transfer);
     }
     case "ethereum->polkadot": {
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
+      if (!("feeAsset" in fee.delivery)) {
+        throw Error(`Invalid delivery fee shape for ${sender.kind}.`);
+      }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery as any,
+        fee.delivery,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->ethereum": {
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery as any,
+        fee.delivery,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->polkadot": {
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery as any,
+        fee.delivery,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->ethereum_l2": {
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery as any,
+        fee.delivery,
       );
       return await sender.validate(transfer);
     }
     case "ethereum_l2->polkadot": {
       if (source.kind !== "ethereum_l2") {
         throw Error(`Invalid source ${source.key}, expected ethereum_l2 source.`);
+      }
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
       }
       const l2asset = Object.values(source.ethChain.assets).find(
         (x) =>
@@ -238,7 +256,7 @@ async function planSend(
           formData.beneficiary,
           l2asset.token,
           amountInSmallestUnit,
-          fee.delivery as any,
+          fee.delivery,
         ),
       );
     }
@@ -258,20 +276,20 @@ async function sendToken(
       cause: plan,
     });
   }
-  const sender = api.sender(
-    { kind: data.source.kind, id: data.source.id },
-    { kind: data.destination.kind, id: data.destination.id },
-  );
+  const sender = api.sender(data.source, data.destination);
 
   switch (sender.kind) {
     case "polkadot->polkadot": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
       const { polkadotAccount } = validateSubstrateSigner(
         data,
         signerInfo,
         true,
       );
       const result = await sender.signAndSend(
-        plan as any,
+        plan,
         polkadotAccount.address,
         {
           signer: polkadotAccount.signer as any,
@@ -279,21 +297,27 @@ async function sendToken(
         },
       );
       console.log(result);
-      return { kind: "polkadot->polkadot", ...result } as MessageReceipt;
+      return { kind: sender.kind, ...result };
     }
     case "ethereum->ethereum": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
       const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
-      const response = await signer.sendTransaction(plan.tx as any);
+      const response = await signer.sendTransaction(plan.tx);
       const receipt = await response.wait();
       if (!receipt) {
         throw Error(`Could not fetch transaction receipt.`);
       }
       const result = await sender.messageId(receipt);
       console.log(result);
-      return { kind: "ethereum->ethereum", ...result } as MessageReceipt;
+      return { kind: sender.kind, ...result };
     }
     case "polkadot->ethereum":
     case "polkadot->ethereum_l2": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
       const { paraInfo, polkadotAccount } = validateSubstrateSigner(
         data,
         signerInfo,
@@ -301,7 +325,7 @@ async function sendToken(
       );
       console.log(`[sendToken] Sending from parachain ${paraInfo.id}.`);
       const result = await sender.signAndSend(
-        plan as any,
+        plan,
         polkadotAccount.address,
         {
           signer: polkadotAccount.signer as any,
@@ -309,15 +333,17 @@ async function sendToken(
         },
       );
       console.log(result);
-      return { kind: sender.kind, ...result } as MessageReceipt;
+      return { kind: sender.kind, ...result };
     }
-    case "ethereum->polkadot":
-    case "ethereum_l2->polkadot": {
-      const { signer } =
-        sender.kind === "ethereum->polkadot"
-          ? await validateEthereumSignerWithParachain(data, signerInfo)
-          : await validateEthereumSigner(data, signerInfo);
-      const response = await signer.sendTransaction(plan.tx as any);
+    case "ethereum->polkadot": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
+      const { signer } = await validateEthereumSignerWithParachain(
+        data,
+        signerInfo,
+      );
+      const response = await signer.sendTransaction(plan.tx);
       const receipt = await response.wait();
       if (!receipt) {
         throw Error(`Could not fetch transaction receipt.`);
@@ -327,7 +353,24 @@ async function sendToken(
         throw Error(`Could not fetch message receipt.`);
       }
       console.log(result);
-      return { kind: sender.kind, ...result } as MessageReceipt;
+      return { kind: sender.kind, ...result };
+    }
+    case "ethereum_l2->polkadot": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
+      const { signer } = await validateEthereumSigner(data, signerInfo);
+      const response = await signer.sendTransaction(plan.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const result = await sender.messageId(receipt);
+      if (!result) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      console.log(result);
+      return { kind: sender.kind, ...result };
     }
     default: {
       throw Error(`Invalid form state: cannot infer source type.`);

@@ -1,25 +1,8 @@
 import { createApi, historyV2, SnowbridgeApi } from "@snowbridge/api";
-import { Environment } from "@snowbridge/base-types";
 import { bridgeInfoFor } from "@snowbridge/registry";
 import { AbstractProvider } from "ethers";
 import { EthersEthereumProvider } from "@snowbridge/provider-ethers";
-
-export function getEnvironmentName() {
-  const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
-  if (!name) throw new Error("NEXT_PUBLIC_SNOWBRIDGE_ENV var not configured.");
-  return name;
-}
-
-export function getEnvironment() {
-  const envName = getEnvironmentName();
-  const env: Environment = bridgeInfoFor(envName).environment;
-
-  if (env === undefined)
-    throw new Error(
-      `NEXT_PUBLIC_SNOWBRIDGE_ENV configured for unknown environment '${envName}'`,
-    );
-  return env;
-}
+import { getEnvironment } from "./snowbridgeEnv";
 
 export interface AccountInfo {
   name: string;

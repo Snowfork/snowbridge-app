@@ -1,8 +1,7 @@
 import {
-  getEnvironment,
-  getEnvironmentName,
   type SnowbridgeClient,
 } from "@/lib/snowbridge";
+import { getEnvironment, getEnvironmentName } from "@/lib/snowbridgeEnv";
 import { atom } from "jotai";
 
 (() => {

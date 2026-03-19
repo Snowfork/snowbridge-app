@@ -87,12 +87,15 @@ async function sendToken(
     });
   }
   const sender = kusamaSender(api, data);
+  if (plan.kind !== sender.kind) {
+    throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+  }
   const { polkadotAccount } = validateSubstrateSigner(data, signerInfo);
-  const result = await sender.signAndSend(plan as any, polkadotAccount.address, {
+  const result = await sender.signAndSend(plan, polkadotAccount.address, {
     signer: polkadotAccount.signer as any,
     withSignedTransaction: false,
   });
-  return { kind: sender.kind, ...result } as MessageReceipt;
+  return { kind: sender.kind, ...result };
 }
 
 export function useSendKusamaToken(): [

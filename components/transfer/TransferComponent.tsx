@@ -11,12 +11,7 @@ import {
   TransferPlanSteps,
   ValidationData,
 } from "@/utils/types";
-import {
-  forInterParachain,
-  historyV2,
-  toEthereumV2,
-  toPolkadotV2,
-} from "@snowbridge/api";
+import { historyV2 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
 import { useSetAtom } from "jotai";
 import {
@@ -60,14 +55,13 @@ function sendResultToHistory(
     case "ethereum->ethereum":
     case "polkadot->ethereum_l2":
     case "polkadot->ethereum": {
-      const sendResult = result as toEthereumV2.MessageReceipt;
       const transfer: historyV2.ToEthereumTransferResult = {
         sourceId: data.source.id,
         sourceKind: data.source.kind,
         destinationId: data.destination.id,
         destinationKind: data.destination.kind as EthereumKind,
-        id: messageId ?? sendResult.messageId,
-        status: sendResult.success
+        id: messageId ?? result.messageId,
+        status: result.success
           ? historyV2.TransferStatus.Pending
           : historyV2.TransferStatus.Failed,
         info: {
@@ -78,12 +72,12 @@ function sendResultToHistory(
           when: new Date(),
         },
         submitted: {
-          block_num: sendResult.blockNumber,
+          block_num: result.blockNumber,
           block_timestamp: 0,
           messageId: messageId ?? resultMessageId,
           account_id: sourceAddress,
-          extrinsic_hash: sendResult.txHash,
-          success: sendResult.success,
+          extrinsic_hash: result.txHash,
+          success: result.success,
           bridgeHubMessageId: "",
           sourceParachainId: data.source.parachain!.id,
         },
@@ -93,7 +87,6 @@ function sendResultToHistory(
     }
     case "ethereum_l2->polkadot":
     case "ethereum->polkadot": {
-      const sendResult = result as toPolkadotV2.MessageReceipt;
       const transfer: historyV2.ToPolkadotTransferResult = {
         sourceId: data.source.id,
         sourceKind: data.source.kind,
@@ -109,25 +102,24 @@ function sendResultToHistory(
           when: new Date(),
         },
         submitted: {
-          blockNumber: sendResult.blockNumber ?? 0,
-          channelId: sendResult.channelId,
+          blockNumber: result.blockNumber ?? 0,
+          channelId: "channelId" in result ? result.channelId : "",
           messageId: messageId ?? resultMessageId,
-          transactionHash: sendResult.txHash ?? "",
-          nonce: Number(sendResult.nonce.toString()),
+          transactionHash: result.txHash ?? "",
+          nonce: Number(result.nonce.toString()),
         },
       };
 
       return { ...transfer, isWalletTransaction: true };
     }
     case "polkadot->polkadot": {
-      const sendResult = result as forInterParachain.MessageReceipt;
       const transfer: historyV2.InterParachainTransfer = {
         sourceId: data.source.id,
         sourceKind: data.source.kind as ParachainKind,
         destinationId: data.destination.id,
         destinationKind: data.destination.kind as ParachainKind,
-        id: messageId ?? sendResult.messageId,
-        status: sendResult.success
+        id: messageId ?? result.messageId,
+        status: result.success
           ? historyV2.TransferStatus.Pending
           : historyV2.TransferStatus.Failed,
         info: {
@@ -138,12 +130,12 @@ function sendResultToHistory(
           when: new Date(),
         },
         submitted: {
-          block_num: sendResult.blockNumber,
+          block_num: result.blockNumber,
           block_timestamp: 0,
           messageId: messageId ?? resultMessageId,
           account_id: sourceAddress,
-          extrinsic_hash: sendResult.txHash,
-          success: sendResult.success,
+          extrinsic_hash: result.txHash,
+          success: result.success,
           bridgeHubMessageId: "",
           sourceParachainId: data.source.parachain!.id,
         },

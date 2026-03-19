@@ -1,7 +1,7 @@
 "use client";
 
 import { FC, useEffect } from "react";
-import { getEnvironment } from "@/lib/snowbridge";
+import { getEnvironment } from "@/lib/snowbridgeEnv";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import { useAppKit, useWalletInfo } from "@reown/appkit/react";
 import Image from "next/image";

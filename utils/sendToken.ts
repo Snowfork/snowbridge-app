@@ -160,8 +160,7 @@ export function createStepsFromPlan(
       };
     }
     case "polkadot->polkadot": {
-      const p = plan as forInterParachain.ValidatedTransfer;
-      for (const log of p.logs) {
+      for (const log of plan.logs) {
         if (log.kind === toPolkadotV2.ValidationKind.Warning) {
           console.warn("Plan validation warning: ", log.message);
           continue;

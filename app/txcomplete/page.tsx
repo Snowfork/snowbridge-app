@@ -29,7 +29,7 @@ import {
 } from "@/lib/explorerLinks";
 import { BridgeInfoContext } from "../providers";
 import { AssetRegistry } from "@snowbridge/base-types";
-import { getEnvironment } from "@/lib/snowbridge";
+import { getEnvironment } from "@/lib/snowbridgeEnv";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { useAtomValue } from "jotai";
 import { walletTxChecker } from "@/utils/addresses";

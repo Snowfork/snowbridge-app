@@ -5,7 +5,8 @@ import { FeeInfo } from "@/utils/types";
 import { useContext } from "react";
 import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
-import { getEnvironmentName, type SnowbridgeClient } from "@/lib/snowbridge";
+import { type SnowbridgeClient } from "@/lib/snowbridge";
+import { getEnvironmentName } from "@/lib/snowbridgeEnv";
 import { parseUnits } from "ethers";
 
 async function estimateExecutionFee(
@@ -77,10 +78,7 @@ async function fetchBridgeFeeInfo([
     asset.decimals,
   );
 
-  const sender = api.sender(
-    { kind: source.kind, id: source.id },
-    { kind: destination.kind, id: destination.id },
-  );
+  const sender = api.sender(source, destination);
 
   switch (sender.kind) {
     case "ethereum->polkadot": {
