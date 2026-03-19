@@ -279,12 +279,7 @@ export const KusamaComponent: FC = () => {
           fee: feeInfo.fee,
           decimals: asset.decimals,
           symbol: asset.symbol,
-          delivery: {
-            totalFeeInNative: feeInfo.fee,
-            destinationFee: feeInfo.delivery.destinationFee,
-            xcmBridgeFee: feeInfo.delivery.xcmBridgeFee,
-            bridgeHubDeliveryFee: feeInfo.delivery.bridgeHubDeliveryFee,
-          },
+          delivery: feeInfo.delivery,
         },
       };
 

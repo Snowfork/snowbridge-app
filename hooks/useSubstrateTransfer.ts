@@ -1,8 +1,7 @@
 import { Location } from "@/lib/xcm";
 import { polkadotAccountAtom, polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { ApiPromise } from "@polkadot/api";
-import { Signer, SubmittableExtrinsicFunction } from "@polkadot/api/types";
+import { SubmittableExtrinsicFunction } from "@polkadot/api/types";
 import { DispatchError, Hash } from "@polkadot/types/interfaces";
 import { AnyTuple } from "@polkadot/types/types";
 import { useAtomValue } from "jotai";
@@ -37,7 +36,7 @@ export function useSubstrateTransfer() {
         throw Error(`Could not resolve signer for '${sourceAccount}'.`);
       }
 
-      let api: ApiPromise | undefined;
+      let api: any;
 
       let transferAssets:
         | SubmittableExtrinsicFunction<"promise", AnyTuple>
@@ -94,7 +93,7 @@ export function useSubstrateTransfer() {
           .signAndSend(
             sourceAccount,
             {
-              signer: walletSigner.signer as Signer,
+              signer: walletSigner.signer as any,
             },
             (cb) => {
               if (cb.isError) {

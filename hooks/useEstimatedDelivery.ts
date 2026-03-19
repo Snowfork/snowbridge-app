@@ -1,8 +1,10 @@
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { formatTime } from "@/utils/formatting";
-import { inferTransferType } from "@/utils/inferTransferType";
 import { subsquidV2 } from "@snowbridge/api";
-import { Environment, TransferLocation } from "@snowbridge/base-types";
+import {
+  Environment,
+  TransferKind,
+} from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 
@@ -50,14 +52,13 @@ export const useEstimatedDelivery = () => {
 };
 
 export function estimateDelivery(
-  source: TransferLocation,
-  destination: TransferLocation,
+  kind: TransferKind,
   latency: BridgeLatency | null,
 ) {
   if (!latency) {
     return "Could not estimate";
   }
-  switch (inferTransferType(source, destination)) {
+  switch (kind) {
     case "ethereum->ethereum":
     case "ethereum->polkadot":
       return formatTime(latency.toPolkadot, false);

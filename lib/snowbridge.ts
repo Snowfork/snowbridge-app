@@ -1,7 +1,8 @@
-import { Context, historyV2 } from "@snowbridge/api";
+import { createApi, historyV2, SnowbridgeApi } from "@snowbridge/api";
 import { Environment } from "@snowbridge/base-types";
 import { bridgeInfoFor } from "@snowbridge/registry";
 import { AbstractProvider } from "ethers";
+import { EthersEthereumProvider } from "@snowbridge/provider-ethers";
 
 export function getEnvironmentName() {
   const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
@@ -35,11 +36,16 @@ export type ContextOverrides = {
   graphqlApiUrl?: string;
 };
 
-export async function createContext(
-  env: Environment,
-  ethereumProvider?: AbstractProvider,
+export type SnowbridgeClient = SnowbridgeApi<EthersEthereumProvider>;
+export type SnowbridgeContext = SnowbridgeClient["context"];
+
+export function createSnowbridgeApi(
+  ethereumProvider: AbstractProvider | undefined,
+  envName: string,
   overrides?: ContextOverrides,
 ) {
+  const info = bridgeInfoFor(envName);
+  const env = info.environment;
   const allParachains = {
     ...env.parachains,
     ...overrides?.parachains,
@@ -51,15 +57,30 @@ export async function createContext(
   allParachains[bridgeHubParaKey] =
     overrides?.bridgeHub ?? env.parachains[bridgeHubParaKey];
 
-  let overrideEnv = { ...env };
+  const overrideEnv = { ...env };
   overrideEnv.parachains = allParachains;
   overrideEnv.relaychainUrl = overrides?.relaychain ?? env.relaychainUrl;
-
-  const context = new Context(overrideEnv);
-  if (ethereumProvider) {
-    context.setEthProvider(env.ethChainId, ethereumProvider);
+  overrideEnv.indexerGraphQlUrl =
+    overrides?.graphqlApiUrl ?? env.indexerGraphQlUrl;
+  if (overrides?.bridgeHub) {
+    overrideEnv.parachains[env.bridgeHubParaId.toString()] =
+      overrides.bridgeHub;
   }
-  return context;
+  if (overrides?.assetHub) {
+    overrideEnv.parachains[env.assetHubParaId.toString()] = overrides.assetHub;
+  }
+
+  const api = createApi({
+    info: {
+      ...info,
+      environment: overrideEnv,
+    },
+    ethereumProvider: new EthersEthereumProvider(),
+  });
+  if (ethereumProvider) {
+    api.context.setEthProvider(env.ethChainId, ethereumProvider);
+  }
+  return api;
 }
 
 export function getErrorMessage(err: any) {

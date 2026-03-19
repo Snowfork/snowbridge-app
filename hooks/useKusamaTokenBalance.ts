@@ -1,7 +1,7 @@
 import { BridgeInfoContext } from "@/app/providers";
+import { type SnowbridgeContext } from "@/lib/snowbridge";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { getKusamaTokenBalance } from "@/utils/balances";
-import { Context } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useContext } from "react";
@@ -14,7 +14,7 @@ async function fetchKusamaTokenBalance([
   registry,
   sourceAccount,
 ]: [
-  Context | null,
+  SnowbridgeContext | null,
   string,
   string,
   AssetRegistry,

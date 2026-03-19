@@ -41,7 +41,6 @@ import { TransferSummary } from "./TransferSummary";
 import { isHex, u8aToHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { EthereumKind, ParachainKind } from "@snowbridge/base-types";
-import { inferTransferType } from "@/utils/inferTransferType";
 
 function sendResultToHistory(
   messageId: string,
@@ -56,8 +55,8 @@ function sendResultToHistory(
   if (!isHex(beneficiaryAddress)) {
     beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
   }
-  const transferType = inferTransferType(data.source, data.destination);
-  switch (`${data.source.kind}->${data.destination.kind}`) {
+  const resultMessageId = "messageId" in result ? result.messageId : undefined;
+  switch (result.kind) {
     case "ethereum->ethereum":
     case "polkadot->ethereum_l2":
     case "polkadot->ethereum": {
@@ -81,7 +80,7 @@ function sendResultToHistory(
         submitted: {
           block_num: sendResult.blockNumber,
           block_timestamp: 0,
-          messageId: messageId ?? sendResult.messageId,
+          messageId: messageId ?? resultMessageId,
           account_id: sourceAddress,
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
@@ -100,7 +99,7 @@ function sendResultToHistory(
         sourceKind: data.source.kind,
         destinationId: data.destination.id,
         destinationKind: data.destination.kind as ParachainKind,
-        id: messageId ?? sendResult.messageId,
+        id: messageId ?? resultMessageId,
         status: historyV2.TransferStatus.Pending,
         info: {
           amount: data.amountInSmallestUnit.toString(),
@@ -112,7 +111,7 @@ function sendResultToHistory(
         submitted: {
           blockNumber: sendResult.blockNumber ?? 0,
           channelId: sendResult.channelId,
-          messageId: messageId ?? sendResult.messageId,
+          messageId: messageId ?? resultMessageId,
           transactionHash: sendResult.txHash ?? "",
           nonce: Number(sendResult.nonce.toString()),
         },
@@ -141,7 +140,7 @@ function sendResultToHistory(
         submitted: {
           block_num: sendResult.blockNumber,
           block_timestamp: 0,
-          messageId: messageId ?? sendResult.messageId,
+          messageId: messageId ?? resultMessageId,
           account_id: sourceAddress,
           extrinsic_hash: sendResult.txHash,
           success: sendResult.success,
@@ -152,7 +151,7 @@ function sendResultToHistory(
       return { ...transfer, isWalletTransaction: true };
     }
     default:
-      throw Error(`Does not support type ${transferType}`);
+      throw Error(`Does not support type ${result.kind}`);
   }
 }
 
@@ -198,7 +197,6 @@ export const TransferComponent: FC = () => {
     setSourceExecutionFee: Dispatch<SetStateAction<bigint | null>>,
   ) => {
     const req = requestId.current;
-    const transferType = inferTransferType(data.source, data.destination);
     let error = "Transaction cannot be sent, because:";
     try {
       setBusy("Checking transfer details.");
@@ -219,10 +217,10 @@ export const TransferComponent: FC = () => {
         case "polkadot->ethereum":
         case "polkadot->ethereum_l2":
         case "polkadot->polkadot":
-          setSourceExecutionFee(plan.data.sourceExecutionFee);
+          setSourceExecutionFee(plan.data.sourceExecutionFee ?? null);
           break;
         default:
-          throw Error(`Does not support ${transferType}`);
+          throw Error(`Does not support ${plan.kind}`);
       }
 
       const steps = createStepsFromPlan(data, plan);
@@ -245,13 +243,14 @@ export const TransferComponent: FC = () => {
       const result = await sendToken(data, plan);
       if (requestId.current != req) return;
 
-      const messageId = result.messageId ?? "0x";
+      const messageId =
+        "messageId" in result && result.messageId ? result.messageId : "0x";
       const historyItem = sendResultToHistory(messageId, data, result);
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);
       setBusy("Transfer successful...", true);
       const transferData = base64url.encode(JSON.stringify(historyItem));
-      if (transferType !== "polkadot->polkadot") {
+      if (plan.kind !== "polkadot->polkadot") {
         if (historyItem !== null) {
           addPendingTransaction({
             kind: "add",

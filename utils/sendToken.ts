@@ -69,7 +69,7 @@ export function createStepsFromPlan(
         if (
           log.reason ===
             toEthereumV2.ValidationReason.InsufficientTokenBalance &&
-          plan.transfer.computed.sourceParaId === NEURO_WEB_PARACHAIN // NeureWeb
+          plan.computed.sourceParaId === NEURO_WEB_PARACHAIN // NeureWeb
         ) {
           steps.push({
             kind: TransferStepKind.WrapNeuroWeb,
@@ -160,7 +160,7 @@ export function createStepsFromPlan(
       };
     }
     case "polkadot->polkadot": {
-      const p = plan as forInterParachain.ValidationResult;
+      const p = plan as forInterParachain.ValidatedTransfer;
       for (const log of p.logs) {
         if (log.kind === toPolkadotV2.ValidationKind.Warning) {
           console.warn("Plan validation warning: ", log.message);

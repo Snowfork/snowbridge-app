@@ -7,7 +7,6 @@ import {
 } from "@/hooks/useEstimatedDelivery";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
-import { inferTransferType } from "@/utils/inferTransferType";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import Image from "next/image";
 import { chainName } from "@/utils/chainNames";
@@ -82,7 +81,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       sourceTokenDecimals = data.source.parachain.info.tokenDecimals ?? null;
       break;
   }
-  const transferType = inferTransferType(data.source, data.destination);
+  const transferType = data.fee.delivery.kind;
   let transferTimeMax: string | undefined;
   switch (transferType) {
     case "ethereum_l2->polkadot":
@@ -291,8 +290,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               : latencyError
                 ? "Could not estimate"
                 : estimateDelivery(
-                    data.source,
-                    data.destination,
+                    data.fee.delivery.kind,
                     deliveryLatency,
                   )}
             <span className="text-muted-foreground">

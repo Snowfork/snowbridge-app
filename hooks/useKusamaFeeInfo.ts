@@ -1,7 +1,6 @@
-import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { assetsV2, Context, forKusama } from "@snowbridge/api";
-import { useAtomValue } from "jotai";
-import useSWR from "swr";
+import { BridgeInfoContext } from "@/app/providers";
+import { type SnowbridgeClient } from "@/lib/snowbridge";
+import { snowbridgeApiAtom } from "@/store/snowbridge";
 import {
   AssetHub,
   DOT_DECIMALS,
@@ -10,70 +9,48 @@ import {
   KSM_SYMBOL,
   KusamaFeeInfo,
 } from "@/utils/types";
-
-import { ApiPromise } from "@polkadot/api";
-import { Direction } from "@snowbridge/api/dist/forKusama";
-import { useContext } from "react";
-import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry } from "@snowbridge/base-types";
+import { useAtomValue } from "jotai";
+import { useContext } from "react";
+import useSWR from "swr";
 
-async function fetchKusamaFeeInfo([context, registry, direction, token]: [
-  Context | null,
+async function fetchKusamaFeeInfo([api, registry, source, token]: [
+  SnowbridgeClient | null,
   AssetRegistry,
-  Direction,
   string,
+  string | undefined,
 ]): Promise<KusamaFeeInfo | undefined> {
-  if (context === null) {
-    return;
-  }
-  let sourceAssetHub: ApiPromise | undefined;
-  let destAssetHub: ApiPromise | undefined;
-  if (direction == Direction.ToPolkadot) {
-    sourceAssetHub = await context.kusamaAssetHub();
-    destAssetHub = await context.assetHub();
-  } else {
-    sourceAssetHub = await context.assetHub();
-    destAssetHub = await context.kusamaAssetHub();
-  }
-
-  if (!sourceAssetHub || !destAssetHub) {
+  if (!api || !token || !registry.kusama) {
     return;
   }
 
-  const deliveryFee = await forKusama.getDeliveryFee(
-    sourceAssetHub,
-    destAssetHub,
-    direction,
-    registry,
-    token,
-  );
-  const isPolkadot = direction == Direction.ToKusama;
-  const tokenSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
-  const tokenDecimals = isPolkadot ? DOT_DECIMALS : KSM_DECIMALS;
+  const from =
+    source === AssetHub.Polkadot
+      ? { kind: "polkadot" as const, id: registry.assetHubParaId }
+      : { kind: "kusama" as const, id: registry.kusama.assetHubParaId };
+  const to =
+    source === AssetHub.Polkadot
+      ? { kind: "kusama" as const, id: registry.kusama.assetHubParaId }
+      : { kind: "polkadot" as const, id: registry.assetHubParaId };
+  const sender = api.sender(from, to);
+  if (sender.kind !== "polkadot->kusama" && sender.kind !== "kusama->polkadot") {
+    throw Error(`Unexpected Kusama route ${sender.kind}.`);
+  }
 
+  const deliveryFee = await sender.fee(token);
+  const isPolkadot = sender.kind === "polkadot->kusama";
   return {
     fee: deliveryFee.totalFeeInNative,
-    decimals: tokenDecimals,
-    symbol: tokenSymbol,
+    decimals: isPolkadot ? DOT_DECIMALS : KSM_DECIMALS,
+    symbol: isPolkadot ? DOT_SYMBOL : KSM_SYMBOL,
     delivery: deliveryFee,
   };
 }
 
 export function useKusamaFeeInfo(source: string, token: string | undefined) {
-  let direction: Direction;
-  if (source === AssetHub.Polkadot) {
-    direction = Direction.ToKusama;
-  } else {
-    direction = Direction.ToPolkadot;
-  }
-
-  const context = useAtomValue(snowbridgeContextAtom);
+  const api = useAtomValue(snowbridgeApiAtom);
   const { registry } = useContext(BridgeInfoContext)!;
-  return useSWR(
-    [context, registry, direction, token, "kusamaFeeInfo"],
-    fetchKusamaFeeInfo,
-    {
-      errorRetryCount: 10,
-    },
-  );
+  return useSWR([api, registry, source, token, "kusamaFeeInfo"], fetchKusamaFeeInfo, {
+    errorRetryCount: 10,
+  });
 }
