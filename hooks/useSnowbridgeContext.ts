@@ -17,9 +17,7 @@ const createSnowbridgeContext = async (
   env: Environment,
   alchemyKey: string,
 ) => {
-  const ethereumProvider = getDefaultProvider(env.ethChainId, {
-    alchemy: alchemyKey,
-  });
+  const ethereumProvider = getDefaultProvider(env.ethChainId);
   const parachains: { [paraId: string]: string } = {};
   Object.keys(env.parachains).forEach(
     (paraId) => (parachains[paraId] = env.parachains[paraId]),
