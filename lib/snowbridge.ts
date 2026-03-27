@@ -36,8 +36,8 @@ export type ContextOverrides = {
 };
 
 export async function createContext(
-  ethereumProvider: AbstractProvider,
   env: Environment,
+  ethereumProvider?: AbstractProvider,
   overrides?: ContextOverrides,
 ) {
   const allParachains = {
@@ -56,7 +56,9 @@ export async function createContext(
   overrideEnv.relaychainUrl = overrides?.relaychain ?? env.relaychainUrl;
 
   const context = new Context(overrideEnv);
-  context.setEthProvider(env.ethChainId, ethereumProvider);
+  if (ethereumProvider) {
+    context.setEthProvider(env.ethChainId, ethereumProvider);
+  }
   return context;
 }
 
