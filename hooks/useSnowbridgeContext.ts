@@ -15,9 +15,14 @@ import { Environment } from "@snowbridge/base-types";
 
 const createSnowbridgeContext = async (
   env: Environment,
-  alchemyKey: string,
+  alchemyKey?: string,
 ) => {
-  const ethereumProvider = getDefaultProvider(env.ethChainId);
+  let ethereumProvider;
+  if (alchemyKey) {
+    ethereumProvider = getDefaultProvider(env.ethChainId, {
+      alchemy: alchemyKey,
+    });
+  }
   const parachains: { [paraId: string]: string } = {};
   Object.keys(env.parachains).forEach(
     (paraId) => (parachains[paraId] = env.parachains[paraId]),
@@ -26,7 +31,7 @@ const createSnowbridgeContext = async (
   parachainConfigs[env.name as SnowbridgeEnvironmentNames].forEach(
     ({ parachainId, endpoint }) => (parachains[parachainId] = endpoint),
   );
-  return await createContext(ethereumProvider, env, {
+  return await createContext(env, ethereumProvider, {
     bridgeHub: process.env.NEXT_PUBLIC_BRIDGE_HUB_URL,
     assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL,
     relaychain: process.env.NEXT_PUBLIC_RELAY_CHAIN_URL,
@@ -49,13 +54,8 @@ export const useSnowbridgeContext = (): [
 
   useEffect(() => {
     if (context !== null) return;
-    const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
-    if (!alchemyKey) {
-      setContext(null);
-      return;
-    }
     setLoading(true);
-    createSnowbridgeContext(env, alchemyKey)
+    createSnowbridgeContext(env, process.env.NEXT_PUBLIC_ALCHEMY_KEY)
       .then((context) => {
         setLoading(false);
         setContext(context);
