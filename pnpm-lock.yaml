@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@duneanalytics/client-sdk':
-        specifier: ^0.3.5
-        version: 0.3.5
       '@hookform/resolvers':
         specifier: 3.9.1
         version: 3.9.1(react-hook-form@7.53.2(react@18.3.1))
@@ -438,9 +435,6 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
-
-  '@duneanalytics/client-sdk@0.3.5':
-    resolution: {integrity: sha512-4YcET+PsKdGbEZi39HMqB5in8FzOVClmSu8lTJSPsKj5gfIgKNwRbBMVnhLvX3xiChXRse2vWGqMPWeLl0zjEQ==}
 
   '@edge-runtime/format@2.2.1':
     resolution: {integrity: sha512-JQTRVuiusQLNNLe2W9tnzBlV/GvSVcozLl4XZHk5swnRZ/v6jp8TqR8P7sqmJsQqblDZ3EztcWmLDbhRje/+8g==}
@@ -3878,10 +3872,6 @@ packages:
   lodash@4.17.23:
     resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
 
-  loglevel@1.9.2:
-    resolution: {integrity: sha512-HgMmCqIJSAKqo68l0rS2AanEWfkxaZ5wNiEFb5ggm08lDs9Xl2KxBlX3PTcaD2chBM1gXAYf491/M2Rv8Jwayg==}
-    engines: {node: '>= 0.6.0'}
-
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
@@ -5594,10 +5584,6 @@ snapshots:
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
-
-  '@duneanalytics/client-sdk@0.3.5':
-    dependencies:
-      loglevel: 1.9.2
 
   '@edge-runtime/format@2.2.1': {}
 
@@ -10283,8 +10269,6 @@ snapshots:
   lodash.merge@4.6.2: {}
 
   lodash@4.17.23: {}
-
-  loglevel@1.9.2: {}
 
   loose-envify@1.4.0:
     dependencies:
