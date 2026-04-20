@@ -165,6 +165,7 @@ export type FeeInfo = {
   totalFee: bigint;
   decimals: number;
   symbol: string;
+  volumeTip?: bigint;
   delivery:
     | toEthereumV2.DeliveryFee
     | toPolkadotV2.DeliveryFee

@@ -162,6 +162,32 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
             </span>
           </div>
         </LayoutRow>
+        {feeInfo.volumeTip && feeInfo.volumeTip > 0n && (
+          <LayoutRow
+            name="• Bridge Tip"
+            feeLabelTextClassName={feeLabelTextClassName}
+            feeTextClassName={feeTextClassName}
+          >
+            <div className="inline">
+              {formatBalance({
+                number: feeInfo.volumeTip,
+                decimals: feeInfo.decimals,
+                displayDecimals,
+              })}{" "}
+              {feeInfo.symbol}
+              {prices && prices[feeInfo.symbol] && (
+                <span className="text-muted-foreground ml-1">
+                  (
+                  {formatUsdValue(
+                    Number(formatUnits(feeInfo.volumeTip, feeInfo.decimals)) *
+                      prices[feeInfo.symbol],
+                  )}
+                  )
+                </span>
+              )}
+            </div>
+          </LayoutRow>
+        )}
       </>
     );
   } else {
@@ -185,7 +211,33 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
               </span>
             )}
           </div>
-        </LayoutRow>{" "}
+        </LayoutRow>
+        {feeInfo.volumeTip && feeInfo.volumeTip > 0n && (
+          <LayoutRow
+            name="• Bridge Tip"
+            feeLabelTextClassName={feeLabelTextClassName}
+            feeTextClassName={feeTextClassName}
+          >
+            <div className="inline">
+              {formatBalance({
+                number: feeInfo.volumeTip,
+                decimals: feeInfo.decimals,
+                displayDecimals,
+              })}{" "}
+              {feeInfo.symbol}
+              {prices && prices[feeInfo.symbol] && (
+                <span className="text-muted-foreground ml-1">
+                  (
+                  {formatUsdValue(
+                    Number(formatUnits(feeInfo.volumeTip, feeInfo.decimals)) *
+                      prices[feeInfo.symbol],
+                  )}
+                  )
+                </span>
+              )}
+            </div>
+          </LayoutRow>
+        )}{" "}
       </>
     );
   }
