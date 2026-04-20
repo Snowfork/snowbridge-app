@@ -14,7 +14,8 @@ import {
   transferFormSchema,
 } from "@/utils/formSchema";
 import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
-import { assetsV2, Context } from "@snowbridge/api";
+import { assetsV2 } from "@snowbridge/api";
+import { type SnowbridgeContext } from "@/lib/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
 import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -1126,7 +1127,7 @@ interface SubmitButtonProps {
   tokenMetadata: ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
-  context: Context | null;
+  context: SnowbridgeContext | null;
 }
 
 function SubmitButton({

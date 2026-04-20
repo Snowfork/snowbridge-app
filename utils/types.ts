@@ -7,6 +7,7 @@ import {
   forInterParachain,
   toPolkadotSnowbridgeV2,
 } from "@snowbridge/api";
+import { EthersProviderTypes } from "@snowbridge/provider-ethers";
 import { Struct, u128 } from "@polkadot/types";
 import { AccountId32 } from "@polkadot/types/interfaces";
 import { Codec } from "@polkadot/types/types";
@@ -48,7 +49,8 @@ export type ValidationError =
   | ({ errorKind: "ethereum->ethereum" } & toEthereumV2.ValidationLog)
   | ({ errorKind: "polkadot->kusama" } & forKusama.ValidationLog)
   | ({ errorKind: "kusama->polkadot" } & forKusama.ValidationLog)
-  | ({ errorKind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationLog);
+  | ({ errorKind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationLog)
+  | ({ errorKind: "ethereum_l2->polkadot" } & toPolkadotV2.ValidationLog);
 
 export type ErrorInfo = {
   title: string;
@@ -164,13 +166,10 @@ export type FeeInfo = {
   decimals: number;
   symbol: string;
   delivery:
-    | ({ kind: "polkadot->ethereum" } & toEthereumV2.DeliveryFee)
-    | ({ kind: "ethereum->ethereum" } & toEthereumV2.DeliveryFee)
-    | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.DeliveryFee)
-    | ({ kind: "ethereum->polkadot" } & toPolkadotV2.DeliveryFee)
-    | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.DeliveryFee)
-    | ({ kind: "ethereum_l2->polkadot" } & toPolkadotSnowbridgeV2.DeliveryFee)
-    | ({ kind: "polkadot->polkadot" } & forInterParachain.DeliveryFee);
+    | toEthereumV2.DeliveryFee
+    | toPolkadotV2.DeliveryFee
+    | toPolkadotSnowbridgeV2.DeliveryFee
+    | forInterParachain.DeliveryFee;
   kind: ChainKind;
 };
 
@@ -205,33 +204,21 @@ export interface KusamaValidationData {
 }
 
 export type ValidationResult =
-  | ({ kind: "polkadot->ethereum" } & toEthereumV2.ValidationResult)
-  | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationResult)
-  | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.ValidationResultEvm)
-  | ({ kind: "ethereum->polkadot" } & toPolkadotV2.ValidationResult)
-  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.ValidationResult)
-  | ({
-      kind: "ethereum_l2->polkadot";
-    } & toPolkadotSnowbridgeV2.ValidationResult)
-  | ({ kind: "polkadot->polkadot" } & forInterParachain.ValidationResult)
-  | ({ kind: "kusama->polkadot" } & forKusama.ValidationResult)
-  | ({ kind: "polkadot->kusama" } & forKusama.ValidationResult);
+  | toEthereumV2.ValidatedTransfer
+  | toEthereumFromEVMV2.ValidatedTransferEvm<EthersProviderTypes>
+  | toPolkadotV2.ValidatedTransfer<EthersProviderTypes>
+  | toPolkadotSnowbridgeV2.ValidatedTransfer<EthersProviderTypes>
+  | forInterParachain.ValidatedTransfer
+  | ({ kind: "kusama->polkadot" } & forKusama.ValidatedTransfer)
+  | ({ kind: "polkadot->kusama" } & forKusama.ValidatedTransfer);
 
 export type MessageReceipt =
   | ({ kind: "polkadot->ethereum" } & toEthereumV2.MessageReceipt)
   | ({ kind: "polkadot->ethereum_l2" } & toEthereumV2.MessageReceipt)
   | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.MessageReceiptEvm)
   | ({ kind: "ethereum->polkadot" } & toPolkadotV2.MessageReceipt)
-  | ({
-      kind: "ethereum_l2->polkadot";
-    } & toPolkadotSnowbridgeV2.MessageReceipt & {
-        messageId: string;
-        channelId: string;
-      })
-  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt & {
-        messageId: string;
-        channelId: string;
-      })
+  | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt)
+  | ({ kind: "ethereum_l2->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt)
   | ({ kind: "kusama->polkadot" } & forKusama.MessageReceipt)
   | ({ kind: "polkadot->kusama" } & forKusama.MessageReceipt)
   | ({ kind: "polkadot->polkadot" } & forInterParachain.MessageReceipt);

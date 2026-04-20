@@ -4,7 +4,7 @@ import { initializeWeb3Modal } from "@/lib/client/web3modal";
 import { BridgeInfo } from "@snowbridge/base-types";
 import { Provider } from "jotai";
 import { ThemeProvider } from "next-themes";
-import { createContext, useEffect } from "react";
+import { createContext } from "react";
 
 export const BridgeInfoContext = createContext<BridgeInfo | null>(null);
 

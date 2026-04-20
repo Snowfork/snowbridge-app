@@ -1,24 +1,21 @@
-import { BridgeInfoContext } from "@/app/providers";
 import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
-import { snowbridgeContextAtom } from "@/store/snowbridge";
+import { snowbridgeApiAtom } from "@/store/snowbridge";
 import { ContractResponse, ValidationData } from "@/utils/types";
-import { toEthereumSnowbridgeV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
-import { useCallback, useContext } from "react";
+import { useCallback } from "react";
 import { isHex, u8aToHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 
 export function useCreateAgent(): (
   _: ValidationData,
 ) => Promise<ContractResponse> {
-  const { registry } = useContext(BridgeInfoContext)!;
-  const context = useAtomValue(snowbridgeContextAtom);
+  const api = useAtomValue(snowbridgeApiAtom);
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
   return useCallback(
     async (data: ValidationData) => {
       if (
-        context === null ||
+        api === null ||
         ethereumProvider === null ||
         ethereumAccount === null
       ) {
@@ -29,19 +26,13 @@ export function useCreateAgent(): (
       if (!isHex(accountInHex)) {
         accountInHex = u8aToHex(decodeAddress(accountInHex));
       }
-      const ca = toEthereumSnowbridgeV2.createAgentCreationImplementation();
-      const tx = await ca.createAgentCreation(
-        context,
-        registry,
+      const agentCreation = api.createAgent();
+      const tx = await agentCreation.tx(
         data.formData.beneficiary,
-        await toEthereumSnowbridgeV2.sourceAgentId(
-          context,
-          data.source.id,
-          accountInHex,
-        ),
+        await agentCreation.agentIdForAccount(data.source.id, accountInHex),
       );
 
-      const plan = await ca.validateAgentCreation(context, tx);
+      const plan = await agentCreation.validate(tx);
       if (!plan.success)
         throw Error(`Could not create agent ${JSON.stringify(plan.logs)}`);
 
@@ -62,6 +53,6 @@ export function useCreateAgent(): (
       console.log("create agent receipt", receipt);
       return { receipt, response };
     },
-    [context, registry, ethereumProvider, ethereumAccount],
+    [api, ethereumProvider, ethereumAccount],
   );
 }

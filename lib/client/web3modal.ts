@@ -1,6 +1,6 @@
 "use client";
 
-import { getEnvironmentName } from "@/lib/snowbridge";
+import { getEnvironmentName } from "@/lib/snowbridgeEnv";
 import { metadata } from "@/lib/metadata";
 import { AppKit, createAppKit } from "@reown/appkit/react";
 import {

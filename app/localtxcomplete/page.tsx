@@ -23,7 +23,7 @@ import useSWR from "swr";
 import { subscanEventLink, subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { BridgeInfoContext } from "../providers";
 import { AssetRegistry, ParachainLocation } from "@snowbridge/base-types";
-import { getEnvironment } from "@/lib/snowbridge";
+import { getEnvironment } from "@/lib/snowbridgeEnv";
 import { getTransferLocation } from "@snowbridge/registry";
 import { TransferTitle } from "@/components/activity/TransferTitle";
 import { chainName } from "@/utils/chainNames";

@@ -1,12 +1,13 @@
 import {
+  snowbridgeApiAtom,
   snowbridgeContextAtom,
   snowbridgeEnvironmentAtom,
+  snowbridgeEnvNameAtom,
 } from "@/store/snowbridge";
-import { Context } from "@snowbridge/api";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 import { getDefaultProvider } from "ethers";
-import { createContext } from "@/lib/snowbridge";
+import { createSnowbridgeApi, type SnowbridgeContext } from "@/lib/snowbridge";
 import {
   parachainConfigs,
   SnowbridgeEnvironmentNames,
@@ -31,7 +32,7 @@ const createSnowbridgeContext = async (
   parachainConfigs[env.name as SnowbridgeEnvironmentNames].forEach(
     ({ parachainId, endpoint }) => (parachains[parachainId] = endpoint),
   );
-  return await createContext(env, ethereumProvider, {
+  return createSnowbridgeApi(ethereumProvider, env.name, {
     bridgeHub: process.env.NEXT_PUBLIC_BRIDGE_HUB_URL,
     assetHub: process.env.NEXT_PUBLIC_ASSET_HUB_URL,
     relaychain: process.env.NEXT_PUBLIC_RELAY_CHAIN_URL,
@@ -41,24 +42,26 @@ const createSnowbridgeContext = async (
 };
 
 export const useSnowbridgeContext = (): [
-  Context | null,
+  SnowbridgeContext | null,
   boolean,
   string | null,
 ] => {
-  const [context, setContext] = useAtom(snowbridgeContextAtom);
+  const [api, setApi] = useAtom(snowbridgeApiAtom);
+  const context = useAtomValue(snowbridgeContextAtom);
 
   const env = useAtomValue(snowbridgeEnvironmentAtom);
+  const envName = useAtomValue(snowbridgeEnvNameAtom);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (context !== null) return;
+    if (api !== null) return;
     setLoading(true);
     createSnowbridgeContext(env, process.env.NEXT_PUBLIC_ALCHEMY_KEY)
-      .then((context) => {
+      .then((nextApi) => {
         setLoading(false);
-        setContext(context);
+        setApi(nextApi);
       })
       .catch((error) => {
         console.error(error);
@@ -67,7 +70,7 @@ export const useSnowbridgeContext = (): [
         setLoading(false);
         setError(message);
       });
-  }, [context, env, setContext, setError, setLoading]);
+  }, [api, env, envName, setApi, setError, setLoading]);
 
   return [context, loading, error];
 };

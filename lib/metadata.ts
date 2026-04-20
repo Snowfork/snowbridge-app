@@ -1,4 +1,4 @@
-import { getEnvironmentName } from "./snowbridge";
+import { getEnvironmentName } from "./snowbridgeEnv";
 
 let url = "http://localhost:3000";
 if (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview") {

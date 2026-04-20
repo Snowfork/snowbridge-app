@@ -1,24 +1,13 @@
 import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
-import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { inferTransferType } from "@/utils/inferTransferType";
+import { snowbridgeApiAtom } from "@/store/snowbridge";
 import {
   MessageReceipt,
   SignerInfo,
   ValidationData,
   ValidationResult,
 } from "@/utils/types";
-import { Signer } from "@polkadot/api/types";
-import {
-  Context,
-  toEthereumV2,
-  toEthereumFromEVMV2,
-  toPolkadotV2,
-  forInterParachain,
-  toEthereumSnowbridgeV2,
-  toPolkadotSnowbridgeV2,
-  assetsV2,
-} from "@snowbridge/api";
+import { type SnowbridgeClient } from "@/lib/snowbridge";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
@@ -172,206 +161,112 @@ async function validateEthereumSignerWithParachain(
 }
 
 async function planSend(
-  context: Context,
+  api: SnowbridgeClient,
   data: ValidationData,
 ): Promise<ValidationResult> {
-  const {
-    source,
-    destination,
-    amountInSmallestUnit,
-    formData,
-    assetRegistry,
-    fee,
-  } = data;
-  const transferType = inferTransferType(source, destination);
-  switch (transferType) {
+  const { source, destination, amountInSmallestUnit, formData, fee } = data;
+  const sender = api.sender(source, destination);
+
+  switch (sender.kind) {
     case "ethereum->ethereum": {
-      const { parachain } = validateEvmSubstrateDestination(data);
-      const tx = await toEthereumFromEVMV2.createTransferEvm(
-        { sourceParaId: parachain.id, context },
-        assetRegistry,
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
+      const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery as toEthereumV2.DeliveryFee,
+        fee.delivery,
       );
-      const plan = await toEthereumFromEVMV2.validateTransferEvm(context, tx);
-      console.log(plan);
-      return { kind: transferType, ...plan };
-    }
-    case "polkadot->ethereum": {
-      const parachain = validateSubstrateDestination(data);
-
-      const useV2 = assetsV2.supportsPolkadotToEthereumV2(parachain);
-      let plan;
-      if (useV2) {
-        console.log(
-          `[planSend] Snowbridge V2: Source parachain ${parachain.id} to Ethereum.`,
-        );
-        const transferImpl =
-          toEthereumSnowbridgeV2.createTransferImplementation(
-            parachain.id,
-            assetRegistry,
-            formData.token,
-          );
-        const tx = await transferImpl.createTransfer(
-          { sourceParaId: parachain.id, context },
-          assetRegistry,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          amountInSmallestUnit,
-          fee.delivery as toEthereumV2.DeliveryFee,
-        );
-        plan = await transferImpl.validateTransfer(context, tx);
-      } else {
-        const tx = await toEthereumV2.createTransfer(
-          { sourceParaId: parachain.id, context },
-          assetRegistry,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          amountInSmallestUnit,
-          fee.delivery as toEthereumV2.DeliveryFee,
-        );
-        plan = await toEthereumV2.validateTransfer(context, tx);
-      }
-      console.log(plan);
-      return { kind: transferType, ...plan };
+      return await sender.validate(transfer);
     }
     case "ethereum->polkadot": {
-      const paraInfo = validateEthereumDestination(data);
-
-      const useV2 = assetsV2.supportsEthereumToPolkadotV2(paraInfo);
-      let plan;
-      if (useV2) {
-        console.log(
-          `[planSend] Snowbridge V2: Ethereum to Destination parachain ${paraInfo.id}.`,
-        );
-        const transferImpl =
-          toPolkadotSnowbridgeV2.createTransferImplementation(
-            paraInfo.id,
-            assetRegistry,
-            formData.token,
-          );
-        const tx = await transferImpl.createTransfer(
-          context,
-          assetRegistry,
-          paraInfo.id,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          amountInSmallestUnit,
-          fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
-        );
-        plan = await transferImpl.validateTransfer(context, tx);
-      } else {
-        const tx = await toPolkadotV2.createTransfer(
-          assetRegistry,
-          formData.sourceAccount,
-          formData.beneficiary,
-          formData.token,
-          paraInfo.id,
-          amountInSmallestUnit,
-          fee.delivery as toPolkadotV2.DeliveryFee,
-        );
-        plan = await toPolkadotV2.validateTransfer(
-          {
-            assetHub: await context.assetHub(),
-            bridgeHub: await context.bridgeHub(),
-            ethereum: context.ethereum(),
-            gateway: context.gateway(),
-            destParachain: await context.parachain(paraInfo.id),
-          },
-          tx,
-        );
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
       }
-      console.log(plan);
-      return { kind: transferType, ...plan };
+      if (!("feeAsset" in fee.delivery)) {
+        throw Error(`Invalid delivery fee shape for ${sender.kind}.`);
+      }
+      const transfer = await sender.tx(
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery,
+      );
+      return await sender.validate(transfer);
+    }
+    case "polkadot->ethereum": {
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
+      const transfer = await sender.tx(
+        formData.sourceAccount,
+        formData.beneficiary,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery,
+      );
+      return await sender.validate(transfer);
     }
     case "polkadot->polkadot": {
-      const { source: s, destination: d } =
-        validateInterParachainTransfer(data);
-      const tx = await forInterParachain.createTransfer(
-        { sourceParaId: s.id, context },
-        assetRegistry,
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
+      const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
-        d.id,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery as forInterParachain.DeliveryFee,
+        fee.delivery,
       );
-      const plan = await forInterParachain.validateTransfer(
-        {
-          sourceParaId: s.id,
-          destinationParaId: d.id,
-          context,
-        },
-        tx,
-      );
-      console.log(plan);
-      return { kind: transferType, ...plan };
+      return await sender.validate(transfer);
     }
     case "polkadot->ethereum_l2": {
-      const l2transfer = toEthereumSnowbridgeV2.createL2TransferImplementation(
-        source.id,
-        assetRegistry,
-        formData.token,
-      );
-      const tx = await l2transfer.createTransfer(
-        context,
-        assetRegistry,
-        destination.id,
-        formData.token,
-        amountInSmallestUnit,
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
+      const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
-        fee.delivery as toEthereumV2.DeliveryFee,
+        formData.token,
+        amountInSmallestUnit,
+        fee.delivery,
       );
-      const plan = await l2transfer.validateTransfer(context, tx);
-      console.log(plan);
-      return { kind: transferType, ...plan };
+      return await sender.validate(transfer);
     }
     case "ethereum_l2->polkadot": {
-      if (source.kind !== "ethereum_l2")
-        throw `Invalid source ${source.key}, expected ethereum_l2 source.`;
+      if (source.kind !== "ethereum_l2") {
+        throw Error(`Invalid source ${source.key}, expected ethereum_l2 source.`);
+      }
+      if (fee.delivery.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      }
       const l2asset = Object.values(source.ethChain.assets).find(
         (x) =>
           x.swapTokenAddress?.toLowerCase() === formData.token.toLowerCase(),
       );
-      if (!l2asset)
+      if (!l2asset) {
         throw Error(`Could not find l2 token for l1 token ${formData.token}`);
-
-      const l2transfer = toPolkadotSnowbridgeV2.createL2TransferImplementation(
-        source.id,
-        destination.id,
-        assetRegistry,
-        l2asset.token,
+      }
+      return await sender.validate(
+        await sender.tx(
+          formData.sourceAccount,
+          formData.beneficiary,
+          l2asset.token,
+          amountInSmallestUnit,
+          fee.delivery,
+        ),
       );
-      const tx = await l2transfer.createTransfer(
-        context,
-        assetRegistry,
-        source.id,
-        l2asset.token,
-        amountInSmallestUnit,
-        destination.id,
-        formData.sourceAccount,
-        formData.beneficiary,
-        fee.delivery as toPolkadotSnowbridgeV2.DeliveryFee,
-      );
-      const plan = await l2transfer.validateTransfer(context, tx);
-      console.log(plan);
-      return { kind: transferType, ...plan };
     }
     default:
-      throw Error(`Cannot infer source ${transferType}.`);
+      throw Error(`Cannot route transfer ${sender.kind}.`);
   }
 }
 
 async function sendToken(
-  context: Context,
+  api: SnowbridgeClient,
   data: ValidationData,
   plan: ValidationResult,
   signerInfo: SignerInfo,
@@ -381,160 +276,101 @@ async function sendToken(
       cause: plan,
     });
   }
-  const { source } = data;
+  const sender = api.sender(data.source, data.destination);
 
-  switch (plan.kind) {
+  switch (sender.kind) {
     case "polkadot->polkadot": {
-      const { paraInfo, polkadotAccount } = validateSubstrateSigner(
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
+      const { polkadotAccount } = validateSubstrateSigner(
         data,
         signerInfo,
         true,
       );
-      const tx = plan.transfer as forInterParachain.Transfer;
-      const result = await forInterParachain.signAndSend(
-        { sourceParaId: paraInfo.id, context },
-        tx,
+      const result = await sender.signAndSend(
+        plan,
         polkadotAccount.address,
         {
-          signer: polkadotAccount.signer! as Signer,
+          signer: polkadotAccount.signer as any,
           withSignedTransaction: true,
         },
       );
       console.log(result);
-      return { kind: plan.kind, ...result };
+      return { kind: sender.kind, ...result };
     }
     case "ethereum->ethereum": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
       const { signer } = await validateEvmSubstrateSigner(data, signerInfo);
-      const transfer = plan.transfer as toEthereumFromEVMV2.TransferEvm;
-      const response = await signer.sendTransaction(transfer.tx);
+      const response = await signer.sendTransaction(plan.tx);
       const receipt = await response.wait();
       if (!receipt) {
         throw Error(`Could not fetch transaction receipt.`);
       }
-      const result = await toEthereumFromEVMV2.getMessageReceipt(
-        { sourceParaId: source.parachain!.id, context },
-        receipt,
-      );
+      const result = await sender.messageId(receipt);
       console.log(result);
-      return { kind: plan.kind, ...result };
+      return { kind: sender.kind, ...result };
     }
-    case "polkadot->ethereum": {
+    case "polkadot->ethereum":
+    case "polkadot->ethereum_l2": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
       const { paraInfo, polkadotAccount } = validateSubstrateSigner(
         data,
         signerInfo,
         false,
       );
-
-      const useV2 = assetsV2.supportsPolkadotToEthereumV2(paraInfo);
-      let result;
-      if (useV2) {
-        console.log(
-          `[sendToken] Snowbridge V2: Source parachain ${paraInfo.id} to Ethereum.`,
-        );
-        const tx = plan.transfer as toEthereumV2.Transfer;
-        result = await toEthereumSnowbridgeV2.signAndSend(
-          context,
-          tx,
-          polkadotAccount.address,
-          {
-            signer: polkadotAccount.signer! as Signer,
-            withSignedTransaction: true,
-          },
-        );
-      } else {
-        const tx = plan.transfer as toEthereumV2.Transfer;
-        result = await toEthereumV2.signAndSend(
-          context,
-          tx,
-          polkadotAccount.address,
-          {
-            signer: polkadotAccount.signer! as Signer,
-            withSignedTransaction: true,
-          },
-        );
-      }
-      console.log(result);
-      return { kind: plan.kind, ...result };
-    }
-    case "ethereum->polkadot": {
-      const { signer, paraInfo } = await validateEthereumSignerWithParachain(
-        data,
-        signerInfo,
-      );
-
-      const useV2 = assetsV2.supportsEthereumToPolkadotV2(paraInfo);
-      let result;
-      if (useV2) {
-        console.log(
-          `[sendToken] Snowbridge V2: Destination parachain ${paraInfo.id}`,
-        );
-        const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
-        const response = await signer.sendTransaction(transfer.tx);
-        const receipt = await response.wait();
-        if (!receipt) {
-          throw Error(`Could not fetch transaction receipt.`);
-        }
-        result = await toPolkadotSnowbridgeV2.getMessageReceipt(receipt);
-        if (!result) {
-          throw Error(`Could not fetch message receipt.`);
-        }
-        result = { ...result, messageId: receipt.hash, channelId: "" };
-      } else {
-        const transfer = plan.transfer as toPolkadotV2.Transfer;
-        const response = await signer.sendTransaction(transfer.tx);
-        const receipt = await response.wait();
-        if (!receipt) {
-          throw Error(`Could not fetch transaction receipt.`);
-        }
-        result = await toPolkadotV2.getMessageReceipt(receipt);
-        if (!result) {
-          throw Error(`Could not fetch message receipt.`);
-        }
-      }
-      console.log(result);
-      return { kind: plan.kind, ...result };
-    }
-    case "polkadot->ethereum_l2": {
-      const { polkadotAccount } = validateSubstrateSigner(
-        data,
-        signerInfo,
-        false,
-      );
-      const result = await toEthereumSnowbridgeV2.signAndSend(
-        context,
-        plan.transfer,
+      console.log(`[sendToken] Sending from parachain ${paraInfo.id}.`);
+      const result = await sender.signAndSend(
+        plan,
         polkadotAccount.address,
         {
-          signer: polkadotAccount.signer! as Signer,
+          signer: polkadotAccount.signer as any,
           withSignedTransaction: true,
         },
       );
       console.log(result);
-      return { kind: plan.kind, ...result };
+      return { kind: sender.kind, ...result };
     }
-    case "ethereum_l2->polkadot": {
-      const { signer } = await validateEthereumSigner(data, signerInfo);
-      const transfer = plan.transfer as toPolkadotSnowbridgeV2.Transfer;
-      const response = await signer.sendTransaction(transfer.tx);
+    case "ethereum->polkadot": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
+      const { signer } = await validateEthereumSignerWithParachain(
+        data,
+        signerInfo,
+      );
+      const response = await signer.sendTransaction(plan.tx);
       const receipt = await response.wait();
       if (!receipt) {
         throw Error(`Could not fetch transaction receipt.`);
       }
-      const message = {
-        nonce: 0n,
-        payload: "",
-        messageId: transfer.computed.topic,
-        blockNumber: receipt.blockNumber,
-        blockHash: receipt.blockHash,
-        txHash: receipt.hash,
-        txIndex: receipt.index,
-      };
-      if (!message) {
+      const result = await sender.messageId(receipt);
+      if (!result) {
         throw Error(`Could not fetch message receipt.`);
       }
-      const result = { ...message, messageId: receipt.hash, channelId: "" };
       console.log(result);
-      return { kind: plan.kind, ...result };
+      return { kind: sender.kind, ...result };
+    }
+    case "ethereum_l2->polkadot": {
+      if (plan.kind !== sender.kind) {
+        throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+      }
+      const { signer } = await validateEthereumSigner(data, signerInfo);
+      const response = await signer.sendTransaction(plan.tx);
+      const receipt = await response.wait();
+      if (!receipt) {
+        throw Error(`Could not fetch transaction receipt.`);
+      }
+      const result = await sender.messageId(receipt);
+      if (!result) {
+        throw Error(`Could not fetch message receipt.`);
+      }
+      console.log(result);
+      return { kind: sender.kind, ...result };
     }
     default: {
       throw Error(`Invalid form state: cannot infer source type.`);
@@ -546,13 +382,13 @@ export function useSendToken(): [
   (data: ValidationData) => Promise<ValidationResult>,
   (data: ValidationData, plan: ValidationResult) => Promise<MessageReceipt>,
 ] {
-  const context = useAtomValue(snowbridgeContextAtom);
+  const api = useAtomValue(snowbridgeApiAtom);
   const plan = useCallback(
     async (data: ValidationData) => {
-      if (context === null) throw Error("No context");
-      return await planSend(context, data);
+      if (api === null) throw Error("No api");
+      return await planSend(api, data);
     },
-    [context],
+    [api],
   );
 
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
@@ -560,8 +396,8 @@ export function useSendToken(): [
   const ethereumProvider = useAtomValue(ethersProviderAtom);
   const send = useCallback(
     async (data: ValidationData, plan: ValidationResult) => {
-      if (context === null) throw Error("No context");
-      return await sendToken(context, data, plan, {
+      if (api === null) throw Error("No api");
+      return await sendToken(api, data, plan, {
         polkadotAccount: (polkadotAccounts ?? []).find(
           (pa) => pa.address === data.formData.sourceAccount,
         ),
@@ -569,7 +405,7 @@ export function useSendToken(): [
         ethereumProvider: ethereumProvider ?? undefined,
       });
     },
-    [context, polkadotAccounts, ethereumAccount, ethereumProvider],
+    [api, polkadotAccounts, ethereumAccount, ethereumProvider],
   );
   return [plan, send];
 }

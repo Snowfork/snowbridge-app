@@ -8,7 +8,7 @@ import "@/styles/overrides.css";
 import { Providers } from "./providers";
 import { bridgeInfoFor } from "@snowbridge/registry";
 import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
-import { getEnvironmentName } from "@/lib/snowbridge";
+import { getEnvironmentName } from "@/lib/snowbridgeEnv";
 
 export const maxDuration = 90;
 export const revalidate = 43_200; // 12 hours: 60 * 60 * 12

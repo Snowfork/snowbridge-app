@@ -127,8 +127,7 @@ function TransferStepView(step: StepData) {
           {...step}
           defaultAmount={step.data.amountInSmallestUnit.toString()}
           messageId={
-            (step.plan as toEthereumV2.ValidationResult).transfer?.computed
-              ?.messageId
+            (step.plan as toEthereumV2.ValidatedTransfer).computed?.messageId
           }
         />
       );
