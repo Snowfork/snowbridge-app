@@ -27,7 +27,7 @@ class SkipMinifySr25519 {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
 
     if (isServer) {
@@ -41,10 +41,14 @@ const nextConfig = {
       return config;
     }
 
-    // Client build: sr25519 must be bundled (browser can't `require` it),
-    // but the minifier mangles `${'\0'}0` into `\00` inside a template
-    // literal. Isolate it into its own chunk and flag that chunk as
-    // pre-minimized so Next's TerserPlugin leaves it alone.
+    // Dev client builds skip minification and splitChunks, so there's
+    // nothing to guard against.
+    if (dev) return config;
+
+    // Production client build: sr25519 must be bundled (browser can't
+    // `require` it), but the minifier mangles `${'\0'}0` into `\00` inside
+    // a template literal. Isolate it into its own chunk and flag that
+    // chunk as pre-minimized so Next's TerserPlugin leaves it alone.
     config.optimization.splitChunks.cacheGroups = {
       ...config.optimization.splitChunks.cacheGroups,
       sr25519: {

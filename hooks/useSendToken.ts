@@ -238,7 +238,9 @@ async function planSend(
     }
     case "ethereum_l2->polkadot": {
       if (source.kind !== "ethereum_l2") {
-        throw Error(`Invalid source ${source.key}, expected ethereum_l2 source.`);
+        throw Error(
+          `Invalid source ${source.key}, expected ethereum_l2 source.`,
+        );
       }
       if (fee.delivery.kind !== sender.kind) {
         throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
@@ -288,14 +290,10 @@ async function sendToken(
         signerInfo,
         true,
       );
-      const result = await sender.signAndSend(
-        plan,
-        polkadotAccount.address,
-        {
-          signer: polkadotAccount.signer as any,
-          withSignedTransaction: true,
-        },
-      );
+      const result = await sender.signAndSend(plan, polkadotAccount.address, {
+        signer: polkadotAccount.signer as any,
+        withSignedTransaction: true,
+      });
       console.log(result);
       return { kind: sender.kind, ...result };
     }
@@ -324,14 +322,10 @@ async function sendToken(
         false,
       );
       console.log(`[sendToken] Sending from parachain ${paraInfo.id}.`);
-      const result = await sender.signAndSend(
-        plan,
-        polkadotAccount.address,
-        {
-          signer: polkadotAccount.signer as any,
-          withSignedTransaction: true,
-        },
-      );
+      const result = await sender.signAndSend(plan, polkadotAccount.address, {
+        signer: polkadotAccount.signer as any,
+        withSignedTransaction: true,
+      });
       console.log(result);
       return { kind: sender.kind, ...result };
     }
