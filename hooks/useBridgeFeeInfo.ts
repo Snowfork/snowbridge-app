@@ -5,6 +5,7 @@ import { FeeInfo } from "@/utils/types";
 import { useContext } from "react";
 import { BridgeInfoContext } from "@/app/providers";
 import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
+import { assetsV2 } from "@snowbridge/api";
 import { type SnowbridgeClient } from "@/lib/snowbridge";
 import { getEnvironmentName } from "@/lib/snowbridgeEnv";
 import { parseUnits } from "ethers";
@@ -97,8 +98,7 @@ async function fetchBridgeFeeInfo([
         kind: source.kind,
       };
     }
-    case "ethereum->ethereum":
-    case "polkadot->ethereum": {
+    case "ethereum->ethereum": {
       const fee = await sender.fee(token);
 
       let feeValue = fee.totalFeeInDot;
@@ -114,6 +114,20 @@ async function fetchBridgeFeeInfo([
         totalFee: feeValue,
         decimals,
         symbol,
+        delivery: fee,
+        kind: source.kind,
+      };
+    }
+    case "polkadot->ethereum": {
+      const fee = await sender.fee(token, {
+        feeTokenLocation: assetsV2.DOT_LOCATION,
+      });
+      const feeValue = fee.totalFeeInDot;
+      return {
+        fee: feeValue,
+        totalFee: feeValue,
+        decimals: registry.relaychain.tokenDecimals ?? 0,
+        symbol: registry.relaychain.tokenSymbols ?? "",
         delivery: fee,
         kind: source.kind,
       };
@@ -154,7 +168,9 @@ async function fetchBridgeFeeInfo([
       };
     }
     case "polkadot->ethereum_l2": {
-      const fee = await sender.fee(token, amountInSmallestUnit);
+      const fee = await sender.fee(token, amountInSmallestUnit, {
+        feeTokenLocation: assetsV2.DOT_LOCATION,
+      });
       let feeValue = fee.totalFeeInDot;
       let decimals = registry.relaychain.tokenDecimals ?? 0;
       let symbol = registry.relaychain.tokenSymbols ?? "";
