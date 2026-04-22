@@ -48,6 +48,7 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   );
 
   if (feeError && !feeInfo) {
+    console.error(feeError);
     let message = "Error";
     if (feeError instanceof FeeEstimateError) {
       switch (feeError.details.code) {

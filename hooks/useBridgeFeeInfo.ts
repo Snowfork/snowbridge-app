@@ -84,11 +84,7 @@ async function fetchBridgeFeeInfo([
   switch (sender.kind) {
     case "ethereum->polkadot": {
       const fee = await sender.fee(token);
-      const estimatedExecution = await estimateExecutionFee(
-        sender,
-        token,
-        fee,
-      );
+      const estimatedExecution = await estimateExecutionFee(sender, token, fee);
       return {
         fee: fee.totalFeeInWei,
         totalFee: fee.totalFeeInWei + BigInt(estimatedExecution),
@@ -119,15 +115,24 @@ async function fetchBridgeFeeInfo([
       };
     }
     case "polkadot->ethereum": {
-      const fee = await sender.fee(token, {
-        feeTokenLocation: assetsV2.DOT_LOCATION,
-      });
-      const feeValue = fee.totalFeeInDot;
+      const fee = source.parachain?.features.supportsV2
+        ? await sender.fee(token, {
+            feeTokenLocation: assetsV2.DOT_LOCATION,
+          })
+        : await sender.fee(token);
+      let feeValue = fee.totalFeeInDot;
+      let decimals = registry.relaychain.tokenDecimals ?? 0;
+      let symbol = registry.relaychain.tokenSymbols ?? "";
+      if (fee.totalFeeInNative) {
+        feeValue = fee.totalFeeInNative;
+        decimals = source.parachain!.info.tokenDecimals;
+        symbol = source.parachain!.info.tokenSymbols;
+      }
       return {
         fee: feeValue,
         totalFee: feeValue,
-        decimals: registry.relaychain.tokenDecimals ?? 0,
-        symbol: registry.relaychain.tokenSymbols ?? "",
+        decimals,
+        symbol,
         delivery: fee,
         kind: source.kind,
       };
@@ -168,9 +173,11 @@ async function fetchBridgeFeeInfo([
       };
     }
     case "polkadot->ethereum_l2": {
-      const fee = await sender.fee(token, amountInSmallestUnit, {
-        feeTokenLocation: assetsV2.DOT_LOCATION,
-      });
+      const fee = source.parachain?.features.supportsV2
+        ? await sender.fee(token, amountInSmallestUnit, {
+            feeTokenLocation: assetsV2.DOT_LOCATION,
+          })
+        : await sender.fee(token, amountInSmallestUnit);
       let feeValue = fee.totalFeeInDot;
       let decimals = registry.relaychain.tokenDecimals ?? 0;
       let symbol = registry.relaychain.tokenSymbols ?? "";
