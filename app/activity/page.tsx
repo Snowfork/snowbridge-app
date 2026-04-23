@@ -370,24 +370,26 @@ const transferDetail = (
   let beneficiary = transfer.info.beneficiaryAddress;
   let sourceAddress = transfer.info.sourceAddress;
   if (source.parachain && source.parachain.info.accountType === "AccountId32") {
-    sourceAddress = encodeAddress(
-      sourceAddress,
-      source.parachain!.info.ss58Format,
-    );
+    sourceAddress = sourceAddress
+      ? encodeAddress(sourceAddress, source.parachain!.info.ss58Format)
+      : "";
   } else {
-    sourceAddress = sourceAddress.substring(0, 42);
+    sourceAddress = sourceAddress?.substring(0, 42) ?? "";
   }
   if (
     destination.parachain &&
     destination.parachain.info.accountType === "AccountId32"
   ) {
-    beneficiary = encodeAddress(
-      beneficiary,
-      destination.parachain?.info.ss58Format ?? registry.relaychain.ss58Format,
-    );
+    beneficiary = beneficiary
+      ? encodeAddress(
+          beneficiary,
+          destination.parachain?.info.ss58Format ??
+            registry.relaychain.ss58Format,
+        )
+      : "";
   } else {
     // 20 byte address
-    beneficiary = beneficiary.substring(0, 42);
+    beneficiary = beneficiary?.substring(0, 42) ?? "";
   }
 
   const tokenUrl = etherscanERC20TokenLink(
