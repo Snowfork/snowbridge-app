@@ -86,10 +86,11 @@ export async function fetchTokenPrices(
   if (activeKeyIndex === null) {
     activeKeyIndex = Math.floor(Math.random() * apiKeys.length);
   }
+  const startIndex = activeKeyIndex;
 
   // Try each API key in turn, rotating past ones that are rate limited.
   for (let attempt = 0; attempt < apiKeys.length; attempt++) {
-    const keyIndex = (activeKeyIndex + attempt) % apiKeys.length;
+    const keyIndex = (startIndex + attempt) % apiKeys.length;
     const apiKey = apiKeys[keyIndex];
 
     try {
