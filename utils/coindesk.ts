@@ -22,12 +22,31 @@ function setCachedPrice(symbol: string, price: number): void {
   priceCache.set(symbol.toUpperCase(), { price, timestamp: Date.now() });
 }
 
+function isRateLimited(status: number, data: any): boolean {
+  if (status === 429) return true;
+  // CryptoCompare returns HTTP 200 with Response: "Error" and Type: 99 on rate limit
+  if (data?.Response === "Error") {
+    const message: string = data.Message ?? "";
+    if (/rate limit/i.test(message) || data.Type === 99) return true;
+  }
+  return false;
+}
+
+// Track the index of the key currently in use so subsequent calls start from
+// the last working key instead of retrying a known-exhausted one. Initialized
+// lazily on first fetch so the starting key is randomized per client, spreading
+// load across keys instead of every user hammering index 0 first.
+let activeKeyIndex: number | null = null;
+
 export async function fetchTokenPrices(
   tokenSymbols: string[],
 ): Promise<Record<string, number>> {
-  const apiKey = process.env.NEXT_PUBLIC_COINDESK_KEY;
+  const apiKeys = (process.env.NEXT_PUBLIC_COINDESK_KEY ?? "")
+    .split(";")
+    .map((k) => k.trim())
+    .filter(Boolean);
 
-  if (!apiKey) {
+  if (apiKeys.length === 0) {
     // Silently return empty object if API key is not configured
     return {};
   }
@@ -64,34 +83,55 @@ export async function fetchTokenPrices(
   // Remove duplicates
   const uniqueSymbols = [...new Set(normalizedSymbols)];
 
-  try {
-    // CoinDesk API (powered by CryptoCompare) endpoint
-    const url = `https://min-api.cryptocompare.com/data/pricemulti?fsyms=${uniqueSymbols.join(",")}&tsyms=USD&api_key=${apiKey}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      // Return whatever we have from cache
-      return priceMap;
-    }
-
-    const data = await response.json();
-
-    // Map prices back to original token symbols and cache them
-    symbolsToFetch.forEach((symbol) => {
-      const upperSymbol = symbol.toUpperCase();
-      const mappedSymbol = TOKEN_SYMBOL_MAPPING[upperSymbol] || upperSymbol;
-
-      if (data[mappedSymbol]?.USD) {
-        const price = data[mappedSymbol].USD;
-        priceMap[upperSymbol] = price;
-        setCachedPrice(upperSymbol, price);
-      }
-    });
-
-    return priceMap;
-  } catch (error) {
-    // Return whatever we have from cache
-    return priceMap;
+  if (activeKeyIndex === null) {
+    activeKeyIndex = Math.floor(Math.random() * apiKeys.length);
   }
+
+  // Try each API key in turn, rotating past ones that are rate limited.
+  for (let attempt = 0; attempt < apiKeys.length; attempt++) {
+    const keyIndex = (activeKeyIndex + attempt) % apiKeys.length;
+    const apiKey = apiKeys[keyIndex];
+
+    try {
+      // CoinDesk API (powered by CryptoCompare) endpoint
+      const url = `https://min-api.cryptocompare.com/data/pricemulti?fsyms=${uniqueSymbols.join(",")}&tsyms=USD&api_key=${apiKey}`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        if (isRateLimited(response.status, null)) {
+          continue;
+        }
+        return priceMap;
+      }
+
+      const data = await response.json();
+
+      if (isRateLimited(response.status, data)) {
+        continue;
+      }
+
+      activeKeyIndex = keyIndex;
+
+      // Map prices back to original token symbols and cache them
+      symbolsToFetch.forEach((symbol) => {
+        const upperSymbol = symbol.toUpperCase();
+        const mappedSymbol = TOKEN_SYMBOL_MAPPING[upperSymbol] || upperSymbol;
+
+        if (data[mappedSymbol]?.USD) {
+          const price = data[mappedSymbol].USD;
+          priceMap[upperSymbol] = price;
+          setCachedPrice(upperSymbol, price);
+        }
+      });
+
+      return priceMap;
+    } catch (error) {
+      // Network or parse error — try the next key.
+      continue;
+    }
+  }
+
+  // All keys exhausted — return whatever we have from cache
+  return priceMap;
 }
