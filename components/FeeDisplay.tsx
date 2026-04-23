@@ -20,6 +20,74 @@ interface FeeDisplayProps {
   feeTextClassName?: string;
 }
 
+function resolveSummaryAsset(
+  summarySymbol: string,
+  feeInfo: FeeInfo,
+  registry: AssetRegistry,
+) {
+  switch (summarySymbol) {
+    case "ETH":
+      return { decimals: 18, symbol: "ETH" };
+    case "DOT":
+      return {
+        decimals: registry.relaychain.tokenDecimals ?? feeInfo.decimals,
+        symbol: registry.relaychain.tokenSymbols ?? "DOT",
+      };
+    case "NATIVE":
+      return {
+        decimals: feeInfo.decimals,
+        symbol: feeInfo.symbol,
+      };
+    default:
+      return { decimals: feeInfo.decimals, symbol: summarySymbol };
+  }
+}
+
+function TipRow({
+  amount,
+  summarySymbol,
+  feeInfo,
+  registry,
+  displayDecimals,
+  prices,
+  feeLabelTextClassName,
+  feeTextClassName,
+}: Readonly<{
+  amount: bigint;
+  summarySymbol: string;
+  feeInfo: FeeInfo;
+  registry: AssetRegistry;
+  displayDecimals: number;
+  prices?: Record<string, number>;
+  feeLabelTextClassName?: string;
+  feeTextClassName?: string;
+}>) {
+  const resolved = resolveSummaryAsset(summarySymbol, feeInfo, registry);
+  const price = prices?.[resolved.symbol];
+
+  return (
+    <LayoutRow
+      name="• Bridge Tip"
+      feeLabelTextClassName={feeLabelTextClassName}
+      feeTextClassName={feeTextClassName}
+    >
+      <div className="inline">
+        {formatBalance({
+          number: amount,
+          decimals: resolved.decimals,
+          displayDecimals,
+        })}{" "}
+        {resolved.symbol}
+        {price && (
+          <span className="text-muted-foreground ml-1">
+            ({formatUsdValue(Number(formatUnits(amount, resolved.decimals)) * price)})
+          </span>
+        )}
+      </div>
+    </LayoutRow>
+  );
+}
+
 export const FeeDisplay: FC<FeeDisplayProps> = ({
   token,
   displayDecimals,
@@ -33,11 +101,32 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
       token.toLowerCase()
     ];
+  const summaryTip = feeInfo?.delivery.summary.find(
+    (item) => item.description === "Volume tip",
+  );
+  const tipSummarySymbol =
+    summaryTip?.symbol ?? (feeInfo?.symbol === "ETH" ? "ETH" : undefined);
+  const crossCurrencyTip =
+    summaryTip &&
+    feeInfo &&
+    resolveSummaryAsset(summaryTip.symbol, feeInfo, registry).symbol !==
+      feeInfo.symbol
+      ? summaryTip
+      : undefined;
 
   const { data: prices } = useSWR(
-    ["fee-info-token-prices", asset, feeInfo],
-    async ([, t, f]: [string, ERC20Metadata, FeeInfo]) => {
-      return await fetchTokenPrices([t.symbol, f?.symbol]);
+    ["fee-info-token-prices", asset, feeInfo, tipSummarySymbol],
+    async ([, t, f]: [string, ERC20Metadata, FeeInfo | undefined, string | undefined]) => {
+      const symbols = new Set<string>([t.symbol]);
+      if (f?.symbol) {
+        symbols.add(f.symbol);
+      }
+      if (tipSummarySymbol && f) {
+        symbols.add(resolveSummaryAsset(tipSummarySymbol, f, registry).symbol);
+      }
+      return await fetchTokenPrices(
+        [...symbols].filter((symbol): symbol is string => Boolean(symbol)),
+      );
     },
     {
       revalidateOnFocus: false,
@@ -162,32 +251,29 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
             </span>
           </div>
         </LayoutRow>
-        {feeInfo.volumeTip && feeInfo.volumeTip > 0n && (
-          <LayoutRow
-            name="• Bridge Tip"
+        {crossCurrencyTip ? (
+          <TipRow
+            amount={crossCurrencyTip.amount}
+            summarySymbol={crossCurrencyTip.symbol}
+            feeInfo={feeInfo}
+            registry={registry}
+            displayDecimals={displayDecimals}
+            prices={prices}
             feeLabelTextClassName={feeLabelTextClassName}
             feeTextClassName={feeTextClassName}
-          >
-            <div className="inline">
-              {formatBalance({
-                number: feeInfo.volumeTip,
-                decimals: feeInfo.decimals,
-                displayDecimals,
-              })}{" "}
-              {feeInfo.symbol}
-              {prices && prices[feeInfo.symbol] && (
-                <span className="text-muted-foreground ml-1">
-                  (
-                  {formatUsdValue(
-                    Number(formatUnits(feeInfo.volumeTip, feeInfo.decimals)) *
-                      prices[feeInfo.symbol],
-                  )}
-                  )
-                </span>
-              )}
-            </div>
-          </LayoutRow>
-        )}
+          />
+        ) : feeInfo.volumeTip && feeInfo.volumeTip > 0n ? (
+          <TipRow
+            amount={feeInfo.volumeTip}
+            summarySymbol={tipSummarySymbol ?? feeInfo.symbol}
+            feeInfo={feeInfo}
+            registry={registry}
+            displayDecimals={displayDecimals}
+            prices={prices}
+            feeLabelTextClassName={feeLabelTextClassName}
+            feeTextClassName={feeTextClassName}
+          />
+        ) : null}
       </>
     );
   } else {
@@ -213,31 +299,17 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
           </div>
         </LayoutRow>
         {feeInfo.volumeTip && feeInfo.volumeTip > 0n && (
-          <LayoutRow
-            name="• Bridge Tip"
+          <TipRow
+            amount={feeInfo.volumeTip}
+            summarySymbol={tipSummarySymbol ?? feeInfo.symbol}
+            feeInfo={feeInfo}
+            registry={registry}
+            displayDecimals={displayDecimals}
+            prices={prices}
             feeLabelTextClassName={feeLabelTextClassName}
             feeTextClassName={feeTextClassName}
-          >
-            <div className="inline">
-              {formatBalance({
-                number: feeInfo.volumeTip,
-                decimals: feeInfo.decimals,
-                displayDecimals,
-              })}{" "}
-              {feeInfo.symbol}
-              {prices && prices[feeInfo.symbol] && (
-                <span className="text-muted-foreground ml-1">
-                  (
-                  {formatUsdValue(
-                    Number(formatUnits(feeInfo.volumeTip, feeInfo.decimals)) *
-                      prices[feeInfo.symbol],
-                  )}
-                  )
-                </span>
-              )}
-            </div>
-          </LayoutRow>
-        )}{" "}
+          />
+        )}
       </>
     );
   }
