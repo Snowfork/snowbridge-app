@@ -5,128 +5,64 @@ import {
   AssetRegistry,
   ERC20Metadata,
   FeeEstimateError,
+  TransferLocation,
 } from "@snowbridge/base-types";
-import { FeeInfo } from "@/utils/types";
 import useSWR from "swr";
 import { formatUnits } from "ethers";
+import {
+  BridgeDeliveryFee,
+  getDeliverySummaryItems,
+  getDeliveryTotals,
+} from "@/utils/deliveryFee";
 
 interface FeeDisplayProps {
   token: string;
   displayDecimals: number;
   registry: AssetRegistry;
-  feeInfo?: FeeInfo;
+  source: TransferLocation;
+  fee?: BridgeDeliveryFee;
   feeError?: unknown;
   feeLabelTextClassName?: string;
   feeTextClassName?: string;
-}
-
-function resolveSummaryAsset(
-  summarySymbol: string,
-  feeInfo: FeeInfo,
-  registry: AssetRegistry,
-) {
-  switch (summarySymbol) {
-    case "ETH":
-      return { decimals: 18, symbol: "ETH" };
-    case "DOT":
-      return {
-        decimals: registry.relaychain.tokenDecimals ?? feeInfo.decimals,
-        symbol: registry.relaychain.tokenSymbols ?? "DOT",
-      };
-    case "NATIVE":
-      return {
-        decimals: feeInfo.decimals,
-        symbol: feeInfo.symbol,
-      };
-    default:
-      return { decimals: feeInfo.decimals, symbol: summarySymbol };
-  }
-}
-
-function TipRow({
-  amount,
-  summarySymbol,
-  feeInfo,
-  registry,
-  displayDecimals,
-  prices,
-  feeLabelTextClassName,
-  feeTextClassName,
-}: Readonly<{
-  amount: bigint;
-  summarySymbol: string;
-  feeInfo: FeeInfo;
-  registry: AssetRegistry;
-  displayDecimals: number;
-  prices?: Record<string, number>;
-  feeLabelTextClassName?: string;
-  feeTextClassName?: string;
-}>) {
-  const resolved = resolveSummaryAsset(summarySymbol, feeInfo, registry);
-  const price = prices?.[resolved.symbol];
-
-  return (
-    <LayoutRow
-      name="• Bridge Tip"
-      feeLabelTextClassName={feeLabelTextClassName}
-      feeTextClassName={feeTextClassName}
-    >
-      <div className="inline">
-        {formatBalance({
-          number: amount,
-          decimals: resolved.decimals,
-          displayDecimals,
-        })}{" "}
-        {resolved.symbol}
-        {price && (
-          <span className="text-muted-foreground ml-1">
-            ({formatUsdValue(Number(formatUnits(amount, resolved.decimals)) * price)})
-          </span>
-        )}
-      </div>
-    </LayoutRow>
-  );
 }
 
 export const FeeDisplay: FC<FeeDisplayProps> = ({
   token,
   displayDecimals,
   registry,
-  feeInfo,
+  source,
+  fee,
   feeError,
   feeLabelTextClassName,
   feeTextClassName,
 }) => {
-  const asset =
+  const tokenMetadata =
     registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
       token.toLowerCase()
     ];
-  const summaryTip = feeInfo?.delivery.summary.find(
-    (item) => item.description === "Volume tip",
-  );
-  const tipSummarySymbol =
-    summaryTip?.symbol ?? (feeInfo?.symbol === "ETH" ? "ETH" : undefined);
-  const crossCurrencyTip =
-    summaryTip &&
-    feeInfo &&
-    resolveSummaryAsset(summaryTip.symbol, feeInfo, registry).symbol !==
-      feeInfo.symbol
-      ? summaryTip
-      : undefined;
+
+  const summaryItems = fee
+    ? getDeliverySummaryItems(fee, {
+        registry,
+        source,
+        tokenMetadata,
+      })
+    : [];
+  const totals = fee
+    ? getDeliveryTotals(fee, {
+        registry,
+        source,
+        tokenMetadata,
+      })
+    : [];
 
   const { data: prices } = useSWR(
-    ["fee-info-token-prices", asset, feeInfo, tipSummarySymbol],
-    async ([, t, f]: [string, ERC20Metadata, FeeInfo | undefined, string | undefined]) => {
+    ["fee-token-prices", tokenMetadata, fee, source.key],
+    async ([, t]: [string, ERC20Metadata]) => {
       const symbols = new Set<string>([t.symbol]);
-      if (f?.symbol) {
-        symbols.add(f.symbol);
-      }
-      if (tipSummarySymbol && f) {
-        symbols.add(resolveSummaryAsset(tipSummarySymbol, f, registry).symbol);
-      }
-      return await fetchTokenPrices(
-        [...symbols].filter((symbol): symbol is string => Boolean(symbol)),
-      );
+      summaryItems.forEach((item) => symbols.add(item.displaySymbol));
+      totals.forEach((item) => symbols.add(item.displaySymbol));
+      return await fetchTokenPrices([...symbols]);
     },
     {
       revalidateOnFocus: false,
@@ -136,183 +72,101 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
     },
   );
 
-  if (feeError && !feeInfo) {
+  if (feeError && !fee) {
     console.error(feeError);
     let message = "Error";
     if (feeError instanceof FeeEstimateError) {
       switch (feeError.details.code) {
-        case "AMOUNT_TOO_LOW": {
+        case "AMOUNT_TOO_LOW":
           message = "Send amount too low";
           break;
-        }
-        case "AMOUNT_TOO_HIGH": {
+        case "AMOUNT_TOO_HIGH":
           message = "Send amount too high";
           break;
-        }
       }
     }
     if (feeError instanceof TypeError) {
       message = "Invalid send amount";
     }
     return (
-      <LayoutRow name="Delivery Fee">
-        <div className="inline  text-red-700">{message}...</div>
+      <LayoutRow name="Total Fee">
+        <div className="inline text-red-700">{message}...</div>
       </LayoutRow>
     );
   }
-  if (feeInfo === undefined) {
+  if (!fee) {
     return (
-      <LayoutRow name="Delivery Fee">
+      <LayoutRow name="Total Fee">
         <div className="inline">Fetching...</div>
       </LayoutRow>
     );
   }
-  const feeUsd =
-    Number(formatUnits(feeInfo.totalFee, feeInfo.decimals)) *
-    (prices && prices[feeInfo.symbol] ? prices[feeInfo.symbol] : 0);
-  if (
-    feeInfo.delivery.kind === "polkadot->ethereum_l2" ||
-    feeInfo.delivery.kind === "ethereum_l2->polkadot"
-  ) {
-    let acrossFee = 0n;
-    if (feeInfo.delivery.kind === "polkadot->ethereum_l2") {
-      acrossFee = feeInfo.delivery.l2BridgeFeeInL1Token ?? 0n;
-    } else if (feeInfo.delivery.kind === "ethereum_l2->polkadot") {
-      acrossFee =
-        (feeInfo.delivery.swapFeeInL1Token ?? 0n) +
-        (feeInfo.delivery.bridgeFeeInL2Token ?? 0n);
-    }
-    let acrossUsdFee: number =
-      Number(formatUnits(acrossFee, asset.decimals)) *
-      (prices && prices[asset.symbol] ? prices[asset.symbol] : 0);
 
-    let totalFeeUsd = acrossUsdFee + feeUsd;
-    let snowbridgeUsdFee = feeUsd;
-    let totalFee = feeInfo.totalFee;
-    let totalFeeFmt = `${asset.symbol} + ${feeInfo.symbol} `;
-    if (asset.symbol === feeInfo.symbol) {
-      totalFee = feeInfo.totalFee - acrossFee;
-      totalFeeUsd = feeUsd;
-      snowbridgeUsdFee = feeUsd - acrossUsdFee;
-      totalFeeFmt = `${formatBalance({
-        number: feeInfo.totalFee,
-        decimals: feeInfo.decimals,
-        displayDecimals: displayDecimals,
-      })} ${feeInfo.symbol}`;
+  const totalUsd = totals.reduce((acc, item) => {
+    const price = prices?.[item.displaySymbol.toUpperCase()];
+    if (!price) {
+      return acc;
     }
-    return (
-      <>
-        <LayoutRow
-          name="Delivery Fee"
-          feeLabelTextClassName={feeLabelTextClassName}
-          feeTextClassName={feeTextClassName}
-        >
-          <div className="inline">
-            {totalFeeFmt}
-            {prices && prices[feeInfo.symbol] && (
-              <span className="text-muted-foreground ml-1">
-                ({formatUsdValue(totalFeeUsd)})
-              </span>
-            )}
-          </div>
-        </LayoutRow>
-        <LayoutRow
-          name="• Snowbridge Fee"
-          feeLabelTextClassName={feeLabelTextClassName}
-          feeTextClassName={feeTextClassName}
-        >
-          <div className="inline">
-            {formatBalance({
-              number: totalFee,
-              decimals: feeInfo.decimals,
-              displayDecimals: displayDecimals,
-            })}{" "}
-            {feeInfo.symbol}
-            {prices && prices[feeInfo.symbol] && (
-              <span className="text-muted-foreground ml-1">
-                ({formatUsdValue(snowbridgeUsdFee)})
-              </span>
-            )}
-          </div>
-        </LayoutRow>
-        <LayoutRow
-          name="• Across.to Fee"
-          feeLabelTextClassName={feeLabelTextClassName}
-          feeTextClassName={feeTextClassName}
-        >
-          <div className="inline">
-            {`${formatBalance({
-              number: acrossFee,
-              decimals: asset.decimals,
-              displayDecimals: displayDecimals,
-            })} ${asset.symbol} `}
-            <span className="text-muted-foreground ml-1 justify-end">
-              ({formatUsdValue(acrossUsdFee)})
+    return acc + Number(formatUnits(item.amount, item.decimals)) * price;
+  }, 0);
+  const totalSymbols = totals.map((item) => item.displaySymbol).join(" + ");
+  const hasSingleTotal = totals.length === 1;
+  const total = totals[0];
+  const visibleSummaryItems =
+    summaryItems.length > 1 ? summaryItems : [];
+
+  return (
+    <>
+      <LayoutRow
+        name="Total Fee"
+        feeLabelTextClassName={feeLabelTextClassName}
+        feeTextClassName={feeTextClassName}
+      >
+        <div className="inline">
+          {hasSingleTotal && total
+            ? `${formatBalance({
+                number: total.amount,
+                decimals: total.decimals,
+                displayDecimals,
+              })} ${total.displaySymbol}`
+            : totalSymbols}
+          {totalUsd > 0 && (
+            <span className="text-muted-foreground ml-1">
+              ({formatUsdValue(totalUsd)})
             </span>
-          </div>
-        </LayoutRow>
-        {crossCurrencyTip ? (
-          <TipRow
-            amount={crossCurrencyTip.amount}
-            summarySymbol={crossCurrencyTip.symbol}
-            feeInfo={feeInfo}
-            registry={registry}
-            displayDecimals={displayDecimals}
-            prices={prices}
+          )}
+        </div>
+      </LayoutRow>
+      {visibleSummaryItems.map((item, index) => {
+        const usd = prices?.[item.displaySymbol.toUpperCase()]
+          ? Number(formatUnits(item.amount, item.decimals)) *
+            prices[item.displaySymbol.toUpperCase()]
+          : null;
+        return (
+          <LayoutRow
+            key={`${item.description}-${item.symbol}-${index}`}
+            name={`• ${item.description}`}
             feeLabelTextClassName={feeLabelTextClassName}
             feeTextClassName={feeTextClassName}
-          />
-        ) : feeInfo.volumeTip && feeInfo.volumeTip > 0n ? (
-          <TipRow
-            amount={feeInfo.volumeTip}
-            summarySymbol={tipSummarySymbol ?? feeInfo.symbol}
-            feeInfo={feeInfo}
-            registry={registry}
-            displayDecimals={displayDecimals}
-            prices={prices}
-            feeLabelTextClassName={feeLabelTextClassName}
-            feeTextClassName={feeTextClassName}
-          />
-        ) : null}
-      </>
-    );
-  } else {
-    return (
-      <>
-        <LayoutRow
-          name="Delivery Fee"
-          feeLabelTextClassName={feeLabelTextClassName}
-          feeTextClassName={feeTextClassName}
-        >
-          <div className="inline">
-            {formatBalance({
-              number: feeInfo.totalFee,
-              decimals: feeInfo.decimals,
-              displayDecimals: displayDecimals,
-            })}{" "}
-            {feeInfo.symbol}
-            {prices && prices[feeInfo.symbol] && (
-              <span className="text-muted-foreground ml-1">
-                ({formatUsdValue(feeUsd)})
-              </span>
-            )}
-          </div>
-        </LayoutRow>
-        {feeInfo.volumeTip && feeInfo.volumeTip > 0n && (
-          <TipRow
-            amount={feeInfo.volumeTip}
-            summarySymbol={tipSummarySymbol ?? feeInfo.symbol}
-            feeInfo={feeInfo}
-            registry={registry}
-            displayDecimals={displayDecimals}
-            prices={prices}
-            feeLabelTextClassName={feeLabelTextClassName}
-            feeTextClassName={feeTextClassName}
-          />
-        )}
-      </>
-    );
-  }
+          >
+            <div className="inline">
+              {formatBalance({
+                number: item.amount,
+                decimals: item.decimals,
+                displayDecimals,
+              })}{" "}
+              {item.displaySymbol}
+              {usd !== null && (
+                <span className="text-muted-foreground ml-1">
+                  ({formatUsdValue(usd)})
+                </span>
+              )}
+            </div>
+          </LayoutRow>
+        );
+      })}
+    </>
+  );
 };
 
 function LayoutRow({
@@ -327,11 +181,9 @@ function LayoutRow({
   name: string;
 }>) {
   return (
-    <>
-      <div className="flex items-center justify-between text-sm">
-        <dt className={feeLabelTextClassName ?? "text-muted-glass"}>{name}</dt>
-        <dd className={feeTextClassName ?? "text-primary"}>{children}</dd>
-      </div>
-    </>
+    <div className="flex items-center justify-between text-sm">
+      <dt className={feeLabelTextClassName ?? "text-muted-glass"}>{name}</dt>
+      <dd className={feeTextClassName ?? "text-primary"}>{children}</dd>
+    </div>
   );
 }

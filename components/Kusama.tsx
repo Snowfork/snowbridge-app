@@ -72,6 +72,7 @@ import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
 import { fetchTokenPrices } from "@/utils/coindesk";
 import { TokenSelector } from "./TokenSelector";
 import { getTransferLocation } from "@snowbridge/registry";
+import { getKusamaDeliveryTotalByDisplaySymbol } from "@/utils/deliveryFee";
 
 export const KusamaComponent: FC = () => {
   const router = useRouter();
@@ -275,12 +276,7 @@ export const KusamaComponent: FC = () => {
         assetRegistry: assetRegistry,
         tokenMetadata: tokens[watchToken],
         amountInSmallestUnit: amountInSmallestUnit,
-        fee: {
-          fee: feeInfo.fee,
-          decimals: asset.decimals,
-          symbol: asset.symbol,
-          delivery: feeInfo.delivery,
-        },
+        fee: feeInfo,
       };
 
       setBusyMessage("Validating transaction");
@@ -319,8 +315,12 @@ export const KusamaComponent: FC = () => {
         (asset.symbol === DOT_SYMBOL && sourceId == AssetHub.Polkadot) ||
         (asset.symbol === KSM_SYMBOL && sourceId == AssetHub.Kusama)
       ) {
+        const nativeFee =
+          getKusamaDeliveryTotalByDisplaySymbol(feeInfo, asset.symbol, {
+            source: sourceId,
+          })?.amount ?? 0n;
         let totalFee =
-          feeInfo.fee +
+          nativeFee +
           plan.data.sourceExecutionFee +
           data.amountInSmallestUnit;
         if (totalFee > plan.data.nativeBalance) {
@@ -339,7 +339,11 @@ export const KusamaComponent: FC = () => {
         const isPolkadot = sourceId === AssetHub.Polkadot;
         const feeSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
         const feeDecimals = isPolkadot ? DOT_DECIMALS : KSM_DECIMALS;
-        let totalFee = feeInfo.fee + plan.data.sourceExecutionFee;
+        const nativeFee =
+          getKusamaDeliveryTotalByDisplaySymbol(feeInfo, feeSymbol, {
+            source: sourceId,
+          })?.amount ?? 0n;
+        let totalFee = nativeFee + plan.data.sourceExecutionFee;
         if (totalFee > plan.data.nativeBalance) {
           let formattedTotalFee = formatBalance({
             number: totalFee,
@@ -650,11 +654,24 @@ export const KusamaComponent: FC = () => {
                                   // If transferring the same token used for fees, subtract the fee
                                   if (
                                     feeInfo &&
-                                    balanceInfo.tokenSymbol.toUpperCase() ===
-                                      feeInfo.symbol.toUpperCase()
+                                    getKusamaDeliveryTotalByDisplaySymbol(
+                                      feeInfo,
+                                      balanceInfo.tokenSymbol,
+                                      {
+                                        source: sourceId,
+                                      },
+                                    )
                                   ) {
+                                    const nativeFee =
+                                      getKusamaDeliveryTotalByDisplaySymbol(
+                                        feeInfo,
+                                        balanceInfo.tokenSymbol,
+                                        {
+                                          source: sourceId,
+                                        },
+                                      )!;
                                     const feeBuffer =
-                                      (feeInfo.fee * 120n) / 100n; // Add 20% buffer
+                                      (nativeFee.amount * 120n) / 100n;
                                     maxAmount =
                                       maxAmount > feeBuffer
                                         ? maxAmount - feeBuffer
@@ -725,18 +742,12 @@ export const KusamaComponent: FC = () => {
                 />
               </div>
               <div className="glass-sub p-4 space-y-2 card-shadow transfer-spacing">
-                <div className="flex items-center justify-between text-sm">
-                  <dt className="text-muted-glass">Delivery fee</dt>
-                  <dd className="text-primary">
-                    <KusamaFeeDisplay
-                      className="inline"
-                      source={sourceId}
-                      destination={destinationId}
-                      token={watchToken}
-                      displayDecimals={8}
-                    />
-                  </dd>
-                </div>
+                <KusamaFeeDisplay
+                  className="space-y-2"
+                  source={sourceId}
+                  token={watchToken}
+                  displayDecimals={8}
+                />
                 <div className="flex items-center justify-between text-sm">
                   <dt className="text-muted-glass">Estimated delivery time</dt>
                   <dd className="text-primary">~1-2 minutes</dd>

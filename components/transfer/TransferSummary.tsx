@@ -12,6 +12,7 @@ import Image from "next/image";
 import { chainName } from "@/utils/chainNames";
 import { ParachainLocation } from "@snowbridge/base-types";
 import { FeeDisplay } from "../FeeDisplay";
+import { getDeliveryTotals } from "@/utils/deliveryFee";
 
 interface TransferSummaryProps {
   data: ValidationData;
@@ -81,7 +82,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       sourceTokenDecimals = data.source.parachain.info.tokenDecimals ?? null;
       break;
   }
-  const transferType = data.fee.delivery.kind;
+  const transferType = data.fee.kind;
   let transferTimeMax: string | undefined;
   switch (transferType) {
     case "ethereum_l2->polkadot":
@@ -99,13 +100,27 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     default:
       console.warn(`Unknown type ${transferTimeMax}.`);
   }
+  const feeTotals = getDeliveryTotals(data.fee, {
+    registry: data.assetRegistry,
+    source: data.source,
+    tokenMetadata: data.tokenMetadata,
+  });
+  const singleFeeTotal = feeTotals.length === 1 ? feeTotals[0] : undefined;
+  const feeSymbolsKey = feeTotals.map((item) => item.displaySymbol).join("|");
+  const sourceTokenMatchesSingleFee =
+    !!singleFeeTotal &&
+    data.tokenMetadata.symbol.toUpperCase() ===
+      singleFeeTotal.displaySymbol.toUpperCase() &&
+    singleFeeTotal.displaySymbol.toUpperCase() ===
+      (sourceTokenSymbol?.toUpperCase() ?? "");
+
   // Fetch USD prices for tokens
   const [prices, setPrices] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const symbols = new Set<string>();
     symbols.add(data.tokenMetadata.symbol);
-    symbols.add(data.fee.symbol);
+    feeTotals.forEach((item) => symbols.add(item.displaySymbol));
     if (sourceTokenSymbol) symbols.add(sourceTokenSymbol);
 
     const fetchPrices = async () => {
@@ -114,7 +129,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     };
 
     fetchPrices();
-  }, [data.tokenMetadata.symbol, data.fee.symbol, sourceTokenSymbol]);
+  }, [data.tokenMetadata.symbol, feeSymbolsKey, sourceTokenSymbol]);
 
   // Helper to calculate USD value
   const getUsdValue = (amount: number, symbol: string): string | null => {
@@ -130,11 +145,6 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
     data.tokenMetadata.symbol,
   );
 
-  const deliveryFeeUsd = getUsdValue(
-    Number(data.fee.fee) / Math.pow(10, data.fee.decimals),
-    data.fee.symbol,
-  );
-
   const executionFeeUsd =
     executionFee && sourceTokenSymbol && sourceTokenDecimals
       ? getUsdValue(
@@ -144,11 +154,11 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       : null;
 
   const totalAmountUsd =
-    data.tokenMetadata.symbol === data.fee.symbol &&
-    data.fee.symbol === sourceTokenSymbol
+    sourceTokenMatchesSingleFee &&
+    singleFeeTotal
       ? getUsdValue(
           Number(
-            data.amountInSmallestUnit + data.fee.fee + (executionFee ?? 0n),
+            data.amountInSmallestUnit + singleFeeTotal.amount + (executionFee ?? 0n),
           ) / Math.pow(10, data.tokenMetadata.decimals),
           data.tokenMetadata.symbol,
         )
@@ -220,15 +230,14 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
         <h3 className="text-primary font-bold text-l pb-2 border-b border-white/30">
           Fees
         </h3>
-        {data.tokenMetadata.symbol === data.fee.symbol &&
-          data.fee.symbol === sourceTokenSymbol && (
+        {sourceTokenMatchesSingleFee && singleFeeTotal && (
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">Total Amount</span>
               <span>
                 {formatBalance({
                   number:
                     data.amountInSmallestUnit +
-                    data.fee.fee +
+                    singleFeeTotal.amount +
                     (executionFee ?? 0n),
                   decimals: data.tokenMetadata.decimals,
                 })}{" "}
@@ -271,8 +280,9 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
         <FeeDisplay
           displayDecimals={10}
           registry={data.assetRegistry}
+          source={data.source}
           token={data.tokenMetadata.token}
-          feeInfo={data.fee}
+          fee={data.fee}
           feeLabelTextClassName="font-medium"
           feeTextClassName=""
         />
@@ -290,7 +300,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               : latencyError
                 ? "Could not estimate"
                 : estimateDelivery(
-                    data.fee.delivery.kind,
+                    data.fee.kind,
                     deliveryLatency,
                   )}
             <span className="text-muted-foreground">

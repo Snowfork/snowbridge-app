@@ -169,23 +169,23 @@ async function planSend(
 
   switch (sender.kind) {
     case "ethereum->ethereum": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "ethereum->polkadot": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
-      if (!("feeAsset" in fee.delivery)) {
+      if (!("feeAsset" in fee)) {
         throw Error(`Invalid delivery fee shape for ${sender.kind}.`);
       }
       const transfer = await sender.tx(
@@ -193,46 +193,46 @@ async function planSend(
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->ethereum": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->polkadot": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->ethereum_l2": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
@@ -242,8 +242,8 @@ async function planSend(
           `Invalid source ${source.key}, expected ethereum_l2 source.`,
         );
       }
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const l2asset = Object.values(source.ethChain.assets).find(
         (x) =>
@@ -258,7 +258,7 @@ async function planSend(
           formData.beneficiary,
           l2asset.token,
           amountInSmallestUnit,
-          fee.delivery,
+          fee,
         ),
       );
     }

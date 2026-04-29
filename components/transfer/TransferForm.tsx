@@ -13,7 +13,7 @@ import {
   TransferFormData,
   transferFormSchema,
 } from "@/utils/formSchema";
-import { AccountInfo, FeeInfo, ValidationData } from "@/utils/types";
+import { AccountInfo, ValidationData } from "@/utils/types";
 import { assetsV2 } from "@snowbridge/api";
 import { type SnowbridgeContext } from "@/lib/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
@@ -77,6 +77,7 @@ import {
 import { chainName } from "@/utils/chainNames";
 import useSWR from "swr";
 import { useTokenBalances } from "@/hooks/useTokenBalances";
+import { getDeliveryTotalByDisplaySymbol } from "@/utils/deliveryFee";
 
 function isValidSubstrateBeneficiary(
   address: string | undefined,
@@ -398,6 +399,8 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchToken ?? token,
     watchAmount,
   );
+
+  useEffect(()=> { console.log('AAAAA', feeInfo); }, [feeInfo]);
 
   const tokenMetadata =
     assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
@@ -924,8 +927,21 @@ export const TransferForm: FC<TransferFormProps> = ({
                                     source.kind === "ethereum_l2") &&
                                   feeInfo
                                 ) {
+                                  const ethFee =
+                                    getDeliveryTotalByDisplaySymbol(
+                                      feeInfo,
+                                      "ETH",
+                                      {
+                                        registry: assetRegistry,
+                                        source: getTransferLocation(
+                                          assetRegistry,
+                                          source,
+                                        ),
+                                        tokenMetadata,
+                                      },
+                                    );
                                   const feeBuffer =
-                                    (feeInfo.totalFee * 120n) / 100n;
+                                    ((ethFee?.amount ?? 0n) * 120n) / 100n;
                                   maxAmount =
                                     maxAmount > feeBuffer
                                       ? maxAmount - feeBuffer
@@ -935,12 +951,23 @@ export const TransferForm: FC<TransferFormProps> = ({
                                 // If transferring native token from substrate, subtract the fee
                                 if (
                                   source.kind === "polkadot" &&
-                                  feeInfo &&
-                                  tokenMetadata.symbol.toUpperCase() ===
-                                    feeInfo.symbol.toUpperCase()
+                                  feeInfo
                                 ) {
+                                  const nativeFee =
+                                    getDeliveryTotalByDisplaySymbol(
+                                      feeInfo,
+                                      tokenMetadata.symbol,
+                                      {
+                                        registry: assetRegistry,
+                                        source: getTransferLocation(
+                                          assetRegistry,
+                                          source,
+                                        ),
+                                        tokenMetadata,
+                                      },
+                                    );
                                   const feeBuffer =
-                                    (feeInfo.totalFee * 120n) / 100n;
+                                    ((nativeFee?.amount ?? 0n) * 120n) / 100n;
                                   maxAmount =
                                     maxAmount > feeBuffer
                                       ? maxAmount - feeBuffer
@@ -1003,9 +1030,10 @@ export const TransferForm: FC<TransferFormProps> = ({
             <FeeDisplay
               token={token}
               displayDecimals={8}
-              feeInfo={feeInfo}
+              fee={feeInfo}
               feeError={feeError}
               registry={assetRegistry}
+              source={getTransferLocation(assetRegistry, source)}
             />
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
@@ -1127,7 +1155,7 @@ interface SubmitButtonProps {
   polkadotAccounts: PolkadotAccount[] | null;
   destination: TransferLocation;
   source: Source;
-  feeInfo?: FeeInfo;
+  feeInfo?: ValidationData["fee"];
   tokenMetadata: ERC20Metadata | null;
   validating: boolean;
   beneficiaries: AccountInfo[] | null;
