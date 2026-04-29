@@ -79,6 +79,21 @@ import { chainName } from "@/utils/chainNames";
 import useSWR from "swr";
 import { useTokenBalances } from "@/hooks/useTokenBalances";
 
+function isValidSubstrateBeneficiary(
+  address: string | undefined,
+  accountType: "AccountId32" | "AccountId20",
+): boolean {
+  if (!address) return false;
+  if (accountType === "AccountId20") return isHex(address, 20 * 8);
+  if (isHex(address)) return isHex(address, 32 * 8);
+  try {
+    decodeAddress(address);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getLocationAccounts(
   location: TransferLocation,
   polkadotAccounts: PolkadotAccount[],
@@ -296,7 +311,6 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSource = form.watch("source");
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
-  const watchBeneficiary = form.watch("beneficiary");
   const watchAmount = form.watch("amount");
   const watchAccelerated = form.watch("accelerated");
 
@@ -336,40 +350,31 @@ export const TransferForm: FC<TransferFormProps> = ({
     source.id,
   ]);
 
-  // Auto-set beneficiary when wallet connects or destination type changes
+  // Default the beneficiary when the destination type or available wallet accounts change.
+  // Validity is checked by address *format* — not by wallet membership — so a valid
+  // manually-typed beneficiary survives. The current value is read via getValues so the
+  // effect doesn't depend on `beneficiary`; depending on it would re-fire on every
+  // keystroke and overwrite partially-typed addresses.
   useEffect(() => {
+    const current = form.getValues("beneficiary");
     if (destination.kind === "ethereum" || destination.kind === "ethereum_l2") {
-      // For Ethereum destination, check if current beneficiary is a valid Ethereum address
       const isValidEthAddress =
-        watchBeneficiary?.startsWith("0x") && watchBeneficiary?.length === 42;
+        current?.startsWith("0x") && current?.length === 42;
       if (!isValidEthAddress) {
-        // Set to Ethereum account if connected, otherwise clear
         form.setValue("beneficiary", ethereumAccount ?? "");
       }
     } else if (destination.kind === "polkadot") {
-      // For substrate destinations, filter accounts by account type (AccountId20 vs AccountId32)
       const accountType =
         destination.parachain?.info.accountType ?? "AccountId32";
+      const validEthereumAccounts =
+        accountType === "AccountId20" ? (ethereumAccounts ?? []) : [];
       const validAccounts = polkadotAccounts?.filter(
         filterByAccountType(accountType),
       );
 
-      // Also include Ethereum accounts for AccountId20 destinations
-      const validEthereumAccounts =
-        accountType === "AccountId20" ? (ethereumAccounts ?? []) : [];
-
-      // Check if current beneficiary is valid for this destination's account type
-      const isCurrentValid =
-        validAccounts?.some(
-          (acc) =>
-            acc.address.toLowerCase() === watchBeneficiary?.toLowerCase(),
-        ) ||
-        validEthereumAccounts.some(
-          (acc) => acc.toLowerCase() === watchBeneficiary?.toLowerCase(),
-        );
+      const isCurrentValid = isValidSubstrateBeneficiary(current, accountType);
 
       if (!isCurrentValid) {
-        // Pick the first valid account
         if (validAccounts && validAccounts.length > 0) {
           form.setValue("beneficiary", validAccounts[0].address);
         } else if (validEthereumAccounts.length > 0) {
@@ -387,7 +392,6 @@ export const TransferForm: FC<TransferFormProps> = ({
     ethereumAccounts,
     polkadotAccount?.address,
     polkadotAccounts,
-    watchBeneficiary,
     form,
   ]);
 
