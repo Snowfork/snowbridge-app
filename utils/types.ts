@@ -20,10 +20,10 @@ import {
 } from "ethers";
 import {
   AssetRegistry,
-  ChainKind,
   ERC20Metadata,
   TransferLocation,
 } from "@snowbridge/base-types";
+import type { BridgeDeliveryFee, KusamaDeliveryFee } from "./deliveryFee";
 
 export const DOT_DECIMALS = 10;
 export const KSM_DECIMALS = 12;
@@ -160,27 +160,6 @@ export interface SignerInfo {
   ethereumProvider?: BrowserProvider;
 }
 
-export type FeeInfo = {
-  fee: bigint;
-  totalFee: bigint;
-  decimals: number;
-  symbol: string;
-  volumeTip?: bigint;
-  delivery:
-    | toEthereumV2.DeliveryFee
-    | toPolkadotV2.DeliveryFee
-    | toPolkadotSnowbridgeV2.DeliveryFee
-    | forInterParachain.DeliveryFee;
-  kind: ChainKind;
-};
-
-export type KusamaFeeInfo = {
-  fee: bigint;
-  decimals: number;
-  symbol: string;
-  delivery: forKusama.DeliveryFee;
-};
-
 export interface ValidationData {
   formData: TransferFormData;
   assetRegistry: AssetRegistry;
@@ -188,7 +167,7 @@ export interface ValidationData {
   destination: TransferLocation;
   tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
-  fee: FeeInfo;
+  fee: BridgeDeliveryFee;
   tokenValueUsd?: number;
 }
 
@@ -201,7 +180,7 @@ export interface KusamaValidationData {
   token: string;
   tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
-  fee: KusamaFeeInfo;
+  fee: KusamaDeliveryFee;
 }
 
 export type ValidationResult =

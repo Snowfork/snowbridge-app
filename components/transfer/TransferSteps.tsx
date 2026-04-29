@@ -19,6 +19,7 @@ import { AssetRegistry } from "@snowbridge/base-types";
 import { NeuroWebWrapStep } from "./NeuroWebUnwrapStep";
 import { chainName } from "@/utils/chainNames";
 import { CreateAgentStep } from "./CreateAgentStep";
+import { getDeliveryTotalByDisplaySymbol } from "@/utils/deliveryFee";
 
 interface TransferStepsProps {
   plan: TransferPlanSteps;
@@ -50,17 +51,25 @@ function TransferFeeStep(step: StepData) {
       </div>
     );
   }
-  if (feeInfo.symbol !== assetRegistry.relaychain.tokenSymbols) {
+  const relayFee = getDeliveryTotalByDisplaySymbol(
+    feeInfo,
+    assetRegistry.relaychain.tokenSymbols,
+    {
+      registry: assetRegistry,
+      source: step.data.source,
+      tokenMetadata: step.data.tokenMetadata,
+    },
+  );
+  if (!relayFee) {
     return (
       <div key={step.id} className="flex flex-col gap-4 justify-between">
-        Expecting {assetRegistry.relaychain.tokenSymbols} as fee asset, found{" "}
-        {feeInfo.symbol}.
+        Expecting {assetRegistry.relaychain.tokenSymbols} as fee asset.
       </div>
     );
   }
 
-  const transferFee = parseUnits("0.2", feeInfo.decimals);
-  const fee = formatUnits(feeInfo.fee + transferFee, feeInfo.decimals);
+  const transferFee = parseUnits("0.2", relayFee.decimals);
+  const fee = formatUnits(relayFee.amount + transferFee, relayFee.decimals);
   const name = chainName(step.data.source);
   return (
     <SubstrateTransferStep
