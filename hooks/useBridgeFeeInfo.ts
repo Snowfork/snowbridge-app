@@ -60,6 +60,7 @@ async function fetchBridgeFeeInfo([
   registry,
   token,
   amount,
+  accelerated,
 ]: [
   SnowbridgeClient | null,
   TransferLocation,
@@ -67,6 +68,7 @@ async function fetchBridgeFeeInfo([
   AssetRegistry,
   string,
   string,
+  boolean | undefined,
 ]): Promise<FeeInfo | undefined> {
   if (api === null) {
     return;
@@ -118,6 +120,7 @@ async function fetchBridgeFeeInfo([
       const fee = source.parachain?.features.supportsV2
         ? await sender.fee(token, {
             feeTokenLocation: assetsV2.DOT_LOCATION,
+            accelerated: !!accelerated,
           })
         : await sender.fee(token);
       let feeValue = fee.totalFeeInDot;
@@ -200,12 +203,13 @@ export function useBridgeFeeInfo(
   destination: TransferLocation,
   token: string,
   amount: string,
+  accelerated?: boolean,
 ) {
   if (amount === undefined) throw Error(`abc`);
   const api = useAtomValue(snowbridgeApiAtom);
   const { registry } = useContext(BridgeInfoContext)!;
   return useSWR(
-    [api, source, destination, registry, token, amount, "feeInfo"],
+    [api, source, destination, registry, token, amount, accelerated, "feeInfo"],
     fetchBridgeFeeInfo,
     {
       errorRetryCount: 30,

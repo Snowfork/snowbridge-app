@@ -2,10 +2,7 @@
 
 import { assetsV2 } from "@snowbridge/api";
 import { type SnowbridgeContext } from "@/lib/snowbridge";
-import {
-  ParachainBase,
-  paraImplementation,
-} from "@snowbridge/api/dist/parachains";
+import { ParachainBase, paraImplementation } from "@snowbridge/api";
 import {
   Asset,
   AssetRegistry,
@@ -65,13 +62,13 @@ async function getEthereumBalance(
   } else if (source.kind === "ethereum" && source.parachain) {
     // Substrate EVM
     const token = asset.token.toLowerCase();
-      const parachainAsset = source.parachain.assets[token.toLowerCase()];
-      try {
-        return (
-          await context.ethereumProvider.erc20Balance(
-            provider,
-            parachainAsset?.xc20 ?? token,
-            account,
+    const parachainAsset = source.parachain.assets[token.toLowerCase()];
+    try {
+      return (
+        await context.ethereumProvider.erc20Balance(
+          provider,
+          parachainAsset?.xc20 ?? token,
+          account,
           context.environment.gatewayContract,
         )
       ).balance;
