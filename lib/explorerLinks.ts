@@ -1,4 +1,4 @@
-import { ETHER_TOKEN_ADDRESS } from "@snowbridge/api/dist/assets_v2";
+import { ETHER_TOKEN_ADDRESS } from "@snowbridge/api";
 import { ChainKey, ParachainKind } from "@snowbridge/base-types";
 
 const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {

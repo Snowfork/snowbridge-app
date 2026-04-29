@@ -189,6 +189,7 @@ export interface ValidationData {
   amountInSmallestUnit: bigint;
   fee: FeeInfo;
   tokenValueUsd?: number;
+  accelerated?: boolean;
 }
 
 export interface KusamaValidationData {
