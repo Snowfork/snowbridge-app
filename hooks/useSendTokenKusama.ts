@@ -70,7 +70,7 @@ async function planSend(
     data.beneficiary,
     data.token,
     data.amountInSmallestUnit,
-    data.fee.delivery,
+    data.fee,
   );
   return await sender.validate(transfer);
 }

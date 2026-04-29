@@ -1,25 +1,19 @@
 import { BridgeInfoContext } from "@/app/providers";
 import { type SnowbridgeClient } from "@/lib/snowbridge";
 import { snowbridgeApiAtom } from "@/store/snowbridge";
-import {
-  AssetHub,
-  DOT_DECIMALS,
-  DOT_SYMBOL,
-  KSM_DECIMALS,
-  KSM_SYMBOL,
-  KusamaFeeInfo,
-} from "@/utils/types";
+import { AssetHub } from "@/utils/types";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useContext } from "react";
 import useSWR from "swr";
+import { KusamaDeliveryFee } from "@/utils/deliveryFee";
 
 async function fetchKusamaFeeInfo([api, registry, source, token]: [
   SnowbridgeClient | null,
   AssetRegistry,
   string,
   string | undefined,
-]): Promise<KusamaFeeInfo | undefined> {
+]): Promise<KusamaDeliveryFee | undefined> {
   if (!api || !token || !registry.kusama) {
     return;
   }
@@ -40,16 +34,7 @@ async function fetchKusamaFeeInfo([api, registry, source, token]: [
     throw Error(`Unexpected Kusama route ${sender.kind}.`);
   }
 
-  const deliveryFee = await sender.fee(token);
-  const isPolkadot = sender.kind === "polkadot->kusama";
-  const nativeSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
-
-  return {
-    fee: deliveryFee.totalFeeInNative,
-    decimals: isPolkadot ? DOT_DECIMALS : KSM_DECIMALS,
-    symbol: nativeSymbol,
-    delivery: deliveryFee,
-  };
+  return await sender.fee(token);
 }
 
 export function useKusamaFeeInfo(source: string, token: string | undefined) {
