@@ -1034,6 +1034,7 @@ export const TransferForm: FC<TransferFormProps> = ({
               feeError={feeError}
               registry={assetRegistry}
               source={getTransferLocation(assetRegistry, source)}
+              defaultExpanded={false}
             />
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>

@@ -1,6 +1,6 @@
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { fetchTokenPrices } from "@/utils/coindesk";
-import { FC } from "react";
+import { FC, useState } from "react";
 import {
   AssetRegistry,
   ERC20Metadata,
@@ -24,6 +24,8 @@ interface FeeDisplayProps {
   feeError?: unknown;
   feeLabelTextClassName?: string;
   feeTextClassName?: string;
+  defaultExpanded?: boolean;
+  showBreakdownToggle?: boolean;
 }
 
 export const FeeDisplay: FC<FeeDisplayProps> = ({
@@ -35,7 +37,10 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   feeError,
   feeLabelTextClassName,
   feeTextClassName,
+  defaultExpanded = true,
+  showBreakdownToggle = true,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const tokenMetadata =
     registry.ethereumChains[`ethereum_${registry.ethChainId}`].assets[
       token.toLowerCase()
@@ -113,12 +118,28 @@ export const FeeDisplay: FC<FeeDisplayProps> = ({
   const hasSingleTotal = totals.length === 1;
   const total = totals[0];
   const visibleSummaryItems =
-    summaryItems.length > 1 ? summaryItems : [];
+    summaryItems.length > 1 && isExpanded ? summaryItems : [];
+  const canExpand = showBreakdownToggle && summaryItems.length > 1;
+  const totalFeeLabel = canExpand ? (
+    <span className="flex items-center gap-1 text-left">
+      <span>Total Fee</span>
+      <button
+        type="button"
+        className="text-xs underline underline-offset-2 hover:text-primary"
+        onClick={() => setIsExpanded((expanded) => !expanded)}
+        aria-expanded={isExpanded}
+      >
+        {isExpanded ? "(hide breakdown)" : "(see breakdown)"}
+      </button>
+    </span>
+  ) : (
+    "Total Fee"
+  );
 
   return (
     <>
       <LayoutRow
-        name="Total Fee"
+        name={totalFeeLabel}
         feeLabelTextClassName={feeLabelTextClassName}
         feeTextClassName={feeTextClassName}
       >
@@ -178,7 +199,7 @@ function LayoutRow({
   feeLabelTextClassName?: string;
   feeTextClassName?: string;
   children: React.ReactNode;
-  name: string;
+  name: React.ReactNode;
 }>) {
   return (
     <div className="flex items-center justify-between text-sm">
