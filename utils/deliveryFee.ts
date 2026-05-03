@@ -31,6 +31,13 @@ export function resolveFeeAsset(
   asset: FeeAsset,
   context: DeliveryFeeContext,
 ): ResolvedFeeAsset {
+  const sourceNativeSymbol = context.source.parachain?.info.tokenSymbols;
+  const sourceNativeDecimals = context.source.parachain?.info.tokenDecimals;
+  const matchingParachain = Object.values(context.registry.parachains).find(
+    (parachain) =>
+      parachain.info.tokenSymbols?.toUpperCase() === asset.symbol.toUpperCase(),
+  );
+
   switch (asset.symbol) {
     case "ETH":
       return { ...asset, decimals: 18, displaySymbol: "ETH" };
@@ -43,10 +50,20 @@ export function resolveFeeAsset(
     case "NATIVE":
       return {
         ...asset,
-        decimals: context.source.parachain?.info.tokenDecimals ?? 0,
-        displaySymbol: context.source.parachain?.info.tokenSymbols ?? "NATIVE",
+        decimals: sourceNativeDecimals ?? 0,
+        displaySymbol: sourceNativeSymbol ?? "NATIVE",
       };
     default:
+      if (
+        sourceNativeSymbol &&
+        asset.symbol.toUpperCase() === sourceNativeSymbol.toUpperCase()
+      ) {
+        return {
+          ...asset,
+          decimals: sourceNativeDecimals ?? 0,
+          displaySymbol: sourceNativeSymbol,
+        };
+      }
       if (
         context.tokenMetadata &&
         asset.symbol.toUpperCase() === context.tokenMetadata.symbol.toUpperCase()
@@ -55,6 +72,13 @@ export function resolveFeeAsset(
           ...asset,
           decimals: context.tokenMetadata.decimals,
           displaySymbol: context.tokenMetadata.symbol,
+        };
+      }
+      if (matchingParachain) {
+        return {
+          ...asset,
+          decimals: matchingParachain.info.tokenDecimals ?? 0,
+          displaySymbol: matchingParachain.info.tokenSymbols,
         };
       }
       return { ...asset, decimals: 18, displaySymbol: asset.symbol };

@@ -285,6 +285,8 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
           fee={data.fee}
           feeLabelTextClassName="font-medium"
           feeTextClassName=""
+          defaultExpanded={true}
+          showBreakdownToggle={false}
         />
       </div>
 
