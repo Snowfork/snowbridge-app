@@ -2,11 +2,11 @@ import { ContextComponent } from "@/components/Context";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { KusamaComponent } from "@/components/Kusama";
 import { FC } from "react";
-import { bridgeInfoFor } from "@snowbridge/registry";
 import { getEnvironmentName } from "@/lib/snowbridgeEnv";
+import { bridgeInfoWithKusamaRoutes } from "@/lib/bridgeInfo";
 
 export default function Kusama() {
-  const { registry } = bridgeInfoFor(getEnvironmentName())!;
+  const { registry } = bridgeInfoWithKusamaRoutes(getEnvironmentName())!;
   return (
     <MaintenanceBanner>
       <ContextComponent>

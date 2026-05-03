@@ -33,16 +33,27 @@ async function fetchKusamaFeeInfo([api, registry, source, token]: [
       ? { kind: "kusama" as const, id: registry.kusama.assetHubParaId }
       : { kind: "polkadot" as const, id: registry.assetHubParaId };
   const sender = api.sender(from, to);
-  if (sender.kind !== "polkadot->kusama" && sender.kind !== "kusama->polkadot") {
+  if (
+    sender.kind !== "polkadot->kusama" &&
+    sender.kind !== "kusama->polkadot"
+  ) {
     throw Error(`Unexpected Kusama route ${sender.kind}.`);
   }
 
   const deliveryFee = await sender.fee(token);
   const isPolkadot = sender.kind === "polkadot->kusama";
+  const nativeSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
+  const nativeFee = deliveryFee.totals.find(
+    (total) => total.symbol === nativeSymbol,
+  );
+  if (!nativeFee) {
+    throw Error(`Kusama fee total missing ${nativeSymbol}.`);
+  }
+
   return {
-    fee: deliveryFee.totalFeeInNative,
+    fee: nativeFee.amount,
     decimals: isPolkadot ? DOT_DECIMALS : KSM_DECIMALS,
-    symbol: isPolkadot ? DOT_SYMBOL : KSM_SYMBOL,
+    symbol: nativeSymbol,
     delivery: deliveryFee,
   };
 }
@@ -50,7 +61,11 @@ async function fetchKusamaFeeInfo([api, registry, source, token]: [
 export function useKusamaFeeInfo(source: string, token: string | undefined) {
   const api = useAtomValue(snowbridgeApiAtom);
   const { registry } = useContext(BridgeInfoContext)!;
-  return useSWR([api, registry, source, token, "kusamaFeeInfo"], fetchKusamaFeeInfo, {
-    errorRetryCount: 10,
-  });
+  return useSWR(
+    [api, registry, source, token, "kusamaFeeInfo"],
+    fetchKusamaFeeInfo,
+    {
+      errorRetryCount: 10,
+    },
+  );
 }
