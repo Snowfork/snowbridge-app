@@ -43,15 +43,9 @@ async function fetchKusamaFeeInfo([api, registry, source, token]: [
   const deliveryFee = await sender.fee(token);
   const isPolkadot = sender.kind === "polkadot->kusama";
   const nativeSymbol = isPolkadot ? DOT_SYMBOL : KSM_SYMBOL;
-  const nativeFee = deliveryFee.totals.find(
-    (total) => total.symbol === nativeSymbol,
-  );
-  if (!nativeFee) {
-    throw Error(`Kusama fee total missing ${nativeSymbol}.`);
-  }
 
   return {
-    fee: nativeFee.amount,
+    fee: deliveryFee.totalFeeInNative,
     decimals: isPolkadot ? DOT_DECIMALS : KSM_DECIMALS,
     symbol: nativeSymbol,
     delivery: deliveryFee,
