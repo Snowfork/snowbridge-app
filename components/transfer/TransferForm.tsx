@@ -17,7 +17,7 @@ import { AccountInfo, ValidationData } from "@/utils/types";
 import { assetsV2 } from "@snowbridge/api";
 import { type SnowbridgeContext } from "@/lib/snowbridge";
 import { useAtom, useAtomValue } from "jotai";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
@@ -282,6 +282,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const [destination, setDestination] = useState(firstDestination);
   const [token, setToken] = useState(firstToken);
   const [validating, setValidating] = useState(false);
+  const syncedNetworkSourceKey = useRef<string | null>(null);
 
   const beneficiaries = useMemo(() => {
     const beneficiaries = getLocationAccounts(
@@ -419,9 +420,10 @@ export const TransferForm: FC<TransferFormProps> = ({
   useEffect(() => {
     let newDestinations = destinations;
     let newSource = source;
+    const sourceChanged = source.key !== watchSource;
 
     // Update source
-    if (source.key !== watchSource) {
+    if (sourceChanged) {
       newSource = locations.find((s) => s.key == watchSource)!;
       setSource(newSource);
 
@@ -435,69 +437,60 @@ export const TransferForm: FC<TransferFormProps> = ({
     const newDestination =
       newDestinations.find((d) => d.key == watchDestination) ??
       newDestinations[0];
-    setDestination(newDestination);
-    form.resetField("destination", { defaultValue: newDestination.key });
+    if (destination.key !== newDestination.key) {
+      setDestination(newDestination);
+    }
+    if (watchDestination !== newDestination.key) {
+      form.setValue("destination", newDestination.key);
+    }
 
     // Update Token
     const newTokens = newSource.destinations[newDestination.key].assets;
     const newToken =
       newTokens.find((x) => x.toLowerCase() == watchToken.toLowerCase()) ??
       newTokens[0];
-    setToken(newToken);
-    form.resetField("token", { defaultValue: newToken });
-
-    // Update Source Account
-    if (newSource.kind === "polkadot") {
-      const accountType =
-        assetRegistry.parachains[`polkadot_${newSource.id}`].info.accountType;
-      const validAccounts = polkadotAccounts?.filter(
-        filterByAccountType(accountType),
-      );
-      // Check if current account is valid for the new chain
-      const currentAccountValid = validAccounts?.some(
-        (acc) => acc.address === watchSourceAccount,
-      );
-      if (!currentAccountValid) {
-        const newAccount =
-          validAccounts && validAccounts.length > 0
-            ? validAccounts[0].address
-            : "";
-        form.setValue("sourceAccount", newAccount);
-      }
+    if (token.toLowerCase() !== newToken.toLowerCase()) {
+      setToken(newToken);
+    }
+    if (watchToken.toLowerCase() !== newToken.toLowerCase()) {
+      form.setValue("token", newToken);
     }
 
     // Update beneficiary account
     if (formData?.beneficiary) {
-      form.resetField("beneficiary", {
-        defaultValue: formData.beneficiary,
-      });
-      form.setValue("beneficiary", formData.beneficiary);
+      const currentBeneficiary = form.getValues("beneficiary");
+      if (currentBeneficiary !== formData.beneficiary) {
+        form.setValue("beneficiary", formData.beneficiary);
+      }
     }
 
     // Update Network Id
-    try {
-      const chainId = getChainId();
-      if (
-        (newSource.kind === "ethereum" || newSource.kind === "ethereum_l2") &&
-        chainId?.toString() !== newSource.id.toString()
-      ) {
-        console.log(`switching wallet network to ${newSource.id}`);
-        switchNetwork(getEthereumNetwork(newSource.id));
+    if (syncedNetworkSourceKey.current !== newSource.key) {
+      syncedNetworkSourceKey.current = newSource.key;
+      try {
+        const chainId = getChainId();
+        if (
+          (newSource.kind === "ethereum" || newSource.kind === "ethereum_l2") &&
+          chainId?.toString() !== newSource.id.toString()
+        ) {
+          console.log(`switching wallet network to ${newSource.id}`);
+          switchNetwork(getEthereumNetwork(newSource.id));
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
     }
   }, [
     assetRegistry,
+    destination.key,
     destinations,
     form,
     formData?.beneficiary,
     locations,
-    polkadotAccounts,
     source,
+    token,
     watchDestination,
     watchSource,
-    watchSourceAccount,
     watchToken,
   ]);
 
