@@ -65,6 +65,19 @@ import { TransferType } from "@/utils/types";
 
 const ITEMS_PER_PAGE = 5;
 
+const encodeAddressForDisplay = (
+  address: string,
+  ss58Format: number,
+): string => {
+  try {
+    return encodeAddress(address, ss58Format);
+  } catch {
+    // Some historical indexed activity rows contain malformed addresses.
+    // Keep the activity page renderable and show the raw value instead.
+    return address;
+  }
+};
+
 /**
  * Check if two transfers are the same by comparing their unique identifiers.
  * For V2 transfers, the backend returns database-generated IDs, while locally
@@ -371,7 +384,7 @@ const transferDetail = (
   let sourceAddress = transfer.info.sourceAddress;
   if (source.parachain && source.parachain.info.accountType === "AccountId32") {
     sourceAddress = sourceAddress
-      ? encodeAddress(sourceAddress, source.parachain!.info.ss58Format)
+      ? encodeAddressForDisplay(sourceAddress, source.parachain.info.ss58Format)
       : "";
   } else {
     sourceAddress = sourceAddress?.substring(0, 42) ?? "";
@@ -381,7 +394,7 @@ const transferDetail = (
     destination.parachain.info.accountType === "AccountId32"
   ) {
     beneficiary = beneficiary
-      ? encodeAddress(
+      ? encodeAddressForDisplay(
           beneficiary,
           destination.parachain?.info.ss58Format ??
             registry.relaychain.ss58Format,
