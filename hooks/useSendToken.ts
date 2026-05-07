@@ -1,4 +1,4 @@
-import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
+import { ethereumAccountAtom, windowEthereumAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeApiAtom } from "@/store/snowbridge";
 import {
@@ -8,8 +8,14 @@ import {
   ValidationResult,
 } from "@/utils/types";
 import { type SnowbridgeClient } from "@/lib/snowbridge";
+import { BrowserProvider, Eip1193Provider } from "ethers";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
+
+type AsyncSendFn<Params extends unknown[], Result> = (
+  // eslint-disable-next-line no-unused-vars
+  ...params: Params
+) => Promise<Result>;
 
 function validateEvmSubstrateDestination({
   source,
@@ -141,6 +147,12 @@ async function validateEthereumSigner(
     signer.address.toLowerCase() !== data.formData.sourceAccount.toLowerCase()
   ) {
     throw Error(`Source account mismatch.`);
+  }
+  if (data.source.kind === "ethereum_l2") {
+    const network = await ethereumProvider.getNetwork();
+    if (network.chainId !== BigInt(data.source.id)) {
+      throw Error(`Ethereum provider chainId mismatch.`);
+    }
   }
   return {
     ethereumAccount,
@@ -373,8 +385,8 @@ async function sendToken(
 }
 
 export function useSendToken(): [
-  (data: ValidationData) => Promise<ValidationResult>,
-  (data: ValidationData, plan: ValidationResult) => Promise<MessageReceipt>,
+  AsyncSendFn<[ValidationData], ValidationResult>,
+  AsyncSendFn<[ValidationData, ValidationResult], MessageReceipt>,
 ] {
   const api = useAtomValue(snowbridgeApiAtom);
   const plan = useCallback(
@@ -387,10 +399,14 @@ export function useSendToken(): [
 
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
-  const ethereumProvider = useAtomValue(ethersProviderAtom);
+  const windowEthereum = useAtomValue(windowEthereumAtom);
   const send = useCallback(
     async (data: ValidationData, plan: ValidationResult) => {
       if (api === null) throw Error("No api");
+      const ethereumProvider =
+        windowEthereum === null
+          ? undefined
+          : new BrowserProvider(windowEthereum as Eip1193Provider);
       return await sendToken(api, data, plan, {
         polkadotAccount: (polkadotAccounts ?? []).find(
           (pa) => pa.address === data.formData.sourceAccount,
@@ -399,7 +415,7 @@ export function useSendToken(): [
         ethereumProvider: ethereumProvider ?? undefined,
       });
     },
-    [api, polkadotAccounts, ethereumAccount, ethereumProvider],
+    [api, polkadotAccounts, ethereumAccount, windowEthereum],
   );
   return [plan, send];
 }
