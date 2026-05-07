@@ -400,8 +400,6 @@ export const TransferForm: FC<TransferFormProps> = ({
     watchAmount,
   );
 
-  useEffect(()=> { console.log('AAAAA', feeInfo); }, [feeInfo]);
-
   const tokenMetadata =
     assetRegistry.ethereumChains[`ethereum_${assetRegistry.ethChainId}`].assets[
       token.toLowerCase()
