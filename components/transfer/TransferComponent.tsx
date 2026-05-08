@@ -50,7 +50,12 @@ function sendResultToHistory(
   if (!isHex(beneficiaryAddress)) {
     beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
   }
-  const resultMessageId = "messageId" in result ? result.messageId : undefined;
+  const resultMessageId =
+    "messageId" in result
+      ? result.messageId
+      : "topic" in result
+        ? result.topic
+        : undefined;
   switch (result.kind) {
     case "ethereum->ethereum":
     case "polkadot->ethereum_l2":
@@ -85,7 +90,6 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
-    case "ethereum_l2->polkadot":
     case "ethereum->polkadot": {
       const transfer: historyV2.ToPolkadotTransferResult = {
         sourceId: data.source.id,
@@ -107,6 +111,32 @@ function sendResultToHistory(
           messageId: messageId ?? resultMessageId,
           transactionHash: result.txHash ?? "",
           nonce: Number(result.nonce.toString()),
+        },
+      };
+
+      return { ...transfer, isWalletTransaction: true };
+    }
+    case "ethereum_l2->polkadot": {
+      const transfer: historyV2.ToPolkadotTransferResult = {
+        sourceId: data.source.id,
+        sourceKind: data.source.kind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
+        id: messageId ?? result.topic,
+        status: historyV2.TransferStatus.Pending,
+        info: {
+          amount: data.amountInSmallestUnit.toString(),
+          sourceAddress,
+          beneficiaryAddress,
+          tokenAddress: data.formData.token,
+          when: new Date(),
+        },
+        submitted: {
+          blockNumber: result.blockNumber ?? 0,
+          channelId: "",
+          messageId: messageId ?? result.topic,
+          transactionHash: result.txHash ?? "",
+          nonce: 0,
         },
       };
 
