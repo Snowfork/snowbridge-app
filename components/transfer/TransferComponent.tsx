@@ -39,8 +39,13 @@ import { decodeAddress } from "@polkadot/util-crypto";
 import { EthereumKind, ParachainKind } from "@snowbridge/base-types";
 
 function getMessageIdFromResult(result: MessageReceipt): string | undefined {
-  if ("messageId" in result && result.messageId) return result.messageId;
-  if ("topic" in result && result.topic) return result.topic;
+  if (
+    "messageId" in result &&
+    typeof result.messageId === "string" &&
+    result.messageId
+  ) {
+    return result.messageId;
+  }
   return undefined;
 }
 
