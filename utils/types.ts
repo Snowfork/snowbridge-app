@@ -21,9 +21,9 @@ import {
 import {
   AssetRegistry,
   ERC20Metadata,
-  L2WrapperDepositCallInvoked,
   TransferLocation,
 } from "@snowbridge/base-types";
+import type { L2MessageReceipt } from "@snowbridge/base-types/dist/provider";
 import type { BridgeDeliveryFee, KusamaDeliveryFee } from "./deliveryFee";
 
 export const DOT_DECIMALS = 10;
@@ -199,7 +199,7 @@ export type MessageReceipt =
   | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.MessageReceiptEvm)
   | ({ kind: "ethereum->polkadot" } & toPolkadotV2.MessageReceipt)
   | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt)
-  | ({ kind: "ethereum_l2->polkadot" } & L2WrapperDepositCallInvoked)
+  | ({ kind: "ethereum_l2->polkadot" } & L2MessageReceipt)
   | ({ kind: "kusama->polkadot" } & forKusama.MessageReceipt)
   | ({ kind: "polkadot->kusama" } & forKusama.MessageReceipt)
   | ({ kind: "polkadot->polkadot" } & forInterParachain.MessageReceipt);
