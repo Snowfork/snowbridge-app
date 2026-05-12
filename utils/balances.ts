@@ -1,6 +1,6 @@
 "use client";
 import { type SnowbridgeContext } from "@/lib/snowbridge";
-import { paraImplementation } from "@snowbridge/api/dist/parachains";
+import { paraImplementation } from "@snowbridge/api";
 import {
   AssetHub,
   DOT_DECIMALS,

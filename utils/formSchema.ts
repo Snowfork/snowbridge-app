@@ -53,6 +53,7 @@ export const transferFormSchema = z.object({
       /^(0x[A-Fa-f0-9]{32})|(0x[A-Fa-f0-9]{20})|([A-Za-z0-9]{47,48})$/,
       "Invalid address format.",
     ),
+  accelerated: z.boolean().optional(),
 });
 
 export type TransferFormData = z.infer<typeof transferFormSchema>;

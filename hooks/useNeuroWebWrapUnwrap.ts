@@ -6,7 +6,7 @@ import { SignerOptions, SubmittableExtrinsic } from "@polkadot/api/types";
 import { EventRecord } from "@polkadot/types/interfaces";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util";
-import { NeurowebParachain } from "@snowbridge/api/dist/parachains/neuroweb";
+import { NeurowebParachain } from "@snowbridge/api";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useCallback, useContext } from "react";

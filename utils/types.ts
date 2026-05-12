@@ -170,6 +170,7 @@ export interface ValidationData {
   amountInSmallestUnit: bigint;
   fee: BridgeDeliveryFee;
   tokenValueUsd?: number;
+  accelerated?: boolean;
 }
 
 export interface KusamaValidationData {
