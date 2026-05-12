@@ -78,11 +78,10 @@ const PRESET_GROUPS: PresetGroup[] = [
         id: "full-v2",
         label: "Full V2 pause (both directions)",
         whenToUse:
-          "Stops all V2 traffic at every layer (Gateway, inbound, outbound). V1 keeps flowing.",
+          "Stops V2 at the Gateway, V2 inbound queue, and the V2 AH fee. V1 keeps flowing. (No V2-only operating-mode halt for P→E exists,the AH frontend would also block V1.)",
         options: [
           "gatewayV2",
           "inboundQueueV2",
-          "systemFrontend",
           "assethubMaxFeeV2",
         ],
       },
@@ -90,8 +89,8 @@ const PRESET_GROUPS: PresetGroup[] = [
         id: "v2-p2e",
         label: "V2 Polkadot → Ethereum only",
         whenToUse:
-          "Blocks new V2 sends from AssetHub. V2 E→P and all V1 traffic keep flowing.",
-        options: ["systemFrontend", "assethubMaxFeeV2"],
+          "Fee-deterrent halt: caps the V2 outbound fee. V1 P→E unaffected (different fee storage item). Note: `systemFrontend` would also block V1 P→E, so it's not part of this preset.",
+        options: ["assethubMaxFeeV2"],
       },
       {
         id: "v2-e2p",
@@ -195,7 +194,7 @@ const ADVANCED_GROUPS: { title: string; options: OptionDescriptor[] }[] = [
         key: "systemFrontend",
         label: "AH system-frontend only",
         description:
-          "V2 router-layer P→E block. V1 BridgeHub outbound-queue continues.",
+          "Router-layer P→E block (covers both V1 and V2). V1 BridgeHub outbound-queue keeps draining in-flight messages.",
       },
       {
         key: "assethubMaxFee",
