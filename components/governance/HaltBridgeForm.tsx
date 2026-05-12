@@ -14,7 +14,7 @@ import {
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { BridgeInfoContext } from "@/app/providers";
 
-type HaltOption = keyof governance.haltBridge.HaltBridgeOptions;
+type HaltOption = keyof governance.HaltBridgeOptions;
 
 interface Preset {
   id: string;
@@ -240,7 +240,7 @@ export function HaltBridgeForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<
-    governance.haltBridge.HaltBridgePreimage | null
+    governance.HaltBridgePreimage | null
   >(null);
 
   const applyPreset = (preset: Preset) => {
@@ -280,10 +280,10 @@ export function HaltBridgeForm() {
     try {
       const assetHub = await context.parachain(registry.assetHubParaId);
       const bridgeHub = await context.parachain(registry.bridgeHubParaId);
-      const preimage = await governance.haltBridge.buildHaltBridgePreimage(
+      const preimage = await governance.buildHaltBridgePreimage(
         assetHub,
         bridgeHub,
-        selected as governance.haltBridge.HaltBridgeOptions,
+        selected as governance.HaltBridgeOptions,
       );
       setResult(preimage);
     } catch (e) {
@@ -421,7 +421,7 @@ export function HaltBridgeForm() {
 function PreimageResult({
   result,
 }: {
-  result: governance.haltBridge.HaltBridgePreimage;
+  result: governance.HaltBridgePreimage;
 }) {
   const copy = (text: string) => navigator.clipboard.writeText(text);
   return (
@@ -539,7 +539,7 @@ function PreimageResult({
 function KeyHasher({
   writes,
 }: {
-  writes: governance.haltBridge.StorageWrite[];
+  writes: governance.StorageWrite[];
 }) {
   const [input, setInput] = useState(writes[0]?.name ?? "");
   const [computed, setComputed] = useState<string | null>(null);
