@@ -1,4 +1,4 @@
-import { ethereumAccountAtom, ethersProviderAtom } from "@/store/ethereum";
+import { ethereumAccountAtom, windowEthereumAtom } from "@/store/ethereum";
 import { polkadotAccountsAtom } from "@/store/polkadot";
 import { snowbridgeApiAtom } from "@/store/snowbridge";
 import {
@@ -8,8 +8,14 @@ import {
   ValidationResult,
 } from "@/utils/types";
 import { type SnowbridgeClient } from "@/lib/snowbridge";
+import { BrowserProvider, Eip1193Provider } from "ethers";
 import { useAtomValue } from "jotai";
 import { useCallback } from "react";
+
+type AsyncSendFn<Params extends unknown[], Result> = (
+  // eslint-disable-next-line no-unused-vars
+  ...params: Params
+) => Promise<Result>;
 
 function validateEvmSubstrateDestination({
   source,
@@ -142,6 +148,12 @@ async function validateEthereumSigner(
   ) {
     throw Error(`Source account mismatch.`);
   }
+  if (data.source.kind === "ethereum_l2") {
+    const network = await ethereumProvider.getNetwork();
+    if (network.chainId !== BigInt(data.source.id)) {
+      throw Error(`Ethereum provider chainId mismatch.`);
+    }
+  }
   return {
     ethereumAccount,
     ethereumProvider,
@@ -169,23 +181,23 @@ async function planSend(
 
   switch (sender.kind) {
     case "ethereum->ethereum": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "ethereum->polkadot": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
-      if (!("feeAsset" in fee.delivery)) {
+      if (!("feeAsset" in fee)) {
         throw Error(`Invalid delivery fee shape for ${sender.kind}.`);
       }
       const transfer = await sender.tx(
@@ -193,46 +205,46 @@ async function planSend(
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->ethereum": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->polkadot": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
     case "polkadot->ethereum_l2": {
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const transfer = await sender.tx(
         formData.sourceAccount,
         formData.beneficiary,
         formData.token,
         amountInSmallestUnit,
-        fee.delivery,
+        fee,
       );
       return await sender.validate(transfer);
     }
@@ -242,8 +254,8 @@ async function planSend(
           `Invalid source ${source.key}, expected ethereum_l2 source.`,
         );
       }
-      if (fee.delivery.kind !== sender.kind) {
-        throw Error(`Invalid delivery fee kind ${fee.delivery.kind}.`);
+      if (fee.kind !== sender.kind) {
+        throw Error(`Invalid delivery fee kind ${fee.kind}.`);
       }
       const l2asset = Object.values(source.ethChain.assets).find(
         (x) =>
@@ -258,7 +270,7 @@ async function planSend(
           formData.beneficiary,
           l2asset.token,
           amountInSmallestUnit,
-          fee.delivery,
+          fee,
         ),
       );
     }
@@ -373,8 +385,8 @@ async function sendToken(
 }
 
 export function useSendToken(): [
-  (data: ValidationData) => Promise<ValidationResult>,
-  (data: ValidationData, plan: ValidationResult) => Promise<MessageReceipt>,
+  AsyncSendFn<[ValidationData], ValidationResult>,
+  AsyncSendFn<[ValidationData, ValidationResult], MessageReceipt>,
 ] {
   const api = useAtomValue(snowbridgeApiAtom);
   const plan = useCallback(
@@ -387,10 +399,14 @@ export function useSendToken(): [
 
   const polkadotAccounts = useAtomValue(polkadotAccountsAtom);
   const ethereumAccount = useAtomValue(ethereumAccountAtom);
-  const ethereumProvider = useAtomValue(ethersProviderAtom);
+  const windowEthereum = useAtomValue(windowEthereumAtom);
   const send = useCallback(
     async (data: ValidationData, plan: ValidationResult) => {
       if (api === null) throw Error("No api");
+      const ethereumProvider =
+        windowEthereum === null
+          ? undefined
+          : new BrowserProvider(windowEthereum as Eip1193Provider);
       return await sendToken(api, data, plan, {
         polkadotAccount: (polkadotAccounts ?? []).find(
           (pa) => pa.address === data.formData.sourceAccount,
@@ -399,7 +415,7 @@ export function useSendToken(): [
         ethereumProvider: ethereumProvider ?? undefined,
       });
     },
-    [api, polkadotAccounts, ethereumAccount, ethereumProvider],
+    [api, polkadotAccounts, ethereumAccount, windowEthereum],
   );
   return [plan, send];
 }

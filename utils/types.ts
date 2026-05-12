@@ -20,10 +20,11 @@ import {
 } from "ethers";
 import {
   AssetRegistry,
-  ChainKind,
   ERC20Metadata,
   TransferLocation,
 } from "@snowbridge/base-types";
+import type { L2MessageReceipt } from "@snowbridge/base-types/dist/provider";
+import type { BridgeDeliveryFee, KusamaDeliveryFee } from "./deliveryFee";
 
 export const DOT_DECIMALS = 10;
 export const KSM_DECIMALS = 12;
@@ -160,26 +161,6 @@ export interface SignerInfo {
   ethereumProvider?: BrowserProvider;
 }
 
-export type FeeInfo = {
-  fee: bigint;
-  totalFee: bigint;
-  decimals: number;
-  symbol: string;
-  delivery:
-    | toEthereumV2.DeliveryFee
-    | toPolkadotV2.DeliveryFee
-    | toPolkadotSnowbridgeV2.DeliveryFee
-    | forInterParachain.DeliveryFee;
-  kind: ChainKind;
-};
-
-export type KusamaFeeInfo = {
-  fee: bigint;
-  decimals: number;
-  symbol: string;
-  delivery: forKusama.DeliveryFee;
-};
-
 export interface ValidationData {
   formData: TransferFormData;
   assetRegistry: AssetRegistry;
@@ -187,7 +168,7 @@ export interface ValidationData {
   destination: TransferLocation;
   tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
-  fee: FeeInfo;
+  fee: BridgeDeliveryFee;
   tokenValueUsd?: number;
   accelerated?: boolean;
 }
@@ -201,7 +182,7 @@ export interface KusamaValidationData {
   token: string;
   tokenMetadata: ERC20Metadata;
   amountInSmallestUnit: bigint;
-  fee: KusamaFeeInfo;
+  fee: KusamaDeliveryFee;
 }
 
 export type ValidationResult =
@@ -219,7 +200,7 @@ export type MessageReceipt =
   | ({ kind: "ethereum->ethereum" } & toEthereumFromEVMV2.MessageReceiptEvm)
   | ({ kind: "ethereum->polkadot" } & toPolkadotV2.MessageReceipt)
   | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt)
-  | ({ kind: "ethereum_l2->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt)
+  | ({ kind: "ethereum_l2->polkadot" } & L2MessageReceipt)
   | ({ kind: "kusama->polkadot" } & forKusama.MessageReceipt)
   | ({ kind: "polkadot->kusama" } & forKusama.MessageReceipt)
   | ({ kind: "polkadot->polkadot" } & forInterParachain.MessageReceipt);

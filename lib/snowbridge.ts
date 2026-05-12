@@ -1,8 +1,8 @@
 import { createApi, historyV2, SnowbridgeApi } from "@snowbridge/api";
-import { bridgeInfoFor } from "@snowbridge/registry";
 import { AbstractProvider } from "ethers";
 import { EthersEthereumProvider } from "@snowbridge/provider-ethers";
 import { getEnvironment } from "./snowbridgeEnv";
+import { bridgeInfoWithKusamaRoutes } from "./bridgeInfo";
 
 export interface AccountInfo {
   name: string;
@@ -27,7 +27,7 @@ export function createSnowbridgeApi(
   envName: string,
   overrides?: ContextOverrides,
 ) {
-  const info = bridgeInfoFor(envName);
+  const info = bridgeInfoWithKusamaRoutes(envName);
   const env = info.environment;
   const allParachains = {
     ...env.parachains,

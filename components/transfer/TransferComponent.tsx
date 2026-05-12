@@ -10,6 +10,7 @@ import {
   MessageReceipt,
   TransferPlanSteps,
   ValidationData,
+  ValidationResult,
 } from "@/utils/types";
 import { historyV2 } from "@snowbridge/api";
 import { track } from "@vercel/analytics";
@@ -37,6 +38,44 @@ import { isHex, u8aToHex } from "@polkadot/util";
 import { decodeAddress } from "@polkadot/util-crypto";
 import { EthereumKind, ParachainKind } from "@snowbridge/base-types";
 
+function getMessageIdFromResult(result: MessageReceipt): string | undefined {
+  if (
+    "messageId" in result &&
+    typeof result.messageId === "string" &&
+    result.messageId
+  ) {
+    return result.messageId;
+  }
+  return undefined;
+}
+
+function getMessageIdFromPlan(plan: ValidationResult): string | undefined {
+  if (!("computed" in plan)) return undefined;
+
+  const computed = plan.computed as {
+    messageId?: unknown;
+    topic?: unknown;
+  };
+
+  if (typeof computed.messageId === "string" && computed.messageId) {
+    return computed.messageId;
+  }
+  if (typeof computed.topic === "string" && computed.topic) {
+    return computed.topic;
+  }
+  return undefined;
+}
+
+function resolveMessageId(
+  result: MessageReceipt,
+  plan: ValidationResult,
+): string {
+  const messageId =
+    getMessageIdFromResult(result) ?? getMessageIdFromPlan(plan);
+  if (!messageId) throw Error(`Could not resolve message id.`);
+  return messageId;
+}
+
 function sendResultToHistory(
   messageId: string,
   data: ValidationData,
@@ -50,7 +89,6 @@ function sendResultToHistory(
   if (!isHex(beneficiaryAddress)) {
     beneficiaryAddress = u8aToHex(decodeAddress(beneficiaryAddress));
   }
-  const resultMessageId = "messageId" in result ? result.messageId : undefined;
   switch (result.kind) {
     case "ethereum->ethereum":
     case "polkadot->ethereum_l2":
@@ -60,7 +98,7 @@ function sendResultToHistory(
         sourceKind: data.source.kind,
         destinationId: data.destination.id,
         destinationKind: data.destination.kind as EthereumKind,
-        id: messageId ?? result.messageId,
+        id: messageId,
         status: result.success
           ? historyV2.TransferStatus.Pending
           : historyV2.TransferStatus.Failed,
@@ -74,7 +112,7 @@ function sendResultToHistory(
         submitted: {
           block_num: result.blockNumber,
           block_timestamp: 0,
-          messageId: messageId ?? resultMessageId,
+          messageId,
           account_id: sourceAddress,
           extrinsic_hash: result.txHash,
           success: result.success,
@@ -85,14 +123,13 @@ function sendResultToHistory(
 
       return { ...transfer, isWalletTransaction: true };
     }
-    case "ethereum_l2->polkadot":
     case "ethereum->polkadot": {
       const transfer: historyV2.ToPolkadotTransferResult = {
         sourceId: data.source.id,
         sourceKind: data.source.kind,
         destinationId: data.destination.id,
         destinationKind: data.destination.kind as ParachainKind,
-        id: messageId ?? resultMessageId,
+        id: messageId,
         status: historyV2.TransferStatus.Pending,
         info: {
           amount: data.amountInSmallestUnit.toString(),
@@ -104,9 +141,35 @@ function sendResultToHistory(
         submitted: {
           blockNumber: result.blockNumber ?? 0,
           channelId: "channelId" in result ? result.channelId : "",
-          messageId: messageId ?? resultMessageId,
+          messageId,
           transactionHash: result.txHash ?? "",
           nonce: Number(result.nonce.toString()),
+        },
+      };
+
+      return { ...transfer, isWalletTransaction: true };
+    }
+    case "ethereum_l2->polkadot": {
+      const transfer: historyV2.ToPolkadotTransferResult = {
+        sourceId: data.source.id,
+        sourceKind: data.source.kind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
+        id: messageId,
+        status: historyV2.TransferStatus.Pending,
+        info: {
+          amount: data.amountInSmallestUnit.toString(),
+          sourceAddress,
+          beneficiaryAddress,
+          tokenAddress: data.formData.token,
+          when: new Date(),
+        },
+        submitted: {
+          blockNumber: result.blockNumber ?? 0,
+          channelId: "",
+          messageId,
+          transactionHash: result.txHash ?? "",
+          nonce: 0,
         },
       };
 
@@ -118,7 +181,7 @@ function sendResultToHistory(
         sourceKind: data.source.kind as ParachainKind,
         destinationId: data.destination.id,
         destinationKind: data.destination.kind as ParachainKind,
-        id: messageId ?? result.messageId,
+        id: messageId,
         status: result.success
           ? historyV2.TransferStatus.Pending
           : historyV2.TransferStatus.Failed,
@@ -132,7 +195,7 @@ function sendResultToHistory(
         submitted: {
           block_num: result.blockNumber,
           block_timestamp: 0,
-          messageId: messageId ?? resultMessageId,
+          messageId,
           account_id: sourceAddress,
           extrinsic_hash: result.txHash,
           success: result.success,
@@ -235,8 +298,7 @@ export const TransferComponent: FC = () => {
       const result = await sendToken(data, plan);
       if (requestId.current != req) return;
 
-      const messageId =
-        "messageId" in result && result.messageId ? result.messageId : "0x";
+      const messageId = resolveMessageId(result, plan);
       const historyItem = sendResultToHistory(messageId, data, result);
       track("Sending Complete", { ...data.formData, messageId });
       setSourceExecutionFee(null);
@@ -350,7 +412,7 @@ export const TransferComponent: FC = () => {
               setSourceExecutionFee,
             )
           }
-          onError={async (form, error) =>
+          onError={async (form) =>
             showError("Error validating transfer form.", form)
           }
         />

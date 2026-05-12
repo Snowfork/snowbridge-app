@@ -1,25 +1,19 @@
 import { BridgeInfoContext } from "@/app/providers";
 import { type SnowbridgeClient } from "@/lib/snowbridge";
 import { snowbridgeApiAtom } from "@/store/snowbridge";
-import {
-  AssetHub,
-  DOT_DECIMALS,
-  DOT_SYMBOL,
-  KSM_DECIMALS,
-  KSM_SYMBOL,
-  KusamaFeeInfo,
-} from "@/utils/types";
+import { AssetHub } from "@/utils/types";
 import { AssetRegistry } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import { useContext } from "react";
 import useSWR from "swr";
+import { KusamaDeliveryFee } from "@/utils/deliveryFee";
 
 async function fetchKusamaFeeInfo([api, registry, source, token]: [
   SnowbridgeClient | null,
   AssetRegistry,
   string,
   string | undefined,
-]): Promise<KusamaFeeInfo | undefined> {
+]): Promise<KusamaDeliveryFee | undefined> {
   if (!api || !token || !registry.kusama) {
     return;
   }
@@ -33,24 +27,24 @@ async function fetchKusamaFeeInfo([api, registry, source, token]: [
       ? { kind: "kusama" as const, id: registry.kusama.assetHubParaId }
       : { kind: "polkadot" as const, id: registry.assetHubParaId };
   const sender = api.sender(from, to);
-  if (sender.kind !== "polkadot->kusama" && sender.kind !== "kusama->polkadot") {
+  if (
+    sender.kind !== "polkadot->kusama" &&
+    sender.kind !== "kusama->polkadot"
+  ) {
     throw Error(`Unexpected Kusama route ${sender.kind}.`);
   }
 
-  const deliveryFee = await sender.fee(token);
-  const isPolkadot = sender.kind === "polkadot->kusama";
-  return {
-    fee: deliveryFee.totalFeeInNative,
-    decimals: isPolkadot ? DOT_DECIMALS : KSM_DECIMALS,
-    symbol: isPolkadot ? DOT_SYMBOL : KSM_SYMBOL,
-    delivery: deliveryFee,
-  };
+  return await sender.fee(token);
 }
 
 export function useKusamaFeeInfo(source: string, token: string | undefined) {
   const api = useAtomValue(snowbridgeApiAtom);
   const { registry } = useContext(BridgeInfoContext)!;
-  return useSWR([api, registry, source, token, "kusamaFeeInfo"], fetchKusamaFeeInfo, {
-    errorRetryCount: 10,
-  });
+  return useSWR(
+    [api, registry, source, token, "kusamaFeeInfo"],
+    fetchKusamaFeeInfo,
+    {
+      errorRetryCount: 10,
+    },
+  );
 }
