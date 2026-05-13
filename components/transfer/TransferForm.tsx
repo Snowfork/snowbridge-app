@@ -663,38 +663,6 @@ export const TransferForm: FC<TransferFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
-        {/* Accelerated Option: Only show for polkadot->ethereum with supportsV2 */}
-        {source.kind === "polkadot" &&
-          destination.kind === "ethereum" &&
-          getTransferLocation(assetRegistry, source).parachain?.features
-            ?.supportsV2 && (
-            <FormField
-              control={form.control}
-              name="accelerated"
-              render={({ field }) => (
-                <FormItem className="rounded-lg border border-muted bg-muted/40 px-4 py-3 flex items-center gap-3 mb-2">
-                  <FormControl>
-                    <input
-                      id="accelerated"
-                      type="checkbox"
-                      className="accent-primary w-5 h-5 rounded focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
-                      checked={field.value ?? false}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                    />
-                  </FormControl>
-                  <Label
-                    htmlFor="accelerated"
-                    className="text-base font-medium cursor-pointer select-none"
-                  >
-                    Accelerated delivery{" "}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      (higher fee, faster)
-                    </span>
-                  </Label>
-                </FormItem>
-              )}
-            />
-          )}
         <div className="mt-5 flex flex-row items-center justify-between gap-1 sm:gap-3">
           <FormField
             control={form.control}
@@ -1054,6 +1022,38 @@ export const TransferForm: FC<TransferFormProps> = ({
               </FormItem>
             )}
           />
+          {/* Accelerated Option: Only show for polkadot->ethereum with supportsV2 */}
+          {source.kind === "polkadot" &&
+            destination.kind === "ethereum" &&
+            getTransferLocation(assetRegistry, source).parachain?.features
+              ?.supportsV2 && (
+              <FormField
+                control={form.control}
+                name="accelerated"
+                render={({ field }) => (
+                  <FormItem className="rounded-lg border border-muted bg-muted/40 px-4 py-3 flex items-center gap-3 mb-2">
+                    <FormControl>
+                      <input
+                        id="accelerated"
+                        type="checkbox"
+                        className="accent-primary w-5 h-5 rounded focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
+                        checked={field.value ?? false}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    </FormControl>
+                    <Label
+                      htmlFor="accelerated"
+                      className="text-base font-medium cursor-pointer select-none"
+                    >
+                      Accelerated delivery{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        (higher fee, faster)
+                      </span>
+                    </Label>
+                  </FormItem>
+                )}
+              />
+            )}
           <div className="glass-sub p-4 space-y-2 card-shadow">
             <FeeDisplay
               token={token}
