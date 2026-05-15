@@ -1022,9 +1022,10 @@ export const TransferForm: FC<TransferFormProps> = ({
               </FormItem>
             )}
           />
-          {/* Accelerated Option: Only show for polkadot->ethereum with supportsV2 */}
+          {/* Accelerated Option: Only show for polkadot->ethereum/ethereum_l2 with supportsV2 */}
           {source.kind === "polkadot" &&
-            destination.kind === "ethereum" &&
+            (destination.kind === "ethereum" ||
+              destination.kind === "ethereum_l2") &&
             getTransferLocation(assetRegistry, source).parachain?.features
               ?.supportsV2 && (
               <FormField
@@ -1067,9 +1068,14 @@ export const TransferForm: FC<TransferFormProps> = ({
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-glass">Estimated delivery time</dt>
               <dd className="text-primary">
-                {source.kind === "ethereum" || source.kind === "ethereum_l2"
-                  ? "~20 minutes"
-                  : "~35 minutes"}
+                {source.kind === "polkadot" &&
+                (destination.kind === "ethereum" ||
+                  destination.kind === "ethereum_l2") &&
+                watchAccelerated
+                  ? "~5 minutes"
+                  : source.kind === "ethereum" || source.kind === "ethereum_l2"
+                    ? "~20 minutes"
+                    : "~5 to 240 minutes"}
               </dd>
             </div>
           </div>
