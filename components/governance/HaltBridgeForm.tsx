@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { governance } from "@snowbridge/api";
 import { Button } from "@/components/ui/button";
@@ -14,255 +14,238 @@ import {
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { BridgeInfoContext } from "@/app/providers";
 
-type HaltOption = keyof governance.HaltBridgeOptions;
+type Operation = "halt" | "resume";
 
-interface Preset {
-  id: string;
+// Per-lever UI keys, operation-agnostic. toSdkOption() below converts each to
+// the right SDK option name for the chosen operation (the halt and resume
+// option shapes overlap except for the fee fields).
+type LeverKey =
+  | "all"
+  | "gateway"
+  | "gatewayV1"
+  | "gatewayV2"
+  | "inboundQueue"
+  | "inboundQueueV1"
+  | "inboundQueueV2"
+  | "outboundQueue"
+  | "outboundQueueV1"
+  | "systemFrontend"
+  | "ethereumClient"
+  | "ahFee"
+  | "ahFeeV1"
+  | "ahFeeV2";
+
+interface LeverDescriptor {
+  key: LeverKey;
   label: string;
-  whenToUse: string;
-  options: HaltOption[];
+  haltDescription: string;
+  resumeDescription: string;
 }
 
-interface PresetGroup {
-  title: string;
-  presets: Preset[];
-}
-
-const PRESET_GROUPS: PresetGroup[] = [
+const ADVANCED_GROUPS: { title: string; levers: LeverDescriptor[] }[] = [
   {
     title: "Catch-all",
-    presets: [
-      {
-        id: "halt-all",
-        label: "Halt everything",
-        whenToUse:
-          "Most defensive. Use when the cause is uncertain or any component is suspect.",
-        options: ["all"],
-      },
-    ],
-  },
-  {
-    title: "V1 only",
-    presets: [
-      {
-        id: "full-v1",
-        label: "Full V1 pause (both directions)",
-        whenToUse:
-          "Stops all V1 traffic at every layer (Gateway, inbound, outbound). V2 keeps flowing.",
-        options: [
-          "gatewayV1",
-          "inboundQueueV1",
-          "outboundQueueV1",
-          "assethubMaxFeeV1",
-        ],
-      },
-      {
-        id: "v1-p2e",
-        label: "V1 Polkadot → Ethereum only",
-        whenToUse:
-          "Blocks V1 outbound at the BH queue and caps the V1 fee. V1 E→P and all V2 traffic keep flowing.",
-        options: ["outboundQueueV1", "assethubMaxFeeV1"],
-      },
-      {
-        id: "v1-e2p",
-        label: "V1 Ethereum → Polkadot only",
-        whenToUse: "Blocks V1 inbound on BridgeHub. Other paths keep flowing.",
-        options: ["inboundQueueV1"],
-      },
-    ],
-  },
-  {
-    title: "V2 only",
-    presets: [
-      {
-        id: "full-v2",
-        label: "Full V2 pause (both directions)",
-        whenToUse:
-          "Stops V2 at the Gateway, V2 inbound queue, and the V2 AH fee. V1 keeps flowing. (No V2-only operating-mode halt for P→E exists,the AH frontend would also block V1.)",
-        options: [
-          "gatewayV2",
-          "inboundQueueV2",
-          "assethubMaxFeeV2",
-        ],
-      },
-      {
-        id: "v2-p2e",
-        label: "V2 Polkadot → Ethereum only",
-        whenToUse:
-          "Fee-deterrent halt: caps the V2 outbound fee. V1 P→E unaffected (different fee storage item). Note: `systemFrontend` would also block V1 P→E, so it's not part of this preset.",
-        options: ["assethubMaxFeeV2"],
-      },
-      {
-        id: "v2-e2p",
-        label: "V2 Ethereum → Polkadot only",
-        whenToUse: "Blocks V2 inbound on BridgeHub. Other paths keep flowing.",
-        options: ["inboundQueueV2"],
-      },
-    ],
-  },
-  {
-    title: "By incident type",
-    presets: [
-      {
-        id: "beacon-compromise",
-        label: "Beacon light client compromise",
-        whenToUse:
-          "Halts new beacon-header ingestion. Halt inbound queues separately to block proof-consuming flows.",
-        options: ["ethereumClient"],
-      },
-    ],
-  },
-];
-
-interface OptionDescriptor {
-  key: HaltOption;
-  label: string;
-  description: string;
-}
-
-const ADVANCED_GROUPS: { title: string; options: OptionDescriptor[] }[] = [
-  {
-    title: "Catch-all",
-    options: [
+    levers: [
       {
         key: "all",
-        label: "Halt everything",
-        description:
-          "Equivalent to ticking every other box. Stops both V1 and V2, both directions.",
+        label: "Everything",
+        haltDescription:
+          "Equivalent to ticking every other box. Halts both V1 and V2, both directions.",
+        resumeDescription:
+          "Equivalent to ticking every other box. Resumes both V1 and V2, both directions, restores prod fees.",
       },
     ],
   },
   {
     title: "Gateway (Ethereum side)",
-    options: [
+    levers: [
       {
         key: "gateway",
         label: "Gateway (V1 + V2)",
-        description:
+        haltDescription:
           "SetOperatingMode on the Ethereum Gateway via both V1 and V2 system pallets.",
+        resumeDescription:
+          "Restore Normal operating mode on the Gateway via both V1 and V2 system pallets.",
       },
       {
         key: "gatewayV1",
         label: "Gateway V1 only",
-        description:
+        haltDescription:
           "Blocks V1 sendToken / sendMessage on the Gateway. V2 continues.",
+        resumeDescription: "Restores V1 send on the Gateway. V2 unaffected.",
       },
       {
         key: "gatewayV2",
         label: "Gateway V2 only",
-        description:
+        haltDescription:
           "Blocks v2_sendMessage / v2_registerToken on the Gateway. V1 continues.",
+        resumeDescription: "Restores V2 send on the Gateway. V1 unaffected.",
       },
     ],
   },
   {
     title: "Inbound (Ethereum → Polkadot)",
-    options: [
+    levers: [
       {
         key: "inboundQueue",
         label: "Inbound queue (V1 + V2)",
-        description: "Blocks Ethereum → Polkadot for both V1 and V2.",
+        haltDescription: "Blocks Ethereum → Polkadot for both V1 and V2.",
+        resumeDescription: "Resumes Ethereum → Polkadot for both V1 and V2.",
       },
       {
         key: "inboundQueueV1",
         label: "Inbound queue V1 only",
-        description: "Blocks V1 Ethereum → Polkadot. V2 inbound continues.",
+        haltDescription: "Blocks V1 Ethereum → Polkadot. V2 inbound continues.",
+        resumeDescription: "Resumes V1 Ethereum → Polkadot. V2 unaffected.",
       },
       {
         key: "inboundQueueV2",
         label: "Inbound queue V2 only",
-        description: "Blocks V2 Ethereum → Polkadot. V1 inbound continues.",
+        haltDescription: "Blocks V2 Ethereum → Polkadot. V1 inbound continues.",
+        resumeDescription: "Resumes V2 Ethereum → Polkadot. V1 unaffected.",
       },
     ],
   },
   {
     title: "Outbound (Polkadot → Ethereum)",
-    options: [
+    levers: [
       {
         key: "outboundQueue",
         label: "Outbound queue + AH frontend",
-        description:
+        haltDescription:
           "Halts V1 outbound-queue on BridgeHub AND AssetHub system-frontend (router-layer block for V1 and V2).",
+        resumeDescription:
+          "Resumes V1 outbound-queue on BridgeHub AND AssetHub system-frontend.",
       },
       {
         key: "outboundQueueV1",
         label: "BH outbound-queue V1 only",
-        description:
+        haltDescription:
           "Halts V1 outbound-queue on BridgeHub only. V2 P→E continues; AH frontend untouched.",
+        resumeDescription:
+          "Resumes V1 outbound-queue on BridgeHub only. AH frontend unaffected.",
       },
       {
         key: "systemFrontend",
         label: "AH system-frontend only",
-        description:
+        haltDescription:
           "Router-layer P→E block (covers both V1 and V2). V1 BridgeHub outbound-queue keeps draining in-flight messages.",
+        resumeDescription:
+          "Restores router-layer P→E (covers both V1 and V2).",
       },
       {
-        key: "assethubMaxFee",
-        label: "AH fee = MAX (V1 + V2)",
-        description:
+        key: "ahFee",
+        label: "AH base fee (V1 + V2)",
+        haltDescription:
           "Fee deterrent: sets both BridgeHubEthereumBaseFee and BridgeHubEthereumBaseFeeV2 to u128::MAX.",
+        resumeDescription:
+          "Restore both BridgeHubEthereumBaseFee and BridgeHubEthereumBaseFeeV2 to their prod values.",
       },
       {
-        key: "assethubMaxFeeV1",
-        label: "AH fee = MAX (V1 only)",
-        description:
+        key: "ahFeeV1",
+        label: "AH base fee (V1 only)",
+        haltDescription:
           "Sets only BridgeHubEthereumBaseFee to u128::MAX. V2 fee untouched.",
+        resumeDescription:
+          "Restore only BridgeHubEthereumBaseFee to its prod value. V2 fee untouched.",
       },
       {
-        key: "assethubMaxFeeV2",
-        label: "AH fee = MAX (V2 only)",
-        description:
+        key: "ahFeeV2",
+        label: "AH base fee (V2 only)",
+        haltDescription:
           "Sets only BridgeHubEthereumBaseFeeV2 to u128::MAX. V1 fee untouched.",
+        resumeDescription:
+          "Restore only BridgeHubEthereumBaseFeeV2 to its prod value. V1 fee untouched.",
       },
     ],
   },
   {
     title: "Beacon light client",
-    options: [
+    levers: [
       {
         key: "ethereumClient",
         label: "Ethereum beacon light client",
-        description:
+        haltDescription:
           "Blocks new beacon-header ingestion. Does NOT propagate into downstream proof-consuming flows; halt inbound queues separately for that.",
+        resumeDescription:
+          "Resumes beacon-header ingestion. Halt inbound queues are unaffected.",
       },
     ],
   },
 ];
 
+// Map UI lever key + operation to the SDK option name. The two option shapes
+// overlap except for the fee fields (`assethubMaxFee*` vs `assethubBaseFee*`).
+function toSdkOption(key: LeverKey, op: Operation): string {
+  if (key === "ahFee") return op === "halt" ? "assethubMaxFee" : "assethubBaseFee";
+  if (key === "ahFeeV1")
+    return op === "halt" ? "assethubMaxFeeV1" : "assethubBaseFeeV1";
+  if (key === "ahFeeV2")
+    return op === "halt" ? "assethubMaxFeeV2" : "assethubBaseFeeV2";
+  return key;
+}
+
 export function HaltBridgeForm() {
   const context = useAtomValue(snowbridgeContextAtom);
   const { registry } = useContext(BridgeInfoContext)!;
 
-  const [selected, setSelected] = useState<
-    Partial<Record<HaltOption, boolean>>
-  >({});
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [operation, setOperation] = useState<Operation>("halt");
+  const [selected, setSelected] = useState<Partial<Record<LeverKey, boolean>>>({});
+  // Resume-only fee override inputs. Default to the SDK's prod-captured
+  // constants so the unmodified form produces a byte-identical preimage to
+  // calling buildResumeBridgePreimage with no overrides. The operator can
+  // edit either field at submission time if the prod policy has moved since
+  // the SDK constants were last refreshed (decimal wei, no scientific
+  // notation, no thousands separators).
+  const [baseFeeV1Input, setBaseFeeV1Input] = useState<string>(
+    governance.PROD_BASE_FEE_V1.toString(),
+  );
+  const [baseFeeV2Input, setBaseFeeV2Input] = useState<string>(
+    governance.PROD_BASE_FEE_V2.toString(),
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<
-    governance.HaltBridgePreimage | null
-  >(null);
+  const [result, setResult] = useState<governance.HaltBridgePreimage | null>(null);
 
-  const applyPreset = (preset: Preset) => {
-    const next: Partial<Record<HaltOption, boolean>> = {};
-    for (const o of preset.options) next[o] = true;
-    setSelected(next);
-    setActivePresetId(preset.id);
-    setResult(null);
-    setError(null);
-  };
-
-  const toggle = (key: HaltOption) => {
-    setSelected((s) => ({ ...s, [key]: !s[key] }));
-    setActivePresetId(null);
-    setResult(null);
-  };
-
-  const clearAll = () => {
+  const setOp = (op: Operation) => {
+    setOperation(op);
+    // Reset advanced selection when toggling op: a halt-leaning selection
+    // doesn't necessarily make sense for a resume and vice versa.
     setSelected({});
-    setActivePresetId(null);
+    // Reset fee inputs to the SDK defaults on op toggle so the form
+    // round-trips cleanly.
+    setBaseFeeV1Input(governance.PROD_BASE_FEE_V1.toString());
+    setBaseFeeV2Input(governance.PROD_BASE_FEE_V2.toString());
     setResult(null);
     setError(null);
+  };
+
+  const toggle = (key: LeverKey) => {
+    setSelected((s) => ({ ...s, [key]: !s[key] }));
+    setResult(null);
+  };
+
+  const clearAdvanced = () => {
+    setSelected({});
+    setResult(null);
+    setError(null);
+  };
+
+  const selectionCount = useMemo(
+    () => Object.values(selected).filter(Boolean).length,
+    [selected],
+  );
+
+  // Parse a decimal-wei string to bigint. Returns the parsed value or an
+  // error string describing why it didn't parse.
+  const parseFee = (raw: string): bigint | string => {
+    const trimmed = raw.trim();
+    if (!/^[0-9]+$/.test(trimmed)) return "must be a non-negative integer (wei)";
+    try {
+      return BigInt(trimmed);
+    } catch {
+      return "could not parse as bigint";
+    }
   };
 
   const generate = async () => {
@@ -272,19 +255,52 @@ export function HaltBridgeForm() {
       setError("Snowbridge context not ready. Try again in a moment.");
       return;
     }
-    if (Object.values(selected).every((v) => !v)) {
-      setError("Pick a preset or one or more advanced options first.");
-      return;
-    }
     setLoading(true);
     try {
       const assetHub = await context.parachain(registry.assetHubParaId);
       const bridgeHub = await context.parachain(registry.bridgeHubParaId);
-      const preimage = await governance.buildHaltBridgePreimage(
-        assetHub,
-        bridgeHub,
-        selected as governance.HaltBridgeOptions,
-      );
+
+      // If the user hasn't picked any advanced levers, default to {all: true}.
+      // Otherwise translate UI keys to SDK options for the chosen operation.
+      const useAll = selectionCount === 0;
+      const opts: Record<string, boolean | bigint> = useAll
+        ? { all: true }
+        : Object.fromEntries(
+            (Object.entries(selected) as [LeverKey, boolean | undefined][])
+              .filter(([, v]) => !!v)
+              .map(([k]) => [toSdkOption(k, operation), true]),
+          );
+
+      // For resume, attach the per-fee overrides. We always pass them so the
+      // operator sees the value in the result summary and the form round-
+      // trips cleanly when the defaults haven't been touched.
+      if (operation === "resume") {
+        const v1 = parseFee(baseFeeV1Input);
+        const v2 = parseFee(baseFeeV2Input);
+        if (typeof v1 === "string") {
+          setError(`V1 base fee: ${v1}`);
+          return;
+        }
+        if (typeof v2 === "string") {
+          setError(`V2 base fee: ${v2}`);
+          return;
+        }
+        opts.baseFeeV1 = v1;
+        opts.baseFeeV2 = v2;
+      }
+
+      const preimage =
+        operation === "halt"
+          ? await governance.buildHaltBridgePreimage(
+              assetHub,
+              bridgeHub,
+              opts as governance.HaltBridgeOptions,
+            )
+          : await governance.buildResumeBridgePreimage(
+              assetHub,
+              bridgeHub,
+              opts as governance.ResumeBridgeOptions,
+            );
       setResult(preimage);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -293,92 +309,146 @@ export function HaltBridgeForm() {
     }
   };
 
-  const selectionCount = Object.values(selected).filter(Boolean).length;
+  const opLabel = operation === "halt" ? "halt" : "resume";
 
   return (
     <div className="w-full max-w-[min(48rem,calc(100vw-2rem))] mx-auto space-y-6">
       <div className="glass rounded-3xl border border-white/60 py-8 px-6 md:py-10 md:px-10 space-y-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-primary">
-            Governance: halt bridge
+            Governance: halt / resume bridge
           </h1>
           <p className="text-sm text-muted-foreground">
-            Build a preimage to halt parts of the Snowbridge V1/V2 stack on
+            Build a preimage to halt or resume the Snowbridge V1/V2 stack on
             Polkadot. The result is a SCALE-encoded call you submit to the
             Whitelisted Caller Track in Polkadot.js Apps. Nothing here signs or
-            submits anything, it just produces the hash and call data. Pick a
-            preset that matches the failure mode, or expand{" "}
-            <span className="italic">Advanced options</span> below for finer
-            control.
+            submits anything, it just produces the hash and call data. Pick{" "}
+            <em>halt</em> or <em>resume</em>, or expand{" "}
+            <span className="italic">Advanced options</span> for finer control.
           </p>
         </div>
 
-        <div className="space-y-5">
-          {PRESET_GROUPS.map((group) => (
-            <fieldset key={group.title} className="space-y-1">
-              <legend className="text-xs font-medium text-muted-foreground mb-2">
-                {group.title}
-              </legend>
-              {group.presets.map((p) => (
-                <label
-                  key={p.id}
-                  className="text-muted-foreground flex items-start gap-3 cursor-pointer rounded-xl p-2 hover:bg-white/30 transition-colors"
-                >
-                  <input
-                    type="radio"
-                    name="halt-preset"
-                    className="mt-1 h-4 w-4 cursor-pointer accent-primary"
-                    checked={activePresetId === p.id}
-                    onChange={() => applyPreset(p)}
-                  />
-                  <span className="flex-1">
-                    <span className="font-medium text-sm text-primary block">
-                      {p.label}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {p.whenToUse}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
+        <fieldset className="space-y-1">
+          <legend className="text-xs font-medium text-muted-foreground mb-2">
+            Operation
+          </legend>
+          {(
+            [
+              {
+                op: "halt" as const,
+                label: "Halt the bridge",
+                whenToUse:
+                  "Stops both V1 and V2 in both directions, sets AH fees to u128::MAX. Most defensive default.",
+              },
+              {
+                op: "resume" as const,
+                label: "Resume the bridge",
+                whenToUse:
+                  "Restores normal operating mode on every lever and restores AH base fees to the current prod values.",
+              },
+            ]
+          ).map((row) => (
+            <label
+              key={row.op}
+              className="text-muted-foreground flex items-start gap-3 cursor-pointer rounded-xl p-2 hover:bg-white/30 transition-colors"
+            >
+              <input
+                type="radio"
+                name="governance-op"
+                className="mt-1 h-4 w-4 cursor-pointer accent-primary"
+                checked={operation === row.op}
+                onChange={() => setOp(row.op)}
+              />
+              <span className="flex-1">
+                <span className="font-medium text-sm text-primary block">
+                  {row.label}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {row.whenToUse}
+                </span>
+              </span>
+            </label>
           ))}
-        </div>
+        </fieldset>
+
+        {operation === "resume" && (
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-medium text-muted-foreground mb-2">
+              Base fees to restore (wei)
+            </legend>
+            <p className="text-xs text-muted-foreground">
+              Prefilled with the SDK&apos;s prod-captured values (
+              {governance.PROD_BASE_FEE_V1.toString()} V1,{" "}
+              {governance.PROD_BASE_FEE_V2.toString()} V2). Override only if
+              governance has changed the fee policy since the SDK constants were
+              last refreshed.
+            </p>
+            <FeeInput
+              label="V1 base fee"
+              hint=":BridgeHubEthereumBaseFee: storage key value"
+              defaultValue={governance.PROD_BASE_FEE_V1}
+              value={baseFeeV1Input}
+              onChange={(v) => {
+                setBaseFeeV1Input(v);
+                setResult(null);
+              }}
+            />
+            <FeeInput
+              label="V2 base fee"
+              hint=":BridgeHubEthereumBaseFeeV2: storage key value"
+              defaultValue={governance.PROD_BASE_FEE_V2}
+              value={baseFeeV2Input}
+              onChange={(v) => {
+                setBaseFeeV2Input(v);
+                setResult(null);
+              }}
+            />
+          </fieldset>
+        )}
 
         <Accordion type="single" collapsible>
           <AccordionItem value="advanced" className="border-none">
             <AccordionTrigger className="text-sm text-primary py-2 hover:no-underline">
               Advanced options
-              {selectionCount > 0 && !activePresetId && (
+              {selectionCount > 0 && (
                 <span className="ml-2 text-xs text-muted-foreground font-normal">
-                  ({selectionCount} selected)
+                  ({selectionCount} selected, will override default)
                 </span>
               )}
             </AccordionTrigger>
             <AccordionContent>
+              <p className="text-xs text-muted-foreground mb-3">
+                Tick one or more to override the default. With nothing ticked,
+                the preimage targets everything (
+                <code className="px-1 rounded bg-white/30">{`{ all: true }`}</code>
+                ). Descriptions reflect the currently-selected operation (
+                <em>{opLabel}</em>).
+              </p>
               <div className="grid md:grid-cols-2 gap-6 pt-2">
                 {ADVANCED_GROUPS.map((g) => (
                   <fieldset key={g.title} className="space-y-1">
                     <legend className="text-xs font-medium text-muted-foreground mb-2">
                       {g.title}
                     </legend>
-                    {g.options.map((o) => (
+                    {g.levers.map((lever) => (
                       <label
-                        key={o.key}
+                        key={lever.key}
                         className="text-muted-foreground flex items-start gap-3 cursor-pointer rounded-xl p-2 hover:bg-white/30 transition-colors"
                       >
                         <input
                           type="checkbox"
                           className="mt-1 h-4 w-4 cursor-pointer accent-primary"
-                          checked={!!selected[o.key]}
-                          onChange={() => toggle(o.key)}
+                          checked={!!selected[lever.key]}
+                          onChange={() => toggle(lever.key)}
                         />
                         <span className="flex-1">
                           <span className="font-medium text-sm text-primary block">
-                            {o.label}
+                            {lever.label}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {o.description}
+                            {operation === "halt"
+                              ? lever.haltDescription
+                              : lever.resumeDescription}
                           </span>
                         </span>
                       </label>
@@ -392,11 +462,11 @@ export function HaltBridgeForm() {
 
         <div className="flex items-center justify-center gap-3 pt-2">
           <Button onClick={generate} disabled={loading || !context}>
-            {loading ? "Generating…" : "Generate preimage"}
+            {loading ? "Generating…" : `Generate ${opLabel} preimage`}
           </Button>
           {selectionCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={clearAll}>
-              Clear selection
+            <Button variant="ghost" size="sm" onClick={clearAdvanced}>
+              Clear advanced
             </Button>
           )}
           {!context && (
@@ -413,20 +483,63 @@ export function HaltBridgeForm() {
         )}
       </div>
 
-      {result && <PreimageResult result={result} />}
+      {result && <PreimageResult result={result} operation={operation} />}
+    </div>
+  );
+}
+
+function FeeInput({
+  label,
+  hint,
+  defaultValue,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  defaultValue: bigint;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const isDefault = value === defaultValue.toString();
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-medium text-primary">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 text-sm font-mono rounded-xl px-3 py-2 bg-white/30 text-primary placeholder:text-muted-foreground border-0 outline-none"
+        />
+        {!isDefault && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onChange(defaultValue.toString())}
+          >
+            Reset to default
+          </Button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">{hint}</p>
     </div>
   );
 }
 
 function PreimageResult({
   result,
+  operation,
 }: {
   result: governance.HaltBridgePreimage;
+  operation: Operation;
 }) {
   const copy = (text: string) => navigator.clipboard.writeText(text);
+  const label = operation === "halt" ? "Halt" : "Resume";
   return (
     <div className="glass rounded-3xl border border-white/60 py-8 px-6 md:py-10 md:px-10 space-y-5">
-      <h2 className="text-xl font-semibold text-primary">Preimage</h2>
+      <h2 className="text-xl font-semibold text-primary">{label} preimage</h2>
 
       <div>
         <div className="text-xs font-medium text-muted-foreground mb-1">
@@ -466,7 +579,7 @@ function PreimageResult({
 
       <div>
         <div className="text-xs font-medium text-muted-foreground mb-1">
-          What this halts
+          What this {operation === "halt" ? "halts" : "resumes"}
         </div>
         <ul className="list-disc pl-5 space-y-1 text-sm text-primary">
           {result.summary.map((s, i) => (
@@ -536,11 +649,7 @@ function PreimageResult({
   );
 }
 
-function KeyHasher({
-  writes,
-}: {
-  writes: governance.StorageWrite[];
-}) {
+function KeyHasher({ writes }: { writes: governance.StorageWrite[] }) {
   const [input, setInput] = useState(writes[0]?.name ?? "");
   const [computed, setComputed] = useState<string | null>(null);
 
