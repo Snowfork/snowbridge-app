@@ -69,7 +69,7 @@ import { ConnectPolkadotWalletButton } from "./ConnectPolkadotWalletButton";
 import { BridgeInfoContext } from "@/app/providers";
 import { ArrowRight } from "lucide-react";
 import { useKusamaTokenBalance } from "@/hooks/useKusamaTokenBalance";
-import { fetchTokenPrices } from "@/utils/coindesk";
+import { fetchTokenPrices } from "@/utils/coinmarketcap";
 import { TokenSelector } from "./TokenSelector";
 import { getTransferLocation } from "@snowbridge/registry";
 import { getKusamaDeliveryTotalByDisplaySymbol } from "@/utils/deliveryFee";

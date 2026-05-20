@@ -40,7 +40,7 @@ import {
 import { track } from "@vercel/analytics";
 import { Label } from "../ui/label";
 import { validateOFAC } from "@/utils/validateOFAC";
-import { fetchTokenPrices } from "@/utils/coindesk";
+import { fetchTokenPrices } from "@/utils/coinmarketcap";
 import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
