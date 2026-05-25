@@ -159,7 +159,7 @@ button.action-button:disabled {
 }
 
 button[role="combobox"],
-input:not(.amountInput),
+input:not(.amountInput):not([type="radio"]):not([type="checkbox"]),
 .fake-dropdown {
   background-color: var(--glass-bg) !important;
   color: var(--text-primary);
@@ -169,7 +169,7 @@ input:not(.amountInput),
 }
 
 button[role="combobox"],
-input:not(.amountInput),
+input:not(.amountInput):not([type="radio"]):not([type="checkbox"]),
 .fake-dropdown {
   padding: 12px 16px !important;
   border-width: 0px !important;

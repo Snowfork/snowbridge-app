@@ -502,6 +502,12 @@ export function Header() {
                   Kusama
                 </Link>
               )}
+              <Link
+                href="/governance"
+                className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                Governance
+              </Link>
             </div>
             <div className="absolute bottom-3 right-3 flex gap-2">
               <a
@@ -645,6 +651,13 @@ export function Header() {
             >
               Docs
             </a>
+            <Link
+              href="/governance"
+              className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Governance
+            </Link>
             {/* Mobile wallet button and theme toggle */}
             <div className="mt-2 w-full flex items-center justify-center gap-3">
               <ThemeToggle />
