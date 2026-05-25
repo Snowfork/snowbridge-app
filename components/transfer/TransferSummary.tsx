@@ -7,7 +7,7 @@ import {
 } from "@/hooks/useEstimatedDelivery";
 import { decodeAddress, encodeAddress } from "@polkadot/util-crypto";
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
-import { fetchTokenPrices } from "@/utils/coindesk";
+import { fetchTokenPrices } from "@/utils/coinmarketcap";
 import Image from "next/image";
 import { chainName } from "@/utils/chainNames";
 import { ParachainLocation } from "@snowbridge/base-types";

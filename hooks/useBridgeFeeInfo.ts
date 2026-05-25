@@ -7,7 +7,7 @@ import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
 import { assetsV2, type VolumeFeeParams } from "@snowbridge/api";
 import { type SnowbridgeClient } from "@/lib/snowbridge";
 import { parseUnits } from "ethers";
-import { fetchTokenPrices } from "@/utils/coindesk";
+import { fetchTokenPrices } from "@/utils/coinmarketcap";
 import { BridgeDeliveryFee } from "@/utils/deliveryFee";
 
 async function fetchBridgeFeeInfo([
@@ -17,6 +17,7 @@ async function fetchBridgeFeeInfo([
   registry,
   token,
   amount,
+  accelerated,
 ]: [
   SnowbridgeClient | null,
   TransferLocation,
@@ -24,6 +25,7 @@ async function fetchBridgeFeeInfo([
   AssetRegistry,
   string,
   string,
+  boolean | undefined,
 ]): Promise<BridgeDeliveryFee | undefined> {
   if (api === null) {
     return;
@@ -63,6 +65,7 @@ async function fetchBridgeFeeInfo([
         ? await sender.fee(token, {
             feeTokenLocation: assetsV2.DOT_LOCATION,
             volumeFee,
+            accelerated: !!accelerated,
           })
         : await sender.fee(token);
     case "ethereum->ethereum":
@@ -100,12 +103,13 @@ export function useBridgeFeeInfo(
   destination: TransferLocation,
   token: string,
   amount: string,
+  accelerated?: boolean,
 ) {
   if (amount === undefined) throw Error(`abc`);
   const api = useAtomValue(snowbridgeApiAtom);
   const { registry } = useContext(BridgeInfoContext)!;
   return useSWR(
-    [api, source, destination, registry, token, amount, "feeInfo"],
+    [api, source, destination, registry, token, amount, accelerated, "feeInfo"],
     fetchBridgeFeeInfo,
     {
       errorRetryCount: 30,

@@ -20,7 +20,7 @@ import { formatBalance, formatUsdValue } from "@/utils/formatting";
 import { assetsV2 } from "@snowbridge/api";
 import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
-import { fetchTokenPrices } from "@/utils/coindesk";
+import { fetchTokenPrices } from "@/utils/coinmarketcap";
 import { ChevronsUpDown, ArrowUpRight } from "lucide-react";
 import { etherscanERC20TokenLink } from "@/lib/explorerLinks";
 import { useTokenBalances } from "@/hooks/useTokenBalances";

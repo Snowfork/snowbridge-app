@@ -7,7 +7,7 @@ import { useAtomValue } from "jotai";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import { ethereumAccountAtom } from "@/store/ethereum";
 import { BridgeInfoContext } from "@/app/providers";
-import { fetchTokenPrices } from "@/utils/coindesk";
+import { fetchTokenPrices } from "@/utils/coinmarketcap";
 import { Loader2, RefreshCw } from "lucide-react";
 import useSWR from "swr";
 import { useTokenBalances } from "@/hooks/useTokenBalances";

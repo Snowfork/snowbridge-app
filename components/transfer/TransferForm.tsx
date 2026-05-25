@@ -38,8 +38,9 @@ import {
   SelectValue,
 } from "../ui/select";
 import { track } from "@vercel/analytics";
+import { Label } from "../ui/label";
 import { validateOFAC } from "@/utils/validateOFAC";
-import { fetchTokenPrices } from "@/utils/coindesk";
+import { fetchTokenPrices } from "@/utils/coinmarketcap";
 import { parseUnits } from "ethers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -304,6 +305,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       beneficiary: formData?.beneficiary,
       sourceAccount: formData?.sourceAccount,
       amount: formData?.amount ?? (queryAmount || "0.0"),
+      accelerated: formData?.accelerated ?? false,
     },
   });
 
@@ -312,6 +314,7 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchDestination = form.watch("destination");
   const watchSourceAccount = form.watch("sourceAccount");
   const watchAmount = form.watch("amount");
+  const watchAccelerated = form.watch("accelerated");
 
   // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
@@ -399,6 +402,7 @@ export const TransferForm: FC<TransferFormProps> = ({
     destination,
     watchToken ?? token,
     watchAmount,
+    watchAccelerated,
   );
 
   const tokenMetadata =
@@ -634,6 +638,7 @@ export const TransferForm: FC<TransferFormProps> = ({
           amountInSmallestUnit,
           fee: feeInfo,
           tokenValueUsd,
+          accelerated: formData.accelerated,
         });
         setValidating(false);
       } catch (err: unknown) {
@@ -1017,6 +1022,38 @@ export const TransferForm: FC<TransferFormProps> = ({
               </FormItem>
             )}
           />
+          {/* Accelerated Option: Only show for polkadot->ethereum with supportsV2 */}
+          {source.kind === "polkadot" &&
+            destination.kind === "ethereum" &&
+            getTransferLocation(assetRegistry, source).parachain?.features
+              ?.supportsV2 && (
+              <FormField
+                control={form.control}
+                name="accelerated"
+                render={({ field }) => (
+                  <FormItem className="rounded-lg border border-muted bg-muted/40 px-4 py-3 flex items-center gap-3 mb-2">
+                    <FormControl>
+                      <input
+                        id="accelerated"
+                        type="checkbox"
+                        className="accent-primary w-5 h-5 rounded focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
+                        checked={field.value ?? false}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    </FormControl>
+                    <Label
+                      htmlFor="accelerated"
+                      className="text-base font-medium cursor-pointer select-none"
+                    >
+                      Accelerated delivery{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        (higher fee, faster)
+                      </span>
+                    </Label>
+                  </FormItem>
+                )}
+              />
+            )}
           <div className="glass-sub p-4 space-y-2 card-shadow">
             <FeeDisplay
               token={token}

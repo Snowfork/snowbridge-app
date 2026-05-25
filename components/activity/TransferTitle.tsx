@@ -51,9 +51,10 @@ interface TransferTitleProps {
 export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
   const { registry: assetRegistry } = useContext(BridgeInfoContext)!;
   const [tokenImageError, setTokenImageError] = useState(false);
+  const [sourceImageError, setSourceImageError] = useState(false);
   const [destImageError, setDestImageError] = useState(false);
 
-  const { destination } = inferTransferDetails(transfer, assetRegistry);
+  const { source, destination } = inferTransferDetails(transfer, assetRegistry);
   const shortDate = formatShortDate(new Date(transfer.info.when));
 
   const { tokenName, amount: rawAmount } = formatTokenData(
@@ -73,6 +74,21 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
       alt={tokenName ?? "token"}
       className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
       onError={() => setTokenImageError(true)}
+    />
+  );
+
+  const sourceIcon = (
+    <Image
+      src={
+        sourceImageError
+          ? "/images/parachain_generic.png"
+          : `/images/${source.key ?? "parachain_generic"}.png`
+      }
+      width={18}
+      height={18}
+      alt={chainName(source)}
+      className="inline-block rounded-full w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]"
+      onError={() => setSourceImageError(true)}
     />
   );
 
@@ -98,6 +114,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
         <span className="truncate">
           {amount} {tokenName ?? "unknown"}
         </span>
+        {sourceIcon}
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{chainName(destination)}</span>
@@ -118,6 +135,7 @@ export function TransferTitle({ transfer, showBagde }: TransferTitleProps) {
         <span className="truncate">
           {amount} {tokenName ?? "unknown"}
         </span>
+        {sourceIcon}
         <span className="text-muted-foreground">→</span>
         {destIcon}
         <span className="truncate">{chainName(destination)}</span>

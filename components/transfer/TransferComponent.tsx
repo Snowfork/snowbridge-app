@@ -403,7 +403,14 @@ export const TransferComponent: FC = () => {
           formData={validationData?.formData ?? formData}
           routes={routes}
           onValidated={async (data) =>
-            await validateAndSubmit(data, false, setSourceExecutionFee)
+            await validateAndSubmit(
+              {
+                ...data,
+                accelerated: data.accelerated ?? data.formData.accelerated,
+              },
+              false,
+              setSourceExecutionFee,
+            )
           }
           onError={async (form) =>
             showError("Error validating transfer form.", form)
