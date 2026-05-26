@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { governance } from "@snowbridge/api";
 import { ApiPromise, WsProvider } from "@polkadot/api";
@@ -214,6 +214,25 @@ export function HaltBridgeForm() {
   const [submissionUrls, setSubmissionUrls] =
     useState<governance.SubmissionUrls | null>(null);
 
+  // Auto-reload once if the Snowbridge context never resolves. The shared
+  // useSnowbridgeContext hook initialises lazily and has no built-in retry,
+  // so a hung WS handshake leaves the form stuck on "Waiting for chain
+  // connections..." indefinitely. Reloading once after 30s recovers without
+  // operator intervention. Guarded via sessionStorage so we don't reload-loop
+  // if the connection truly cannot be established.
+  useEffect(() => {
+    if (context) {
+      sessionStorage.removeItem("halt-bridge-context-reload");
+      return;
+    }
+    if (sessionStorage.getItem("halt-bridge-context-reload")) return;
+    const timer = setTimeout(() => {
+      sessionStorage.setItem("halt-bridge-context-reload", "1");
+      window.location.reload();
+    }, 30_000);
+    return () => clearTimeout(timer);
+  }, [context]);
+
   const setOp = (op: Operation) => {
     setOperation(op);
     // Reset advanced selection when toggling op: a halt-leaning selection
@@ -353,12 +372,8 @@ export function HaltBridgeForm() {
             Governance: halt / resume bridge
           </h1>
           <p className="text-sm text-muted-foreground">
-            Build a preimage to halt or resume the Snowbridge V1/V2 stack on
-            Polkadot. The result is a SCALE-encoded call you submit to the
-            Whitelisted Caller Track in Polkadot.js Apps. Nothing here signs or
-            submits anything, it just produces the hash and call data. Pick{" "}
-            <em>halt</em> or <em>resume</em>, or expand{" "}
-            <span className="italic">Advanced options</span> for finer control.
+            Build a halt or resume preimage for the Whitelisted Caller track.
+            Submission links open in papi.how, you sign there.
           </p>
         </div>
 
@@ -366,40 +381,20 @@ export function HaltBridgeForm() {
           <legend className="text-xs font-medium text-muted-foreground mb-2">
             Operation
           </legend>
-          {(
-            [
-              {
-                op: "halt" as const,
-                label: "Halt the bridge",
-                whenToUse:
-                  "Stops both V1 and V2 in both directions, sets AH fees to u128::MAX. Most defensive default.",
-              },
-              {
-                op: "resume" as const,
-                label: "Resume the bridge",
-                whenToUse:
-                  "Restores normal operating mode on every lever and restores AH base fees to the current prod values.",
-              },
-            ]
-          ).map((row) => (
+          {(["halt", "resume"] as const).map((op) => (
             <label
-              key={row.op}
-              className="text-muted-foreground flex items-start gap-3 cursor-pointer rounded-xl p-2 hover:bg-white/30 transition-colors"
+              key={op}
+              className="text-muted-foreground flex items-center gap-3 cursor-pointer rounded-xl p-2 hover:bg-white/30 transition-colors"
             >
               <input
                 type="radio"
                 name="governance-op"
-                className="mt-1 h-4 w-4 cursor-pointer accent-primary"
-                checked={operation === row.op}
-                onChange={() => setOp(row.op)}
+                className="h-4 w-4 cursor-pointer accent-primary"
+                checked={operation === op}
+                onChange={() => setOp(op)}
               />
-              <span className="flex-1">
-                <span className="font-medium text-sm text-primary block">
-                  {row.label}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {row.whenToUse}
-                </span>
+              <span className="font-medium text-sm text-primary">
+                {op === "halt" ? "Halt the bridge" : "Resume the bridge"}
               </span>
             </label>
           ))}
@@ -585,7 +580,7 @@ function PreimageResult({
 
       <div>
         <div className="text-xs font-medium text-muted-foreground mb-1">
-          Hash (submit this to the Whitelisted Caller Track)
+          Preimage hash
         </div>
         <div className="flex items-center gap-2">
           <code className="glass-sub break-all text-sm rounded-xl p-3 flex-1 text-primary">
@@ -688,97 +683,73 @@ function PreimageResult({
         </a>
       </div>
 
-      {submissionUrls && (
-        <SubmissionLinks operation={operation} urls={submissionUrls} />
-      )}
+      {submissionUrls && <SubmissionLinks urls={submissionUrls} />}
     </div>
   );
 }
 
 function SubmissionLinks({
-  operation,
   urls,
 }: {
-  operation: Operation;
   urls: governance.SubmissionUrls;
 }) {
   const copy = (text: string) => navigator.clipboard.writeText(text);
-  const verb = operation === "halt" ? "halt" : "resume";
   return (
-    <div className="space-y-4 pt-2 border-t border-white/40">
-      <div>
-        <h3 className="text-base font-semibold text-primary">
-          Submit on the Whitelisted Caller track
-        </h3>
-        <p className="text-xs text-muted-foreground mt-1">
-          Two links to land this {verb} on-chain. Both open in papi.how with
-          the call pre-filled, sign with your wallet there.
-        </p>
-      </div>
+    <div className="space-y-3 pt-2 border-t border-white/40">
+      <h3 className="text-base font-semibold text-primary">Submit</h3>
 
-      <div className="glass-sub rounded-2xl p-4 space-y-2">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div className="glass-sub rounded-2xl p-4 flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-primary">
-            1. Asset Hub batch
+            Asset Hub batch
           </div>
           <div className="text-xs text-muted-foreground">
-            Anyone on the team can submit
+            Anyone on the team
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Notes the preimage and opens the public Whitelisted Caller referendum.
-        </p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button asChild size="sm">
-            <a
-              href={urls.assetHubBatchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open on Asset Hub ↗
-            </a>
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => copy(urls.assetHubBatchUrl)}
+        <Button asChild size="sm">
+          <a
+            href={urls.assetHubBatchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            Copy link
-          </Button>
-        </div>
+            Open ↗
+          </a>
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => copy(urls.assetHubBatchUrl)}
+        >
+          Copy
+        </Button>
       </div>
 
-      <div className="glass-sub rounded-2xl p-4 space-y-2">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div className="glass-sub rounded-2xl p-4 flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-primary">
-            2. Fellowship whitelist
+            Fellowship whitelist
           </div>
           <div className="text-xs text-muted-foreground">
-            Requires rank-3+ Fellow
+            Rank-3+ Fellow only, share via Element
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Opens the Fellowship referendum that whitelists the call hash. Share
-          this link in Element with a rank-3+ Fellow to submit.
-        </p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => copy(urls.fellowshipWhitelistUrl)}
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => copy(urls.fellowshipWhitelistUrl)}
+        >
+          Copy
+        </Button>
+        <Button asChild size="sm" variant="ghost">
+          <a
+            href={urls.fellowshipWhitelistUrl}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            Copy link for Fellow
-          </Button>
-          <Button asChild size="sm" variant="ghost">
-            <a
-              href={urls.fellowshipWhitelistUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open on Collectives ↗
-            </a>
-          </Button>
-        </div>
+            Open ↗
+          </a>
+        </Button>
       </div>
     </div>
   );
