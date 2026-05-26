@@ -3,8 +3,13 @@
 import { useContext, useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { governance } from "@snowbridge/api";
+import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Button } from "@/components/ui/button";
 import { xxhashAsHex } from "@polkadot/util-crypto";
+
+// Public RPC for Polkadot Collectives Chain, used to construct the
+// fellowshipReferenda.submit call (the Whitelist origin lives there).
+const COLLECTIVES_WS = "wss://polkadot-collectives-rpc.polkadot.io";
 import {
   Accordion,
   AccordionContent,
@@ -206,6 +211,8 @@ export function HaltBridgeForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<governance.HaltBridgePreimage | null>(null);
+  const [submissionUrls, setSubmissionUrls] =
+    useState<governance.SubmissionUrls | null>(null);
 
   const setOp = (op: Operation) => {
     setOperation(op);
@@ -217,17 +224,20 @@ export function HaltBridgeForm() {
     setBaseFeeV1Input(governance.PROD_BASE_FEE_V1.toString());
     setBaseFeeV2Input(governance.PROD_BASE_FEE_V2.toString());
     setResult(null);
+    setSubmissionUrls(null);
     setError(null);
   };
 
   const toggle = (key: LeverKey) => {
     setSelected((s) => ({ ...s, [key]: !s[key] }));
     setResult(null);
+    setSubmissionUrls(null);
   };
 
   const clearAdvanced = () => {
     setSelected({});
     setResult(null);
+    setSubmissionUrls(null);
     setError(null);
   };
 
@@ -251,11 +261,13 @@ export function HaltBridgeForm() {
   const generate = async () => {
     setError(null);
     setResult(null);
+    setSubmissionUrls(null);
     if (!context) {
       setError("Snowbridge context not ready. Try again in a moment.");
       return;
     }
     setLoading(true);
+    let collectives: ApiPromise | null = null;
     try {
       const assetHub = await context.parachain(registry.assetHubParaId);
       const bridgeHub = await context.parachain(registry.bridgeHubParaId);
@@ -302,9 +314,31 @@ export function HaltBridgeForm() {
               opts as governance.ResumeBridgeOptions,
             );
       setResult(preimage);
+
+      // Build submission URLs alongside the preimage. Needs a Collectives
+      // connection because the Fellowship whitelist call is opened there.
+      collectives = await ApiPromise.create({
+        provider: new WsProvider(COLLECTIVES_WS),
+      });
+      const urls =
+        operation === "halt"
+          ? await governance.buildHaltBridgeSubmissionUrls(
+              assetHub,
+              collectives,
+              preimage,
+            )
+          : await governance.buildResumeBridgeSubmissionUrls(
+              assetHub,
+              collectives,
+              preimage,
+            );
+      setSubmissionUrls(urls);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
+      if (collectives) {
+        await collectives.disconnect().catch(() => {});
+      }
       setLoading(false);
     }
   };
@@ -483,7 +517,13 @@ export function HaltBridgeForm() {
         )}
       </div>
 
-      {result && <PreimageResult result={result} operation={operation} />}
+      {result && (
+        <PreimageResult
+          result={result}
+          operation={operation}
+          submissionUrls={submissionUrls}
+        />
+      )}
     </div>
   );
 }
@@ -531,9 +571,11 @@ function FeeInput({
 function PreimageResult({
   result,
   operation,
+  submissionUrls,
 }: {
   result: governance.HaltBridgePreimage;
   operation: Operation;
+  submissionUrls: governance.SubmissionUrls | null;
 }) {
   const copy = (text: string) => navigator.clipboard.writeText(text);
   const label = operation === "halt" ? "Halt" : "Resume";
@@ -644,6 +686,99 @@ function PreimageResult({
         >
           Open decoded extrinsic in Polkadot.js Apps ↗
         </a>
+      </div>
+
+      {submissionUrls && (
+        <SubmissionLinks operation={operation} urls={submissionUrls} />
+      )}
+    </div>
+  );
+}
+
+function SubmissionLinks({
+  operation,
+  urls,
+}: {
+  operation: Operation;
+  urls: governance.SubmissionUrls;
+}) {
+  const copy = (text: string) => navigator.clipboard.writeText(text);
+  const verb = operation === "halt" ? "halt" : "resume";
+  return (
+    <div className="space-y-4 pt-2 border-t border-white/40">
+      <div>
+        <h3 className="text-base font-semibold text-primary">
+          Submit on the Whitelisted Caller track
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Two links to land this {verb} on-chain. Both open in papi.how with
+          the call pre-filled, sign with your wallet there.
+        </p>
+      </div>
+
+      <div className="glass-sub rounded-2xl p-4 space-y-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="text-sm font-medium text-primary">
+            1. Asset Hub batch
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Anyone on the team can submit
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Notes the preimage and opens the public Whitelisted Caller referendum.
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button asChild size="sm">
+            <a
+              href={urls.assetHubBatchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open on Asset Hub ↗
+            </a>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => copy(urls.assetHubBatchUrl)}
+          >
+            Copy link
+          </Button>
+        </div>
+      </div>
+
+      <div className="glass-sub rounded-2xl p-4 space-y-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="text-sm font-medium text-primary">
+            2. Fellowship whitelist
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Requires rank-3+ Fellow
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Opens the Fellowship referendum that whitelists the call hash. Share
+          this link in Element with a rank-3+ Fellow to submit.
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => copy(urls.fellowshipWhitelistUrl)}
+          >
+            Copy link for Fellow
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <a
+              href={urls.fellowshipWhitelistUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open on Collectives ↗
+            </a>
+          </Button>
+        </div>
       </div>
     </div>
   );
