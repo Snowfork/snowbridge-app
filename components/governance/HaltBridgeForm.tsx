@@ -6,6 +6,12 @@ import { governance } from "@snowbridge/api";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Button } from "@/components/ui/button";
 import { xxhashAsHex } from "@polkadot/util-crypto";
+import {
+  LucideSlidersHorizontal,
+  LucideShieldCheck,
+  LucideListChecks,
+  LucideCheck,
+} from "lucide-react";
 
 // Public RPC for Polkadot Collectives Chain, used to construct the
 // fellowshipReferenda.submit call (the Whitelist origin lives there).
@@ -373,14 +379,11 @@ export function HaltBridgeForm() {
           </h1>
           <p className="text-sm text-muted-foreground">
             Build a halt or resume preimage for the Whitelisted Caller track.
-            Submission links open in papi.how, you sign there.
+            Submission links open in papi.how, signed transaction in PAPI.
           </p>
         </div>
 
         <fieldset className="space-y-1">
-          <legend className="text-xs font-medium text-muted-foreground mb-2">
-            Operation
-          </legend>
           {(["halt", "resume"] as const).map((op) => (
             <label
               key={op}
@@ -394,7 +397,7 @@ export function HaltBridgeForm() {
                 onChange={() => setOp(op)}
               />
               <span className="font-medium text-sm text-primary">
-                {op === "halt" ? "Halt the bridge" : "Resume the bridge"}
+                {op === "halt" ? "Halt bridge" : "Resume bridge"}
               </span>
             </label>
           ))}
@@ -436,21 +439,30 @@ export function HaltBridgeForm() {
         )}
 
         <Accordion type="single" collapsible>
-          <AccordionItem value="advanced" className="border-none">
-            <AccordionTrigger className="text-sm text-primary py-2 hover:no-underline">
-              Advanced options
-              {selectionCount > 0 && (
-                <span className="ml-2 text-xs text-muted-foreground font-normal">
-                  ({selectionCount} selected, will override default)
+          <AccordionItem
+            value="advanced"
+            className="border-none glass-sub rounded-2xl overflow-hidden"
+          >
+            <AccordionTrigger className="text-sm text-primary px-4 py-3 hover:no-underline hover:bg-white/30 transition-colors">
+              <span className="flex items-center gap-2 flex-1">
+                <LucideSlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Advanced options</span>
+                {selectionCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    {selectionCount}
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground font-normal ml-auto mr-2">
+                  {selectionCount > 0
+                    ? "overrides default"
+                    : "pick specific levers"}
                 </span>
-              )}
+              </span>
             </AccordionTrigger>
-            <AccordionContent>
+            <AccordionContent className="px-4 pb-4">
               <p className="text-xs text-muted-foreground mb-3">
-                Tick one or more to override the default. With nothing ticked,
-                the preimage targets everything (
-                <code className="px-1 rounded bg-white/30">{`{ all: true }`}</code>
-                ). Descriptions reflect the currently-selected operation (
+                Tick one or more to override the default. Nothing ticked targets
+                everything. Descriptions reflect the selected operation (
                 <em>{opLabel}</em>).
               </p>
               <div className="grid md:grid-cols-2 gap-6 pt-2">
@@ -574,117 +586,177 @@ function PreimageResult({
 }) {
   const copy = (text: string) => navigator.clipboard.writeText(text);
   const label = operation === "halt" ? "Halt" : "Resume";
+  const verb = operation === "halt" ? "halts" : "resumes";
   return (
     <div className="glass rounded-3xl border border-white/60 py-8 px-6 md:py-10 md:px-10 space-y-5">
-      <h2 className="text-xl font-semibold text-primary">{label} preimage</h2>
-
-      <div>
-        <div className="text-xs font-medium text-muted-foreground mb-1">
-          Preimage hash
-        </div>
-        <div className="flex items-center gap-2">
-          <code className="glass-sub break-all text-sm rounded-xl p-3 flex-1 text-primary">
-            {result.hash}
-          </code>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => copy(result.hash)}
-          >
-            Copy
-          </Button>
-        </div>
+      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+        <h2 className="text-xl font-semibold text-primary">{label} preimage</h2>
+        <span className="text-xs text-muted-foreground font-mono">
+          {result.encodedSize} bytes
+        </span>
       </div>
 
-      <div>
-        <div className="text-xs font-medium text-muted-foreground mb-1">
-          Call data ({result.encodedSize} bytes)
-        </div>
-        <div className="flex items-start gap-2">
-          <code className="glass-sub break-all text-sm rounded-xl p-3 flex-1 max-h-32 overflow-y-auto text-primary">
-            {result.callData}
-          </code>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => copy(result.callData)}
-          >
-            Copy
-          </Button>
-        </div>
-      </div>
+      <Accordion type="single" collapsible>
+        <AccordionItem
+          value="what"
+          className="border-none glass-sub rounded-2xl overflow-hidden"
+        >
+          <AccordionTrigger className="text-sm text-primary px-4 py-3 hover:no-underline hover:bg-white/30 transition-colors">
+            <span className="flex items-center gap-2 flex-1">
+              <LucideListChecks className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">What this {verb}</span>
+              <span className="text-xs text-muted-foreground font-normal ml-auto mr-2">
+                {result.summary.length} action
+                {result.summary.length === 1 ? "" : "s"}
+              </span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <ul className="space-y-1 text-sm text-primary">
+              {result.summary.map((s, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="text-primary/40 select-none">•</span>
+                  <span className="flex-1">{s}</span>
+                </li>
+              ))}
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
-      <div>
-        <div className="text-xs font-medium text-muted-foreground mb-1">
-          What this {operation === "halt" ? "halts" : "resumes"}
-        </div>
-        <ul className="list-disc pl-5 space-y-1 text-sm text-primary">
-          {result.summary.map((s, i) => (
-            <li key={i}>{s}</li>
-          ))}
-        </ul>
-      </div>
+      {submissionUrls && <SubmissionLinks urls={submissionUrls} />}
 
-      {result.storageWrites.length > 0 && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground mb-1">
-            Storage writes (verify the keys)
-          </div>
-          <p className="text-xs text-muted-foreground mb-2">
-            Each storage key is{" "}
-            <code className="px-1 rounded bg-white/30">
-              twox_128(&quot;:NAME:&quot;)
-            </code>
-            . Re-derive it below to confirm the call data targets the named
-            parameter and nothing else.
-          </p>
-          <div className="space-y-2 mb-3">
-            {result.storageWrites.map((w) => (
-              <div
-                key={w.key}
-                className="glass-sub rounded-xl p-3 text-sm text-primary space-y-1"
-              >
-                <div className="font-medium">{w.name}</div>
-                <div className="font-mono text-xs break-all">
-                  <span className="text-muted-foreground">key </span>
-                  {w.key}
-                </div>
-                <div className="font-mono text-xs break-all">
-                  <span className="text-muted-foreground">value </span>
-                  {w.value}
-                </div>
-                {w.sourceUrl && (
-                  <div className="text-xs">
-                    <a
-                      href={w.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="glimmer-text underline"
-                    >
-                      runtime source ↗
-                    </a>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <KeyHasher writes={result.storageWrites} />
-        </div>
-      )}
-
-      <div>
+      <div className="space-y-3">
+        <HexField label="Preimage hash" value={result.hash} />
+        <HexField label="Call data" value={result.callData} maxHeight />
         <a
           href={result.decodeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="glimmer-text underline text-sm"
+          className="glimmer-text underline text-sm inline-flex items-center gap-1"
         >
           Open decoded extrinsic in Polkadot.js Apps ↗
         </a>
       </div>
 
-      {submissionUrls && <SubmissionLinks urls={submissionUrls} />}
+      <Accordion type="single" collapsible>
+        <AccordionItem
+          value="verify"
+          className="border-none glass-sub rounded-2xl overflow-hidden"
+        >
+          <AccordionTrigger className="text-sm text-primary px-4 py-3 hover:no-underline hover:bg-white/30 transition-colors">
+            <span className="flex items-center gap-2 flex-1">
+              <LucideShieldCheck className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Verify</span>
+              <span className="text-xs text-muted-foreground font-normal ml-auto mr-2">
+                storage writes
+              </span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 space-y-4">
+            {result.storageWrites.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">
+                  Each key is{" "}
+                  <code className="px-1 rounded bg-white/40">
+                    twox_128(&quot;:NAME:&quot;)
+                  </code>
+                  . Use the hasher below to confirm.
+                </div>
+                <div className="space-y-2">
+                  {result.storageWrites.map((w) => (
+                    <div
+                      key={w.key}
+                      className="rounded-xl bg-white/40 p-3 text-sm text-primary space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="font-medium">{w.name}</span>
+                        {w.sourceUrl && (
+                          <a
+                            href={w.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="glimmer-text underline text-xs"
+                          >
+                            runtime source ↗
+                          </a>
+                        )}
+                      </div>
+                      <div className="font-mono text-xs break-all">
+                        <span className="text-muted-foreground">key </span>
+                        {w.key}
+                      </div>
+                      <div className="font-mono text-xs break-all">
+                        <span className="text-muted-foreground">value </span>
+                        {w.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <KeyHasher writes={result.storageWrites} />
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
+  );
+}
+
+function HexField({
+  label,
+  value,
+  maxHeight,
+}: {
+  label: string;
+  value: string;
+  maxHeight?: boolean;
+}) {
+  return (
+    <div className="glass-sub rounded-2xl p-4 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-medium text-primary">{label}</span>
+        <CopyButton value={value} />
+      </div>
+      <code
+        className={`block font-mono text-xs break-all text-primary/90 ${
+          maxHeight ? "max-h-32 overflow-y-auto" : ""
+        }`}
+      >
+        {value}
+      </code>
+    </div>
+  );
+}
+
+function CopyButton({
+  value,
+  variant = "ghost",
+}: {
+  value: string;
+  variant?: "ghost" | "secondary";
+}) {
+  const [copied, setCopied] = useState(false);
+  const onClick = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+  };
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(t);
+  }, [copied]);
+  return (
+    <Button size="sm" variant={variant} onClick={onClick}>
+      {copied ? (
+        <span className="inline-flex items-center gap-1">
+          <LucideCheck className="h-3.5 w-3.5" />
+          Copied
+        </span>
+      ) : (
+        "Copy"
+      )}
+    </Button>
   );
 }
 
@@ -693,10 +765,9 @@ function SubmissionLinks({
 }: {
   urls: governance.SubmissionUrls;
 }) {
-  const copy = (text: string) => navigator.clipboard.writeText(text);
   return (
-    <div className="space-y-3 pt-2 border-t border-white/40">
-      <h3 className="text-base font-semibold text-primary">Submit</h3>
+    <div className="space-y-2">
+      <div className="text-sm font-medium text-primary">Submit</div>
 
       <div className="glass-sub rounded-2xl p-4 flex items-center gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
@@ -716,13 +787,7 @@ function SubmissionLinks({
             Open ↗
           </a>
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => copy(urls.assetHubBatchUrl)}
-        >
-          Copy
-        </Button>
+        <CopyButton value={urls.assetHubBatchUrl} />
       </div>
 
       <div className="glass-sub rounded-2xl p-4 flex items-center gap-3 flex-wrap">
@@ -734,13 +799,7 @@ function SubmissionLinks({
             Rank-3+ Fellow only, share via Element
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => copy(urls.fellowshipWhitelistUrl)}
-        >
-          Copy
-        </Button>
+        <CopyButton value={urls.fellowshipWhitelistUrl} variant="secondary" />
         <Button asChild size="sm" variant="ghost">
           <a
             href={urls.fellowshipWhitelistUrl}
