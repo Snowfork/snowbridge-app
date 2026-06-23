@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const COINMARKETCAP_QUOTES_URL =
-  "https://pro-api.coinmarketcap.com/v3/cryptocurrency/quotes/latest";
+// USD token prices are served by the Snowbridge indexer's `latestTokenPrices`
+// GraphQL query (populated hourly by the indexer pricefetcher), replacing the
+// previous direct CoinMarketCap integration.
+const GRAPHQL_API_URL = process.env.NEXT_PUBLIC_GRAPHQL_API_URL;
 
 const SYMBOL_PATTERN = /^[0-9A-Z$@-]+$/;
 
-interface CoinMarketCapQuote {
-  symbol?: string;
-  price?: number;
-}
+const LATEST_TOKEN_PRICES_QUERY = `
+  query LatestTokenPrices($symbols: [String!]) {
+    latestTokenPrices(symbols: $symbols) {
+      symbol
+      priceUSD
+    }
+  }
+`;
 
-interface CoinMarketCapAsset {
-  id?: number;
+interface TokenPriceRow {
   symbol?: string;
-  is_active?: number;
-  cmc_rank?: number;
-  quote?: CoinMarketCapQuote[] | { USD?: { price?: number } };
+  priceUSD?: number;
 }
 
 function sanitizeSymbols(symbols: string | null): string[] {
@@ -33,77 +36,24 @@ function sanitizeSymbols(symbols: string | null): string[] {
   ];
 }
 
-function quotePrice(asset: CoinMarketCapAsset): number | null {
-  if (Array.isArray(asset.quote)) {
-    const usdQuote = asset.quote.find(
-      (quote) => quote.symbol?.toUpperCase() === "USD",
-    );
-    return typeof usdQuote?.price === "number" ? usdQuote.price : null;
-  }
+// Build a map of UPPERCASE symbol -> USD price from the indexer rows. Keyed
+// uppercase to match the symbols the client requested (the indexer stores
+// mixed-case symbols such as "wstETH"); matching there is case-insensitive.
+function pricesFromIndexer(rows: TokenPriceRow[]): Record<string, number> {
+  const prices: Record<string, number> = {};
 
-  const price = asset.quote?.USD?.price;
-  return typeof price === "number" ? price : null;
-}
+  for (const row of rows) {
+    const symbol = row?.symbol?.toUpperCase();
+    const price = row?.priceUSD;
 
-function assetRank(asset: CoinMarketCapAsset): number {
-  if (typeof asset.cmc_rank === "number" && asset.cmc_rank > 0) {
-    return asset.cmc_rank;
-  }
-  return Number.MAX_SAFE_INTEGER;
-}
-
-function flattenAssets(payload: unknown): CoinMarketCapAsset[] {
-  if (Array.isArray(payload)) {
-    return payload as CoinMarketCapAsset[];
-  }
-
-  if (typeof payload !== "object" || payload === null) {
-    return [];
-  }
-
-  const data = (payload as { data?: unknown }).data;
-  if (Array.isArray(data)) {
-    return data as CoinMarketCapAsset[];
-  }
-
-  if (typeof data !== "object" || data === null) {
-    return [];
-  }
-
-  return Object.values(data).flatMap((value) =>
-    Array.isArray(value) ? value : [value],
-  ) as CoinMarketCapAsset[];
-}
-
-function pricesFromCoinMarketCap(payload: unknown): Record<string, number> {
-  const bestBySymbol = new Map<string, CoinMarketCapAsset>();
-
-  flattenAssets(payload).forEach((asset) => {
-    const symbol = asset.symbol?.toUpperCase();
-    const price = quotePrice(asset);
-
-    if (
-      !symbol ||
-      price === null ||
-      !Number.isFinite(price) ||
-      price <= 0 ||
-      asset.is_active === 0
-    ) {
-      return;
+    if (!symbol || typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+      continue;
     }
 
-    const current = bestBySymbol.get(symbol);
-    if (!current || assetRank(asset) < assetRank(current)) {
-      bestBySymbol.set(symbol, asset);
-    }
-  });
+    prices[symbol] = price;
+  }
 
-  return Object.fromEntries(
-    [...bestBySymbol.entries()].flatMap(([symbol, asset]) => {
-      const price = quotePrice(asset);
-      return price === null ? [] : [[symbol, price]];
-    }),
-  );
+  return prices;
 }
 
 function jsonResponse(
@@ -127,10 +77,8 @@ function jsonResponse(
 }
 
 export async function GET(request: NextRequest) {
-  const apiKey = process.env.COINMARKETCAP_KEY;
-
-  if (!apiKey) {
-    return jsonResponse({}, "CoinMarketCap API key is not configured", 200);
+  if (!GRAPHQL_API_URL) {
+    return jsonResponse({}, "Indexer GraphQL URL is not configured", 200);
   }
 
   const symbols = sanitizeSymbols(request.nextUrl.searchParams.get("symbols"));
@@ -138,34 +86,42 @@ export async function GET(request: NextRequest) {
     return jsonResponse({});
   }
 
-  const params = new URLSearchParams({
-    symbol: symbols.join(","),
-    convert: "USD",
-    aux: "cmc_rank",
-    skip_invalid: "true",
-  });
-
   try {
-    const response = await fetch(`${COINMARKETCAP_QUOTES_URL}?${params}`, {
+    const response = await fetch(GRAPHQL_API_URL, {
+      method: "POST",
       headers: {
+        "Content-Type": "application/json",
         Accept: "application/json",
-        "X-CMC_PRO_API_KEY": apiKey,
       },
+      body: JSON.stringify({
+        query: LATEST_TOKEN_PRICES_QUERY,
+        variables: { symbols },
+      }),
       next: { revalidate: 60 },
     });
 
     if (!response.ok) {
       return jsonResponse(
         {},
-        `CoinMarketCap request failed: ${response.status} ${response.statusText}`,
+        `Indexer request failed: ${response.status} ${response.statusText}`,
         502,
       );
     }
 
     const payload = await response.json();
-    return jsonResponse(pricesFromCoinMarketCap(payload));
+
+    if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+      return jsonResponse(
+        {},
+        `Indexer query error: ${payload.errors[0]?.message ?? "unknown error"}`,
+        502,
+      );
+    }
+
+    const rows: TokenPriceRow[] = payload?.data?.latestTokenPrices ?? [];
+    return jsonResponse(pricesFromIndexer(rows));
   } catch (error) {
-    console.error("CoinMarketCap API error:", error);
+    console.error("Indexer token price error:", error);
     return jsonResponse({}, "Failed to fetch token prices", 500);
   }
 }

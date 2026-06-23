@@ -1,5 +1,5 @@
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
-import { fetchTokenPrices } from "@/utils/coinmarketcap";
+import { fetchTokenPrices } from "@/utils/tokenPrices";
 import { FC, useState } from "react";
 import {
   AssetRegistry,

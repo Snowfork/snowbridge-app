@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { fetchTokenPrices } from "@/utils/coinmarketcap";
+import { fetchTokenPrices } from "@/utils/tokenPrices";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SelectItemWithIcon } from "../SelectItemWithIcon";
 import { TokenSelector } from "../TokenSelector";
