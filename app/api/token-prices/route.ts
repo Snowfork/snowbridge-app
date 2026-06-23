@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getEnvironment } from "@/lib/snowbridgeEnv";
 
 // USD token prices are served by the Snowbridge indexer's `latestTokenPrices`
-// GraphQL query (populated hourly by the indexer pricefetcher), replacing the
-// previous direct CoinMarketCap integration.
-const GRAPHQL_API_URL = process.env.NEXT_PUBLIC_GRAPHQL_API_URL;
+// GraphQL query (populated by the indexer pricefetcher service).
 
 const SYMBOL_PATTERN = /^[0-9A-Z$@-]+$/;
 
@@ -77,17 +76,13 @@ function jsonResponse(
 }
 
 export async function GET(request: NextRequest) {
-  if (!GRAPHQL_API_URL) {
-    return jsonResponse({}, "Indexer GraphQL URL is not configured", 200);
-  }
-
   const symbols = sanitizeSymbols(request.nextUrl.searchParams.get("symbols"));
   if (symbols.length === 0) {
     return jsonResponse({});
   }
 
   try {
-    const response = await fetch(GRAPHQL_API_URL, {
+    const response = await fetch(getEnvironment().indexerGraphQlUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
