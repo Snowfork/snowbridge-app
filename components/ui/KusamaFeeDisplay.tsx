@@ -1,5 +1,5 @@
 import { formatBalance, formatUsdValue } from "@/utils/formatting";
-import { fetchTokenPrices } from "@/utils/coinmarketcap";
+import { fetchTokenPrices } from "@/utils/tokenPrices";
 import { FC } from "react";
 import { useKusamaFeeInfo } from "@/hooks/useKusamaFeeInfo";
 import useSWR from "swr";

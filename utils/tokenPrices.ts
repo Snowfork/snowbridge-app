@@ -1,4 +1,4 @@
-// Mapping of token symbols that need special handling for CoinMarketCap.
+// Mapping of token symbols to the symbol the indexer prices them under.
 const TOKEN_SYMBOL_MAPPING: Record<string, string> = {
   WETH: "ETH",
   ETHER: "ETH",
