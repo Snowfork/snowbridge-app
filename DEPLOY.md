@@ -22,32 +22,33 @@ the token once.
 
 ## How a deploy happens
 
-1. Push (or merge) to the deploy branch (`clara/ipfs` today; change to `main`
-   for the production cutover).
-2. GitHub Actions: install deps → `pnpm build` (with `NEXT_PUBLIC_*` injected
-   from secrets) → pin the whole `dist/` folder to IPFS as a single directory
-   CID via Filebase's IPFS RPC (`/api/v0/add?wrap-with-directory=true`).
-3. The run summary prints the site **root CID** and a gateway URL.
-
-Manual run: Actions tab → "Deploy to IPFS (Filebase)" → "Run workflow".
+- **Production** (`.github/workflows/filebase.yml`): on push to `polkadot_mainnet`
+  (i.e. after a PR merges), GitHub Actions installs deps → `pnpm build` → pins
+  the whole `dist/` folder to IPFS as a single directory CID via Filebase's IPFS
+  RPC (`/api/v0/add?wrap-with-directory=true`). The run summary prints the root
+  CID + gateway URL. Manual run: Actions tab → "Deploy to IPFS (Filebase)" →
+  "Run workflow".
+- **Per-PR preview** (`.github/workflows/filebase-preview.yml`): on every push to
+  an open PR, builds and pins a preview, then posts/updates a PR comment with the
+  unique preview URL. Previews are content-addressed CIDs, isolated from prod
+  (they never repoint the prod IPNS/domain). Fork PRs get no preview (no secret
+  access). The previous preview for a PR is unpinned to conserve quota.
 
 ## One-time setup (repo admin)
 
 1. Create a free Filebase account (https://console.filebase.com/signup), make an
    **IPFS bucket**, and generate an **IPFS RPC API token**.
-2. Add GitHub repo secrets (Settings → Secrets and variables → Actions):
-   - `FILEBASE_RPC_TOKEN`
-   - `NEXT_PUBLIC_SNOWBRIDGE_ENV` (e.g. `polkadot_mainnet`)
-   - `NEXT_PUBLIC_ALCHEMY_KEY`
-   - `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID`
-   - `NEXT_PUBLIC_GRAPHQL_API_URL`
-   - any other `NEXT_PUBLIC_*` the build needs (see `.env.example`)
+2. Add two GitHub repo secrets (Settings → Secrets and variables → Actions):
+   - `FILEBASE_RPC_TOKEN` — the Filebase IPFS RPC API token.
+   - `BUILD_ENV` — the prod `.env` contents, i.e. the `NEXT_PUBLIC_*` lines
+     (paste the body of your `.env.local`). Written to `.env.local` at build
+     time so Vite bakes the values in.
 3. For a **stable URL** across deploys, point a Filebase IPNS name / custom
    domain at the bucket in the dashboard (the CID changes every deploy).
 
-> Note: `NEXT_PUBLIC_*` values are baked into the public static bundle at build
-> time and are visible to anyone, only put publishable values here, never a
-> server secret.
+> Note: `BUILD_ENV` only needs the publishable `NEXT_PUBLIC_*` values, they are
+> baked into the public bundle and visible to anyone. Never put a server secret
+> there.
 
 ## Local development
 

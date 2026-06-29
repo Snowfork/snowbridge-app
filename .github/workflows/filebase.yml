@@ -3,21 +3,23 @@
 # + pnpm are pinned here, and the whole dist/ folder is pinned as a single
 # directory CID so paths (and the 404.html SPA fallback) resolve on a gateway.
 #
-# One-time setup before this works:
-#   1. Create a Filebase account (free tier: 5 GB, 1 GB IPFS egress).
-#   2. Create an IPFS bucket, then generate an IPFS RPC API access token
-#      (Filebase dashboard). Add it as repo secret FILEBASE_RPC_TOKEN.
-#   3. Add the build-time secrets (Settings > Secrets and variables > Actions):
-#        NEXT_PUBLIC_SNOWBRIDGE_ENV, NEXT_PUBLIC_ALCHEMY_KEY,
-#        NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID, NEXT_PUBLIC_GRAPHQL_API_URL
-#        (+ any other NEXT_PUBLIC_* the build needs)
-#   4. For a stable URL across deploys, point a Filebase IPNS name / custom
+# One-time setup before this works (Settings > Secrets and variables > Actions):
+#   1. Create a Filebase account (free tier: 5 GB, 1 GB IPFS egress) and an
+#      IPFS bucket, then generate an IPFS RPC API token (Filebase dashboard).
+#      Add it as repo secret FILEBASE_RPC_TOKEN.
+#   2. Add repo secret BUILD_ENV = the prod .env contents (the NEXT_PUBLIC_*
+#      lines, e.g. the body of your .env.local). Written to .env.local at build.
+#   3. For a stable URL across deploys, point a Filebase IPNS name / custom
 #      domain at the bucket in the dashboard (the CID changes every deploy).
 name: Deploy to IPFS (Filebase)
 
+# Deploys to the prod IPFS target ONLY on push to the production branch (after
+# a PR merges), never from a feature branch. Use the manual trigger to test a
+# build without touching prod. Set `branches` to whichever branch is your real
+# production deploy branch (e.g. polkadot_mainnet).
 on:
   push:
-    branches: [clara/ipfs] # change to `main` for the production cutover
+    branches: [polkadot_mainnet]
   workflow_dispatch: {}
 
 jobs:
@@ -26,9 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No version here on purpose: pnpm/action-setup reads the pinned version
+      # from package.json's "packageManager" field (specifying both errors).
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
 
       - uses: actions/setup-node@v4
         with:
@@ -38,17 +40,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
+      # BUILD_ENV holds the prod .env contents (the NEXT_PUBLIC_* lines). Vite
+      # reads .env.local at build time and bakes the values into the bundle.
+      - name: Write build env
         env:
-          # Vite bakes these into the static bundle at build time
-          # (vite.config.ts maps process.env.NEXT_PUBLIC_* via define).
-          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
-          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
-          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
-          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
-          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
-          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
-          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+          BUILD_ENV: ${{ secrets.BUILD_ENV }}
+        run: printf '%s\n' "$BUILD_ENV" > .env.local
+
+      - name: Build
         run: pnpm build
 
       - name: Pin dist/ to IPFS via Filebase (single directory CID)
