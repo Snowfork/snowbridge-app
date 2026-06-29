@@ -38,17 +38,23 @@ the token once.
 
 1. Create a free Filebase account (https://console.filebase.com/signup), make an
    **IPFS bucket**, and generate an **IPFS RPC API token**.
-2. Add two GitHub repo secrets (Settings → Secrets and variables → Actions):
+2. Add GitHub repo secrets (Settings → Secrets and variables → Actions):
    - `FILEBASE_RPC_TOKEN` — the Filebase IPFS RPC API token.
-   - `BUILD_ENV` — the prod `.env` contents, i.e. the `NEXT_PUBLIC_*` lines
-     (paste the body of your `.env.local`). Written to `.env.local` at build
-     time so Vite bakes the values in.
+   - One secret per `NEXT_PUBLIC_*` build var (see the Build step in the
+     workflows for the full list), e.g.
+     `NEXT_PUBLIC_SNOWBRIDGE_ENV=polkadot_mainnet`, `NEXT_PUBLIC_ALCHEMY_KEY`,
+     `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID`, etc. Set them all at once from
+     your local file:
+     ```bash
+     while IFS='=' read -r k v; do
+       gh secret set "$k" --repo Snowfork/snowbridge-app --body "$v"
+     done < <(grep '^NEXT_PUBLIC_' .env.local)
+     ```
 3. For a **stable URL** across deploys, point a Filebase IPNS name / custom
    domain at the bucket in the dashboard (the CID changes every deploy).
 
-> Note: `BUILD_ENV` only needs the publishable `NEXT_PUBLIC_*` values, they are
-> baked into the public bundle and visible to anyone. Never put a server secret
-> there.
+> Note: only the publishable `NEXT_PUBLIC_*` values go here, they are baked into
+> the public bundle and visible to anyone. Never add a server secret.
 
 ## Local development
 

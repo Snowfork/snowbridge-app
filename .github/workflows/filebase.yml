@@ -7,8 +7,8 @@
 #   1. Create a Filebase account (free tier: 5 GB, 1 GB IPFS egress) and an
 #      IPFS bucket, then generate an IPFS RPC API token (Filebase dashboard).
 #      Add it as repo secret FILEBASE_RPC_TOKEN.
-#   2. Add repo secret BUILD_ENV = the prod .env contents (the NEXT_PUBLIC_*
-#      lines, e.g. the body of your .env.local). Written to .env.local at build.
+#   2. Add a repo secret for each NEXT_PUBLIC_* build var (see the Build step
+#      below for the full list), e.g. NEXT_PUBLIC_SNOWBRIDGE_ENV=polkadot_mainnet.
 #   3. For a stable URL across deploys, point a Filebase IPNS name / custom
 #      domain at the bucket in the dashboard (the CID changes every deploy).
 name: Deploy to IPFS (Filebase)
@@ -40,20 +40,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # BUILD_ENV holds the prod .env contents (the NEXT_PUBLIC_* lines). Vite
-      # reads .env.local at build time and bakes the values into the bundle.
-      - name: Write build env
-        env:
-          BUILD_ENV: ${{ secrets.BUILD_ENV }}
-        run: |
-          printf '%s\n' "$BUILD_ENV" > .env.local
-          if ! grep -q '^NEXT_PUBLIC_SNOWBRIDGE_ENV=' .env.local; then
-            echo "::error::BUILD_ENV secret is empty or missing NEXT_PUBLIC_SNOWBRIDGE_ENV. Set the BUILD_ENV repo secret to the NEXT_PUBLIC_* lines of your prod .env."
-            exit 1
-          fi
-
+      # Each NEXT_PUBLIC_* is its own repo secret. Vite reads them from the
+      # build env (envPrefix) and bakes them into the static bundle.
       - name: Build
-        run: pnpm build
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+        run: |
+          [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
+          pnpm build
 
       - name: Pin dist/ to IPFS via Filebase (single directory CID)
         env:

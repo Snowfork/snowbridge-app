@@ -3,9 +3,9 @@
 # comment with the unique preview URL. Previews only produce immutable CIDs and
 # never repoint the prod IPNS/domain, so they cannot affect the live site.
 #
-# Secrets needed: FILEBASE_RPC_TOKEN and BUILD_ENV (the contents of the prod
-# .env, i.e. the NEXT_PUBLIC_* lines). Note: secrets are NOT available to PRs
-# opened from forks (GitHub security), so fork PRs won't get a preview.
+# Secrets needed: FILEBASE_RPC_TOKEN and one repo secret per NEXT_PUBLIC_* build
+# var (see the Build step). Note: secrets are NOT available to PRs opened from
+# forks (GitHub security), so fork PRs won't get a preview.
 name: Preview deploy (IPFS)
 
 on:
@@ -38,20 +38,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # BUILD_ENV holds the prod .env contents (the NEXT_PUBLIC_* lines). Vite
-      # reads .env.local at build time and bakes the values into the bundle.
-      - name: Write build env
-        env:
-          BUILD_ENV: ${{ secrets.BUILD_ENV }}
-        run: |
-          printf '%s\n' "$BUILD_ENV" > .env.local
-          if ! grep -q '^NEXT_PUBLIC_SNOWBRIDGE_ENV=' .env.local; then
-            echo "::error::BUILD_ENV secret is empty or missing NEXT_PUBLIC_SNOWBRIDGE_ENV. Set the BUILD_ENV repo secret to the NEXT_PUBLIC_* lines of your prod .env."
-            exit 1
-          fi
-
+      # Each NEXT_PUBLIC_* is its own repo secret. Vite reads them from the
+      # build env (envPrefix) and bakes them into the static bundle.
       - name: Build
-        run: pnpm build
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+        run: |
+          [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
+          pnpm build
 
       - name: Unpin this PR's previous preview (conserve Filebase quota)
         env:
