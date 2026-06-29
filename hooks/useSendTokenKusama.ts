@@ -54,7 +54,10 @@ function kusamaSender(api: SnowbridgeClient, data: KusamaValidationData) {
       ? { kind: "polkadot" as const, id: registry.assetHubParaId }
       : { kind: "kusama" as const, id: registry.kusama.assetHubParaId };
   const sender = api.sender(from, to);
-  if (sender.kind !== "polkadot->kusama" && sender.kind !== "kusama->polkadot") {
+  if (
+    sender.kind !== "polkadot->kusama" &&
+    sender.kind !== "kusama->polkadot"
+  ) {
     throw Error(`Invalid Kusama route ${sender.kind}.`);
   }
   return sender;

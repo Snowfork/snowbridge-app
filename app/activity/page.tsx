@@ -56,7 +56,6 @@ import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { BridgeInfoContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
-import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { chainName } from "@/utils/chainNames";
 import { inferTransferDetails } from "@/utils/inferTransferType";
@@ -365,7 +364,7 @@ const getExplorerLinks = (
 const transferDetail = (
   transfer: Transfer,
   registry: AssetRegistry,
-  router: AppRouterInstance,
+  router: ReturnType<typeof useRouter>,
 ): JSX.Element => {
   const {
     kind: transferType,
@@ -660,7 +659,6 @@ export default function Activity() {
       }
     }
     // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTransfersPendingLocal, assetRegistry]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);

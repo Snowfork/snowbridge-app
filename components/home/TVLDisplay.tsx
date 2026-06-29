@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-
-interface TVLData {
-  success: boolean;
-  tvlUsd?: number | null;
-  data?: any;
-  error?: string;
-}
+import { fetchTvlUsd } from "@/lib/client/dashboardStats";
 
 export function TVLDisplay() {
   const [tvl, setTvl] = useState<number | null>(null);
@@ -21,26 +15,12 @@ export function TVLDisplay() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/portfolio-value");
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch TVL: ${response.status}`);
-        }
-
-        const result: TVLData = await response.json();
-
-        if (result.success) {
-          const totalValue =
-            typeof result.tvlUsd === "number" ? result.tvlUsd : null;
-
-          if (totalValue !== null) {
-            setTvl(totalValue);
-          } else {
-            console.warn("TVL value not found in response", result);
-            setTvl(null);
-          }
+        const totalValue = await fetchTvlUsd();
+        if (totalValue !== null) {
+          setTvl(totalValue);
         } else {
-          throw new Error(result.error || "Failed to fetch TVL data");
+          console.warn("TVL value not found in response");
+          setTvl(null);
         }
       } catch (err) {
         console.error("Error fetching TVL:", err);

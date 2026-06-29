@@ -945,10 +945,7 @@ export const TransferForm: FC<TransferFormProps> = ({
                                 }
 
                                 // If transferring native token from substrate, subtract the fee
-                                if (
-                                  source.kind === "polkadot" &&
-                                  feeInfo
-                                ) {
+                                if (source.kind === "polkadot" && feeInfo) {
                                   const nativeFee =
                                     getDeliveryTotalByDisplaySymbol(
                                       feeInfo,

@@ -4,13 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { TVLDisplay } from "./TVLDisplay";
-
-interface VolumeByMonthResponse {
-  success: boolean;
-  averageVolumeUsd?: number | null;
-  data?: Array<{ month: string; volumeUsd: number }>;
-  error?: string;
-}
+import { fetchAverageMonthlyVolumeUsd } from "@/lib/client/dashboardStats";
 
 function MonthlyVolumeDisplay() {
   const [averageVolume, setAverageVolume] = useState<number | null>(null);
@@ -22,15 +16,11 @@ function MonthlyVolumeDisplay() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch("/api/volume-by-month");
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status}`);
-        }
-        const result: VolumeByMonthResponse = await response.json();
-        if (result.success && typeof result.averageVolumeUsd === "number") {
-          setAverageVolume(result.averageVolumeUsd);
+        const avg = await fetchAverageMonthlyVolumeUsd();
+        if (typeof avg === "number") {
+          setAverageVolume(avg);
         } else {
-          throw new Error(result.error || "Failed to fetch monthly volume");
+          throw new Error("Failed to fetch monthly volume");
         }
       } catch (err) {
         console.error("Error fetching monthly volume:", err);

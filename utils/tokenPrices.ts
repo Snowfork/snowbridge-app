@@ -1,3 +1,5 @@
+import { getEnvironment } from "@/lib/snowbridgeEnv";
+
 // Mapping of token symbols to the symbol the indexer prices them under.
 const TOKEN_SYMBOL_MAPPING: Record<string, string> = {
   WETH: "ETH",
@@ -27,8 +29,61 @@ function setCachedPrice(symbol: string, price: number): void {
   priceCache.set(symbol.toUpperCase(), { price, timestamp: Date.now() });
 }
 
-interface TokenPricesResponse {
-  prices?: Record<string, number>;
+// USD token prices come from the Snowbridge indexer's `latestTokenPrices`
+// GraphQL query (populated by the indexer pricefetcher). Queried directly from
+// the browser so the app needs no server; the indexer matches symbols
+// case-insensitively, so UPPERCASE requests resolve mixed-case rows.
+const LATEST_TOKEN_PRICES_QUERY = `
+  query LatestTokenPrices($symbols: [String!]) {
+    latestTokenPrices(symbols: $symbols) {
+      symbol
+      priceUSD
+    }
+  }
+`;
+
+interface TokenPriceRow {
+  symbol?: string;
+  priceUSD?: number;
+}
+
+// Returns a map of UPPERCASE symbol -> USD price.
+async function fetchPricesFromIndexer(
+  symbols: string[],
+): Promise<Record<string, number>> {
+  const response = await fetch(getEnvironment().indexerGraphQlUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      query: LATEST_TOKEN_PRICES_QUERY,
+      variables: { symbols },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Indexer request failed: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+    throw new Error(payload.errors[0]?.message ?? "Indexer query error");
+  }
+
+  const rows: TokenPriceRow[] = payload?.data?.latestTokenPrices ?? [];
+  const prices: Record<string, number> = {};
+  for (const row of rows) {
+    const symbol = row?.symbol?.toUpperCase();
+    const price = row?.priceUSD;
+    if (
+      symbol &&
+      typeof price === "number" &&
+      Number.isFinite(price) &&
+      price > 0
+    ) {
+      prices[symbol] = price;
+    }
+  }
+  return prices;
 }
 
 export async function fetchTokenPrices(
@@ -59,17 +114,7 @@ export async function fetchTokenPrices(
   const uniqueSymbols = [...new Set(normalizedSymbols)];
 
   try {
-    const params = new URLSearchParams({
-      symbols: uniqueSymbols.join(","),
-    });
-    const response = await fetch(`/api/token-prices?${params.toString()}`);
-
-    if (!response.ok) {
-      return priceMap;
-    }
-
-    const data = (await response.json()) as TokenPricesResponse;
-    const prices = data.prices ?? {};
+    const prices = await fetchPricesFromIndexer(uniqueSymbols);
 
     symbolsToFetch.forEach((symbol) => {
       const upperSymbol = symbol.toUpperCase();

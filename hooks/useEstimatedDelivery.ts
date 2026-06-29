@@ -1,10 +1,7 @@
 import { snowbridgeEnvironmentAtom } from "@/store/snowbridge";
 import { formatTime } from "@/utils/formatting";
 import { subsquidV2 } from "@snowbridge/api";
-import {
-  Environment,
-  TransferKind,
-} from "@snowbridge/base-types";
+import { Environment, TransferKind } from "@snowbridge/base-types";
 import { useAtomValue } from "jotai";
 import useSWR from "swr";
 

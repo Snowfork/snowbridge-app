@@ -320,9 +320,7 @@ export const KusamaComponent: FC = () => {
             source: sourceId,
           })?.amount ?? 0n;
         let totalFee =
-          nativeFee +
-          plan.data.sourceExecutionFee +
-          data.amountInSmallestUnit;
+          nativeFee + plan.data.sourceExecutionFee + data.amountInSmallestUnit;
         if (totalFee > plan.data.nativeBalance) {
           let formattedTotalFee = formatBalance({
             number: totalFee,

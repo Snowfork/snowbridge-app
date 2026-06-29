@@ -154,11 +154,12 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       : null;
 
   const totalAmountUsd =
-    sourceTokenMatchesSingleFee &&
-    singleFeeTotal
+    sourceTokenMatchesSingleFee && singleFeeTotal
       ? getUsdValue(
           Number(
-            data.amountInSmallestUnit + singleFeeTotal.amount + (executionFee ?? 0n),
+            data.amountInSmallestUnit +
+              singleFeeTotal.amount +
+              (executionFee ?? 0n),
           ) / Math.pow(10, data.tokenMetadata.decimals),
           data.tokenMetadata.symbol,
         )
@@ -231,25 +232,25 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
           Fees
         </h3>
         {sourceTokenMatchesSingleFee && singleFeeTotal && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Total Amount</span>
-              <span>
-                {formatBalance({
-                  number:
-                    data.amountInSmallestUnit +
-                    singleFeeTotal.amount +
-                    (executionFee ?? 0n),
-                  decimals: data.tokenMetadata.decimals,
-                })}{" "}
-                {data.tokenMetadata.symbol}
-                {totalAmountUsd && (
-                  <span className="text-muted-foreground ml-1">
-                    ({totalAmountUsd})
-                  </span>
-                )}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">Total Amount</span>
+            <span>
+              {formatBalance({
+                number:
+                  data.amountInSmallestUnit +
+                  singleFeeTotal.amount +
+                  (executionFee ?? 0n),
+                decimals: data.tokenMetadata.decimals,
+              })}{" "}
+              {data.tokenMetadata.symbol}
+              {totalAmountUsd && (
+                <span className="text-muted-foreground ml-1">
+                  ({totalAmountUsd})
+                </span>
+              )}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">Transfer Amount</span>
           <span>
@@ -301,10 +302,7 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
               ? "Calculating..."
               : latencyError
                 ? "Could not estimate"
-                : estimateDelivery(
-                    data.fee.kind,
-                    deliveryLatency,
-                  )}
+                : estimateDelivery(data.fee.kind, deliveryLatency)}
             <span className="text-muted-foreground">
               {transferTimeMax ? `(Up to ${transferTimeMax})` : ""}
             </span>

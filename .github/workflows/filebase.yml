@@ -1,0 +1,85 @@
+# Build the Vite/PWA bundle on GitHub's runners and deploy to IPFS via Filebase
+# (Fleek's hosting was discontinued Jan 2026). Build minutes are GitHub's, Node
+# + pnpm are pinned here, and the whole dist/ folder is pinned as a single
+# directory CID so paths (and the 404.html SPA fallback) resolve on a gateway.
+#
+# One-time setup before this works:
+#   1. Create a Filebase account (free tier: 5 GB, 1 GB IPFS egress).
+#   2. Create an IPFS bucket, then generate an IPFS RPC API access token
+#      (Filebase dashboard). Add it as repo secret FILEBASE_RPC_TOKEN.
+#   3. Add the build-time secrets (Settings > Secrets and variables > Actions):
+#        NEXT_PUBLIC_SNOWBRIDGE_ENV, NEXT_PUBLIC_ALCHEMY_KEY,
+#        NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID, NEXT_PUBLIC_GRAPHQL_API_URL
+#        (+ any other NEXT_PUBLIC_* the build needs)
+#   4. For a stable URL across deploys, point a Filebase IPNS name / custom
+#      domain at the bucket in the dashboard (the CID changes every deploy).
+name: Deploy to IPFS (Filebase)
+
+on:
+  push:
+    branches: [clara/ipfs] # change to `main` for the production cutover
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          # Vite bakes these into the static bundle at build time
+          # (vite.config.ts maps process.env.NEXT_PUBLIC_* via define).
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+        run: pnpm build
+
+      - name: Pin dist/ to IPFS via Filebase (single directory CID)
+        env:
+          FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Build one multipart form with every file, using its path relative
+          # to dist/ as the filename so the RPC reconstructs the directory tree.
+          args=()
+          while IFS= read -r f; do
+            args+=(-F "file=@${f};filename=${f#dist/}")
+          done < <(find dist -type f | sort)
+
+          resp=$(curl -sf -X POST \
+            -H "Authorization: Bearer ${FILEBASE_RPC_TOKEN}" \
+            "https://rpc.filebase.io/api/v0/add?wrap-with-directory=true&cid-version=1&pin=true" \
+            "${args[@]}")
+
+          # With wrap-with-directory the wrapping directory is the final NDJSON
+          # entry; its Hash is the site root CID.
+          cid=$(printf '%s\n' "$resp" | tail -n 1 | jq -r '.Hash')
+          if [ -z "$cid" ] || [ "$cid" = "null" ]; then
+            echo "Failed to parse root CID from response:"; echo "$resp"; exit 1
+          fi
+
+          echo "Site root CID: $cid"
+          {
+            echo "### Deployed to IPFS 🛰"
+            echo ""
+            echo "Root CID: \`$cid\`"
+            echo ""
+            echo "Gateway: https://$cid.ipfs.dweb.link/"
+          } >> "$GITHUB_STEP_SUMMARY"

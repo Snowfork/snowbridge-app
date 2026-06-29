@@ -13,7 +13,6 @@ import { useAtomValue } from "jotai";
 import { useCallback } from "react";
 
 type AsyncSendFn<Params extends unknown[], Result> = (
-  // eslint-disable-next-line no-unused-vars
   ...params: Params
 ) => Promise<Result>;
 
