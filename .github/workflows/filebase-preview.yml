@@ -43,7 +43,12 @@ jobs:
       - name: Write build env
         env:
           BUILD_ENV: ${{ secrets.BUILD_ENV }}
-        run: printf '%s\n' "$BUILD_ENV" > .env.local
+        run: |
+          printf '%s\n' "$BUILD_ENV" > .env.local
+          if ! grep -q '^NEXT_PUBLIC_SNOWBRIDGE_ENV=' .env.local; then
+            echo "::error::BUILD_ENV secret is empty or missing NEXT_PUBLIC_SNOWBRIDGE_ENV. Set the BUILD_ENV repo secret to the NEXT_PUBLIC_* lines of your prod .env."
+            exit 1
+          fi
 
       - name: Build
         run: pnpm build
