@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Manual deploy: pin the built dist/ folder to IPFS via Filebase as a single
-# directory CID. Usage:
+# Pin the built dist/ folder to IPFS via Filebase as a single directory CID.
+# Single source of the pin logic, used both manually and by the GitHub
+# workflows (.github/workflows/filebase*.yml).
 #
 #   export FILEBASE_RPC_TOKEN=<your Filebase IPFS RPC API token>
-#   ./scripts/deploy-filebase.sh           # builds, then pins
-#   SKIP_BUILD=1 ./scripts/deploy-filebase.sh   # pins existing dist/
+#   ./scripts/deploy-filebase.sh             # builds, then pins
+#   SKIP_BUILD=1 ./scripts/deploy-filebase.sh  # pins an existing dist/
 #
-# The token stays in your shell env; it is never printed.
+# Prints the site root CID. In GitHub Actions it also writes `cid=<cid>` to
+# $GITHUB_OUTPUT and a summary to $GITHUB_STEP_SUMMARY. The token stays in your
+# shell env; it is never printed.
 set -euo pipefail
 
 : "${FILEBASE_RPC_TOKEN:?Set FILEBASE_RPC_TOKEN to your Filebase IPFS RPC API token}"
@@ -46,10 +49,24 @@ if [ -z "$cid" ]; then
   exit 1
 fi
 
+# Serve from a gateway ROOT (subdomain or DNSLink). The app uses absolute
+# /assets paths, which 404 on a path gateway like ipfs.filebase.io/ipfs/<cid>/,
+# so only subdomain/DNSLink/custom-domain gateways render it.
+url="https://${cid}.ipfs.dweb.link/"
 echo ""
 echo "==> Deployed. Site root CID: $cid"
-echo "    Gateway:  https://${cid}.ipfs.dweb.link/"
-echo "    Filebase: https://ipfs.filebase.io/ipfs/${cid}/"
-echo ""
-echo "Open one of those and check that /assets load and that a deep link"
-echo "(e.g. add /activity) resolves via the 404.html fallback."
+echo "    Preview (subdomain gateway): $url"
+echo "    (Path gateways like ipfs.filebase.io/ipfs/<cid>/ render blank.)"
+
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  echo "cid=${cid}" >> "$GITHUB_OUTPUT"
+fi
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  {
+    echo "### Deployed to IPFS"
+    echo ""
+    echo "Root CID: \`${cid}\`"
+    echo ""
+    echo "Preview: ${url}"
+  } >> "$GITHUB_STEP_SUMMARY"
+fi

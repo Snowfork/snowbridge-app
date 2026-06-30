@@ -55,35 +55,9 @@ jobs:
           [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
           pnpm build
 
-      - name: Pin dist/ to IPFS via Filebase (single directory CID)
+      # Single source of the pin logic (scripts/deploy-filebase.sh); it prints
+      # the root CID and writes the run summary.
+      - name: Pin dist/ to IPFS via Filebase
         env:
           FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
-        run: |
-          set -euo pipefail
-          # Build one multipart form with every file, using its path relative
-          # to dist/ as the filename so the RPC reconstructs the directory tree.
-          args=()
-          while IFS= read -r f; do
-            args+=(-F "file=@${f};filename=${f#dist/}")
-          done < <(find dist -type f | sort)
-
-          resp=$(curl -sf -X POST \
-            -H "Authorization: Bearer ${FILEBASE_RPC_TOKEN}" \
-            "https://rpc.filebase.io/api/v0/add?wrap-with-directory=true&cid-version=1&pin=true" \
-            "${args[@]}")
-
-          # With wrap-with-directory the wrapping directory is the final NDJSON
-          # entry; its Hash is the site root CID.
-          cid=$(printf '%s\n' "$resp" | tail -n 1 | jq -r '.Hash')
-          if [ -z "$cid" ] || [ "$cid" = "null" ]; then
-            echo "Failed to parse root CID from response:"; echo "$resp"; exit 1
-          fi
-
-          echo "Site root CID: $cid"
-          {
-            echo "### Deployed to IPFS 🛰"
-            echo ""
-            echo "Root CID: \`$cid\`"
-            echo ""
-            echo "Gateway: https://$cid.ipfs.dweb.link/"
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: SKIP_BUILD=1 bash scripts/deploy-filebase.sh

@@ -2,35 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { TVLDisplay } from "./TVLDisplay";
 import { fetchAverageMonthlyVolumeUsd } from "@/lib/client/dashboardStats";
 
 function MonthlyVolumeDisplay() {
-  const [averageVolume, setAverageVolume] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchVolume() {
-      try {
-        setLoading(true);
-        setError(null);
-        const avg = await fetchAverageMonthlyVolumeUsd();
-        if (typeof avg === "number") {
-          setAverageVolume(avg);
-        } else {
-          throw new Error("Failed to fetch monthly volume");
-        }
-      } catch (err) {
-        console.error("Error fetching monthly volume:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchVolume();
-  }, []);
+  // SWR caches + dedups the upstream call (see TVLDisplay).
+  const {
+    data: averageVolume,
+    error,
+    isLoading: loading,
+  } = useSWR("dashboard:monthly-volume", fetchAverageMonthlyVolumeUsd, {
+    dedupingInterval: 300_000,
+    revalidateOnFocus: false,
+  });
 
   if (loading) {
     return (
@@ -86,7 +71,7 @@ function MonthlyVolumeDisplay() {
           Monthly Volume
         </p>
         <p className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
-          {averageVolume !== null ? (
+          {averageVolume != null ? (
             <span>
               $
               {averageVolume >= 1_000_000

@@ -26,11 +26,29 @@ function getOracle(): ethers.Contract {
   return oracle;
 }
 
+// Screening is intentionally fail-closed: validateOFAC blocks the transfer if
+// this rejects. To avoid blocking legitimate transfers on a transient RPC
+// hiccup (especially the keyless public-provider fallback), retry a few times
+// with backoff before giving up.
+async function callIsSanctioned(address: string): Promise<boolean> {
+  const oracle = getOracle();
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await oracle.isSanctioned(address);
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 // Returns true if the address is on the sanctions list. Non-EVM addresses
 // (e.g. Substrate SS58) can't be screened by the oracle and resolve to false.
 export async function isAddressSanctioned(address: string): Promise<boolean> {
   if (!ethers.isAddress(address)) {
     return false;
   }
-  return getOracle().isSanctioned(address);
+  return callIsSanctioned(address);
 }

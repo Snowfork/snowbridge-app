@@ -1,39 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import useSWR from "swr";
 import Image from "next/image";
 import { fetchTvlUsd } from "@/lib/client/dashboardStats";
 
 export function TVLDisplay() {
-  const [tvl, setTvl] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // SWR dedups concurrent requests and caches the result, so the upstream
+  // dashboard is hit at most once per dedupingInterval across mounts (the
+  // deleted /api route used a 5-min shared edge cache).
+  const {
+    data: tvl,
+    error,
+    isLoading,
+  } = useSWR("dashboard:tvl", fetchTvlUsd, {
+    dedupingInterval: 300_000,
+    revalidateOnFocus: false,
+  });
 
-  useEffect(() => {
-    async function fetchTVL() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const totalValue = await fetchTvlUsd();
-        if (totalValue !== null) {
-          setTvl(totalValue);
-        } else {
-          console.warn("TVL value not found in response");
-          setTvl(null);
-        }
-      } catch (err) {
-        console.error("Error fetching TVL:", err);
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchTVL();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="glass-sub relative overflow-hidden flex items-start justify-start py-8 px-6 md:py-10 md:px-10 w-full md:min-w-[320px] min-h-[120px] md:min-h-[140px] rounded-2xl">
         <Image
@@ -87,7 +71,7 @@ export function TVLDisplay() {
           Total Value Secured
         </p>
         <p className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
-          {tvl !== null ? (
+          {tvl != null ? (
             <span>
               $
               {tvl >= 1_000_000

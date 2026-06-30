@@ -593,7 +593,7 @@ const transferDetail = (
           <Button
             className={"glass-button mt-2"}
             onClick={() => {
-              router.push(`txcomplete?messageId=${transfer.id}`);
+              router.push(`/txcomplete?messageId=${transfer.id}`);
             }}
           >
             View

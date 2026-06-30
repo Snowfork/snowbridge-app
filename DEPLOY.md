@@ -39,7 +39,7 @@ the token once.
 1. Create a free Filebase account (https://console.filebase.com/signup), make an
    **IPFS bucket**, and generate an **IPFS RPC API token**.
 2. Add GitHub repo secrets (Settings → Secrets and variables → Actions):
-   - `FILEBASE_RPC_TOKEN` — the Filebase IPFS RPC API token.
+   - `FILEBASE_RPC_TOKEN`, the Filebase IPFS RPC API token.
    - One secret per `NEXT_PUBLIC_*` build var (see the Build step in the
      workflows for the full list), e.g.
      `NEXT_PUBLIC_SNOWBRIDGE_ENV=polkadot_mainnet`, `NEXT_PUBLIC_ALCHEMY_KEY`,

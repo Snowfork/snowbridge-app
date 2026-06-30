@@ -69,23 +69,13 @@ jobs:
             echo "Unpinned previous preview CID: ${prev}"
           fi
 
+      # Single source of the pin logic (scripts/deploy-filebase.sh); it sets
+      # the `cid` step output used by the comment below.
       - name: Pin dist/ to IPFS via Filebase
         id: pin
         env:
           FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
-        run: |
-          set -euo pipefail
-          args=()
-          while IFS= read -r f; do
-            args+=(-F "file=@${f};filename=${f#dist/}")
-          done < <(find dist -type f | sort)
-          resp=$(curl -sf -X POST \
-            -H "Authorization: Bearer ${FILEBASE_RPC_TOKEN}" \
-            "https://rpc.filebase.io/api/v0/add?wrap-with-directory=true&cid-version=1&pin=true" \
-            "${args[@]}")
-          cid=$(printf '%s\n' "$resp" | tail -n 1 | jq -r '.Hash')
-          [ -n "$cid" ] && [ "$cid" != "null" ] || { echo "Failed to parse CID:"; echo "$resp"; exit 1; }
-          echo "cid=$cid" >> "$GITHUB_OUTPUT"
+        run: SKIP_BUILD=1 bash scripts/deploy-filebase.sh
 
       - name: Comment preview URL on the PR
         env:
