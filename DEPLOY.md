@@ -22,12 +22,39 @@ the token once.
 
 ## How a deploy happens
 
-- **Production** (`.github/workflows/filebase.yml`): on push to `polkadot_mainnet`
-  (i.e. after a PR merges), GitHub Actions installs deps → `pnpm build` → pins
-  the whole `dist/` folder to IPFS as a single directory CID via Filebase's IPFS
-  RPC (`/api/v0/add?wrap-with-directory=true`). The run summary prints the root
-  CID + gateway URL. Manual run: Actions tab → "Deploy to IPFS (Filebase)" →
-  "Run workflow".
+- **Environments** (`.github/workflows/filebase.yml`): on push to an environment
+  branch (after a PR merges), GitHub Actions installs deps → `pnpm build` → pins
+  `dist/` to IPFS as a single directory CID via Filebase's IPFS RPC
+  (`/api/v0/add?wrap-with-directory=true`), then republishes the branch's IPNS
+  name to that CID so the DNSLinked domain follows the deploy. Branch → env:
+  - `main` → **staging**, republishes the `staging` IPNS name (→ staging domain).
+  - `polkadot_mainnet` → **prod**, pins only for now (on hold). To enable, create
+    a `prod` IPNS name and add it to the workflow's `FILEBASE_IPNS_KEY` mapping.
+
+  A branch's IPNS name must exist in Filebase before its first deploy, or the
+  publish step fails (the bundle still pins, but the run goes red and the domain
+  is not updated).
+- **Per-PR preview** (`.github/workflows/filebase-preview.yml`): on every push to
+  an open PR, builds and pins a preview, then posts/updates a PR comment with the
+  unique preview URL. Previews are content-addressed CIDs, isolated from the
+  environments (they never repoint an IPNS name). Fork PRs get no preview (no
+  secret access). The previous preview for a PR is unpinned to conserve quota.
+
+### Stable domain for an environment (IPNS + DNSLink)
+
+Each deploy is a new CID; an IPNS name is the stable pointer the domain follows.
+One-time, per environment (e.g. staging at `staging-app.snowbridge.network`):
+
+1. In the Filebase dashboard → **Names**, create an IPNS name and label its key
+   `staging` (must match `FILEBASE_IPNS_KEY` in the workflow). Note the IPNS name
+   it issues (a `k51…` string). The RPC token must belong to the same account.
+2. At your DNS provider, DNSLink the domain to that IPNS name:
+   - `TXT  _dnslink.staging-app.snowbridge.network  "dnslink=/ipns/k51…"`
+   - Point the host at a DNSLink-resolving gateway (Filebase's gateway with a
+     custom domain, or a `CNAME` to one). Filebase's dashboard shows the exact
+     record for a custom-domain gateway.
+3. Merge to `main` → the deploy republishes the `staging` IPNS name to the new
+   CID, and the domain serves it. Subsequent merges just update the pointer.
 - **Per-PR preview** (`.github/workflows/filebase-preview.yml`): on every push to
   an open PR, builds and pins a preview, then posts/updates a PR comment with the
   unique preview URL. Previews are content-addressed CIDs, isolated from prod

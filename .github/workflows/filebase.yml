@@ -9,17 +9,17 @@
 #      Add it as repo secret FILEBASE_RPC_TOKEN.
 #   2. Add a repo secret for each NEXT_PUBLIC_* build var (see the Build step
 #      below for the full list), e.g. NEXT_PUBLIC_SNOWBRIDGE_ENV=polkadot_mainnet.
-#   3. For a stable URL across deploys, point a Filebase IPNS name / custom
-#      domain at the bucket in the dashboard (the CID changes every deploy).
+#   3. Create a Filebase IPNS name per environment (dashboard > Names), e.g.
+#      "staging", and DNSLink your domain at it (see DEPLOY.md). The deploy
+#      republishes that IPNS name to the new CID, so the domain follows deploys.
 name: Deploy to IPFS (Filebase)
 
-# Deploys to the prod IPFS target ONLY on push to the production branch (after
-# a PR merges), never from a feature branch. Use the manual trigger to test a
-# build without touching prod. Set `branches` to whichever branch is your real
-# production deploy branch (e.g. polkadot_mainnet).
+# Deploys on push to an environment branch (after a PR merges), never from a
+# feature branch (previews handle those). main -> staging, polkadot_mainnet ->
+# prod. The manual trigger builds+pins without touching an IPNS name.
 on:
   push:
-    branches: [polkadot_mainnet]
+    branches: [main, polkadot_mainnet]
   workflow_dispatch: {}
 
 jobs:
@@ -55,9 +55,14 @@ jobs:
           [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
           pnpm build
 
-      # Single source of the pin logic (scripts/deploy-filebase.sh); it prints
-      # the root CID and writes the run summary.
-      - name: Pin dist/ to IPFS via Filebase
+      # Single source of the pin logic (scripts/deploy-filebase.sh). It pins the
+      # bundle and, when FILEBASE_IPNS_KEY is set, republishes that IPNS name to
+      # the new CID so the DNSLinked domain follows the deploy. main -> the
+      # "staging" IPNS name. polkadot_mainnet pins only for now (prod on hold);
+      # to enable prod, create a "prod" IPNS name and add it to the mapping:
+      #   ... || github.ref_name == 'polkadot_mainnet' && 'prod' || ''
+      - name: Pin dist/ to IPFS and update IPNS
         env:
           FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
+          FILEBASE_IPNS_KEY: ${{ github.ref_name == 'main' && 'staging' || '' }}
         run: SKIP_BUILD=1 bash scripts/deploy-filebase.sh

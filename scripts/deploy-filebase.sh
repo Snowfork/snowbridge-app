@@ -58,8 +58,23 @@ echo "==> Deployed. Site root CID: $cid"
 echo "    Preview (subdomain gateway): $url"
 echo "    (Path gateways like ipfs.filebase.io/ipfs/<cid>/ render blank.)"
 
+# Optionally point an IPNS name at this CID so a stable URL (via DNSLink /
+# custom domain) follows each deploy. Set FILEBASE_IPNS_KEY to the Filebase
+# IPNS name key to publish to (create it once in the Filebase dashboard).
+ipns=""
+if [ -n "${FILEBASE_IPNS_KEY:-}" ]; then
+  echo "==> Publishing to IPNS name '${FILEBASE_IPNS_KEY}'..."
+  ipns_resp=$(curl -sf -X POST \
+    -H "Authorization: Bearer ${FILEBASE_RPC_TOKEN}" \
+    "https://rpc.filebase.io/api/v0/name/publish?arg=/ipfs/${cid}&key=${FILEBASE_IPNS_KEY}")
+  ipns=$(printf '%s' "$ipns_resp" |
+    node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write(JSON.parse(d).Name||"")}catch{process.exit(1)}})')
+  echo "    IPNS: /ipns/${ipns:-?} -> /ipfs/${cid}"
+fi
+
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "cid=${cid}" >> "$GITHUB_OUTPUT"
+  [ -n "$ipns" ] && echo "ipns=${ipns}" >> "$GITHUB_OUTPUT"
 fi
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {
@@ -68,5 +83,6 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     echo "Root CID: \`${cid}\`"
     echo ""
     echo "Preview: ${url}"
+    [ -n "$ipns" ] && printf '\nIPNS: `/ipns/%s`\n' "$ipns"
   } >> "$GITHUB_STEP_SUMMARY"
 fi
