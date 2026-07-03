@@ -2,12 +2,14 @@
 
 import { snowbridgeEnvNameAtom } from "@/store/snowbridge";
 import { termsOfUseModalOpenAtom } from "@/store/termsOfUse";
+import { useIsIpfsHosted } from "@/hooks/useIsIpfsHosted";
 import { useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
 
 export function Footer() {
   const envName = useAtomValue(snowbridgeEnvNameAtom);
   const setTermsModalOpen = useSetAtom(termsOfUseModalOpenAtom);
+  const isIpfsHosted = useIsIpfsHosted();
   return (
     <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between w-full px-8 md:px-12">
       <div className="flex items-center gap-1">
@@ -34,6 +36,20 @@ export function Footer() {
           />
           <span>Polkadot</span>
         </a>
+        {isIpfsHosted && (
+          <>
+            <span className="mx-2 opacity-40">·</span>
+            <a
+              href="https://ipfs.tech/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              title="This app is served from IPFS, a decentralized, content-addressed network"
+            >
+              Hosted on IPFS
+            </a>
+          </>
+        )}
         {envName !== "polkadot_mainnet" && (
           <span className="ml-2">(env: {envName})</span>
         )}
