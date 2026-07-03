@@ -28,6 +28,8 @@ export function initAnalytics(): void {
     // never screen-record (addresses/amounts on screen). Prevents the recorder
     // from even loading.
     disable_session_recording: true,
+    disable_surveys: true, // don't load the surveys feature (surveys.js)
+    capture_performance: false, // don't load web-vitals / perf capture
     person_profiles: "identified_only",
   });
   enabled = true;
