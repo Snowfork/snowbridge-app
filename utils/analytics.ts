@@ -24,6 +24,10 @@ export function initAnalytics(): void {
       process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     capture_pageview: false, // captured per route in useAnalytics (SPA)
     autocapture: false,
+    // Hard-off, independent of the PostHog project setting: a wallet UI must
+    // never screen-record (addresses/amounts on screen). Prevents the recorder
+    // from even loading.
+    disable_session_recording: true,
     person_profiles: "identified_only",
   });
   enabled = true;
