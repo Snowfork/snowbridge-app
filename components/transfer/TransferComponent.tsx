@@ -13,7 +13,7 @@ import {
   ValidationResult,
 } from "@/utils/types";
 import { historyV2 } from "@snowbridge/api";
-import { track } from "@vercel/analytics";
+import { track } from "@/utils/analytics";
 import { useSetAtom } from "jotai";
 import {
   Dispatch,

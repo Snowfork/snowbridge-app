@@ -48,7 +48,7 @@ import {
   ParachainLocation,
   TransferLocation,
 } from "@snowbridge/base-types";
-import { track } from "@vercel/analytics";
+import { track } from "@/utils/analytics";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";

@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { track } from "@vercel/analytics";
+import { track } from "@/utils/analytics";
 import { Label } from "../ui/label";
 import { validateOFAC } from "@/utils/validateOFAC";
 import { fetchTokenPrices } from "@/utils/tokenPrices";
