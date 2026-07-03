@@ -11,8 +11,10 @@ import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
 import { Providers } from "@/app/providers";
 import { getEnvironmentName } from "@/lib/snowbridgeEnv";
 import { bridgeInfoWithKusamaRoutes } from "@/lib/bridgeInfo";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 export function RootLayout() {
+  useAnalytics();
   const info = bridgeInfoWithKusamaRoutes(getEnvironmentName());
 
   return (

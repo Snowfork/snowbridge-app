@@ -2,38 +2,43 @@
 
 import posthog from "posthog-js";
 
-// Drop-in replacement for @vercel/analytics `track()`. Sends UI events (transfer
-// attempts/completions, validation + funnel events) to PostHog, which works on a
-// static IPFS host (client -> PostHog endpoint), unlike Vercel Analytics which
-// only worked when hosted on Vercel.
-//
-// Configure with NEXT_PUBLIC_POSTHOG_KEY (a publishable project key, baked into
-// the bundle) and optionally NEXT_PUBLIC_POSTHOG_HOST. With no key set (e.g.
-// local dev), track() is a no-op, matching the old off-Vercel behavior.
+// PostHog analytics. Works on a static IPFS host (client -> PostHog endpoint),
+// replacing Vercel Analytics. Configure with NEXT_PUBLIC_POSTHOG_KEY (a
+// publishable project key, baked into the bundle) and optionally
+// NEXT_PUBLIC_POSTHOG_HOST. With no key set (e.g. local dev) everything no-ops.
 
 let initialized = false;
 let enabled = false;
 
-function ensureInit(): boolean {
-  if (initialized) return enabled;
+// Initialize PostHog once. Idempotent, safe to call from multiple places.
+export function initAnalytics(): void {
+  if (initialized) return;
   initialized = true;
 
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") return;
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!key) return false;
+  if (!key) return;
 
   posthog.init(key, {
     api_host:
       process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-    capture_pageview: true,
+    capture_pageview: false, // captured per route in useAnalytics (SPA)
     autocapture: false,
     person_profiles: "identified_only",
   });
   enabled = true;
-  return true;
 }
 
+// Capture a page view for the current URL (called on each route change).
+export function capturePageview(): void {
+  initAnalytics();
+  if (!enabled) return;
+  posthog.capture("$pageview");
+}
+
+// Named UI event with optional properties (drop-in for @vercel/analytics track).
 export function track(event: string, properties?: unknown): void {
-  if (!ensureInit()) return;
+  initAnalytics();
+  if (!enabled) return;
   posthog.capture(event, properties as Record<string, unknown> | undefined);
 }
