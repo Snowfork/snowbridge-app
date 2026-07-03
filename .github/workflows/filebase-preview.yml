@@ -1,0 +1,121 @@
+# Per-PR preview deploys to IPFS (the Vercel-preview equivalent). On every push
+# to an open PR, builds and pins the bundle to Filebase, then posts/updates a PR
+# comment with the unique preview URL. Previews only produce immutable CIDs and
+# never repoint the prod IPNS/domain, so they cannot affect the live site.
+#
+# Secrets needed: FILEBASE_RPC_TOKEN and one repo secret per NEXT_PUBLIC_* build
+# var (see the Build step). Note: secrets are NOT available to PRs opened from
+# forks (GitHub security), so fork PRs won't get a preview.
+name: Preview deploy (IPFS)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# One in-flight preview per PR; newer pushes cancel older runs.
+concurrency:
+  group: ipfs-preview-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Each NEXT_PUBLIC_* is its own repo secret. Vite reads them from the
+      # build env (envPrefix) and bakes them into the static bundle.
+      - name: Build
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+        run: |
+          [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
+          pnpm build
+
+      - name: Unpin this PR's previous preview (conserve Filebase quota)
+        env:
+          FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+        run: |
+          set -euo pipefail
+          prev=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json comments \
+            --jq '[.comments[] | select(.body | contains("<!-- ipfs-preview -->")) | .body] | last // ""' \
+            | grep -oE 'bafy[a-z2-7]+' | tail -1 || true)
+          if [ -n "${prev:-}" ]; then
+            curl -s -X POST -H "Authorization: Bearer ${FILEBASE_RPC_TOKEN}" \
+              "https://rpc.filebase.io/api/v0/pin/rm?arg=${prev}" >/dev/null || true
+            echo "Unpinned previous preview CID: ${prev}"
+          fi
+
+      # Single source of the pin logic (scripts/deploy-filebase.sh); it sets
+      # the `cid` step output used by the comment below.
+      - name: Pin dist/ to IPFS via Filebase
+        id: pin
+        env:
+          FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
+        run: SKIP_BUILD=1 bash scripts/deploy-filebase.sh
+
+      - name: Comment preview URL on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+          CID: ${{ steps.pin.outputs.cid }}
+        run: |
+          set -euo pipefail
+          {
+            echo "<!-- ipfs-preview -->"
+            echo "🛰 **IPFS preview deployed** (commit \`${GITHUB_SHA::7}\`)"
+            echo ""
+            echo "- Root CID: \`${CID}\`"
+            echo "- Preview: https://${CID}.ipfs.dweb.link/"
+            echo ""
+            echo "Content-addressed CID, isolated from prod. Updated on each push."
+          } > preview-comment.md
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file preview-comment.md --edit-last \
+            || gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file preview-comment.md
+
+  # When a PR closes (merged or not), unpin its preview so it stops counting
+  # against the Filebase quota.
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unpin this PR's preview
+        env:
+          FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
+        run: |
+          set -euo pipefail
+          cid=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json comments \
+            --jq '[.comments[] | select(.body | contains("<!-- ipfs-preview -->")) | .body] | last // ""' \
+            | grep -oE 'bafy[a-z2-7]+' | tail -1 || true)
+          if [ -n "${cid:-}" ]; then
+            curl -s -X POST -H "Authorization: Bearer ${FILEBASE_RPC_TOKEN}" \
+              "https://rpc.filebase.io/api/v0/pin/rm?arg=${cid}" >/dev/null || true
+            echo "Unpinned preview for closed PR #${PR}: ${cid}"
+          fi

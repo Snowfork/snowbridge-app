@@ -1,4 +1,8 @@
-import type { AssetRegistry, ERC20Metadata, TransferLocation } from "@snowbridge/base-types";
+import type {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import type {
   FeeAsset,
   forKusama,
@@ -66,7 +70,8 @@ export function resolveFeeAsset(
       }
       if (
         context.tokenMetadata &&
-        asset.symbol.toUpperCase() === context.tokenMetadata.symbol.toUpperCase()
+        asset.symbol.toUpperCase() ===
+          context.tokenMetadata.symbol.toUpperCase()
       ) {
         return {
           ...asset,

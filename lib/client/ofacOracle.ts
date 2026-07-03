@@ -1,0 +1,54 @@
+// Client-side OFAC screening via the Chainalysis on-chain sanctions oracle.
+// Replaces the former server route that called Chainalysis's keyed REST API
+// (no CORS, secret key) so the app can run as a static bundle on IPFS.
+//
+// The oracle is permissionless (no API key) and deployed at the same address
+// across EVM chains. We always query Ethereum mainnet, where it exists and
+// where OFAC's sanctioned-address data lives. Coverage is EVM-only: the OFAC
+// SDN crypto list contains no Polkadot SS58 addresses, so non-EVM addresses
+// are treated as not sanctioned.
+import { ethers } from "ethers";
+
+const ORACLE_ADDRESS = "0x40C57923924B5c5c5455c48D93317139ADDaC8fb";
+const ORACLE_ABI = ["function isSanctioned(address) view returns (bool)"];
+
+let oracle: ethers.Contract | null = null;
+
+function getOracle(): ethers.Contract {
+  if (oracle) return oracle;
+
+  const key = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
+  const provider = key
+    ? new ethers.JsonRpcProvider(`https://eth-mainnet.g.alchemy.com/v2/${key}`)
+    : ethers.getDefaultProvider(1);
+
+  oracle = new ethers.Contract(ORACLE_ADDRESS, ORACLE_ABI, provider);
+  return oracle;
+}
+
+// Screening is intentionally fail-closed: validateOFAC blocks the transfer if
+// this rejects. To avoid blocking legitimate transfers on a transient RPC
+// hiccup (especially the keyless public-provider fallback), retry a few times
+// with backoff before giving up.
+async function callIsSanctioned(address: string): Promise<boolean> {
+  const oracle = getOracle();
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await oracle.isSanctioned(address);
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
+// Returns true if the address is on the sanctions list. Non-EVM addresses
+// (e.g. Substrate SS58) can't be screened by the oracle and resolve to false.
+export async function isAddressSanctioned(address: string): Promise<boolean> {
+  if (!ethers.isAddress(address)) {
+    return false;
+  }
+  return callIsSanctioned(address);
+}

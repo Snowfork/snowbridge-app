@@ -1,72 +1,62 @@
 import js from "@eslint/js";
-import nextConfig from "eslint-config-next";
+import tseslint from "typescript-eslint";
 import prettier from "eslint-plugin-prettier";
-
-const [
-  nextBaseConfig,
-  nextTypescriptConfig = {},
-  nextIgnoreConfig = { ignores: [] },
-] = nextConfig;
-const mergedIgnores = Array.from(
-  new Set([
-    ...(nextIgnoreConfig.ignores ?? []),
-    ".next/**",
-    "**/.next/**",
-    "node_modules/**",
-    "components/ui/**/*",
-  ]),
-);
+import reactHooks from "eslint-plugin-react-hooks";
 
 const config = [
-  { ignores: mergedIgnores },
   {
-    files: ["**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      "dist/**",
+      ".next/**",
+      "node_modules/**",
+      "components/ui/**/*",
+      "public/**",
+    ],
+  },
+  // Plain JS/config + Node scripts: recommended base rules with Node globals.
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    ...js.configs.recommended,
     languageOptions: {
+      ...js.configs.recommended.languageOptions,
       globals: {
-        React: "readonly",
-        JSX: "readonly",
+        require: "readonly",
+        module: "readonly",
+        process: "readonly",
+        console: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        Buffer: "readonly",
       },
     },
   },
-  js.configs.recommended,
-  nextBaseConfig,
-  nextTypescriptConfig,
+  // TypeScript sources: parse with the TS parser. Type-level concerns
+  // (unused vars, no-explicit-any) are enforced by `tsc --noEmit`, not here,
+  // matching the prior lenient lint setup.
   {
-    files: ["**/__tests__/**/*.{js,jsx,ts,tsx}"],
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      globals: {
-        describe: "readonly",
-        test: "readonly",
-        expect: "readonly",
-        beforeEach: "readonly",
-        afterEach: "readonly",
-        beforeAll: "readonly",
-        afterAll: "readonly",
-        jest: "readonly",
-      },
+      parser: tseslint.parser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: { React: "readonly", JSX: "readonly" },
     },
+    // Register the plugin so inline `react-hooks/*` disable directives in the
+    // source resolve. Rules are left off (parity with the prior setup).
+    plugins: { "react-hooks": reactHooks },
   },
+  // Style rules enforced across the codebase (kept from the previous config).
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
-    plugins: {
-      prettier,
-    },
+    plugins: { prettier },
     rules: {
       "prettier/prettier": [
         "error",
-        {
-          singleQuote: false,
-          trailingComma: "all",
-          semi: true,
-        },
+        { singleQuote: false, trailingComma: "all", semi: true },
       ],
       quotes: [
         "error",
         "double",
-        {
-          allowTemplateLiterals: true,
-          avoidEscape: true,
-        },
+        { allowTemplateLiterals: true, avoidEscape: true },
       ],
       semi: ["error", "always"],
       "comma-dangle": ["error", "always-multiline"],

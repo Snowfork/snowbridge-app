@@ -1,0 +1,70 @@
+# Build the Vite/PWA bundle on GitHub's runners and deploy to IPFS via Filebase
+# (Fleek's hosting was discontinued Jan 2026). Build minutes are GitHub's, Node
+# + pnpm are pinned here, and the whole dist/ folder is pinned as a single
+# directory CID so paths (and the 404.html SPA fallback) resolve on a gateway.
+#
+# One-time setup before this works (Settings > Secrets and variables > Actions):
+#   1. Create a Filebase account (free tier: 5 GB, 1 GB IPFS egress) and an
+#      IPFS bucket, then generate an IPFS RPC API token (Filebase dashboard).
+#      Add it as repo secret FILEBASE_RPC_TOKEN.
+#   2. Add a repo secret for each NEXT_PUBLIC_* build var (see the Build step
+#      below for the full list), e.g. NEXT_PUBLIC_SNOWBRIDGE_ENV=polkadot_mainnet.
+#   3. Create a Filebase IPNS name per environment (dashboard > Names), e.g.
+#      "staging", and DNSLink your domain at it (see DEPLOY.md). The deploy
+#      republishes that IPNS name to the new CID, so the domain follows deploys.
+name: Deploy to IPFS (Filebase)
+
+# Deploys on push to an environment branch (after a PR merges), never from a
+# feature branch (previews handle those). main -> staging, polkadot_mainnet ->
+# prod. The manual trigger builds+pins without touching an IPNS name.
+on:
+  push:
+    branches: [main, polkadot_mainnet]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No version here on purpose: pnpm/action-setup reads the pinned version
+      # from package.json's "packageManager" field (specifying both errors).
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Each NEXT_PUBLIC_* is its own repo secret. Vite reads them from the
+      # build env (envPrefix) and bakes them into the static bundle.
+      - name: Build
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+        run: |
+          [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
+          pnpm build
+
+      # Single source of the pin logic (scripts/deploy-filebase.sh). It pins the
+      # bundle and, when FILEBASE_IPNS_KEY is set, republishes that IPNS name to
+      # the new CID so the DNSLinked domain follows the deploy. main -> the
+      # "staging" IPNS name. polkadot_mainnet pins only for now (prod on hold);
+      # to enable prod, create a "prod" IPNS name and add it to the mapping:
+      #   ... || github.ref_name == 'polkadot_mainnet' && 'prod' || ''
+      - name: Pin dist/ to IPFS and update IPNS
+        env:
+          FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
+          FILEBASE_IPNS_KEY: ${{ github.ref_name == 'main' && 'staging' || '' }}
+        run: SKIP_BUILD=1 bash scripts/deploy-filebase.sh

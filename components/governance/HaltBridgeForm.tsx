@@ -141,8 +141,7 @@ const ADVANCED_GROUPS: { title: string; levers: LeverDescriptor[] }[] = [
         label: "AH system-frontend only",
         haltDescription:
           "Router-layer P→E block (covers both V1 and V2). V1 BridgeHub outbound-queue keeps draining in-flight messages.",
-        resumeDescription:
-          "Restores router-layer P→E (covers both V1 and V2).",
+        resumeDescription: "Restores router-layer P→E (covers both V1 and V2).",
       },
       {
         key: "ahFee",
@@ -188,7 +187,8 @@ const ADVANCED_GROUPS: { title: string; levers: LeverDescriptor[] }[] = [
 // Map UI lever key + operation to the SDK option name. The two option shapes
 // overlap except for the fee fields (`assethubMaxFee*` vs `assethubBaseFee*`).
 function toSdkOption(key: LeverKey, op: Operation): string {
-  if (key === "ahFee") return op === "halt" ? "assethubMaxFee" : "assethubBaseFee";
+  if (key === "ahFee")
+    return op === "halt" ? "assethubMaxFee" : "assethubBaseFee";
   if (key === "ahFeeV1")
     return op === "halt" ? "assethubMaxFeeV1" : "assethubBaseFeeV1";
   if (key === "ahFeeV2")
@@ -201,7 +201,9 @@ export function HaltBridgeForm() {
   const { registry } = useContext(BridgeInfoContext)!;
 
   const [operation, setOperation] = useState<Operation>("halt");
-  const [selected, setSelected] = useState<Partial<Record<LeverKey, boolean>>>({});
+  const [selected, setSelected] = useState<Partial<Record<LeverKey, boolean>>>(
+    {},
+  );
   // Resume-only fee override inputs. Default to the SDK's prod-captured
   // constants so the unmodified form produces a byte-identical preimage to
   // calling buildResumeBridgePreimage with no overrides. The operator can
@@ -216,7 +218,9 @@ export function HaltBridgeForm() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<governance.HaltBridgePreimage | null>(null);
+  const [result, setResult] = useState<governance.HaltBridgePreimage | null>(
+    null,
+  );
   const [submissionUrls, setSubmissionUrls] =
     useState<governance.SubmissionUrls | null>(null);
 
@@ -275,7 +279,8 @@ export function HaltBridgeForm() {
   // error string describing why it didn't parse.
   const parseFee = (raw: string): bigint | string => {
     const trimmed = raw.trim();
-    if (!/^[0-9]+$/.test(trimmed)) return "must be a non-negative integer (wei)";
+    if (!/^[0-9]+$/.test(trimmed))
+      return "must be a non-negative integer (wei)";
     try {
       return BigInt(trimmed);
     } catch {
@@ -760,11 +765,7 @@ function CopyButton({
   );
 }
 
-function SubmissionLinks({
-  urls,
-}: {
-  urls: governance.SubmissionUrls;
-}) {
+function SubmissionLinks({ urls }: { urls: governance.SubmissionUrls }) {
   return (
     <div className="space-y-2">
       <div className="text-sm font-medium text-primary">Submit</div>
@@ -835,9 +836,8 @@ function KeyHasher({ writes }: { writes: governance.StorageWrite[] }) {
         Verify a storage key
       </div>
       <p className="text-xs text-muted-foreground">
-        Paste a parameter name (with or without surrounding{" "}
-        <code>:</code> colons) and click <em>Hash</em>. Compare the result to
-        the keys above.
+        Paste a parameter name (with or without surrounding <code>:</code>{" "}
+        colons) and click <em>Hash</em>. Compare the result to the keys above.
       </p>
       <div className="flex items-center gap-2">
         <input

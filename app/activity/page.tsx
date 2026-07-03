@@ -48,7 +48,7 @@ import {
   ParachainLocation,
   TransferLocation,
 } from "@snowbridge/base-types";
-import { track } from "@vercel/analytics";
+import { track } from "@/utils/analytics";
 import { useAtom, useAtomValue } from "jotai";
 import { LucideGlobe, LucideRefreshCw, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -56,7 +56,6 @@ import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { BridgeInfoContext } from "../providers";
 import { walletTxChecker } from "@/utils/addresses";
 import { formatShortDate, trimAccount } from "@/utils/formatting";
-import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { chainName } from "@/utils/chainNames";
 import { inferTransferDetails } from "@/utils/inferTransferType";
@@ -365,7 +364,7 @@ const getExplorerLinks = (
 const transferDetail = (
   transfer: Transfer,
   registry: AssetRegistry,
-  router: AppRouterInstance,
+  router: ReturnType<typeof useRouter>,
 ): JSX.Element => {
   const {
     kind: transferType,
@@ -594,7 +593,7 @@ const transferDetail = (
           <Button
             className={"glass-button mt-2"}
             onClick={() => {
-              router.push(`txcomplete?messageId=${transfer.id}`);
+              router.push(`/txcomplete?messageId=${transfer.id}`);
             }}
           >
             View
@@ -660,7 +659,6 @@ export default function Activity() {
       }
     }
     // Do not add `transfersPendingLocal`. Causes infinite re-rendering loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTransfersPendingLocal, assetRegistry]);
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);

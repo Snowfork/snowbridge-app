@@ -5,7 +5,7 @@ import { ErrorDialog } from "./ErrorDialog";
 import { windowEthereumErrorAtom } from "@/store/ethereum";
 import { walletSheetOpenAtom } from "@/store/polkadot";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
-import { track } from "@vercel/analytics";
+import { track } from "@/utils/analytics";
 import { cn } from "@/lib/utils";
 import { getEthereumNetwork } from "@/lib/client/web3modal";
 
