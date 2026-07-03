@@ -66,7 +66,7 @@ if [ -n "${FILEBASE_IPNS_KEY:-}" ]; then
   echo "==> Publishing to IPNS name '${FILEBASE_IPNS_KEY}'..."
   ipns_resp=$(curl -sf -X POST \
     -H "Authorization: Bearer ${FILEBASE_RPC_TOKEN}" \
-    "https://rpc.filebase.io/api/v0/name/publish?arg=/ipfs/${cid}&key=${FILEBASE_IPNS_KEY}")
+    "https://rpc.filebase.io/api/v0/name/publish?arg=/ipfs/${cid}&key=${FILEBASE_IPNS_KEY}&ttl=1m")
   ipns=$(printf '%s' "$ipns_resp" |
     node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write(JSON.parse(d).Name||"")}catch{process.exit(1)}})')
   echo "    IPNS: /ipns/${ipns:-?} -> /ipfs/${cid}"
