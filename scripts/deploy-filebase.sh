@@ -74,7 +74,7 @@ fi
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "cid=${cid}" >> "$GITHUB_OUTPUT"
-  [ -n "$ipns" ] && echo "ipns=${ipns}" >> "$GITHUB_OUTPUT"
+  if [ -n "$ipns" ]; then echo "ipns=${ipns}" >> "$GITHUB_OUTPUT"; fi
 fi
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {
@@ -83,6 +83,6 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     echo "Root CID: \`${cid}\`"
     echo ""
     echo "Preview: ${url}"
-    [ -n "$ipns" ] && printf '\nIPNS: `/ipns/%s`\n' "$ipns"
+    if [ -n "$ipns" ]; then printf '\nIPNS: `/ipns/%s`\n' "$ipns"; fi
   } >> "$GITHUB_STEP_SUMMARY"
 fi
