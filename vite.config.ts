@@ -58,6 +58,9 @@ export default defineConfig(({ mode }) => {
       }),
       VitePWA({
         registerType: "autoUpdate",
+        // Registration is handled in src/pwa.ts (via virtual:pwa-register) so we
+        // can poll for updates; don't also auto-inject a registerSW script.
+        injectRegister: null,
         includeAssets: ["icon.svg", "icon.png"],
         workbox: {
           // The web3 deps still produce a chunk above the 2 MiB default even
