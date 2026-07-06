@@ -25,15 +25,52 @@ the token once.
 - **Environments** (`.github/workflows/filebase.yml`): on push to an environment
   branch (after a PR merges), GitHub Actions installs deps → `pnpm build` → pins
   `dist/` to IPFS as a single directory CID via Filebase's IPFS RPC
-  (`/api/v0/add?wrap-with-directory=true`), then republishes the branch's IPNS
-  name to that CID so the DNSLinked domain follows the deploy. Branch → env:
-  - `main` → **staging**, republishes the `staging` IPNS name (→ staging domain).
-  - `polkadot_mainnet` → **prod**, pins only for now (on hold). To enable, create
-    a `prod` IPNS name and add it to the workflow's `FILEBASE_IPNS_KEY` mapping.
+  (`/api/v0/add?wrap-with-directory=true`), then (for staging) republishes the
+  branch's IPNS name to that CID so the DNSLinked domain follows the deploy.
+  Branch → env:
+  - `main` → **staging**, republishes the `staging` IPNS name to the new CID.
+  - `polkadot_mainnet` → **prod**. The free tier allows one IPNS name (used by
+    staging), so prod's domain DNSLinks straight at the CID instead of an IPNS
+    name. After pinning, the workflow's "Update prod DNSLink (Route 53)" step
+    UPSERTs the `_dnslink.app.snowbridge.network` TXT record to
+    `dnslink=/ipfs/<cid>` (TTL 60), so prod follows deploys with no manual DNS
+    edit, same hands-off feel as staging.
 
-  A branch's IPNS name must exist in Filebase before its first deploy, or the
-  publish step fails (the bundle still pins, but the run goes red and the domain
-  is not updated).
+  The `staging` IPNS name must exist in Filebase before main's first deploy, or
+  the publish step fails (the bundle still pins, but the run goes red and the
+  domain is not updated).
+
+### URLs
+
+The Filebase free tier also allows only one custom domain (one gateway), which
+`app.snowbridge.network` (prod) holds for its TLS cert. Staging therefore has no
+snowbridge.network domain; the team reaches it through the permanent staging
+IPNS name on a public subdomain gateway (valid TLS, and it's a subdomain gateway
+so absolute `/assets` and the SPA `_redirects` fallback both work):
+
+- **prod**: https://app.snowbridge.network/
+- **staging**: https://k51qzi5uqu5dmegclz0sz7dhncuqpdxhxyuzp3d8edo90j54oskg8gs592058i.ipns.dweb.link/
+
+The staging URL is stable across deploys (the IPNS key never changes; CI just
+republishes it). `<key>.ipns.inbrowser.link` is an equivalent fallback gateway
+if dweb.link is slow. The staging key is also in the `_dnslink.staging-app` TXT
+record for reference.
+
+  Prod's Route 53 step needs three repo secrets: `AWS_ACCESS_KEY_ID` and
+  `AWS_SECRET_ACCESS_KEY` for an IAM user whose only permission is
+  `route53:ChangeResourceRecordSets` on the snowbridge.network hosted zone, plus
+  `AWS_ROUTE53_HOSTED_ZONE_ID` (the zone's ID). Minimal IAM policy:
+
+  ```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": "route53:ChangeResourceRecordSets",
+      "Resource": "arn:aws:route53:::hostedzone/<ZONE_ID>"
+    }]
+  }
+  ```
 - **Per-PR preview** (`.github/workflows/filebase-preview.yml`): on every push to
   an open PR, builds and pins a preview, then posts/updates a PR comment with the
   unique preview URL. Previews are content-addressed CIDs, isolated from the
