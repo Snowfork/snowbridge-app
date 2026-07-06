@@ -9,9 +9,13 @@
 #      Add it as repo secret FILEBASE_RPC_TOKEN.
 #   2. Add a repo secret for each NEXT_PUBLIC_* build var (see the Build step
 #      below for the full list), e.g. NEXT_PUBLIC_SNOWBRIDGE_ENV=polkadot_mainnet.
-#   3. Create a Filebase IPNS name per environment (dashboard > Names), e.g.
-#      "staging", and DNSLink your domain at it (see DEPLOY.md). The deploy
-#      republishes that IPNS name to the new CID, so the domain follows deploys.
+#   3. Create the "staging" Filebase IPNS name (dashboard > Names) and DNSLink
+#      the staging domain at it (see DEPLOY.md). The deploy republishes it to the
+#      new CID, so the staging domain follows deploys.
+#   4. Prod (polkadot_mainnet) has no IPNS name; its DNSLink TXT is updated in
+#      Route 53 by the "Update prod DNSLink" step. Add three repo secrets:
+#      AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY (an IAM key scoped to
+#      route53:ChangeResourceRecordSets on the zone) and AWS_ROUTE53_HOSTED_ZONE_ID.
 name: Deploy to IPFS (Filebase)
 
 # Deploys on push to an environment branch (after a PR merges), never from a
@@ -59,12 +63,47 @@ jobs:
 
       # Single source of the pin logic (scripts/deploy-filebase.sh). It pins the
       # bundle and, when FILEBASE_IPNS_KEY is set, republishes that IPNS name to
-      # the new CID so the DNSLinked domain follows the deploy. main -> the
-      # "staging" IPNS name. polkadot_mainnet pins only for now (prod on hold);
-      # to enable prod, create a "prod" IPNS name and add it to the mapping:
-      #   ... || github.ref_name == 'polkadot_mainnet' && 'prod' || ''
+      # the new CID so the DNSLinked domain follows the deploy. main -> "staging"
+      # (the one free-tier IPNS name). polkadot_mainnet pins only: prod's domain
+      # DNSLinks straight at the CID (the next step updates it), so it needs no
+      # IPNS name. The script writes cid=<cid> to $GITHUB_OUTPUT (id: pin).
       - name: Pin dist/ to IPFS and update IPNS
+        id: pin
         env:
           FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
           FILEBASE_IPNS_KEY: ${{ github.ref_name == 'main' && 'staging' || '' }}
         run: SKIP_BUILD=1 bash scripts/deploy-filebase.sh
+
+      # Prod (polkadot_mainnet) has no IPNS name (free tier allows one, used by
+      # staging), so point app.snowbridge.network's DNSLink TXT straight at the
+      # new CID via Route 53. This makes prod as hands-off as staging: no manual
+      # DNS edit per release. Needs an IAM key scoped to
+      # route53:ChangeResourceRecordSets on the hosted zone (see DEPLOY.md).
+      # Staging skips this (its IPNS name is updated above), so it's prod-only.
+      - name: Update prod DNSLink (Route 53)
+        if: github.ref_name == 'polkadot_mainnet'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          HOSTED_ZONE_ID: ${{ secrets.AWS_ROUTE53_HOSTED_ZONE_ID }}
+          CID: ${{ steps.pin.outputs.cid }}
+        run: |
+          [ -n "$CID" ] || { echo "::error::no CID from the pin step"; exit 1; }
+          [ -n "$HOSTED_ZONE_ID" ] || { echo "::error::AWS_ROUTE53_HOSTED_ZONE_ID secret is not set"; exit 1; }
+          # jq builds the change batch so the TXT value's embedded quotes are
+          # escaped correctly (Route 53 wants the value as "dnslink=/ipfs/<cid>").
+          batch=$(jq -n --arg cid "$CID" '{
+            Comment: "prod DNSLink -> new IPFS CID",
+            Changes: [{
+              Action: "UPSERT",
+              ResourceRecordSet: {
+                Name: "_dnslink.app.snowbridge.network",
+                Type: "TXT",
+                TTL: 60,
+                ResourceRecords: [{ Value: ("\"dnslink=/ipfs/" + $cid + "\"") }]
+              }
+            }]
+          }')
+          aws route53 change-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch "$batch"
+          echo "Updated _dnslink.app.snowbridge.network -> dnslink=/ipfs/${CID}"

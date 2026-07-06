@@ -1,7 +1,7 @@
 import "./env-bootstrap"; // must run before any code reads process.env
 import React, { lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 import "@/styles/globals.css";
 import "@/styles/overrides.css";
 import { RootLayout } from "./RootLayout";
@@ -22,7 +22,11 @@ const LocalTxComplete = lazy(() => import("@/app/localtxcomplete/page"));
 const Blocked = lazy(() => import("@/app/blocked/page"));
 const NotFound = lazy(() => import("@/app/not-found"));
 
-const router = createBrowserRouter([
+// Hash routing (URLs like /#/send) so the app works on any IPFS gateway: the
+// server only ever serves "/", and routing happens client-side after load.
+// Path routing 404s on hard-refresh/deep-link on gateways that don't rewrite
+// unknown paths to index.html (e.g. the Filebase gateway ignores _redirects).
+const router = createHashRouter([
   {
     element: <RootLayout />,
     children: [
