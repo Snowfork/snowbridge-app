@@ -1,4 +1,5 @@
 import "./env-bootstrap"; // must run before any code reads process.env
+import "./pwa"; // register the service worker + poll for new builds
 import React, { lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { createHashRouter, RouterProvider } from "react-router-dom";
