@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAtomValue } from "jotai";
 import { governance } from "@snowbridge/api";
 import { ApiPromise, WsProvider } from "@polkadot/api";
@@ -9,9 +9,17 @@ import { xxhashAsHex } from "@polkadot/util-crypto";
 import {
   LucideSlidersHorizontal,
   LucideShieldCheck,
+  LucideShieldAlert,
   LucideListChecks,
   LucideCheck,
+  LucideLoader2,
 } from "lucide-react";
+import {
+  verifyAgainstReference,
+  PET_REFERENCE_BLOB_URL,
+  type Operation as RefOperation,
+  type ReferenceVerdict,
+} from "@/lib/preimageReference";
 
 // Public RPC for Polkadot Collectives Chain, used to construct the
 // fellowshipReferenda.submit call (the Whitelist origin lives there).
@@ -223,6 +231,21 @@ export function HaltBridgeForm() {
   );
   const [submissionUrls, setSubmissionUrls] =
     useState<governance.SubmissionUrls | null>(null);
+  // Whether the generated preimage is the canonical "everything" halt/resume
+  // (no custom levers, and for resume the prod fee defaults). Only a canonical
+  // preimage can be checked against the version-controlled reference; custom
+  // selections have no pinned counterpart. Captured at generate() time so it
+  // stays consistent with the displayed result.
+  const [resultCanonical, setResultCanonical] = useState(false);
+  // Result of comparing a canonical preimage against the version-controlled
+  // reference. null while a canonical check is in flight (the ReferenceCheck
+  // component renders that as "checking"); irrelevant for custom selections.
+  // Owned here rather than in an effect so the verification rides the same async
+  // generate() flow as the preimage build.
+  const [refVerdict, setRefVerdict] = useState<ReferenceVerdict | null>(null);
+  // Monotonic token to ignore a stale reference response if the operator
+  // regenerates before a previous fetch resolves.
+  const refGen = useRef(0);
 
   // Auto-reload once if the Snowbridge context never resolves. The shared
   // useSnowbridgeContext hook initialises lazily and has no built-in retry,
@@ -255,12 +278,16 @@ export function HaltBridgeForm() {
     setResult(null);
     setSubmissionUrls(null);
     setError(null);
+    refGen.current++;
+    setRefVerdict(null);
   };
 
   const toggle = (key: LeverKey) => {
     setSelected((s) => ({ ...s, [key]: !s[key] }));
     setResult(null);
     setSubmissionUrls(null);
+    refGen.current++;
+    setRefVerdict(null);
   };
 
   const clearAdvanced = () => {
@@ -268,6 +295,8 @@ export function HaltBridgeForm() {
     setResult(null);
     setSubmissionUrls(null);
     setError(null);
+    refGen.current++;
+    setRefVerdict(null);
   };
 
   const selectionCount = useMemo(
@@ -292,6 +321,8 @@ export function HaltBridgeForm() {
     setError(null);
     setResult(null);
     setSubmissionUrls(null);
+    setRefVerdict(null);
+    const myGen = ++refGen.current;
     if (!context) {
       setError("Snowbridge context not ready. Try again in a moment.");
       return;
@@ -304,7 +335,9 @@ export function HaltBridgeForm() {
 
       // If the user hasn't picked any advanced levers, default to {all: true}.
       // Otherwise translate UI keys to SDK options for the chosen operation.
-      const useAll = selectionCount === 0;
+      // The "Everything" lever ticked on its own is also a full halt/resume.
+      const useAll =
+        selectionCount === 0 || (selectionCount === 1 && !!selected.all);
       const opts: Record<string, boolean | bigint> = useAll
         ? { all: true }
         : Object.fromEntries(
@@ -331,6 +364,13 @@ export function HaltBridgeForm() {
         opts.baseFeeV2 = v2;
       }
 
+      // A resume is only canonical if the fee inputs are still the prod
+      // defaults; an override produces bytes with no pinned counterpart.
+      const feesAtDefault =
+        baseFeeV1Input === governance.PROD_BASE_FEE_V1.toString() &&
+        baseFeeV2Input === governance.PROD_BASE_FEE_V2.toString();
+      const canonical = operation === "halt" ? useAll : useAll && feesAtDefault;
+
       const preimage =
         operation === "halt"
           ? await governance.buildHaltBridgePreimage(
@@ -344,6 +384,27 @@ export function HaltBridgeForm() {
               opts as governance.ResumeBridgeOptions,
             );
       setResult(preimage);
+      setResultCanonical(canonical);
+
+      // Verify a canonical preimage against the version-controlled reference,
+      // fire-and-forget so it doesn't delay the submission links below. A stale
+      // response (operator regenerated meanwhile) is dropped via the gen token.
+      if (canonical) {
+        verifyAgainstReference(operation as RefOperation, {
+          hash: preimage.hash,
+          callData: preimage.callData,
+        })
+          .then((v) => {
+            if (refGen.current === myGen) setRefVerdict(v);
+          })
+          .catch((e) => {
+            if (refGen.current === myGen)
+              setRefVerdict({
+                kind: "unavailable",
+                reason: e instanceof Error ? e.message : String(e),
+              });
+          });
+      }
 
       // Build submission URLs alongside the preimage. Needs a Collectives
       // connection because the Fellowship whitelist call is opened there.
@@ -534,6 +595,8 @@ export function HaltBridgeForm() {
           result={result}
           operation={operation}
           submissionUrls={submissionUrls}
+          canonical={resultCanonical}
+          refVerdict={refVerdict}
         />
       )}
     </div>
@@ -584,10 +647,14 @@ function PreimageResult({
   result,
   operation,
   submissionUrls,
+  canonical,
+  refVerdict,
 }: {
   result: governance.HaltBridgePreimage;
   operation: Operation;
   submissionUrls: governance.SubmissionUrls | null;
+  canonical: boolean;
+  refVerdict: ReferenceVerdict | null;
 }) {
   const copy = (text: string) => navigator.clipboard.writeText(text);
   const label = operation === "halt" ? "Halt" : "Resume";
@@ -643,6 +710,13 @@ function PreimageResult({
           Open decoded extrinsic in Polkadot.js Apps ↗
         </a>
       </div>
+
+      <ReferenceCheck
+        operation={operation}
+        result={result}
+        canonical={canonical}
+        verdict={refVerdict}
+      />
 
       <Accordion type="single" collapsible>
         <AccordionItem
@@ -704,6 +778,138 @@ function PreimageResult({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+    </div>
+  );
+}
+
+function ReferenceCheck({
+  operation,
+  result,
+  canonical,
+  verdict,
+}: {
+  operation: Operation;
+  result: governance.HaltBridgePreimage;
+  canonical: boolean;
+  // null while a canonical check is in flight (rendered as "checking").
+  verdict: ReferenceVerdict | null;
+}) {
+  // The link + disclaimer shown for every canonical outcome: this in-app check
+  // is only a convenience, the real trust root is the operator's own eyeball
+  // comparison against PET on GitHub.
+  const githubLink = (
+    <a
+      href={PET_REFERENCE_BLOB_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="glimmer-text underline"
+    >
+      View reference on GitHub ↗
+    </a>
+  );
+  const disclaimer = (
+    <p className="text-xs text-muted-foreground">
+      This in-app check is a convenience and could be faked by a tampered
+      frontend. Before whitelisting, compare the preimage hash above against the
+      reference yourself. {githubLink}
+    </p>
+  );
+
+  // Custom selection: there is no pinned reference for these exact bytes.
+  if (!canonical) {
+    return (
+      <div className="rounded-2xl glass-sub p-4 space-y-1 border border-white/40">
+        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+          <LucideShieldCheck className="h-4 w-4 text-muted-foreground" />
+          Custom configuration
+        </div>
+        <p className="text-xs text-muted-foreground">
+          This is not the canonical full {operation}, so there is no pinned
+          reference to compare it against. Verify it via the decoded extrinsic
+          above and the storage hasher below.
+        </p>
+      </div>
+    );
+  }
+
+  if (!verdict) {
+    return (
+      <div className="rounded-2xl glass-sub p-4 flex items-center gap-2 text-sm text-muted-foreground border border-white/40">
+        <LucideLoader2 className="h-4 w-4 animate-spin" />
+        Checking against the reviewed reference…
+      </div>
+    );
+  }
+
+  if (verdict.kind === "match") {
+    const bh = verdict.reference.bridgeHubRuntime;
+    const ah = verdict.reference.assetHubRuntime;
+    return (
+      <div className="rounded-2xl p-4 space-y-2 bg-green-500/10 border border-green-500/40">
+        <div className="flex items-center gap-2 text-sm font-semibold text-green-700">
+          <LucideShieldCheck className="h-4 w-4" />
+          Matches the Fellowship-reviewed reference preimage
+        </div>
+        <p className="text-xs text-green-800/80">
+          These bytes are byte-identical to the canonical full {operation}{" "}
+          pinned in polkadot-ecosystem-tests and re-executed against forked live
+          chains on a schedule.
+          {ah && bh
+            ? ` Reference generated against Asset Hub ${ah.specVersion} / Bridge Hub ${bh.specVersion}` +
+              (verdict.reference.generatedAt
+                ? ` (${verdict.reference.generatedAt}).`
+                : ".")
+            : ""}
+        </p>
+        {disclaimer}
+      </div>
+    );
+  }
+
+  if (verdict.kind === "mismatch") {
+    return (
+      <div className="rounded-2xl p-4 space-y-2 bg-red-500/10 border border-red-400/60">
+        <div className="flex items-center gap-2 text-sm font-semibold text-red-700">
+          <LucideShieldAlert className="h-4 w-4" />
+          Does NOT match the reference preimage
+        </div>
+        <p className="text-xs text-red-700/90">
+          These bytes differ from the canonical full {operation} pinned in
+          polkadot-ecosystem-tests. Do not assume the difference is benign.
+          Stop, decode the extrinsic above, and verify manually before
+          submitting. This can also mean the reference is stale after a runtime
+          upgrade, confirm on GitHub.
+        </p>
+        <div className="font-mono text-[11px] break-all text-red-700/90 space-y-0.5">
+          <div>
+            <span className="text-red-700/60">generated </span>
+            {result.hash}
+          </div>
+          <div>
+            <span className="text-red-700/60">reference </span>
+            {verdict.expected.hash}
+          </div>
+        </div>
+        {disclaimer}
+      </div>
+    );
+  }
+
+  // unsupported | unavailable: can't compare, fall back to manual verification.
+  const reason =
+    verdict.kind === "unsupported"
+      ? "This app's @snowbridge/api predates the deterministic preimage build, so its bytes cannot be matched against the pinned reference yet."
+      : `Could not reach the reference (${verdict.reason}). It may not be published yet.`;
+  return (
+    <div className="rounded-2xl glass-sub p-4 space-y-1 border border-amber-400/40">
+      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+        <LucideShieldAlert className="h-4 w-4 text-amber-600" />
+        Reference check unavailable
+      </div>
+      <p className="text-xs text-muted-foreground">{reason}</p>
+      <p className="text-xs text-muted-foreground">
+        Verify the hash above manually. {githubLink}
+      </p>
     </div>
   );
 }
