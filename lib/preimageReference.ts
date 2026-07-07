@@ -35,9 +35,6 @@ export interface ReferencePreimageEntry {
 
 export interface ReferenceFile {
   description?: string;
-  generatedAt?: string;
-  assetHubRuntime?: { specName: string; specVersion: number };
-  bridgeHubRuntime?: { specName: string; specVersion: number };
   halt: ReferencePreimageEntry;
   resume: ReferencePreimageEntry;
 }

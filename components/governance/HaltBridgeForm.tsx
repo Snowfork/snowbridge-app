@@ -842,8 +842,6 @@ function ReferenceCheck({
   }
 
   if (verdict.kind === "match") {
-    const bh = verdict.reference.bridgeHubRuntime;
-    const ah = verdict.reference.assetHubRuntime;
     return (
       <div className="rounded-2xl p-4 space-y-2 bg-green-500/10 border border-green-500/40">
         <div className="flex items-center gap-2 text-sm font-semibold text-green-700">
@@ -854,12 +852,6 @@ function ReferenceCheck({
           These bytes are byte-identical to the canonical full {operation}{" "}
           pinned in polkadot-ecosystem-tests and re-executed against forked live
           chains on a schedule.
-          {ah && bh
-            ? ` Reference generated against Asset Hub ${ah.specVersion} / Bridge Hub ${bh.specVersion}` +
-              (verdict.reference.generatedAt
-                ? ` (${verdict.reference.generatedAt}).`
-                : ".")
-            : ""}
         </p>
         {disclaimer}
       </div>
