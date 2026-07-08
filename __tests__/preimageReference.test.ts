@@ -1,4 +1,4 @@
-import { compareToReference } from "@/lib/preimageReference";
+import { compareToReference, parseLastVerified } from "@/lib/preimageReference";
 import type { ReferenceFile } from "@/lib/preimageReference";
 import { describe, expect, test } from "vitest";
 
@@ -66,5 +66,25 @@ describe("compareToReference", () => {
         reference,
       ),
     ).toBe("mismatch");
+  });
+});
+
+describe("parseLastVerified", () => {
+  test("extracts the committer date of the first commit", () => {
+    const d = parseLastVerified([
+      { commit: { committer: { date: "2026-07-07T12:00:00Z" } } },
+    ]);
+    expect(d?.toISOString()).toBe("2026-07-07T12:00:00.000Z");
+  });
+
+  test("returns null for an empty array", () => {
+    expect(parseLastVerified([])).toBeNull();
+  });
+
+  test("returns null for a malformed / missing date", () => {
+    expect(parseLastVerified([{ commit: { committer: {} } }])).toBeNull();
+    expect(
+      parseLastVerified([{ commit: { committer: { date: "not-a-date" } } }]),
+    ).toBeNull();
   });
 });

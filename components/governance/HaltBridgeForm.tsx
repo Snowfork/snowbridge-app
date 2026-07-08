@@ -782,6 +782,15 @@ function PreimageResult({
   );
 }
 
+// Relative age of the last live-chain verification, e.g. "3 hours ago".
+function formatVerifiedAgo(date: Date): string {
+  const hours = Math.round((Date.now() - date.getTime()) / 3_600_000);
+  if (hours < 1) return "less than an hour ago";
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
 function ReferenceCheck({
   operation,
   result,
@@ -852,6 +861,9 @@ function ReferenceCheck({
           These bytes are byte-identical to the canonical full {operation}{" "}
           pinned in polkadot-ecosystem-tests and re-executed against forked live
           chains on a schedule.
+          {verdict.lastVerifiedAt
+            ? ` Last verified against live chains ${formatVerifiedAgo(verdict.lastVerifiedAt)}.`
+            : ""}
         </p>
         {disclaimer}
       </div>
