@@ -1,0 +1,61 @@
+name: Release tarball build
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: Release artifact name
+        required: true
+        type: string
+        default: manual
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build release bundle
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+        run: |
+          [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set."; exit 1; }
+          pnpm build
+
+      - name: Package release tarball
+        env:
+          RELEASE_NAME: ${{ inputs.release_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          tarball="snowbridge-${RELEASE_NAME}-${GITHUB_SHA::7}.tar.gz"
+          tar -czf "release/${tarball}" -C dist .
+          (cd release && sha256sum "${tarball}" > "${tarball}.sha256")
+          echo "TARBALL=${tarball}" >> "$GITHUB_ENV"
+
+      - name: Upload release tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: snowbridge-release-${{ inputs.release_name }}
+          path: |
+            release/${{ env.TARBALL }}
+            release/${{ env.TARBALL }}.sha256
+          if-no-files-found: error
