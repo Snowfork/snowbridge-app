@@ -10,12 +10,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { BackgroundSnowfall } from "@/components/BackgroundSnowfall";
 import { Providers } from "@/app/providers";
 import { getEnvironmentName } from "@/lib/snowbridgeEnv";
-import { bridgeInfoWithKusamaRoutes } from "@/lib/bridgeInfo";
+import { bridgeInfoFor } from "@snowbridge/registry";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
 export function RootLayout() {
   useAnalytics();
-  const info = bridgeInfoWithKusamaRoutes(getEnvironmentName());
+  const info = bridgeInfoFor(getEnvironmentName());
 
   return (
     <Providers info={info}>

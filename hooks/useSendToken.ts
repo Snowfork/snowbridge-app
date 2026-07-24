@@ -178,6 +178,24 @@ async function planSend(
   const { source, destination, amountInSmallestUnit, formData, fee } = data;
   const sender = api.sender(source, destination);
 
+  // polkadot<->kusama: cast because the linked-SDK type surface omits the kusama kinds
+  // (pnpm-link base-types duplication); the runtime sender is correct.
+  const senderKind = sender.kind as string;
+  if (senderKind === "polkadot->kusama" || senderKind === "kusama->polkadot") {
+    if ((fee as { kind: string }).kind !== senderKind) {
+      throw Error(`Invalid delivery fee kind ${fee.kind}.`);
+    }
+    const s = sender as any;
+    const transfer = await s.tx(
+      formData.sourceAccount,
+      formData.beneficiary,
+      formData.token,
+      amountInSmallestUnit,
+      fee,
+    );
+    return await s.validate(transfer);
+  }
+
   switch (sender.kind) {
     case "ethereum->ethereum": {
       if (fee.kind !== sender.kind) {
@@ -290,6 +308,31 @@ async function sendToken(
     });
   }
   const sender = api.sender(data.source, data.destination);
+
+  // polkadot<->kusama: cast because the linked-SDK type surface omits the kusama kinds
+  // (pnpm-link base-types duplication); the runtime sender is correct.
+  const senderKind = sender.kind as string;
+  if (senderKind === "polkadot->kusama" || senderKind === "kusama->polkadot") {
+    if ((plan as { kind: string }).kind !== senderKind) {
+      throw Error(`Invalid validated transfer kind ${plan.kind}.`);
+    }
+    const { polkadotAccount } = signerInfo;
+    if (!polkadotAccount) {
+      throw Error(`Polkadot Wallet not connected.`);
+    }
+    if (polkadotAccount.address !== data.formData.sourceAccount) {
+      throw Error(`Source account mismatch.`);
+    }
+    const result = await (sender as any).signAndSend(
+      plan,
+      polkadotAccount.address,
+      {
+        signer: polkadotAccount.signer as any,
+        withSignedTransaction: true,
+      },
+    );
+    return { kind: senderKind, ...result } as MessageReceipt;
+  }
 
   switch (sender.kind) {
     case "polkadot->polkadot": {

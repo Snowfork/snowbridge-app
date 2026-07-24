@@ -494,14 +494,6 @@ export function Header() {
               >
                 Terms of Use
               </a>
-              {envName === "polkadot_mainnet" && (
-                <Link
-                  href="/kusama"
-                  className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Kusama
-                </Link>
-              )}
               <Link
                 href="/governance"
                 className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
@@ -617,15 +609,6 @@ export function Header() {
             >
               Transfer
             </Link>
-            {envName === "polkadot_mainnet" ? (
-              <Link
-                href="/kusama"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Kusama
-              </Link>
-            ) : null}
             <Link
               href="/activity"
               className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"

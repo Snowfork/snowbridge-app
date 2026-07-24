@@ -40,6 +40,25 @@ async function fetchBridgeFeeInfo([
 
   const sender = api.sender(source, destination);
 
+  // polkadot<->kusama: cast because the linked-SDK type surface omits the kusama kinds
+  // (pnpm-link base-types duplication); the runtime sender is correct.
+  const senderKind = sender.kind as string;
+  if (senderKind === "polkadot->kusama" || senderKind === "kusama->polkadot") {
+    // Optional service fee, configured via env (opt-in: no fee unless set). Single recipient;
+    // the amount is the SOURCE native asset in base units (DOT for polkadot->kusama, KSM for
+    // kusama->polkadot).
+    const recipient = process.env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT;
+    const amountStr =
+      senderKind === "polkadot->kusama"
+        ? process.env.NEXT_PUBLIC_SERVICE_FEE_DOT
+        : process.env.NEXT_PUBLIC_SERVICE_FEE_KSM;
+    const options =
+      recipient && amountStr
+        ? { serviceFee: { recipient, amount: BigInt(amountStr) } }
+        : undefined;
+    return await (sender as any).fee(token, options);
+  }
+
   const prices = await fetchTokenPrices([asset.symbol, "ETH"]);
   const tokenPriceUsd = prices[asset.symbol.toUpperCase()] ?? 0;
   const ethPriceUsd = prices["ETH"] ?? 0;

@@ -17,7 +17,6 @@ const Send = lazy(() => import("@/app/send/page"));
 const Activity = lazy(() => import("@/app/activity/page"));
 const HistoryRedirect = lazy(() => import("@/app/history/page"));
 const Governance = lazy(() => import("@/app/governance/page"));
-const Kusama = lazy(() => import("@/app/kusama/page"));
 const TxComplete = lazy(() => import("@/app/txcomplete/page"));
 const LocalTxComplete = lazy(() => import("@/app/localtxcomplete/page"));
 const Blocked = lazy(() => import("@/app/blocked/page"));
@@ -36,7 +35,6 @@ const router = createHashRouter([
       { path: "/activity", element: <Activity /> },
       { path: "/history", element: <HistoryRedirect /> },
       { path: "/governance", element: <Governance /> },
-      { path: "/kusama", element: <Kusama /> },
       { path: "/txcomplete", element: <TxComplete /> },
       { path: "/localtxcomplete", element: <LocalTxComplete /> },
       { path: "/blocked", element: <Blocked /> },

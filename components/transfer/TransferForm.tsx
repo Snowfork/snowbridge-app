@@ -102,7 +102,7 @@ function getLocationAccounts(
   ss58Format: number,
 ) {
   const accounts: AccountInfo[] = [];
-  if (location.kind === "polkadot") {
+  if (location.kind === "polkadot" || location.kind === "kusama") {
     polkadotAccounts
       .filter(
         (x) =>
@@ -321,11 +321,14 @@ export const TransferForm: FC<TransferFormProps> = ({
     if (source.kind === "ethereum" || source.kind === "ethereum_l2") {
       // Set to Ethereum account if connected, otherwise clear
       form.setValue("sourceAccount", ethereumAccount ?? "");
-    } else if (source.kind === "polkadot") {
+    } else if (source.kind === "polkadot" || source.kind === "kusama") {
       // For substrate sources, filter accounts by account type (AccountId20 vs AccountId32)
       const accountType =
-        assetRegistry.parachains[`polkadot_${source.id}`]?.info.accountType ??
-        "AccountId32";
+        (source.kind === "kusama"
+          ? assetRegistry.kusama?.parachains[`kusama_${source.id}`]?.info
+              .accountType
+          : assetRegistry.parachains[`polkadot_${source.id}`]?.info
+              .accountType) ?? "AccountId32";
       const validAccounts = polkadotAccounts?.filter(
         filterByAccountType(accountType),
       );
@@ -365,7 +368,7 @@ export const TransferForm: FC<TransferFormProps> = ({
       if (!isValidEthAddress) {
         form.setValue("beneficiary", ethereumAccount ?? "");
       }
-    } else if (destination.kind === "polkadot") {
+    } else if (destination.kind === "polkadot" || destination.kind === "kusama") {
       const accountType =
         destination.parachain?.info.accountType ?? "AccountId32";
       const validEthereumAccounts =
@@ -545,7 +548,7 @@ export const TransferForm: FC<TransferFormProps> = ({
         }
 
         if (
-          destination.kind === "polkadot" &&
+          (destination.kind === "polkadot" || destination.kind === "kusama") &&
           destination.parachain!.info.accountType === "AccountId32"
         ) {
           if (!isHex(formData.beneficiary)) {
@@ -767,7 +770,8 @@ export const TransferForm: FC<TransferFormProps> = ({
                           (((source.kind === "ethereum" ||
                             source.kind === "ethereum_l2") &&
                             ethereumAccount) ||
-                            (source.kind === "polkadot" &&
+                            ((source.kind === "polkadot" ||
+                              source.kind === "kusama") &&
                               polkadotAccount?.address)) && (
                             <button
                               type="button"

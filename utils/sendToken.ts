@@ -1,4 +1,9 @@
-import { forInterParachain, toEthereumV2, toPolkadotV2 } from "@snowbridge/api";
+import {
+  forInterParachain,
+  toEthereumV2,
+  toPolkadotV2,
+  polkadotKusama,
+} from "@snowbridge/api";
 import {
   NEURO_WEB_PARACHAIN,
   TransferPlanSteps,
@@ -173,7 +178,25 @@ export function createStepsFromPlan(
         plan,
       };
     }
+    case "polkadot->kusama":
+    case "kusama->polkadot": {
+      // Substrate-signed sibling transfer: no extra steps, just surface errors.
+      // Cast: the linked-SDK union narrows this case to never (base-types duplication).
+      const p = plan as any;
+      for (const log of p.logs) {
+        if (log.kind === polkadotKusama.ValidationKind.Warning) {
+          console.warn("Plan validation warning: ", log.message);
+          continue;
+        }
+        errors.push(log);
+      }
+      return {
+        steps,
+        errors,
+        plan: p,
+      };
+    }
     default:
-      throw Error(`Cannot infer source type ${plan.kind}.`);
+      throw Error(`Cannot infer source type ${(plan as { kind: string }).kind}.`);
   }
 }
