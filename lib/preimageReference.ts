@@ -25,6 +25,18 @@ export const PET_REFERENCE_BLOB_URL =
   process.env.NEXT_PUBLIC_PET_REFERENCE_BLOB_URL ??
   "https://github.com/open-web3-stack/polkadot-ecosystem-tests/blob/master/packages/shared/src/snowbridge/referencePreimages.json";
 
+// GitHub API: latest commit that touched PET's known-good block file. That file
+// is committed by the 6-hourly `update-known-good` cron only when the whole
+// Polkadot suite (our halt/resume test included) passes against fresh live
+// blocks, so its commit date is a live "last verified against live chains"
+// signal. Derived from CI rather than baked into the reference, so it's always
+// current and never goes stale. (Proxy note: it reflects the whole Polkadot
+// suite passing, not our test alone; if any Polkadot test fails the date simply
+// stops advancing, which is itself a useful staleness signal.)
+export const PET_KNOWN_GOOD_COMMITS_URL =
+  process.env.NEXT_PUBLIC_PET_KNOWN_GOOD_URL ??
+  "https://api.github.com/repos/open-web3-stack/polkadot-ecosystem-tests/commits?path=KNOWN_GOOD_BLOCK_NUMBERS_POLKADOT.env&per_page=1";
+
 export type Operation = "halt" | "resume";
 
 export interface ReferencePreimageEntry {
@@ -35,9 +47,6 @@ export interface ReferencePreimageEntry {
 
 export interface ReferenceFile {
   description?: string;
-  generatedAt?: string;
-  assetHubRuntime?: { specName: string; specVersion: number };
-  bridgeHubRuntime?: { specName: string; specVersion: number };
   halt: ReferencePreimageEntry;
   resume: ReferencePreimageEntry;
 }
@@ -60,7 +69,7 @@ export async function sdkProducesDeterministicPreimage(): Promise<boolean> {
 }
 
 export type ReferenceVerdict =
-  | { kind: "match"; reference: ReferenceFile }
+  | { kind: "match"; reference: ReferenceFile; lastVerifiedAt: Date | null }
   | {
       kind: "mismatch";
       reference: ReferenceFile;
@@ -98,6 +107,38 @@ export async function fetchReference(
   return (await res.json()) as ReferenceFile;
 }
 
+/**
+ * Pure extractor for the last-verified date from the GitHub commits API
+ * response. Exposed for unit testing. Returns null for an empty/malformed
+ * response or an unparseable date.
+ */
+export function parseLastVerified(
+  commits: Array<{ commit?: { committer?: { date?: string } } }>,
+): Date | null {
+  const iso = commits?.[0]?.commit?.committer?.date;
+  if (!iso) return null;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+// Fetch the "last verified against live chains" timestamp. Never throws: any
+// failure (network, rate limit, shape change) resolves to null so the badge
+// simply omits the line rather than breaking the whole check.
+export async function fetchLastVerifiedAt(
+  signal?: AbortSignal,
+): Promise<Date | null> {
+  try {
+    const res = await fetch(PET_KNOWN_GOOD_COMMITS_URL, {
+      signal,
+      headers: { Accept: "application/vnd.github+json" },
+    });
+    if (!res.ok) return null;
+    return parseLastVerified(await res.json());
+  } catch {
+    return null;
+  }
+}
+
 export async function verifyAgainstReference(
   operation: Operation,
   result: { hash: string; callData: string },
@@ -107,8 +148,14 @@ export async function verifyAgainstReference(
     return { kind: "unsupported" };
   }
   let reference: ReferenceFile;
+  let lastVerifiedAt: Date | null = null;
   try {
-    reference = await fetchReference(signal);
+    // fetchLastVerifiedAt never throws, so this only rejects if the reference
+    // fetch itself fails.
+    [reference, lastVerifiedAt] = await Promise.all([
+      fetchReference(signal),
+      fetchLastVerifiedAt(signal),
+    ]);
   } catch (e) {
     return {
       kind: "unavailable",
@@ -117,7 +164,7 @@ export async function verifyAgainstReference(
   }
   const verdict = compareToReference(operation, result, reference);
   if (verdict === "match") {
-    return { kind: "match", reference };
+    return { kind: "match", reference, lastVerifiedAt };
   }
   const expected = operation === "halt" ? reference.halt : reference.resume;
   return { kind: "mismatch", reference, expected };
