@@ -95,10 +95,12 @@ export const TransferSummary: FC<TransferSummaryProps> = ({
       transferTimeMax = "1h 30min";
       break;
     case "polkadot->polkadot":
+    case "polkadot->kusama":
+    case "kusama->polkadot":
       transferTimeMax = "5 min";
       break;
     default:
-      console.warn(`Unknown type ${transferTimeMax}.`);
+      console.warn(`Unknown type ${transferType}.`);
   }
   const feeTotals = getDeliveryTotals(data.fee, {
     registry: data.assetRegistry,

@@ -63,8 +63,10 @@ export function estimateDelivery(
     case "polkadot->ethereum_l2": {
       return formatTime(latency.toEthereum, false);
     }
-    case "polkadot->polkadot": {
-      // Inter parachain transfers takes 30s-1min. At most 2 minutes.
+    case "polkadot->polkadot":
+    case "polkadot->kusama":
+    case "kusama->polkadot": {
+      // Inter parachain / kusama sibling transfers take ~30s-2min.
       return formatTime(120, false);
     }
     default:

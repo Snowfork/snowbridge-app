@@ -3,7 +3,7 @@ import {
   toEthereumV2,
   toEthereumFromEVMV2,
   toPolkadotV2,
-  forKusama,
+  polkadotKusama,
   forInterParachain,
   toPolkadotSnowbridgeV2,
 } from "@snowbridge/api";
@@ -48,8 +48,8 @@ export type ValidationError =
   | ({ errorKind: "ethereum->polkadot" } & toPolkadotV2.ValidationLog)
   | ({ errorKind: "polkadot->ethereum" } & toEthereumV2.ValidationLog)
   | ({ errorKind: "ethereum->ethereum" } & toEthereumV2.ValidationLog)
-  | ({ errorKind: "polkadot->kusama" } & forKusama.ValidationLog)
-  | ({ errorKind: "kusama->polkadot" } & forKusama.ValidationLog)
+  | ({ errorKind: "polkadot->kusama" } & polkadotKusama.ValidationLog)
+  | ({ errorKind: "kusama->polkadot" } & polkadotKusama.ValidationLog)
   | ({ errorKind: "polkadot->ethereum_l2" } & toEthereumV2.ValidationLog)
   | ({ errorKind: "ethereum_l2->polkadot" } & toPolkadotV2.ValidationLog);
 
@@ -191,8 +191,8 @@ export type ValidationResult =
   | toPolkadotV2.ValidatedTransfer<EthersProviderTypes>
   | toPolkadotSnowbridgeV2.ValidatedTransfer<EthersProviderTypes>
   | forInterParachain.ValidatedTransfer
-  | ({ kind: "kusama->polkadot" } & forKusama.ValidatedTransfer)
-  | ({ kind: "polkadot->kusama" } & forKusama.ValidatedTransfer);
+  | ({ kind: "kusama->polkadot" } & polkadotKusama.ValidatedTransfer)
+  | ({ kind: "polkadot->kusama" } & polkadotKusama.ValidatedTransfer);
 
 export type MessageReceipt =
   | ({ kind: "polkadot->ethereum" } & toEthereumV2.MessageReceipt)
@@ -201,8 +201,8 @@ export type MessageReceipt =
   | ({ kind: "ethereum->polkadot" } & toPolkadotV2.MessageReceipt)
   | ({ kind: "ethereum->polkadot" } & toPolkadotSnowbridgeV2.MessageReceipt)
   | ({ kind: "ethereum_l2->polkadot" } & L2MessageReceipt)
-  | ({ kind: "kusama->polkadot" } & forKusama.MessageReceipt)
-  | ({ kind: "polkadot->kusama" } & forKusama.MessageReceipt)
+  | ({ kind: "kusama->polkadot" } & polkadotKusama.MessageReceipt)
+  | ({ kind: "polkadot->kusama" } & polkadotKusama.MessageReceipt)
   | ({ kind: "polkadot->polkadot" } & forInterParachain.MessageReceipt);
 
 export enum TransferStepKind {

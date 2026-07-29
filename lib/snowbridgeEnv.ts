@@ -1,5 +1,5 @@
 import { Environment } from "@snowbridge/base-types";
-import { bridgeInfoWithKusamaRoutes } from "./bridgeInfo";
+import { bridgeInfoFor } from "@snowbridge/registry";
 
 export function getEnvironmentName() {
   const name = process.env.NEXT_PUBLIC_SNOWBRIDGE_ENV;
@@ -9,7 +9,7 @@ export function getEnvironmentName() {
 
 export function getEnvironment() {
   const envName = getEnvironmentName();
-  const env: Environment = bridgeInfoWithKusamaRoutes(envName).environment;
+  const env: Environment = bridgeInfoFor(envName).environment;
 
   if (env === undefined)
     throw new Error(

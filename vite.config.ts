@@ -90,6 +90,17 @@ export default defineConfig(({ mode }) => {
       spaFallback(),
     ],
     resolve: {
+      // Force single copies to avoid duplicate-instance bugs (React useContext
+      // null; buffer-shim resolution).
+      dedupe: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "bn.js",
+        "buffer",
+        "@polkadot/util",
+        "@polkadot/api",
+      ],
       alias: {
         // Shim Next-only modules so the existing component source resolves
         // under Vite without edits (see src/shims/*).
