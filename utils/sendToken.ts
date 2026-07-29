@@ -181,7 +181,7 @@ export function createStepsFromPlan(
     case "polkadot->kusama":
     case "kusama->polkadot": {
       // Substrate-signed sibling transfer: no extra steps, just surface errors.
-      // Cast: the linked-SDK union narrows this case to never (base-types duplication).
+      // plan union omits the kusama case (narrows to never); cast to reach logs.
       const p = plan as any;
       for (const log of p.logs) {
         if (log.kind === polkadotKusama.ValidationKind.Warning) {

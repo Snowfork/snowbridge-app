@@ -90,13 +90,9 @@ export default defineConfig(({ mode }) => {
       spaFallback(),
     ],
     resolve: {
-      // When the @snowbridge SDK is pnpm-linked from a sibling repo, its
-      // out-of-root transitive deps (bn.js -> require('buffer')) otherwise fail
-      // to resolve the node-polyfills buffer shim. Dedupe them onto the app copy.
+      // Force single copies to avoid duplicate-instance bugs (React useContext
+      // null; buffer-shim resolution).
       dedupe: [
-        // Force a single React instance, otherwise jotai/react-router can bind to
-        // a second copy pulled in via the pnpm-linked SDK and useContext returns
-        // null ("Cannot read properties of null (reading 'useContext')").
         "react",
         "react-dom",
         "react/jsx-runtime",
@@ -116,23 +112,6 @@ export default defineConfig(({ mode }) => {
         "next/image": path.resolve(__dirname, "src/shims/next-image.tsx"),
         "@": path.resolve(__dirname, "."),
       },
-    },
-    // Allow Vite to read the pnpm-linked SDK that lives outside the app root, and
-    // don't pre-bundle the linked packages (avoids the out-of-root polyfill error).
-    server: {
-      fs: { allow: [path.resolve(__dirname, ".."), __dirname] },
-    },
-    optimizeDeps: {
-      // Pre-bundle the pnpm-linked CJS packages so their named exports (e.g.
-      // registry's bridgeInfoFor) work, and so esbuild applies the buffer
-      // polyfill to their out-of-root deps (bn.js). Paired with resolve.dedupe.
-      include: [
-        "@snowbridge/api",
-        "@snowbridge/registry",
-        "@snowbridge/base-types",
-        "@snowbridge/provider-ethers",
-        "@snowbridge/contract-types",
-      ],
     },
     build: {
       target: "esnext", // top-level await + wasm in the crypto deps
