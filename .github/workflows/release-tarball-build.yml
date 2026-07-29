@@ -36,8 +36,12 @@ jobs:
           NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          NEXT_PUBLIC_SERVICE_FEE_RECIPIENT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT }}
+          NEXT_PUBLIC_SERVICE_FEE_DOT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_DOT }}
+          NEXT_PUBLIC_SERVICE_FEE_KSM: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_KSM }}
         run: |
           [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set."; exit 1; }
+          [ -n "$NEXT_PUBLIC_SERVICE_FEE_RECIPIENT" ] || { echo "::error::NEXT_PUBLIC_SERVICE_FEE_RECIPIENT secret is not set; P<>K fee would not be collected."; exit 1; }
           pnpm build
 
       - name: Package release tarball
