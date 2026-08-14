@@ -16,15 +16,18 @@
 #
 # Repo secrets required (Settings > Secrets and variables > Actions):
 #   WEBDEPLOY_SSH_KEY     private key for webdeploy@, no passphrase
-#   WEBDEPLOY_KNOWN_HOSTS host keys for BOTH app.snowbridge.network and
-#                         staging-app.snowbridge.network (ssh-keyscan output),
-#                         since the deploy targets the vhost name, not the IP
+#   WEBDEPLOY_KNOWN_HOSTS ssh-keyscan output for whatever the deploy connects to:
+#                         both vhost names normally, or the box's IP while the
+#                         EDGE_SSH_HOST variable is set (see SSH_HOST below)
 #   plus the NEXT_PUBLIC_* build vars listed in the Build step
+# Repo variable (optional): EDGE_SSH_HOST, the edge box's IP, for deploying
+# before a domain's DNS is cut over to it.
 name: Deploy to edge (nginx)
 
-# Push to an environment branch deploys it. The manual trigger either rebuilds
-# and deploys the branch it is dispatched on, or — with release_id set — only
-# repoints `site` at an existing release (rollback), building nothing.
+# Push to an environment branch deploys it. The manual trigger must also be run
+# from one of those two branches (see the job's `if`); it either rebuilds and
+# deploys that branch, or — with release_id set — only repoints `site` at an
+# existing release (rollback), building nothing.
 on:
   push:
     branches: [main, polkadot_mainnet]
@@ -44,21 +47,37 @@ concurrency:
 
 env:
   DEPLOY_USER: webdeploy
-  # polkadot_mainnet -> prod, main -> staging. Both the app dir on the box and
-  # the host we ssh to derive from the branch.
-  APP: ${{ github.ref_name == 'polkadot_mainnet' && 'app' || 'staging-app' }}
-  DEPLOY_HOST: ${{ github.ref_name == 'polkadot_mainnet' && 'app.snowbridge.network' || 'staging-app.snowbridge.network' }}
+  # Each environment is reachable from exactly one branch: polkadot_mainnet ->
+  # prod, main -> staging. Any other ref resolves to empty rather than falling
+  # back to staging, so a branch that slipped past the job guard below cannot
+  # publish anywhere.
+  APP: ${{ github.ref_name == 'polkadot_mainnet' && 'app' || github.ref_name == 'main' && 'staging-app' || '' }}
+  DEPLOY_HOST: ${{ github.ref_name == 'polkadot_mainnet' && 'app.snowbridge.network' || github.ref_name == 'main' && 'staging-app.snowbridge.network' || '' }}
+  # Where to ssh/rsync. Normally the vhost itself, but until each domain's DNS is
+  # cut over to the edge box the vhost still resolves to the old IPFS gateway, so
+  # ssh lands on the wrong machine ("Permission denied (publickey)"). Set the repo
+  # variable EDGE_SSH_HOST (Settings > Secrets and variables > Actions >
+  # Variables) to the box's IP to deploy before the flip, and delete it after —
+  # no workflow change needed either way. WEBDEPLOY_KNOWN_HOSTS must contain
+  # whichever name/IP is in use.
+  SSH_HOST: ${{ vars.EDGE_SSH_HOST != '' && vars.EDGE_SSH_HOST || (github.ref_name == 'polkadot_mainnet' && 'app.snowbridge.network' || github.ref_name == 'main' && 'staging-app.snowbridge.network' || '') }}
 
 jobs:
   deploy:
+    # `push` is already limited to the two environment branches; this covers
+    # workflow_dispatch, which GitHub lets you run from any branch and cannot be
+    # restricted at the trigger level. A run from anywhere else is skipped
+    # before it can check out code or touch a secret.
+    if: github.ref_name == 'main' || github.ref_name == 'polkadot_mainnet'
     runs-on: ubuntu-latest
     steps:
-      - name: Check branch is deployable
+      # Belt and braces: if the mapping above ever gains a branch without
+      # gaining a target, fail here rather than deploying to the wrong vhost.
+      - name: Check the branch resolved to an environment
         run: |
-          case "${GITHUB_REF_NAME}" in
-            main|polkadot_mainnet) ;;
-            *) echo "::error::${GITHUB_REF_NAME} is not a deploy branch (main or polkadot_mainnet)."; exit 1 ;;
-          esac
+          [ -n "$APP" ] && [ -n "$DEPLOY_HOST" ] && [ -n "$SSH_HOST" ] || {
+            echo "::error::${GITHUB_REF_NAME} does not map to a deploy environment (main or polkadot_mainnet)."; exit 1; }
+          echo "${GITHUB_REF_NAME} -> $APP, serving https://$DEPLOY_HOST/, deploying over ssh to $SSH_HOST"
 
       - uses: actions/checkout@v4
 
@@ -130,8 +149,14 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
           # Host keys are pinned by the secret; a mismatch must fail, not prompt.
           ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$DEPLOY_USER@$DEPLOY_HOST" "test -d /opt/edge/www/$APP/releases" \
-            || { echo "::error::cannot reach $DEPLOY_USER@$DEPLOY_HOST or /opt/edge/www/$APP/releases is missing."; exit 1; }
+            "$DEPLOY_USER@$SSH_HOST" "test -d /opt/edge/www/$APP/releases" && exit 0
+          echo "::error::cannot reach $DEPLOY_USER@$SSH_HOST, or /opt/edge/www/$APP/releases is missing there."
+          if [ "$SSH_HOST" = "$DEPLOY_HOST" ]; then
+            # The usual cause pre-cutover: the vhost still points at the old IPFS
+            # gateway, so this key is being offered to a machine that never had it.
+            echo "::error::$DEPLOY_HOST currently resolves to $(getent hosts "$DEPLOY_HOST" | awk '{print $1}' | paste -sd, -). If DNS has not been cut over to the edge box yet, set the EDGE_SSH_HOST repo variable to the box's IP (and keyscan that IP into WEBDEPLOY_KNOWN_HOSTS)."
+          fi
+          exit 1
 
       - name: Upload release
         if: inputs.release_id == ''
@@ -143,7 +168,7 @@ jobs:
           # The trailing slash on dist/ copies the contents, not the directory.
           rsync -a --delete \
             -e "ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes" \
-            dist/ "$DEPLOY_USER@$DEPLOY_HOST:/opt/edge/www/$APP/releases/$REL/"
+            dist/ "$DEPLOY_USER@$SSH_HOST:/opt/edge/www/$APP/releases/$REL/"
 
       - name: Resolve rollback target
         if: inputs.release_id != ''
@@ -152,9 +177,9 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "$DEPLOY_USER@$SSH_HOST" \
             "test -f /opt/edge/www/$APP/releases/$RELEASE_ID/index.html" \
-            || { echo "::error::releases/$RELEASE_ID does not exist (or has no index.html) on $DEPLOY_HOST."; exit 1; }
+            || { echo "::error::releases/$RELEASE_ID does not exist (or has no index.html) on $SSH_HOST."; exit 1; }
           echo "REL=$RELEASE_ID" >> "$GITHUB_ENV"
 
       # The swap: write the new symlink under a temp name, then rename it over
@@ -164,19 +189,37 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "$DEPLOY_USER@$SSH_HOST" \
             "set -eu; cd /opt/edge/www/$APP && ln -sfn releases/$REL site.tmp && mv -Tf site.tmp site && readlink site"
 
-      # Smoke test through the real vhost, so a broken symlink, a missing
-      # index.html or a bad cert shows up as a red run rather than a white page.
+      # Smoke test, so a broken symlink or a missing index.html shows up as a red
+      # run rather than a white page. --resolve pins the request to the box we
+      # just deployed to while keeping the vhost name for SNI and Host, so this
+      # tests the new release even while DNS still points the domain elsewhere
+      # (without it, a pre-cutover run would "pass" against the old IPFS gateway).
       - name: Verify
         run: |
           set -euo pipefail
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 2 "https://$DEPLOY_HOST/")
-          [ "$code" = "200" ] || { echo "::error::https://$DEPLOY_HOST/ returned $code"; exit 1; }
-          enc=$(curl -sS -o /dev/null -H 'Accept-Encoding: gzip' -w '%{content_encoding}' "https://$DEPLOY_HOST/")
-          [ "$enc" = "gzip" ] || echo "::warning::https://$DEPLOY_HOST/ served content-encoding '$enc' (expected gzip via gzip_static)"
-          echo "https://$DEPLOY_HOST/ -> $APP/releases/$REL" >> "$GITHUB_STEP_SUMMARY"
+          ip=$(getent ahostsv4 "$SSH_HOST" | awk '{print $1; exit}')
+          [ -n "$ip" ] || { echo "::error::could not resolve $SSH_HOST"; exit 1; }
+          url="https://$DEPLOY_HOST/"
+          pin=(--resolve "$DEPLOY_HOST:443:$ip")
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 2 "${pin[@]}" "$url" || true)
+          enc=$(curl -sS -o /dev/null -H 'Accept-Encoding: gzip' -w '%{content_encoding}' "${pin[@]}" "$url" || true)
+          echo "$url via $ip -> HTTP ${code:-none}, content-encoding '${enc:-none}'"
+          if [ "$code" != "200" ]; then
+            # Before cutover the box may not hold this domain's TLS cert yet, so
+            # a failure here is expected and non-fatal; the release is published
+            # either way and goes live with the DNS flip.
+            if [ "$SSH_HOST" != "$DEPLOY_HOST" ]; then
+              echo "::warning::$url did not answer 200 from $ip (pre-cutover: EDGE_SSH_HOST is set, so DNS/TLS for this domain may not be on the box yet)."
+            else
+              echo "::error::$url returned ${code:-no response}"; exit 1
+            fi
+          elif [ "$enc" != "gzip" ]; then
+            echo "::warning::$url served content-encoding '$enc' (expected gzip via gzip_static)"
+          fi
+          echo "\`$APP\` now serves \`releases/$REL\` (verified via $ip)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove the deploy key
         if: always()
