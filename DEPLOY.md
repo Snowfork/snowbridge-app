@@ -108,57 +108,35 @@ One-time, per environment (e.g. staging at `staging-app.snowbridge.network`):
 
 ## Deploying to the edge box (nginx)
 
-The same `dist/` is also published to the edge server that serves
-`app.snowbridge.network` and `staging-app.snowbridge.network` directly over
-HTTPS. This runs alongside the IPFS pipeline (`.github/workflows/deploy-edge.yml`,
-same branch → environment mapping) and is independent of it: neither one can
-break the other.
+`.github/workflows/deploy-edge.yml` publishes the same `dist/` to the nginx box,
+alongside the IPFS pipeline. `main` → `staging-app.snowbridge.network`,
+`polkadot_mainnet` → `app.snowbridge.network`.
 
-- `main` → **staging**, app `staging-app`, host `staging-app.snowbridge.network`
-- `polkadot_mainnet` → **prod**, app `app`, host `app.snowbridge.network`
+Each deploy rsyncs to `/opt/edge/www/<app>/releases/<timestamp>-<sha>/`, then
+renames the `site` symlink onto it (atomic, no nginx reload). The box prunes old
+releases and owns everything else under that path. Both vhosts use
+`gzip_static`, so the build ships a `.gz` next to every text asset
+(`gzipStatic()` in `vite.config.ts`).
 
-**A release is a directory, and going live is a symlink rename.** The workflow
-rsyncs `dist/` to `/opt/edge/www/<app>/releases/<UTC timestamp>-<sha7>/`, then
-renames a symlink over `site` (`ln -sfn releases/$REL site.tmp && mv -Tf site.tmp
-site`). `rename(2)` is atomic, so nginx serves either the old release or the new
-one and never something in between, and nothing needs reloading. Old releases
-stay on disk; a systemd timer on the box prunes to the newest 5 and never
-touches the live one.
+Settings → Secrets and variables → Actions:
 
-**Everything is served pre-compressed.** Both vhosts set `gzip_static on`, so
-nginx answers `/assets/x.js` with `/assets/x.js.gz` when that file exists.
-`gzipStatic()` in `vite.config.ts` writes a `.gz` next to every text asset at
-level 9 (skipping files under 1 KB and any file gzip doesn't shrink). This is
-also why the workflow fails the build when `dist/index.html.gz` or a `.gz` for a
-large JS/CSS asset is missing: `gzip_static` falls back to the uncompressed file
-silently, so a regression here would ship megabytes more without any visible
-error.
+| Name                    | Kind     | Value                                       |
+| ----------------------- | -------- | ------------------------------------------- |
+| `WEBDEPLOY_SSH_KEY`     | secret   | private key for `webdeploy@`, no passphrase |
+| `WEBDEPLOY_KNOWN_HOSTS` | secret   | output of `ssh-keyscan 65.108.5.38`         |
+| `EDGE_SSH_HOST`         | variable | the edge box's IP, `65.108.5.38`            |
 
-**Rollback**: run the workflow manually (Actions → _Deploy to edge (nginx)_ →
-_Run workflow_) from the environment branch with `release_id` set to a directory
-that already exists under `releases/`. It skips the build entirely and only
-repoints `site`. To see what's available:
+Plus the same `NEXT_PUBLIC_*` build secrets the IPFS workflow uses. The deploy
+always ssh's to `EDGE_SSH_HOST`, not the vhost name, which only reaches the box
+once that domain's DNS is cut over.
+
+**Rollback**: run the workflow manually from the environment branch with
+`release_id` set to an existing directory under `releases/`; it skips the build
+and only repoints `site`. To list them:
 
 ```bash
-ssh webdeploy@app.snowbridge.network 'ls /opt/edge/www/app/releases; readlink /opt/edge/www/app/site'
+ssh webdeploy@65.108.5.38 'ls /opt/edge/www/app/releases; readlink /opt/edge/www/app/site'
 ```
-
-**Access**: the workflow authenticates as `webdeploy@` with repo secrets
-`WEBDEPLOY_SSH_KEY` (private key, no passphrase) and `WEBDEPLOY_KNOWN_HOSTS`
-(host keys, so a MITM fails the run instead of prompting). Because the deploy
-targets the vhost names rather than the box's IP, `WEBDEPLOY_KNOWN_HOSTS` must
-have entries for **both** hostnames:
-
-```bash
-ssh-keyscan app.snowbridge.network staging-app.snowbridge.network |
-  gh secret set WEBDEPLOY_KNOWN_HOSTS --repo Snowfork/snowbridge-app
-```
-
-The `webdeploy` user has no sudo and can only write under
-`/opt/edge/www/<app>/releases/`. The server, that user, the vhosts and the
-pruning timer are all owned by the `edge` Ansible role in the infra repo, not by
-this repo; `maintenance/` in particular belongs to that role and must not be
-touched by CI.
 
 ## One-time setup (repo admin)
 
