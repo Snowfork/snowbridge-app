@@ -18,12 +18,14 @@
 #      route53:ChangeResourceRecordSets on the zone) and AWS_ROUTE53_HOSTED_ZONE_ID.
 name: Deploy to IPFS (Filebase)
 
-# Deploys on push to an environment branch (after a PR merges), never from a
-# feature branch (previews handle those). main -> staging, polkadot_mainnet ->
-# prod. The manual trigger builds+pins without touching an IPNS name.
+# Manual only for now: the edge box (deploy-edge.yml) serves the live domains,
+# so pushing to an environment branch no longer deploys to IPFS. Run this from
+# main or polkadot_mainnet to publish there by hand; the branch still selects
+# the environment (main -> staging IPNS name, polkadot_mainnet -> prod DNSLink).
+# To re-enable automatic deploys, restore:
+#   push:
+#     branches: [main, polkadot_mainnet]
 on:
-  push:
-    branches: [main, polkadot_mainnet]
   workflow_dispatch: {}
 
 jobs:
