@@ -5,6 +5,7 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 import fs from "node:fs";
+import zlib from "node:zlib";
 
 // SPA fallback for static / IPFS hosting so a direct deep link (e.g. /activity)
 // returns the app shell instead of a hard 404; React Router then resolves the
@@ -25,6 +26,53 @@ function spaFallback() {
           "/*  /index.html  200\n",
         );
       }
+    },
+  };
+}
+
+// Pre-compress the build so nginx can serve it with `gzip_static on` (see the
+// app.snowbridge.network / staging-app.snowbridge.network vhosts): for a request
+// to /assets/x.js nginx serves /assets/x.js.gz when it exists, so compression
+// costs nothing at request time and can use a higher level than on-the-fly gzip.
+// Only text-ish files are worth it; images and woff2 are already compressed.
+//
+// `sequential: true` + `order: "post"` makes this the last closeBundle hook to
+// run, so the PWA service worker (VitePWA) and 404.html/_redirects (spaFallback)
+// are on disk and get compressed too.
+const COMPRESSIBLE = /\.(html|js|mjs|css|json|webmanifest|svg|txt|xml|map)$/i;
+const MIN_BYTES = 1024; // below this, gzip usually costs more than it saves
+
+function gzipStatic() {
+  return {
+    name: "gzip-static",
+    closeBundle: {
+      sequential: true as const,
+      order: "post" as const,
+      handler() {
+        const outDir = path.resolve(__dirname, "dist");
+        if (!fs.existsSync(outDir)) return;
+        let count = 0;
+        const walk = (dir: string) => {
+          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+              walk(full);
+            } else if (entry.isFile() && COMPRESSIBLE.test(entry.name)) {
+              const source = fs.readFileSync(full);
+              if (source.length < MIN_BYTES) continue;
+              const gz = zlib.gzipSync(source, {
+                level: zlib.constants.Z_BEST_COMPRESSION,
+              });
+              // A .gz that is not smaller would make nginx serve more bytes.
+              if (gz.length >= source.length) continue;
+              fs.writeFileSync(`${full}.gz`, gz);
+              count++;
+            }
+          }
+        };
+        walk(outDir);
+        console.log(`gzip-static: wrote ${count} .gz files`);
+      },
     },
   };
 }
@@ -88,6 +136,8 @@ export default defineConfig(({ mode }) => {
         },
       }),
       spaFallback(),
+      // Keep last: it compresses whatever the plugins above emitted.
+      gzipStatic(),
     ],
     resolve: {
       // Force single copies to avoid duplicate-instance bugs (React useContext

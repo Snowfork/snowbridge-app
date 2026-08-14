@@ -1,19 +1,22 @@
-# Deploying the Snowbridge UI to IPFS
+# Deploying the Snowbridge UI
 
 This app is a static Vite + React PWA. It is built on GitHub's CI runners and
-pinned to IPFS via **Filebase**. There is no server, all config lives in this
-repo (config-as-code), so a teammate changes how it deploys by opening a normal
-PR, not by logging into a hosting dashboard.
+published two ways from the same build: pinned to IPFS via **Filebase**, and
+rsynced to the **edge box** that serves `app.snowbridge.network` /
+`staging-app.snowbridge.network` over nginx. All config lives in this repo
+(config-as-code), so a teammate changes how it deploys by opening a normal PR,
+not by logging into a hosting dashboard.
 
 ## Where each piece of config lives
 
-| What | Where | How a teammate changes it |
-| --- | --- | --- |
-| Build + deploy pipeline | `.github/workflows/filebase.yml` | Edit the file in a PR |
-| Build config (bundler, PWA, SPA fallback, aliases) | `vite.config.ts` | Edit the file in a PR |
-| App env values (`NEXT_PUBLIC_*`) | GitHub repo **Secrets** (Settings → Secrets and variables → Actions) | Repo admin updates the secret; reference it in `filebase.yml` |
-| Filebase deploy token | GitHub secret `FILEBASE_RPC_TOKEN` | Repo admin rotates it in GitHub + Filebase |
-| Which branch deploys | `on.push.branches` in `filebase.yml` | Edit the file in a PR |
+| What                                               | Where                                                                | How a teammate changes it                                     |
+| -------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Build + deploy pipeline (IPFS)                     | `.github/workflows/filebase.yml`                                     | Edit the file in a PR                                         |
+| Build + deploy pipeline (edge/nginx)               | `.github/workflows/deploy-edge.yml`                                  | Edit the file in a PR                                         |
+| Build config (bundler, PWA, SPA fallback, aliases) | `vite.config.ts`                                                     | Edit the file in a PR                                         |
+| App env values (`NEXT_PUBLIC_*`)                   | GitHub repo **Secrets** (Settings → Secrets and variables → Actions) | Repo admin updates the secret; reference it in `filebase.yml` |
+| Filebase deploy token                              | GitHub secret `FILEBASE_RPC_TOKEN`                                   | Repo admin rotates it in GitHub + Filebase                    |
+| Which branch deploys                               | `on.push.branches` in `filebase.yml`                                 | Edit the file in a PR                                         |
 
 Because the pipeline and build config are files in the repo, collaboration uses
 **GitHub's existing roles and PR review**, no Filebase seat is required for a
@@ -28,6 +31,7 @@ the token once.
   (`/api/v0/add?wrap-with-directory=true`), then (for staging) republishes the
   branch's IPNS name to that CID so the DNSLinked domain follows the deploy.
   Branch → env:
+
   - `main` → **staging**, republishes the `staging` IPNS name to the new CID.
   - `polkadot_mainnet` → **prod**. The free tier allows one IPNS name (used by
     staging), so prod's domain DNSLinks straight at the CID instead of an IPNS
@@ -56,21 +60,24 @@ republishes it). `<key>.ipns.inbrowser.link` is an equivalent fallback gateway
 if dweb.link is slow. The staging key is also in the `_dnslink.staging-app` TXT
 record for reference.
 
-  Prod's Route 53 step needs three repo secrets: `AWS_ACCESS_KEY_ID` and
-  `AWS_SECRET_ACCESS_KEY` for an IAM user whose only permission is
-  `route53:ChangeResourceRecordSets` on the snowbridge.network hosted zone, plus
-  `AWS_ROUTE53_HOSTED_ZONE_ID` (the zone's ID). Minimal IAM policy:
+Prod's Route 53 step needs three repo secrets: `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY` for an IAM user whose only permission is
+`route53:ChangeResourceRecordSets` on the snowbridge.network hosted zone, plus
+`AWS_ROUTE53_HOSTED_ZONE_ID` (the zone's ID). Minimal IAM policy:
 
-  ```json
-  {
-    "Version": "2012-10-17",
-    "Statement": [{
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
       "Effect": "Allow",
       "Action": "route53:ChangeResourceRecordSets",
       "Resource": "arn:aws:route53:::hostedzone/<ZONE_ID>"
-    }]
-  }
-  ```
+    }
+  ]
+}
+```
+
 - **Per-PR preview** (`.github/workflows/filebase-preview.yml`): on every push to
   an open PR, builds and pins a preview, then posts/updates a PR comment with the
   unique preview URL. Previews are content-addressed CIDs, isolated from the
@@ -92,11 +99,66 @@ One-time, per environment (e.g. staging at `staging-app.snowbridge.network`):
      record for a custom-domain gateway.
 3. Merge to `main` → the deploy republishes the `staging` IPNS name to the new
    CID, and the domain serves it. Subsequent merges just update the pointer.
+
 - **Per-PR preview** (`.github/workflows/filebase-preview.yml`): on every push to
   an open PR, builds and pins a preview, then posts/updates a PR comment with the
   unique preview URL. Previews are content-addressed CIDs, isolated from prod
   (they never repoint the prod IPNS/domain). Fork PRs get no preview (no secret
   access). The previous preview for a PR is unpinned to conserve quota.
+
+## Deploying to the edge box (nginx)
+
+The same `dist/` is also published to the edge server that serves
+`app.snowbridge.network` and `staging-app.snowbridge.network` directly over
+HTTPS. This runs alongside the IPFS pipeline (`.github/workflows/deploy-edge.yml`,
+same branch → environment mapping) and is independent of it: neither one can
+break the other.
+
+- `main` → **staging**, app `staging-app`, host `staging-app.snowbridge.network`
+- `polkadot_mainnet` → **prod**, app `app`, host `app.snowbridge.network`
+
+**A release is a directory, and going live is a symlink rename.** The workflow
+rsyncs `dist/` to `/opt/edge/www/<app>/releases/<UTC timestamp>-<sha7>/`, then
+renames a symlink over `site` (`ln -sfn releases/$REL site.tmp && mv -Tf site.tmp
+site`). `rename(2)` is atomic, so nginx serves either the old release or the new
+one and never something in between, and nothing needs reloading. Old releases
+stay on disk; a systemd timer on the box prunes to the newest 5 and never
+touches the live one.
+
+**Everything is served pre-compressed.** Both vhosts set `gzip_static on`, so
+nginx answers `/assets/x.js` with `/assets/x.js.gz` when that file exists.
+`gzipStatic()` in `vite.config.ts` writes a `.gz` next to every text asset at
+level 9 (skipping files under 1 KB and any file gzip doesn't shrink). This is
+also why the workflow fails the build when `dist/index.html.gz` or a `.gz` for a
+large JS/CSS asset is missing: `gzip_static` falls back to the uncompressed file
+silently, so a regression here would ship megabytes more without any visible
+error.
+
+**Rollback**: run the workflow manually (Actions → _Deploy to edge (nginx)_ →
+_Run workflow_) from the environment branch with `release_id` set to a directory
+that already exists under `releases/`. It skips the build entirely and only
+repoints `site`. To see what's available:
+
+```bash
+ssh webdeploy@app.snowbridge.network 'ls /opt/edge/www/app/releases; readlink /opt/edge/www/app/site'
+```
+
+**Access**: the workflow authenticates as `webdeploy@` with repo secrets
+`WEBDEPLOY_SSH_KEY` (private key, no passphrase) and `WEBDEPLOY_KNOWN_HOSTS`
+(host keys, so a MITM fails the run instead of prompting). Because the deploy
+targets the vhost names rather than the box's IP, `WEBDEPLOY_KNOWN_HOSTS` must
+have entries for **both** hostnames:
+
+```bash
+ssh-keyscan app.snowbridge.network staging-app.snowbridge.network |
+  gh secret set WEBDEPLOY_KNOWN_HOSTS --repo Snowfork/snowbridge-app
+```
+
+The `webdeploy` user has no sudo and can only write under
+`/opt/edge/www/<app>/releases/`. The server, that user, the vhosts and the
+pruning timer are all owned by the `edge` Ansible role in the infra repo, not by
+this repo; `maintenance/` in particular belongs to that role and must not be
+touched by CI.
 
 ## One-time setup (repo admin)
 
@@ -131,7 +193,9 @@ pnpm lint      # eslint
 ```
 
 `pnpm build` also writes `dist/404.html` (a copy of `index.html`) so deep links
-like `/activity` resolve to the app shell on a static host / IPFS gateway.
+like `/activity` resolve to the app shell on a static host / IPFS gateway, and a
+`.gz` next to every text asset for nginx's `gzip_static` (harmless on IPFS,
+which just ignores the extra files).
 
 ## Known caveats
 
