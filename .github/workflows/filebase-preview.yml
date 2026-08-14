@@ -1,32 +1,51 @@
-# Per-PR preview deploys to IPFS (the Vercel-preview equivalent). On every push
-# to an open PR, builds and pins the bundle to Filebase, then posts/updates a PR
-# comment with the unique preview URL. Previews only produce immutable CIDs and
-# never repoint the prod IPNS/domain, so they cannot affect the live site.
+# Per-PR preview deploys to IPFS (the Vercel-preview equivalent). Builds and pins
+# the bundle to Filebase, then posts/updates a PR comment with the unique preview
+# URL. Previews only produce immutable CIDs and never repoint the prod
+# IPNS/domain, so they cannot affect the live site.
+#
+# Manual only for now (previously ran on every push to an open PR, and unpinned
+# on close). Give it a PR number; tick `unpin` to remove that PR's preview
+# instead. To re-enable automatic previews, restore:
+#   pull_request:
+#     types: [opened, synchronize, reopened, closed]
+# and swap the job conditions back to github.event.action.
 #
 # Secrets needed: FILEBASE_RPC_TOKEN and one repo secret per NEXT_PUBLIC_* build
 # var (see the Build step). Note: secrets are NOT available to PRs opened from
-# forks (GitHub security), so fork PRs won't get a preview.
+# forks (GitHub security), so fork PRs can't be previewed.
 name: Preview deploy (IPFS)
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to preview
+        required: true
+        type: string
+      unpin:
+        description: Unpin that PR's preview instead of building one
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
   pull-requests: write
 
-# One in-flight preview per PR; newer pushes cancel older runs.
+# One in-flight preview per PR; newer runs cancel older ones.
 concurrency:
-  group: ipfs-preview-${{ github.event.number }}
+  group: ipfs-preview-${{ inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   preview:
-    if: github.event.action != 'closed'
+    if: ${{ !inputs.unpin }}
     runs-on: ubuntu-latest
     steps:
+      # The dispatch runs from a branch, so check out the PR's head explicitly.
       - uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ inputs.pr }}/head
 
       - uses: pnpm/action-setup@v4
 
@@ -59,7 +78,7 @@ jobs:
         env:
           FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.number }}
+          PR: ${{ inputs.pr }}
         run: |
           set -euo pipefail
           prev=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json comments \
@@ -82,33 +101,36 @@ jobs:
       - name: Comment preview URL on the PR
         env:
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.number }}
+          PR: ${{ inputs.pr }}
           CID: ${{ steps.pin.outputs.cid }}
         run: |
           set -euo pipefail
+          # Not GITHUB_SHA: on a dispatch that is the branch the run started
+          # from, while the checkout above is the PR's head.
+          sha=$(git rev-parse --short HEAD)
           {
             echo "<!-- ipfs-preview -->"
-            echo "🛰 **IPFS preview deployed** (commit \`${GITHUB_SHA::7}\`)"
+            echo "🛰 **IPFS preview deployed** (commit \`${sha}\`)"
             echo ""
             echo "- Root CID: \`${CID}\`"
             echo "- Preview: https://${CID}.ipfs.dweb.link/"
             echo ""
-            echo "Content-addressed CID, isolated from prod. Updated on each push."
+            echo "Content-addressed CID, isolated from prod."
           } > preview-comment.md
           gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file preview-comment.md --edit-last \
             || gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file preview-comment.md
 
-  # When a PR closes (merged or not), unpin its preview so it stops counting
-  # against the Filebase quota.
+  # Unpin a PR's preview so it stops counting against the Filebase quota (this
+  # used to run automatically when the PR closed).
   cleanup:
-    if: github.event.action == 'closed'
+    if: ${{ inputs.unpin }}
     runs-on: ubuntu-latest
     steps:
       - name: Unpin this PR's preview
         env:
           FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.number }}
+          PR: ${{ inputs.pr }}
         run: |
           set -euo pipefail
           cid=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json comments \

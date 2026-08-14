@@ -25,8 +25,12 @@ the token once.
 
 ## How a deploy happens
 
-- **Environments** (`.github/workflows/filebase.yml`): on push to an environment
-  branch (after a PR merges), GitHub Actions installs deps → `pnpm build` → pins
+> Both IPFS workflows are **manual only for now** — the edge box serves the live
+> domains. Run them from Actions → _Run workflow_ (the preview one takes a PR
+> number). Each file's header comment says what to restore to re-enable them.
+
+- **Environments** (`.github/workflows/filebase.yml`): GitHub Actions installs
+  deps → `pnpm build` → pins
   `dist/` to IPFS as a single directory CID via Filebase's IPFS RPC
   (`/api/v0/add?wrap-with-directory=true`), then (for staging) republishes the
   branch's IPNS name to that CID so the DNSLinked domain follows the deploy.
