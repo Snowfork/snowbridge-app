@@ -63,20 +63,20 @@ importers:
         specifier: 1.7.7
         version: 1.7.7(@ethersproject/sha2@5.7.0)(@types/react@18.3.12)(@vercel/functions@3.3.4)(bufferutil@4.0.8)(ethers@6.16.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
       '@snowbridge/api':
-        specifier: 1.1.12
-        version: 1.1.12(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 1.1.13
+        version: 1.1.13(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@snowbridge/base-types':
-        specifier: 1.1.12
-        version: 1.1.12
+        specifier: 1.1.13
+        version: 1.1.13
       '@snowbridge/contract-types':
-        specifier: 1.1.12
-        version: 1.1.12(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 1.1.13
+        version: 1.1.13(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@snowbridge/provider-ethers':
-        specifier: 1.1.12
-        version: 1.1.12(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: 1.1.13
+        version: 1.1.13(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@snowbridge/registry':
-        specifier: 1.1.12
-        version: 1.1.12
+        specifier: 1.1.13
+        version: 1.1.13
       '@talismn/connect-components':
         specifier: 1.1.9
         version: 1.1.9(@polkadot/api@16.5.4(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/extension-inject@0.63.1(@polkadot/api@16.5.4(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@polkadot/util@14.0.3)(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2020,23 +2020,23 @@ packages:
   '@scure/sr25519@0.2.0':
     resolution: {integrity: sha512-uUuLP7Z126XdSizKtrCGqYyR3b3hYtJ6Fg/XFUXmc2//k2aXHDLqZwFeXxL97gg4XydPROPVnuaHGF2+xriSKg==}
 
-  '@snowbridge/api@1.1.12':
-    resolution: {integrity: sha512-dU9RCBj0pO8GFc1suBQdjEPAAUh79agankBQTWq6mxdRh97cn9ajB0bvNNjuXL9Qc+5NqG7rO3M9l+sHy9vuKQ==}
+  '@snowbridge/api@1.1.13':
+    resolution: {integrity: sha512-aYEU6LYepLYoSE/obUz0fjraV1yzvZ749f1ijiGXCY/dC6KiTh1QGLIwTuCYy+LQVfPqrYH/QLoCVRLgHsYLhA==}
 
-  '@snowbridge/base-types@1.1.12':
-    resolution: {integrity: sha512-YmOcuOyCtuXlicnnOkGaJCOH6aU3ClYbUsuxF60g8VBBQz+6CDwF44zYY/sZ6uyAHviFu8fn5P/+vHS52aoOhQ==}
+  '@snowbridge/base-types@1.1.13':
+    resolution: {integrity: sha512-deJHOD6KJ0xIOAJxCgt3yoI1+UESpSAZ6gX9S1GSpoCQZ1OyQzN65YU7lPHurpfmfI232TI1CDJek9EbMcDXAA==}
 
-  '@snowbridge/contract-types@1.1.12':
-    resolution: {integrity: sha512-NCZr2LsyJdF5xvev85QtH9tDbHp/icdQ7m+Eyao6ApHzpFoJO7WC6ICBWgeOShUw12kpLAeowmBNztUA9+PmuQ==}
+  '@snowbridge/contract-types@1.1.13':
+    resolution: {integrity: sha512-96xjLnm2wFaF+Z+jwcWhUarNFodZXm5+96sIYoZBGAkZuVdZK9p/NujmVhnjPha9mSwRSLHsDlRSF6TJsrpp7g==}
 
-  '@snowbridge/contracts@1.1.12':
-    resolution: {integrity: sha512-E/1/Gvs+Qy9lRmZU9SM96t/GH/+u5GhgNZsWkHXT5TOk4ML8j0/hU4PSh91UCAsez/5XldQUpiWPRyFUafNaCg==}
+  '@snowbridge/contracts@1.1.13':
+    resolution: {integrity: sha512-NjOwPfZhngr4NW10fpO3UjWQlaatLIkC2M1uaotW9+WlcNH5E3MflLK8/k/Xneq4ytG8IvWRhRD84m8Q5cNLQw==}
 
-  '@snowbridge/provider-ethers@1.1.12':
-    resolution: {integrity: sha512-NQGzd2IaN1RMxtfBIYhDQYvT/jMwp8jyQI47LKQNdSFbLAVBsGyhqjf9krxt3LOspuVRhno+NE2I7Cp/J+cqiA==}
+  '@snowbridge/provider-ethers@1.1.13':
+    resolution: {integrity: sha512-/QmP1ymtisrBlb28sCKv3TbytApjPH3iXKFuOJFjVb3NScA51oJmuJrv7tGbxiUt7RZ7bmnZVSfqevbPp56aeg==}
 
-  '@snowbridge/registry@1.1.12':
-    resolution: {integrity: sha512-34+mHLCGvs00hBlqKLgTzW1YgqtlpoSA30Eu3+yMfHsSV0r+o+DnL3E4FeEZU8t3S8pMlU9hejsYG3ZhQR+GUg==}
+  '@snowbridge/registry@1.1.13':
+    resolution: {integrity: sha512-C8qRQP/BKvcLyTkd1tpsXtdoQYgj91ARU25IHfYg+TdYxbIwv7Z3iRHXVJOxKNg7Sd6/5otYtPfBAylPOJTQXw==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -7621,42 +7621,42 @@ snapshots:
       '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
 
-  '@snowbridge/api@1.1.12(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/api@1.1.13(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@polkadot/api': 16.5.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring': 14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)
       '@polkadot/types': 16.5.4
       '@polkadot/util': 14.0.3
       '@polkadot/util-crypto': 14.0.3(@polkadot/util@14.0.3)
-      '@snowbridge/base-types': 1.1.12
+      '@snowbridge/base-types': 1.1.13
     transitivePeerDependencies:
       - bufferutil
       - supports-color
       - utf-8-validate
 
-  '@snowbridge/base-types@1.1.12': {}
+  '@snowbridge/base-types@1.1.13': {}
 
-  '@snowbridge/contract-types@1.1.12(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/contract-types@1.1.13(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@snowbridge/contracts': 1.1.12
+      '@snowbridge/contracts': 1.1.13
       ethers: 6.16.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@snowbridge/contracts@1.1.12': {}
+  '@snowbridge/contracts@1.1.13': {}
 
-  '@snowbridge/provider-ethers@1.1.12(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/provider-ethers@1.1.13(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
-      '@snowbridge/base-types': 1.1.12
+      '@snowbridge/base-types': 1.1.13
       ethers: 6.16.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@snowbridge/registry@1.1.12':
+  '@snowbridge/registry@1.1.13':
     dependencies:
-      '@snowbridge/base-types': 1.1.12
+      '@snowbridge/base-types': 1.1.13
 
   '@standard-schema/spec@1.1.0': {}
 
