@@ -92,13 +92,14 @@ export const subscanExtrinsicLink = (
   envName: string,
   para: ChainKey<ParachainKind> | "relaychain",
   extrinsicIndex: string,
+  block?: number,
 ): string => {
   const baseUrl = EXPLORERS[envName][`subscan_${para}`];
   if (!baseUrl) {
     return `#no-explorer-url-for-extrinsic-${para}`;
   }
   if (para === "polkadot_3397") {
-    return `${baseUrl}${extrinsicIndex.split("-")[0]}`;
+    return `${baseUrl}${block ?? extrinsicIndex.split("-")[0]}`;
   }
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}extrinsic/${extrinsicIndex}`;
