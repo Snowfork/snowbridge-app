@@ -31,6 +31,8 @@ const EXPLORERS: { [env: string]: { [explorer: string]: string } } = {
     subscan_polkadot_2004: "https://moonbeam.subscan.io/",
     subscan_polkadot_2030: "https://bifrost.subscan.io/",
     subscan_polkadot_3369: "https://mythos.subscan.io/",
+    subscan_polkadot_3397:
+      "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.jamton.network#/explorer/query/",
     subscan_polkadot_2043: "https://neuroweb.subscan.io/",
     subscan_polkadot_2086: "https://spiritnet.subscan.io/",
     subscan_relaychain: "https://polkadot.subscan.io/",
@@ -95,6 +97,9 @@ export const subscanExtrinsicLink = (
   if (!baseUrl) {
     return `#no-explorer-url-for-extrinsic-${para}`;
   }
+  if (para === "polkadot_3397") {
+    return `${baseUrl}${extrinsicIndex.split("-")[0]}`;
+  }
   const slash = baseUrl.endsWith("/") ? "" : "/";
   return `${baseUrl}${slash}extrinsic/${extrinsicIndex}`;
 };
@@ -108,8 +113,11 @@ export const subscanEventLink = (
   if (!baseUrl) {
     return `#no-explorer-url-for-event-${para}`;
   }
-  const block = eventIndex.split("-")[0];
   const slash = baseUrl.endsWith("/") ? "" : "/";
+  const block = eventIndex.split("-")[0];
+  if (para === "polkadot_3397") {
+    return `${baseUrl}${block}`;
+  }
   return `${baseUrl}${slash}block/${block}?event=${eventIndex}&tab=event`;
 };
 
