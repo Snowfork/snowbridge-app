@@ -147,6 +147,7 @@ const getExplorerLinks = (
             registry.environment,
             (source as ParachainLocation).key,
             tx.submitted.transactionHash,
+            tx.submitted.blockNumber,
           ),
         });
         links.push({
@@ -171,6 +172,7 @@ const getExplorerLinks = (
           registry.environment,
           (source as ParachainLocation).key,
           tx.submitted.extrinsic_hash,
+          tx.submitted.block_num,
         ),
       });
       if (tx.bridgeHubXcmDelivered) {
