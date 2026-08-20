@@ -1,0 +1,44 @@
+name: PR build
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: polkadot_mainnet
+          NEXT_PUBLIC_GRAPHQL_API_URL: https://snowbridge.squids.live/snowbridge-subsquid-polkadot@v1/api/graphql
+          NEXT_PUBLIC_ALCHEMY_KEY: pr-build
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: pr-build
+          NEXT_PUBLIC_POSTHOG_HOST: https://us.i.posthog.com
+          NEXT_PUBLIC_SERVICE_FEE_RECIPIENT: "0x0000000000000000000000000000000000000000"
+          NEXT_PUBLIC_SERVICE_FEE_DOT: "0"
+          NEXT_PUBLIC_SERVICE_FEE_KSM: "0"
+        run: pnpm build
