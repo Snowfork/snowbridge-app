@@ -73,6 +73,9 @@ async function fetchBridgeFeeInfo([
       txValueUsd,
       ethToUsdNumerator: BigInt(ethPriceCents),
       ethToUsdDenominator: 100n,
+      // If set, the volume fee is deposited to this Asset Hub account instead of
+      // being added to the relayer fee.
+      serviceFeeRecipient: process.env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT,
     };
   }
 
