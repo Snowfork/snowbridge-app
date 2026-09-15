@@ -66,16 +66,22 @@ async function fetchBridgeFeeInfo([
   const txValueUsdNumber = Math.floor(tokenAmountFloat * tokenPriceUsd);
   const txValueUsd = BigInt(Math.max(0, txValueUsdNumber));
 
+  // The volume fee is deposited to this Asset Hub account by the message itself.
+  // Without a recipient there is nowhere for it to go, so no volume fee is charged.
+  const serviceFeeRecipient = process.env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT;
   let volumeFee: VolumeFeeParams | undefined;
-  if (tokenPriceUsd > 0 && ethPriceUsd > 0 && txValueUsd > 0n) {
+  if (
+    serviceFeeRecipient &&
+    tokenPriceUsd > 0 &&
+    ethPriceUsd > 0 &&
+    txValueUsd > 0n
+  ) {
     const ethPriceCents = Math.round(ethPriceUsd * 100);
     volumeFee = {
       txValueUsd,
       ethToUsdNumerator: BigInt(ethPriceCents),
       ethToUsdDenominator: 100n,
-      // If set, the volume fee is deposited to this Asset Hub account instead of
-      // being added to the relayer fee.
-      serviceFeeRecipient: process.env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT,
+      serviceFeeRecipient,
     };
   }
 
