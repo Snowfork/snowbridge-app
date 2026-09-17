@@ -60,8 +60,12 @@ jobs:
           NEXT_PUBLIC_FORKED_PROVIDER_API_KEY: ${{ secrets.NEXT_PUBLIC_FORKED_PROVIDER_API_KEY }}
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          NEXT_PUBLIC_SERVICE_FEE_RECIPIENT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT }}
+          NEXT_PUBLIC_SERVICE_FEE_DOT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_DOT }}
+          NEXT_PUBLIC_SERVICE_FEE_KSM: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_KSM }}
         run: |
           [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
+          [ -n "$NEXT_PUBLIC_SERVICE_FEE_RECIPIENT" ] || { echo "::error::NEXT_PUBLIC_SERVICE_FEE_RECIPIENT secret is not set; service fees would not be collected."; exit 1; }
           pnpm build
 
       # Single source of the pin logic (scripts/deploy-filebase.sh). It pins the

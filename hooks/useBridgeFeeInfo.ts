@@ -10,6 +10,12 @@ import { parseUnits } from "ethers";
 import { fetchTokenPrices } from "@/utils/tokenPrices";
 import { BridgeDeliveryFee } from "@/utils/deliveryFee";
 
+// "none" builds without a service fee, the same as leaving it unset.
+function serviceFeeRecipientFromEnv(): string | undefined {
+  const recipient = process.env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT;
+  return recipient && recipient !== "none" ? recipient : undefined;
+}
+
 async function fetchBridgeFeeInfo([
   api,
   source,
@@ -47,7 +53,7 @@ async function fetchBridgeFeeInfo([
     // Optional service fee, configured via env (opt-in: no fee unless set). Single recipient;
     // the amount is the SOURCE native asset in base units (DOT for polkadot->kusama, KSM for
     // kusama->polkadot).
-    const recipient = process.env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT;
+    const recipient = serviceFeeRecipientFromEnv();
     const amountStr =
       senderKind === "polkadot->kusama"
         ? process.env.NEXT_PUBLIC_SERVICE_FEE_DOT
@@ -66,13 +72,22 @@ async function fetchBridgeFeeInfo([
   const txValueUsdNumber = Math.floor(tokenAmountFloat * tokenPriceUsd);
   const txValueUsd = BigInt(Math.max(0, txValueUsdNumber));
 
+  // The volume fee is deposited to this Asset Hub account by the message itself.
+  // Without a recipient there is nowhere for it to go, so no volume fee is charged.
+  const serviceFeeRecipient = serviceFeeRecipientFromEnv();
   let volumeFee: VolumeFeeParams | undefined;
-  if (tokenPriceUsd > 0 && ethPriceUsd > 0 && txValueUsd > 0n) {
+  if (
+    serviceFeeRecipient &&
+    tokenPriceUsd > 0 &&
+    ethPriceUsd > 0 &&
+    txValueUsd > 0n
+  ) {
     const ethPriceCents = Math.round(ethPriceUsd * 100);
     volumeFee = {
       txValueUsd,
       ethToUsdNumerator: BigInt(ethPriceCents),
       ethToUsdDenominator: 100n,
+      serviceFeeRecipient,
     };
   }
 

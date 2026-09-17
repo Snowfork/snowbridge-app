@@ -77,11 +77,40 @@ function gzipStatic() {
   };
 }
 
-export default defineConfig(({ mode }) => {
+// Without a recipient no service fee is collected, so a deployed build must have
+// one. Set it to "none" to build without a service fee.
+function assertServiceFeeRecipient(
+  value: string | undefined,
+  isBuild: boolean,
+) {
+  const label = "NEXT_PUBLIC_SERVICE_FEE_RECIPIENT";
+  if (value === "none") {
+    console.warn(`[service fee] ${label}=none, no service fee is collected.`);
+    return;
+  }
+  const valid = !!value && /^0x[0-9a-fA-F]{64}$/.test(value);
+  if (valid) return;
+  const reason = value
+    ? `${label} is not a 32-byte hex account: ${value}`
+    : `${label} is not set`;
+  if (isBuild) {
+    throw new Error(
+      `${reason}. A deployed build must collect service fees. Set it to a 32-byte ` +
+        `Asset Hub account, or to "none" to build without one.`,
+    );
+  }
+  console.warn(`[service fee] ${reason}, no service fee is collected.`);
+}
+
+export default defineConfig(({ mode, command }) => {
   // Load .env files (incl. .env.local). The app reads config as
   // `process.env.NEXT_PUBLIC_*`; we keep those call sites untouched and
   // statically replace them at build time via `define`.
   const env = loadEnv(mode, process.cwd(), "");
+  assertServiceFeeRecipient(
+    env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT,
+    command === "build",
+  );
   const define: Record<string, string> = {};
   for (const [key, value] of Object.entries(env)) {
     if (key.startsWith("NEXT_PUBLIC_")) {
