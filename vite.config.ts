@@ -77,17 +77,15 @@ function gzipStatic() {
   };
 }
 
-// Without a recipient the SDK pays the volume fee to the relayer, so a deployed
-// build must have one. Set it to "none" to build without a service fee.
+// Without a recipient no service fee is collected, so a deployed build must have
+// one. Set it to "none" to build without a service fee.
 function assertServiceFeeRecipient(
   value: string | undefined,
   isBuild: boolean,
 ) {
   const label = "NEXT_PUBLIC_SERVICE_FEE_RECIPIENT";
   if (value === "none") {
-    console.warn(
-      `[service fee] ${label}=none, the relayer keeps the volume fee.`,
-    );
+    console.warn(`[service fee] ${label}=none, no service fee is collected.`);
     return;
   }
   const valid = !!value && /^0x[0-9a-fA-F]{64}$/.test(value);
@@ -101,7 +99,7 @@ function assertServiceFeeRecipient(
         `Asset Hub account, or to "none" to build without one.`,
     );
   }
-  console.warn(`[service fee] ${reason}, the relayer keeps the volume fee.`);
+  console.warn(`[service fee] ${reason}, no service fee is collected.`);
 }
 
 export default defineConfig(({ mode, command }) => {
