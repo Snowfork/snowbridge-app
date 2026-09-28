@@ -64,7 +64,7 @@ importers:
         version: 1.7.7(@ethersproject/sha2@5.7.0)(@types/react@18.3.12)(@vercel/functions@3.3.4)(bufferutil@4.0.8)(ethers@6.16.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
       '@snowbridge/api':
         specifier: 1.2.1
-        version: 1.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        version: link:../snowbridge/web/packages/api
       '@snowbridge/base-types':
         specifier: 1.2.1
         version: 1.2.1
@@ -2019,9 +2019,6 @@ packages:
 
   '@scure/sr25519@0.2.0':
     resolution: {integrity: sha512-uUuLP7Z126XdSizKtrCGqYyR3b3hYtJ6Fg/XFUXmc2//k2aXHDLqZwFeXxL97gg4XydPROPVnuaHGF2+xriSKg==}
-
-  '@snowbridge/api@1.2.1':
-    resolution: {integrity: sha512-qydaR2c2WH5X1f8g5XHnmeM0pyQR103z58Da4wd5zRWQrp3CnFcDTTGmyR80oEVb5UbRPRkvlF5JH/YPxVmtrg==}
 
   '@snowbridge/base-types@1.2.1':
     resolution: {integrity: sha512-zbcR+e6YgffaAWJFxryMBzK0IiTvXl0nSqCDjZvlF+OeHc9SYKRaRxeIcZSScI5qFK4CqUbu0DOw9+5QkqbLDQ==}
@@ -7620,19 +7617,6 @@ snapshots:
     dependencies:
       '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
-
-  '@snowbridge/api@1.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@polkadot/api': 16.5.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      '@polkadot/keyring': 14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)
-      '@polkadot/types': 16.5.4
-      '@polkadot/util': 14.0.3
-      '@polkadot/util-crypto': 14.0.3(@polkadot/util@14.0.3)
-      '@snowbridge/base-types': 1.2.1
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
 
   '@snowbridge/base-types@1.2.1': {}
 
