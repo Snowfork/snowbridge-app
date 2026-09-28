@@ -1,6 +1,13 @@
 "use client";
 
-import { FC, useState, useMemo, useCallback } from "react";
+import {
+  ComponentPropsWithoutRef,
+  FC,
+  forwardRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { SelectItemWithIcon } from "./SelectItemWithIcon";
 import {
   Dialog,
@@ -77,31 +84,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       }}
     >
       <DialogTrigger asChild>
-        <button
-          type="button"
-          className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs bg-white dark:bg-slate-700 hover:bg-white/90 dark:hover:bg-slate-600 rounded-full flex-shrink-0 transition-colors"
-        >
-          {selectedAsset ? (
-            <>
-              <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
-                <ImageWithFallback
-                  src={`/images/${selectedAsset.symbol.toLowerCase()}.png`}
-                  fallbackSrc="/images/token_generic.png"
-                  width={16}
-                  height={16}
-                  alt={selectedAsset.symbol}
-                  className="rounded-full"
-                />
-              </div>
-              <span className="text-xs font-medium">
-                {selectedAsset.symbol}
-              </span>
-            </>
-          ) : (
-            <span className="text-muted-foreground text-xs">Token</span>
-          )}
-          <ChevronsUpDown className="h-3 w-3 opacity-50" />
-        </button>
+        <TokenPill symbol={selectedAsset?.symbol} />
       </DialogTrigger>
       <DialogContent className="glass more-blur">
         <Description></Description>
@@ -135,8 +118,6 @@ const TokenList: FC<TokenListProps> = (props) => {
 
   const context = useAtomValue(snowbridgeContextAtom)!;
 
-  const [searchQuery, setSearchQuery] = useState("");
-
   const { data: balances } = useTokenBalances(
     context,
     registry,
@@ -153,19 +134,7 @@ const TokenList: FC<TokenListProps> = (props) => {
     PRICE_SWR_CONFIG,
   );
 
-  const filteredAssets = useMemo(() => {
-    let filtered = assetMeta;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = assetMeta.filter((m) => {
-        return (
-          m.name.toLowerCase().includes(query) ||
-          m.symbol.toLowerCase().includes(query)
-        );
-      });
-    }
-
+  const sortedAssets = useMemo(() => {
     // Helper to get token info for sorting
     const getTokenInfo = (token: ERC20Metadata) => {
       const tokenBalance = balances?.[token.token.toLowerCase()];
@@ -184,7 +153,7 @@ const TokenList: FC<TokenListProps> = (props) => {
     };
 
     // Sort by: 1) USD value (highest first), 2) has balance but no price, 3) no balance
-    return [...filtered].sort((a, b) => {
+    return [...assetMeta].sort((a, b) => {
       const infoA = getTokenInfo(a);
       const infoB = getTokenInfo(b);
 
@@ -205,7 +174,114 @@ const TokenList: FC<TokenListProps> = (props) => {
       // Same category - sort alphabetically by name
       return a.name.localeCompare(b.name);
     });
-  }, [assetMeta, searchQuery, balances, prices]);
+  }, [assetMeta, balances, prices]);
+
+  const options: TokenOption[] = sortedAssets.map((asset) => {
+    const tokenBalance = balances?.[asset.token.toLowerCase()];
+
+    let formattedBalance: string;
+    if (tokenBalance && tokenBalance.balance > 0n) {
+      formattedBalance = formatBalance({
+        number: tokenBalance.balance,
+        decimals: tokenBalance.decimals,
+        displayDecimals: 8,
+      });
+    } else {
+      formattedBalance = "0.00";
+    }
+
+    const truncatedAddress =
+      asset.token.length > 10
+        ? `${asset.token.substring(0, 10)}...`
+        : asset.token;
+
+    const tokenPrice = prices?.[asset.symbol.toUpperCase()];
+    let usdValue: string | undefined;
+    if (tokenBalance && tokenBalance.balance > 0n && tokenPrice) {
+      const balanceInTokens =
+        Number(tokenBalance.balance) / Math.pow(10, tokenBalance.decimals);
+      usdValue = formatUsdValue(balanceInTokens * tokenPrice);
+    }
+
+    return {
+      key: asset.token,
+      symbol: asset.symbol,
+      name: asset.name,
+      balance: formattedBalance,
+      usdValue,
+      link:
+        asset.token.toLowerCase() !== assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase()
+          ? {
+              label: truncatedAddress,
+              href: etherscanERC20TokenLink(
+                registry.environment,
+                registry.ethChainId,
+                asset.token,
+              ),
+            }
+          : undefined,
+    };
+  });
+
+  return <TokenOptionList options={options} onSelect={onChange} />;
+};
+
+export type TokenOption = {
+  key: string;
+  symbol: string;
+  name: string;
+  balance?: string;
+  usdValue?: string;
+  link?: { label: string; href: string };
+};
+
+export const TokenPill = forwardRef<
+  HTMLButtonElement,
+  ComponentPropsWithoutRef<"button"> & { symbol?: string }
+>(({ symbol, ...props }, ref) => (
+  <button
+    ref={ref}
+    type="button"
+    className="h-7 px-3 py-1 flex items-center justify-center gap-1.5 text-xs bg-white dark:bg-slate-700 hover:bg-white/90 dark:hover:bg-slate-600 rounded-full flex-shrink-0 transition-colors"
+    {...props}
+  >
+    {symbol ? (
+      <>
+        <div className="relative w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
+          <ImageWithFallback
+            src={`/images/${symbol.toLowerCase()}.png`}
+            fallbackSrc="/images/token_generic.png"
+            width={16}
+            height={16}
+            alt={symbol}
+            className="rounded-full"
+          />
+        </div>
+        <span className="text-xs font-medium">{symbol}</span>
+      </>
+    ) : (
+      <span className="text-muted-foreground text-xs">Token</span>
+    )}
+    <ChevronsUpDown className="h-3 w-3 opacity-50" />
+  </button>
+));
+TokenPill.displayName = "TokenPill";
+
+export const TokenOptionList: FC<{
+  options: TokenOption[];
+  onSelect: (key: string) => unknown;
+}> = ({ options, onSelect }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!searchQuery) return options;
+    const query = searchQuery.toLowerCase();
+    return options.filter(
+      (o) =>
+        o.name.toLowerCase().includes(query) ||
+        o.symbol.toLowerCase().includes(query),
+    );
+  }, [options, searchQuery]);
 
   return (
     <>
@@ -224,94 +300,59 @@ const TokenList: FC<TokenListProps> = (props) => {
         />
       </div>
       <div className="max-h-96 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
-        {filteredAssets.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="text-center py-8 text-gray-500">No tokens found</div>
         ) : (
-          filteredAssets.map((asset) => {
-            const tokenBalance = balances?.[asset.token.toLowerCase()];
-
-            let formattedBalance: string;
-            if (tokenBalance && tokenBalance.balance > 0n) {
-              formattedBalance = formatBalance({
-                number: tokenBalance.balance,
-                decimals: tokenBalance.decimals,
-                displayDecimals: 8,
-              });
-            } else {
-              formattedBalance = "0.00";
-            }
-
-            const truncatedAddress =
-              asset.token.length > 10
-                ? `${asset.token.substring(0, 10)}...`
-                : asset.token;
-
-            const tokenPrice = prices?.[asset.symbol.toUpperCase()];
-            let usdValue: string | null = null;
-            if (tokenBalance && tokenBalance.balance > 0n && tokenPrice) {
-              const balanceInTokens =
-                Number(tokenBalance.balance) /
-                Math.pow(10, tokenBalance.decimals);
-              const usdAmount = balanceInTokens * tokenPrice;
-              usdValue = formatUsdValue(usdAmount);
-            }
-
-            return (
-              <button
-                key={asset.token}
-                type="button"
-                onClick={() => {
-                  onChange(asset.token);
-                }}
-                className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0"
-              >
-                <div className="flex items-center gap-3">
-                  <SelectItemWithIcon
-                    label=""
-                    image={asset.symbol}
-                    altImage="token_generic"
-                  />
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium text-primary">
-                      {asset.symbol}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
-                      {asset.name}
-                      {asset.token.toLowerCase() !==
-                        assetsV2.ETHER_TOKEN_ADDRESS.toLowerCase() && (
-                        <span
-                          className="hover:underline cursor-pointer inline-flex items-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(
-                              etherscanERC20TokenLink(
-                                registry.environment,
-                                registry.ethChainId,
-                                asset.token,
-                              ),
-                            );
-                          }}
-                        >
-                          ({truncatedAddress}
-                          <ArrowUpRight className="w-3 h-3" />)
-                        </span>
-                      )}
-                    </span>
-                  </div>
+          filtered.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => {
+                onSelect(option.key);
+              }}
+              className="w-full flex items-center justify-between gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0"
+            >
+              <div className="flex items-center gap-3">
+                <SelectItemWithIcon
+                  label=""
+                  image={option.symbol}
+                  altImage="token_generic"
+                />
+                <div className="flex flex-col items-start">
+                  <span className="font-medium text-primary">
+                    {option.symbol}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
+                    {option.name}
+                    {option.link && (
+                      <span
+                        className="hover:underline cursor-pointer inline-flex items-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(option.link!.href);
+                        }}
+                      >
+                        ({option.link.label}
+                        <ArrowUpRight className="w-3 h-3" />)
+                      </span>
+                    )}
+                  </span>
                 </div>
+              </div>
+              {option.balance !== undefined && (
                 <div className="flex flex-col items-end">
                   <span className="text-sm font-medium text-primary">
-                    {formattedBalance}
+                    {option.balance}
                   </span>
-                  {usdValue && (
+                  {option.usdValue && (
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {usdValue}
+                      {option.usdValue}
                     </span>
                   )}
                 </div>
-              </button>
-            );
-          })
+              )}
+            </button>
+          ))
         )}
       </div>
     </>

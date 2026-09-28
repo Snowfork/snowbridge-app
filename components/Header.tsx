@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -500,12 +501,6 @@ export function Header() {
               >
                 Governance
               </Link>
-              <Link
-                href="/stables"
-                className="text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                Stables
-              </Link>
             </div>
             <div className="absolute bottom-3 right-3 flex gap-2">
               <a
@@ -567,6 +562,19 @@ export function Header() {
             Send
           </Link>
           <Link
+            href="/stables"
+            className={`group px-3 text-base transition-colors inline-flex items-center gap-1.5 ${
+              pathname === "/stables"
+                ? "text-black dark:text-white"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            Stables
+            <Badge className="px-1.5 py-0 text-[10px] leading-4 uppercase tracking-wide border-0 text-white bg-[linear-gradient(to_right,var(--action-gradient-start),var(--action-gradient-end))] transition-shadow group-hover:shadow-[0_4px_12px_var(--action-shadow-hover)]">
+              New
+            </Badge>
+          </Link>
+          <Link
             href="/activity"
             className={`px-3 text-base transition-colors ${
               pathname === "/activity"
@@ -614,6 +622,16 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Transfer
+            </Link>
+            <Link
+              href="/stables"
+              className="group px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium inline-flex items-center gap-1.5"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Stables
+              <Badge className="px-1.5 py-0 text-[10px] leading-4 uppercase tracking-wide border-0 text-white bg-[linear-gradient(to_right,var(--action-gradient-start),var(--action-gradient-end))] transition-shadow group-hover:shadow-[0_4px_12px_var(--action-shadow-hover)]">
+                New
+              </Badge>
             </Link>
             <Link
               href="/activity"
