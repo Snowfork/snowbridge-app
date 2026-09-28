@@ -1354,7 +1354,8 @@ export const StablesTransferForm: FC = () => {
                   )}
                   {summaryRow(
                     "Service fee",
-                    leg1ServiceFee !== null
+                    leg1ServiceFee !== null &&
+                      (leg1AmountParsed || dotTopUp > 0n)
                       ? `${fmt(leg1ServiceFee, DOT_DECIMALS)} DOT`
                       : pending(leg1ServiceLoading),
                   )}
