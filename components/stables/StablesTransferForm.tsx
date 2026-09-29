@@ -2,6 +2,7 @@
 
 import {
   FC,
+  Fragment,
   ReactNode,
   useCallback,
   useContext,
@@ -40,6 +41,7 @@ import { ErrorDialog } from "@/components/ErrorDialog";
 import Image from "next/image";
 import { SelectAccount } from "@/components/SelectAccount";
 import { PolkadotAccountDialog } from "@/components/PolkadotAccountDialog";
+import { ConnectEthereumWalletButton } from "@/components/ConnectEthereumWalletButton";
 import { ConnectPolkadotWalletButton } from "@/components/ConnectPolkadotWalletButton";
 import { filterByAccountType } from "@/utils/formSchema";
 import { AccountInfo } from "@/utils/types";
@@ -56,15 +58,16 @@ import {
   LucideCircleCheck,
   LucideInfo,
   LucideLoaderCircle,
+  LucideArrowRight,
   LucideTriangleAlert,
   LucideX,
 } from "lucide-react";
-import { formatBalance, trimAccount } from "@/utils/formatting";
+import { formatBalance, formatUsdValue, trimAccount } from "@/utils/formatting";
+import { SelectItemWithIcon } from "@/components/SelectItemWithIcon";
 import { subscanExtrinsicLink } from "@/lib/explorerLinks";
 import { errorMessage } from "@/utils/errorMessage";
 
 const DOT_DECIMALS = 10;
-const HDX_DECIMALS = 12;
 const SOURCE_SYMBOLS = Object.keys(
   stables.HYDRATION_STABLES,
 ) as stables.HydrationStableSymbol[];
@@ -72,7 +75,6 @@ const TARGET_SYMBOLS = Object.keys(
   stables.ETHEREUM_STABLES,
 ) as stables.EthereumStableSymbol[];
 
-const HYDRATION_HDX_ID = 0;
 const HYDRATION_DOT_ID = 5;
 // Headroom for the step 2 tx fee when suggesting a DOT top-up.
 const STEP2_TX_FEE_BUFFER = 200_000_000n;
@@ -80,8 +82,8 @@ const roundUpToTenthDot = (planck: bigint) =>
   ((planck + 999_999_999n) / 1_000_000_000n) * 1_000_000_000n;
 const TOP_UP_PAD_PERCENT = 25n;
 
-// DOT to send so step 2 can pay `fee`: the SDK's top-up plus the step 2 tx fee,
-// which the SDK leaves out, rounded up to a tenth of a DOT.
+// DOT to send so step 2 can pay `fee` (and its tx fee, when paid in DOT), rounded up
+// to a tenth of a DOT.
 async function suggestTopUp(
   transfer: ReturnType<SnowbridgeClient["stables"]>,
   account: string,
@@ -90,12 +92,30 @@ async function suggestTopUp(
 ): Promise<bigint> {
   const topUp = await transfer.dotTopUp(account, fee, {
     padPercentage: TOP_UP_PAD_PERCENT,
+    txFee,
   });
-  return topUp > 0n ? roundUpToTenthDot(topUp + txFee) : 0n;
+  return topUp > 0n ? roundUpToTenthDot(topUp) : 0n;
 }
 const MAX_SLIPPAGE_PERCENT = 5;
+// Expected Hydration to Ethereum delivery; normal matches /send.
+const DELIVERY_TIME = { normal: "~35 min", accelerated: "~2 min" };
+const DELIVERY_OPTIONS = [
+  { label: `Normal (${DELIVERY_TIME.normal})`, value: false },
+  { label: `Accelerated (${DELIVERY_TIME.accelerated})`, value: true },
+];
 const DELIVERY_POLL_MS = 6_000;
 const BALANCE_REFRESH_MS = 15_000;
+// Ethereum gas can triple within minutes, so fee quotes are refreshed while shown
+// and fetched again at submit.
+const QUOTE_REFRESH_MS = 30_000;
+// A step 1 fee computed longer ago than this blocks the step until a refresh succeeds.
+// fetchTokenPrices caches for 5 minutes too, so the DOT price behind a usable fee is
+// at most about 10 minutes old.
+const LEG1_FEE_MAX_AGE_MS = 5 * 60_000;
+// Stop at submit when the fee rose more than this since it was shown.
+const FEE_RISE_TOLERANCE_PERCENT = 10n;
+const dotTotal = (fee: toEthereumV2.DeliveryFee) =>
+  fee.totals.find((t) => t.symbol === "DOT")?.amount ?? 0n;
 const DELIVERY_TIMEOUT_MS = 180_000;
 
 const STATUS_STYLE = {
@@ -132,21 +152,19 @@ async function volumeFeeInputs(
 
 const toCents = (usd: number) => BigInt(Math.round(usd * 100));
 
-async function leg1VolumeFee(
-  symbol: stables.HydrationStableSymbol,
-  amount: bigint,
-): Promise<stables.MoveToHydrationFeeParams | undefined> {
-  const inputs = await volumeFeeInputs(
-    symbol,
-    amount,
-    stables.HYDRATION_STABLES[symbol].decimals,
-  );
-  if (!inputs?.dotUsd) return undefined;
+// Step 1 charges a fixed fee, so it needs only the DOT price.
+async function leg1FeeParams(): Promise<
+  stables.MoveToHydrationFeeParams | undefined
+> {
+  const recipient = serviceFeeRecipientFromEnv();
+  if (!recipient) return undefined;
+  const dotUsd = (await fetchTokenPrices(["DOT"]))["DOT"];
+  // The fee is mandatory once a recipient is set, so no price means no transfer.
+  if (!dotUsd) throw new Error("No DOT price for the step 1 service fee.");
   return {
-    txValueUsd: inputs.txValueUsd,
-    dotToUsdNumerator: toCents(inputs.dotUsd),
+    dotToUsdNumerator: toCents(dotUsd),
     dotToUsdDenominator: 100n,
-    serviceFeeRecipient: inputs.recipient,
+    serviceFeeRecipient: recipient,
   };
 }
 
@@ -188,6 +206,16 @@ function toHex(address: string): string {
   return isHex(address) ? address : u8aToHex(decodeAddress(address));
 }
 
+// Non-empty input that is not a non-negative amount with at most `decimals` places.
+function isInvalidAmount(value: string, decimals: number): boolean {
+  if (value.trim() === "") return false;
+  try {
+    return parseUnits(value.trim(), decimals) < 0n;
+  } catch {
+    return true;
+  }
+}
+
 function parseAmount(value: string, decimals: number): bigint | null {
   try {
     const parsed = parseUnits(
@@ -199,6 +227,29 @@ function parseAmount(value: string, decimals: number): bigint | null {
     return null;
   }
 }
+
+// Amounts filled in for the user (Max, prefill) show at most this many decimals;
+// the exact value is kept so no dust is left behind.
+const DISPLAY_DECIMALS = 6;
+function displayAmount(value: bigint, decimals: number): string {
+  const [whole, fraction = ""] = formatUnits(value, decimals).split(".");
+  const cut = fraction.slice(0, DISPLAY_DECIMALS).replace(/0+$/, "");
+  return cut ? `${whole}.${cut}` : whole;
+}
+type ExactAmount = { symbol: string; display: string; value: bigint } | null;
+// The exact value while the input still shows what was filled in.
+function amountValue(
+  input: string,
+  exact: ExactAmount,
+  symbol: string,
+  decimals: number,
+): bigint | null {
+  return exact && exact.symbol === symbol && exact.display === input
+    ? exact.value
+    : parseAmount(input, decimals);
+}
+// Stables are dollar pegged; use $1 when the indexer has no price.
+const PEGGED = new Set(["HOLLAR", "USDT", "USDC"]);
 
 // RPC calls fail transiently while a chain connection reconnects; retry before
 // surfacing anything.
@@ -233,9 +284,17 @@ function errorMessages(logs: toEthereumV2.ValidationLog[]): string[] {
   return specific.length > 0 ? specific : errors;
 }
 
+// Dry-run warnings are diagnostics (e.g. the forked Ethereum RPC being
+// unreachable), not something the user can act on, so they only go to the console.
 function warningMessages(logs: toEthereumV2.ValidationLog[]): string[] {
-  return logs
-    .filter((l) => l.kind === toEthereumV2.ValidationKind.Warning)
+  const warnings = logs.filter(
+    (l) => l.kind === toEthereumV2.ValidationKind.Warning,
+  );
+  warnings
+    .filter((l) => l.reason === toEthereumV2.ValidationReason.DryRunFailed)
+    .forEach((l) => console.warn("Dry run warning:", l.message));
+  return warnings
+    .filter((l) => l.reason !== toEthereumV2.ValidationReason.DryRunFailed)
     .map((l) => l.message);
 }
 
@@ -257,57 +316,53 @@ async function withBlockNumber(
   }
 }
 
-// One place for everything that blocks or delays the action button.
+// Errors block the action button; warnings do not.
 const StatusAlert: FC<{
   errors: string[];
   warnings?: string[];
-  info?: string | null;
-  busy?: boolean;
-}> = ({ errors, warnings = [], info, busy }) => {
+  action?: { label: string; onClick: () => void };
+}> = ({ errors, warnings = [], action }) => {
   if (errors.length > 0) {
     return (
       <div className="w-full rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3">
         <div className="flex items-start gap-2 text-sm text-red-800 dark:text-red-200">
           <LucideTriangleAlert className="flex-shrink-0 mt-0.5 w-4 h-4" />
-          {errors.length === 1 ? (
-            <span>{errors[0]}</span>
-          ) : (
-            <ul className="space-y-1 list-disc pl-4">
-              {errors.map((e) => (
-                <li key={e}>{e}</li>
-              ))}
-            </ul>
-          )}
+          <div className="space-y-2">
+            {errors.length === 1 ? (
+              <span>{errors[0]}</span>
+            ) : (
+              <ul className="space-y-1 list-disc pl-4">
+                {errors.map((e) => (
+                  <li key={e}>{e}</li>
+                ))}
+              </ul>
+            )}
+            {action && (
+              <button
+                type="button"
+                className="block font-medium underline underline-offset-2"
+                onClick={action.onClick}
+              >
+                {action.label}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
   }
-  if (!info && warnings.length === 0) return null;
+  if (warnings.length === 0) return null;
   return (
-    <>
-      {warnings.length > 0 && (
-        <div className="w-full rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 px-4 py-3">
-          <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
-            <LucideTriangleAlert className="flex-shrink-0 mt-0.5 w-4 h-4" />
-            <ul className="space-y-1">
-              {warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-      {info && (
-        <div className="w-full rounded-xl glass-sub px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
-          {busy ? (
-            <LucideLoaderCircle className="w-4 h-4 animate-spin flex-shrink-0" />
-          ) : (
-            <LucideInfo className="w-4 h-4 flex-shrink-0" />
-          )}
-          <span>{info}</span>
-        </div>
-      )}
-    </>
+    <div className="w-full rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 px-4 py-3">
+      <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
+        <LucideTriangleAlert className="flex-shrink-0 mt-0.5 w-4 h-4" />
+        <ul className="space-y-1">
+          {warnings.map((w) => (
+            <li key={w}>{w}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 };
 
@@ -362,6 +417,11 @@ export const StablesTransferForm: FC = () => {
     () => ethereumAccounts.map((a) => ({ key: a, name: a, type: "ethereum" })),
     [ethereumAccounts],
   );
+  // Asset Hub and Hydration take AccountId32 accounts only.
+  const substrateAccounts = useMemo(
+    () => (polkadotAccounts ?? []).filter(filterByAccountType("AccountId32")),
+    [polkadotAccounts],
+  );
   const addPendingTransaction = useSetAtom(transfersPendingLocalAtom);
   const { mutate: refreshHistory } = useTransferActivity();
   const router = useRouter();
@@ -378,7 +438,15 @@ export const StablesTransferForm: FC = () => {
   }, [selectedPolkadotAccount, sourceAddress]);
   const account = polkadotAccounts?.find((a) => a.address === sourceAddress);
 
-  const [balances, setBalances] = useState<stables.StableBalances | null>(null);
+  // Tagged with their account, so a switch never shows the previous account's.
+  const [loadedBalances, setLoadedBalances] = useState<{
+    account: string;
+    value: stables.StableBalances;
+  } | null>(null);
+  const balances =
+    loadedBalances && loadedBalances.account === sourceAddress
+      ? loadedBalances.value
+      : null;
   const [balancesError, setBalancesError] = useState<string | null>(null);
   // Drop stale responses, e.g. from a previous account.
   const balancesRequest = useRef(0);
@@ -387,8 +455,10 @@ export const StablesTransferForm: FC = () => {
     const id = ++balancesRequest.current;
     try {
       const result = await transfer.balances(sourceAddress);
-      if (id !== balancesRequest.current) return null;
-      setBalances(result);
+      // A newer request owns the page state, but this result is still valid for
+      // `sourceAddress`, so callers such as the arrival watcher can use it.
+      if (id !== balancesRequest.current) return result;
+      setLoadedBalances({ account: sourceAddress, value: result });
       setBalancesError(null);
       return result;
     } catch (err) {
@@ -399,7 +469,6 @@ export const StablesTransferForm: FC = () => {
     }
   }, [transfer, sourceAddress]);
   useEffect(() => {
-    setBalances(null);
     setBalancesError(null);
     loadBalances();
     const timer = setInterval(() => {
@@ -416,8 +485,28 @@ export const StablesTransferForm: FC = () => {
   const leg1Stable = stables.HYDRATION_STABLES[leg1Symbol];
   const [leg1Amount, setLeg1Amount] = useState("");
   const [pendingLeg1, setPendingLeg1] = useState<PendingLeg1 | null>(null);
+  // After a send the form is hidden behind the progress card until "Send more".
+  const [leg1FormOpen, setLeg1FormOpen] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [feeBreakdownOpen, setFeeBreakdownOpen] = useState(false);
+  const [leg1Exact, setLeg1Exact] = useState<ExactAmount>(null);
+  const [leg2Exact, setLeg2Exact] = useState<ExactAmount>(null);
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [refreshTick, setRefreshTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") setRefreshTick((t) => t + 1);
+    }, QUOTE_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, []);
+  // Step 1's top-up estimate and fee refresh only while step 1 is shown.
+  const topUpRefresh = step === 1 ? refreshTick : 0;
+  useEffect(() => {
+    fetchTokenPrices(["DOT", "HDX", ...SOURCE_SYMBOLS])
+      .then(setPrices)
+      .catch((err) => console.error("Could not load prices:", err));
+  }, []);
   const [topUpEnabled, setTopUpEnabled] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState("");
   // Once the user edits the top-up, stop replacing it with the suggestion.
@@ -431,10 +520,11 @@ export const StablesTransferForm: FC = () => {
     const key = `${sourceAddress}|${leg1Symbol}`;
     if (!balances || leg1Prefilled.current === key) return;
     leg1Prefilled.current = key;
-    if (leg1Amount === "" && balances.assetHub[leg1Symbol] > 0n) {
-      setLeg1Amount(
-        formatUnits(balances.assetHub[leg1Symbol], leg1Stable.decimals),
-      );
+    const balance = balances.assetHub[leg1Symbol];
+    if (leg1Amount === "" && balance > 0n) {
+      const display = displayAmount(balance, leg1Stable.decimals);
+      setLeg1Exact({ symbol: leg1Symbol, display, value: balance });
+      setLeg1Amount(display);
     }
   }, [balances, sourceAddress, leg1Amount, leg1Symbol, leg1Stable.decimals]);
 
@@ -456,10 +546,11 @@ export const StablesTransferForm: FC = () => {
     const key = `${sourceAddress}|${leg2Symbol}`;
     if (leg1InFlight || !balances || leg2Prefilled.current === key) return;
     leg2Prefilled.current = key;
-    if (leg2Amount === "" && balances.hydration[leg2Symbol] > 0n) {
-      setLeg2Amount(
-        formatUnits(balances.hydration[leg2Symbol], leg2Stable.decimals),
-      );
+    const balance = balances.hydration[leg2Symbol];
+    if (leg2Amount === "" && balance > 0n) {
+      const display = displayAmount(balance, leg2Stable.decimals);
+      setLeg2Exact({ symbol: leg2Symbol, display, value: balance });
+      setLeg2Amount(display);
     }
   }, [
     leg1InFlight,
@@ -470,12 +561,44 @@ export const StablesTransferForm: FC = () => {
     leg2Stable.decimals,
   ]);
 
+  // A wallet switch can drop the selected account; follow the wallet's current one and
+  // start clean, as a manual account switch does.
+  useEffect(() => {
+    if (substrateAccounts.length === 0) return;
+    if (substrateAccounts.some((a) => a.address === sourceAddress)) return;
+    const next =
+      substrateAccounts.find(
+        (a) => a.address === selectedPolkadotAccount?.address,
+      ) ?? substrateAccounts[0];
+    setSourceAddress(next.address);
+    setLeg1Amount("");
+    setLeg2Amount("");
+    setLeg1Exact(null);
+    setLeg2Exact(null);
+    setPendingLeg1(null);
+  }, [substrateAccounts, sourceAddress, selectedPolkadotAccount]);
+
+  // Read after awaits, when the selection or input may have changed.
+  const sourceAddressRef = useRef(sourceAddress);
+  sourceAddressRef.current = sourceAddress;
+  const leg2SymbolRef = useRef(leg2Symbol);
+  leg2SymbolRef.current = leg2Symbol;
+  const leg2AmountRef = useRef(leg2Amount);
+  leg2AmountRef.current = leg2Amount;
   // Poll until leg 1 lands, then fill step 2 with the amount received.
   useEffect(() => {
     if (!pendingLeg1 || pendingLeg1.status !== "pending") return;
     if (pendingLeg1.account !== sourceAddress) return;
+    // One poll at a time, and none acting after this card is replaced or dismissed.
+    let inFlight = false;
+    let cancelled = false;
     const poll = async () => {
-      const latest = await loadBalances();
+      if (inFlight) return;
+      inFlight = true;
+      const latest = await loadBalances().finally(() => {
+        inFlight = false;
+      });
+      if (cancelled) return;
       const now =
         pendingLeg1.tracks === "dot"
           ? latest?.hydrationDot
@@ -485,59 +608,90 @@ export const StablesTransferForm: FC = () => {
         setPendingLeg1({ ...pendingLeg1, status: "received", received });
         if (
           pendingLeg1.tracks === "stable" &&
-          leg2Symbol === pendingLeg1.symbol
+          leg2SymbolRef.current === pendingLeg1.symbol
         ) {
-          const amount = formatUnits(
+          const display = displayAmount(
             received,
             stables.HYDRATION_STABLES[pendingLeg1.symbol].decimals,
           );
-          setLeg2Amount((prev) => (prev === "" ? amount : prev));
+          // Only an empty input is filled; one the user set keeps its own amount.
+          if (leg2AmountRef.current === "") {
+            setLeg2Exact({
+              symbol: pendingLeg1.symbol,
+              display,
+              value: received,
+            });
+            setLeg2Amount(display);
+          }
         }
       } else if (Date.now() > pendingLeg1.deadline) {
         setPendingLeg1({ ...pendingLeg1, status: "timeout" });
       }
     };
     const timer = setInterval(poll, DELIVERY_POLL_MS);
-    return () => clearInterval(timer);
-  }, [pendingLeg1, sourceAddress, loadBalances, leg2Symbol]);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [pendingLeg1, sourceAddress, loadBalances]);
 
-  const leg2AmountParsed = parseAmount(leg2Amount, leg2Stable.decimals);
+  const leg2AmountParsed = amountValue(
+    leg2Amount,
+    leg2Exact,
+    leg2Symbol,
+    leg2Stable.decimals,
+  );
   // A quote is only valid for the inputs it was fetched for.
   const quoteKey =
     sourceAddress && leg2AmountParsed
-      ? `${sourceAddress}|${leg2Symbol}|${target}|${leg2AmountParsed}|${accelerated}`
+      ? `${sourceAddress}|${leg2Symbol}|${target}|${leg2AmountParsed}`
       : null;
   const [quoted, setQuoted] = useState<{
     key: string;
     quote: stables.SwapQuote;
-    fee: toEthereumV2.DeliveryFee;
+    fees: {
+      normal: toEthereumV2.DeliveryFee;
+      accelerated: toEthereumV2.DeliveryFee;
+    };
   } | null>(null);
   const quote = quoted && quoted.key === quoteKey ? quoted.quote : null;
-  const fee = quoted && quoted.key === quoteKey ? quoted.fee : null;
+  const fees = quoted && quoted.key === quoteKey ? quoted.fees : null;
+  const fee = fees ? (accelerated ? fees.accelerated : fees.normal) : null;
+  // Only step 2 shows the quote, so only it refreshes.
+  const quoteRefresh = step === 2 ? refreshTick : 0;
   useEffect(() => {
-    setQuoted(null);
+    // A refresh of the same inputs keeps the current quote on screen until it lands.
+    setQuoted((prev) => (prev && prev.key === quoteKey ? prev : null));
     setQuoteError(null);
     if (!transfer || !sourceAddress || !leg2AmountParsed || !quoteKey) return;
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const [q, f] = await withRetry(
-          () =>
-            Promise.all([
+        const [q, normal, fast] = await withRetry(
+          async () => {
+            const volumeFee = await leg2VolumeFee(leg2Symbol, leg2AmountParsed);
+            return Promise.all([
               transfer.quote(
                 sourceAddress,
                 leg2Symbol,
                 target,
                 leg2AmountParsed,
               ),
-              leg2VolumeFee(leg2Symbol, leg2AmountParsed).then((volumeFee) =>
-                transfer.swapAndBridgeFee(target, { accelerated, volumeFee }),
-              ),
-            ]),
+              transfer.swapAndBridgeFee(target, { volumeFee }),
+              transfer.swapAndBridgeFee(target, {
+                accelerated: true,
+                volumeFee,
+              }),
+            ]);
+          },
           () => cancelled,
         );
         if (cancelled) return;
-        setQuoted({ key: quoteKey, quote: q, fee: f });
+        setQuoted({
+          key: quoteKey,
+          quote: q,
+          fees: { normal, accelerated: fast },
+        });
       } catch (err) {
         if (cancelled) return;
         setQuoteError(networkError(err));
@@ -554,7 +708,7 @@ export const StablesTransferForm: FC = () => {
     leg2Symbol,
     target,
     quoteKey,
-    accelerated,
+    quoteRefresh,
   ]);
 
   const slippageBps = useMemo(() => {
@@ -570,30 +724,41 @@ export const StablesTransferForm: FC = () => {
   const leg2ServiceFee =
     fee?.breakdown.serviceFee?.find((t) => t.symbol === "DOT")?.amount ?? 0n;
 
-  const leg1AmountParsed = parseAmount(leg1Amount, leg1Stable.decimals);
-  // The fee shown is the fee charged: submit reuses these params.
-  const leg1FeeKey = leg1AmountParsed
-    ? `${leg1Symbol}|${leg1AmountParsed}`
-    : null;
+  const leg1AmountParsed = amountValue(
+    leg1Amount,
+    leg1Exact,
+    leg1Symbol,
+    leg1Stable.decimals,
+  );
+  // The fee shown is the fee charged: submit reuses these params. Step 1 charges its
+  // fixed fee on every transfer, a DOT-only top-up included.
+  const sendsLeg1 = !!leg1AmountParsed || dotTopUp > 0n;
+  const leg1FeeKey = sendsLeg1 ? "step1" : null;
   const [leg1Fee, setLeg1Fee] = useState<{
     key: string;
     params?: stables.MoveToHydrationFeeParams;
     amount: bigint;
+    fetchedAt: number;
   } | null>(null);
-  // The service fee is on the stable; a DOT-only top-up has none.
-  const leg1ServiceFee = !leg1AmountParsed
+  const [leg1FeeError, setLeg1FeeError] = useState<string | null>(null);
+  // Re-evaluated on every refresh tick, so an old price stops being used.
+  const leg1FeeCurrent =
+    leg1Fee !== null &&
+    leg1Fee.key === leg1FeeKey &&
+    Date.now() - leg1Fee.fetchedAt <= LEG1_FEE_MAX_AGE_MS;
+  const leg1ServiceFee = !leg1FeeKey
     ? 0n
-    : leg1Fee && leg1Fee.key === leg1FeeKey
+    : leg1FeeCurrent
       ? leg1Fee.amount
       : null;
   useEffect(() => {
-    if (!transfer || !leg1AmountParsed || !leg1FeeKey) return;
+    if (!transfer || !leg1FeeKey) return;
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
         const { params, serviceFee } = await withRetry(
           async () => {
-            const params = await leg1VolumeFee(leg1Symbol, leg1AmountParsed);
+            const params = await leg1FeeParams();
             return {
               params,
               serviceFee: await transfer.moveToHydrationServiceFee(params),
@@ -601,21 +766,29 @@ export const StablesTransferForm: FC = () => {
           },
           () => cancelled,
         );
-        if (!cancelled)
+        if (!cancelled) {
           setLeg1Fee({
             key: leg1FeeKey,
             params,
             amount: serviceFee?.amount ?? 0n,
+            fetchedAt: Date.now(),
           });
+          setLeg1FeeError(null);
+        }
       } catch (err) {
         console.error("Could not compute the service fee:", err);
+        if (!cancelled)
+          setLeg1FeeError(
+            "Couldn't get the DOT price for the $1 service fee. Retrying...",
+          );
       }
     }, 400);
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [transfer, leg1Symbol, leg1AmountParsed, leg1FeeKey]);
+    // Refreshed with the quotes, as the DOT price moves.
+  }, [transfer, leg1FeeKey, topUpRefresh]);
 
   // Fee estimate and validation, re-run when the inputs or relevant balances change.
   const leg1CheckKey =
@@ -662,7 +835,7 @@ export const StablesTransferForm: FC = () => {
               leg1Symbol,
               leg1AmountParsed ?? 0n,
               {
-                volumeFee: leg1AmountParsed ? leg1Fee?.params : undefined,
+                volumeFee: leg1Fee?.params,
                 dotTopUp,
               },
             );
@@ -699,25 +872,32 @@ export const StablesTransferForm: FC = () => {
     leg1Fee?.params,
   ]);
 
-  // Suggest enough DOT on Hydration for step 2, with 25% headroom for gas moves.
-  const [step2DotNeeds, setStep2DotNeeds] = useState<{
+  // Suggest DOT for step 2 for both delivery modes, so switching needs no refetch.
+  const [suggestedTopUps, setSuggestedTopUps] = useState<{
     normal: bigint;
     accelerated: bigint;
-    topUp: { normal: bigint; accelerated: bigint };
   } | null>(null);
-  const [step2Estimating, setStep2Estimating] = useState(false);
+  const suggestedTopUp = suggestedTopUps
+    ? accelerated
+      ? suggestedTopUps.accelerated
+      : suggestedTopUps.normal
+    : null;
+  // Once the user ticks or unticks the top-up, stop ticking it for them.
+  const topUpTouched = useRef(false);
   const hydrationDotHeld = balances?.hydrationDot;
   useEffect(() => {
-    if (!transfer || !topUpEnabled || !sourceAddress) return;
+    if (!transfer || !sourceAddress || step !== 1) return;
     let cancelled = false;
-    setStep2Estimating(true);
     const timer = setTimeout(async () => {
       try {
+        // Step 2's volume fee is on what gets swapped: this transfer, or for a
+        // DOT-only top-up, the stable already on Hydration.
         const volumeFee = leg1AmountParsed
           ? await leg2VolumeFee(leg1Symbol, leg1AmountParsed)
-          : undefined;
-        // Both modes, so switching delivery updates the suggestion without a refetch.
-        const { normal, fast, topUp } = await withRetry(
+          : leg2AmountParsed
+            ? await leg2VolumeFee(leg2Symbol, leg2AmountParsed)
+            : undefined;
+        const topUps = await withRetry(
           async () => {
             const [normal, fast] = await Promise.all([
               transfer.swapAndBridgeFee(target, { volumeFee }),
@@ -726,31 +906,17 @@ export const StablesTransferForm: FC = () => {
                 volumeFee,
               }),
             ]);
-            const [topUpNormal, topUpFast] = await Promise.all([
+            const [normalTopUp, fastTopUp] = await Promise.all([
               suggestTopUp(transfer, sourceAddress, normal),
               suggestTopUp(transfer, sourceAddress, fast),
             ]);
-            return {
-              normal,
-              fast,
-              topUp: { normal: topUpNormal, accelerated: topUpFast },
-            };
+            return { normal: normalTopUp, accelerated: fastTopUp };
           },
           () => cancelled,
         );
-        const dot = (f: toEthereumV2.DeliveryFee) =>
-          (f.totals.find((t) => t.symbol === "DOT")?.amount ?? 0n) +
-          STEP2_TX_FEE_BUFFER;
-        if (!cancelled)
-          setStep2DotNeeds({
-            normal: dot(normal),
-            accelerated: dot(fast),
-            topUp,
-          });
+        if (!cancelled) setSuggestedTopUps(topUps);
       } catch (err) {
         console.error("Could not estimate the step 2 fees:", err);
-      } finally {
-        if (!cancelled) setStep2Estimating(false);
       }
     }, 400);
     return () => {
@@ -759,49 +925,54 @@ export const StablesTransferForm: FC = () => {
     };
   }, [
     transfer,
-    topUpEnabled,
     sourceAddress,
+    step,
     leg1Symbol,
     leg1AmountParsed,
+    leg2Symbol,
+    leg2AmountParsed,
     target,
     hydrationDotHeld,
+    topUpRefresh,
   ]);
-  const suggestedTopUp = step2DotNeeds
-    ? accelerated
-      ? step2DotNeeds.topUp.accelerated
-      : step2DotNeeds.topUp.normal
-    : null;
   useEffect(() => {
-    if (suggestedTopUp !== null && !topUpEdited.current) {
+    if (suggestedTopUp === null) return;
+    if (!topUpTouched.current) setTopUpEnabled(suggestedTopUp > 0n);
+    if (!topUpEdited.current && suggestedTopUp > 0n) {
       setTopUpAmount(formatUnits(suggestedTopUp, DOT_DECIMALS));
     }
   }, [suggestedTopUp]);
 
   const submitLeg1 = async () => {
     if (!transfer || !account) return;
-    const amount = parseAmount(leg1Amount, leg1Stable.decimals) ?? 0n;
+    if (leg1InputErrors.length > 0) {
+      setError(leg1InputErrors[0]);
+      return;
+    }
+    const amount = leg1AmountParsed ?? 0n;
     if (amount === 0n && dotTopUp === 0n) {
       setError(`Enter a ${leg1Symbol} amount or DOT to send.`);
       return;
     }
+    // Aged at click time; the render-time flag may predate a hidden-tab stretch.
     if (
-      amount > 0n &&
-      (!leg1Fee || leg1Fee.key !== `${leg1Symbol}|${amount}`)
+      !leg1FeeCurrent ||
+      Date.now() - leg1Fee.fetchedAt > LEG1_FEE_MAX_AGE_MS
     ) {
-      setError("The service fee is still loading. Try again in a moment.");
+      setError("The service fee is being updated. Try again in a moment.");
       return;
     }
     try {
       setBusy({
         title: "Send to Hydration",
-        message: "Dry running on Asset Hub and Hydration...",
+        message: "Dry running on Polkadot Hub and Hydration...",
       });
       const tx = await transfer.moveToHydrationTx(
         account.address,
         leg1Symbol,
         amount,
         {
-          volumeFee: amount > 0n ? leg1Fee?.params : undefined,
+          volumeFee: leg1Fee?.params,
           dotTopUp,
         },
       );
@@ -834,6 +1005,7 @@ export const StablesTransferForm: FC = () => {
         );
         return;
       }
+      setLeg1FormOpen(false);
       setPendingLeg1({
         account: account.address,
         symbol: leg1Symbol,
@@ -854,6 +1026,7 @@ export const StablesTransferForm: FC = () => {
       setTopUpEnabled(false);
       setTopUpAmount("");
       topUpEdited.current = false;
+      topUpTouched.current = false;
       loadBalances();
     } catch (err) {
       setBusy(null);
@@ -869,16 +1042,21 @@ export const StablesTransferForm: FC = () => {
     : "0x0000000000000000000000000000000000000001";
   const leg2CheckKey =
     quoteKey && quote && fee && slippageBps !== null && balances
-      ? `${quoteKey}|${slippageBps}|${checkBeneficiary}|${balances.hydration[leg2Symbol]}|${balances.hydrationDot}|${balances.hydrationNative}`
+      ? `${quoteKey}|${accelerated}|${slippageBps}|${checkBeneficiary}|${balances.hydration[leg2Symbol]}|${balances.hydrationDot}|${balances.hydrationNative}`
       : null;
   const [leg2Check, setLeg2Check] = useState<{
     key: string;
+    account: string;
     errors: string[];
     warnings?: string[];
     txFee?: stables.ValidatedSwapAndBridge["data"]["txFee"];
   } | null>(null);
   // Paid in DOT, the tx fee draws on the same balance as the bridge fee.
-  const leg2TxFee = leg2Check?.txFee ?? null;
+  // The last check's fee stays shown while the next runs, but only for the same account.
+  const leg2TxFee =
+    leg2Check && leg2Check.account === sourceAddress
+      ? (leg2Check.txFee ?? null)
+      : null;
   const leg2TxFeeInDot =
     leg2TxFee?.assetId === HYDRATION_DOT_ID ? (leg2TxFee.amount ?? 0n) : 0n;
   // The SDK leaves the amount unset for a fee currency it cannot price.
@@ -922,13 +1100,18 @@ export const StablesTransferForm: FC = () => {
         if (!cancelled)
           setLeg2Check({
             key: leg2CheckKey,
+            account: sourceAddress,
             errors: errorMessages(validated.logs),
             warnings: warningMessages(validated.logs),
             txFee: validated.data.txFee,
           });
       } catch (err) {
         if (!cancelled)
-          setLeg2Check({ key: leg2CheckKey, errors: [networkError(err)] });
+          setLeg2Check({
+            key: leg2CheckKey,
+            account: sourceAddress,
+            errors: [networkError(err)],
+          });
       }
     }, 400);
     return () => {
@@ -962,15 +1145,44 @@ export const StablesTransferForm: FC = () => {
     try {
       setBusy({
         title: "Swap and send to Ethereum",
-        message:
-          "Dry running on Hydration, Asset Hub, Bridge Hub and Ethereum...",
+        message: "Checking the latest fees...",
       });
+      const latestFee = await transfer.swapAndBridgeFee(target, {
+        accelerated,
+        volumeFee: await leg2VolumeFee(leg2Symbol, quote.amountIn),
+      });
+      const shownDot = dotTotal(fee);
+      const latestDot = dotTotal(latestFee);
+      if (latestDot * 100n > shownDot * (100n + FEE_RISE_TOLERANCE_PERCENT)) {
+        setQuoted((prev) =>
+          prev && prev.key === quoteKey
+            ? {
+                ...prev,
+                fees: {
+                  ...prev.fees,
+                  [accelerated ? "accelerated" : "normal"]: latestFee,
+                },
+              }
+            : prev,
+        );
+        setBusy(null);
+        setError(
+          `The fee went up from ${formatBalance({ number: shownDot, decimals: DOT_DECIMALS, displayDecimals: 4 })} to ${formatBalance({ number: latestDot, decimals: DOT_DECIMALS, displayDecimals: 4 })} DOT since it was quoted, as Ethereum gas rose. The page now shows the new fee; check it and send again.`,
+        );
+        return;
+      }
+      setBusy({
+        title: "Swap and send to Ethereum",
+        message:
+          "Dry running on Hydration, Polkadot Hub, Bridge Hub and Ethereum...",
+      });
+      // The fresh fee, so the relayer reward matches current Ethereum gas.
       const tx = await transfer.swapAndBridgeTx(
         account.address,
         beneficiary,
         quote,
         slippageBps,
-        fee,
+        latestFee,
       );
       const validated = await transfer.validateSwapAndBridge(tx);
       if (!validated.success) {
@@ -1050,7 +1262,7 @@ export const StablesTransferForm: FC = () => {
       "-"
     );
   const leg1Loading = (!!leg1AmountParsed || dotTopUp > 0n) && !leg1Checked;
-  const leg1ServiceLoading = !!leg1AmountParsed && leg1ServiceFee === null;
+  const leg1ServiceLoading = sendsLeg1 && leg1ServiceFee === null;
   const leg2QuoteLoading = !!leg2AmountParsed && !quote && !quoteError;
   const leg2TxFeeLoading = !leg2TxFee && (leg2QuoteLoading || !leg2Checked);
   const fmtFee = (n: bigint, decimals: number) =>
@@ -1100,11 +1312,7 @@ export const StablesTransferForm: FC = () => {
       </button>
     );
 
-  const percentPills = (
-    balance: bigint | null,
-    decimals: number,
-    set: (v: string) => void,
-  ) => (
+  const percentPills = (balance: bigint | null, set: (v: bigint) => void) => (
     <div className="flex items-center justify-end gap-1">
       {[25, 50, 75, 100].map((percent) => (
         <Button
@@ -1114,8 +1322,7 @@ export const StablesTransferForm: FC = () => {
           className="h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill"
           disabled={balance === null || balance === 0n}
           onClick={() =>
-            balance !== null &&
-            set(formatUnits((balance * BigInt(percent)) / 100n, decimals))
+            balance !== null && set((balance * BigInt(percent)) / 100n)
           }
         >
           {percent === 100 ? "Max" : `${percent}%`}
@@ -1123,62 +1330,244 @@ export const StablesTransferForm: FC = () => {
       ))}
     </div>
   );
+  const setLeg1Value = (value: bigint) => {
+    const display = displayAmount(value, leg1Stable.decimals);
+    setLeg1Exact({ symbol: leg1Symbol, display, value });
+    setLeg1Amount(display);
+  };
+  const setLeg2Value = (value: bigint) => {
+    const display = displayAmount(value, leg2Stable.decimals);
+    setLeg2Exact({ symbol: leg2Symbol, display, value });
+    setLeg2Amount(display);
+  };
 
-  // `held` shows the balance the fee draws on, in red when it falls short.
-  const summaryRow = (
-    label: string,
-    value: ReactNode,
-    held?: {
-      balance: bigint;
-      required: bigint;
-      decimals: number;
-      symbol: string;
-    } | null,
-  ) => (
+  const summaryRow = (label: ReactNode, value: ReactNode) => (
     <div className="flex items-center justify-between gap-4 text-sm">
       <dt className="text-muted-glass">{label}</dt>
-      <dd className="text-primary text-right">
-        {held && (
-          <span
-            className={`text-xs mr-2 ${
-              held.balance < held.required
-                ? "text-red-600 dark:text-red-400"
-                : "text-muted-foreground"
-            }`}
+      <dd className="text-primary text-right">{value}</dd>
+    </div>
+  );
+
+  // The total, with the per-chain lines behind a toggle as on /send.
+  const feeSummary = (
+    total: ReactNode,
+    items: [string, ReactNode][],
+    rows: ReactNode,
+  ) => (
+    <dl className="glass-sub p-4 space-y-2 card-shadow">
+      {summaryRow(
+        <span className="flex items-center gap-1 text-left">
+          <span>Total fee</span>
+          <button
+            type="button"
+            className="text-xs underline underline-offset-2 hover:text-primary"
+            onClick={() => setFeeBreakdownOpen((open) => !open)}
+            aria-expanded={feeBreakdownOpen}
           >
-            You have {fmt(held.balance, held.decimals)} {held.symbol} ·
-          </span>
-        )}
-        {value}
-      </dd>
+            {feeBreakdownOpen ? "(hide breakdown)" : "(see breakdown)"}
+          </button>
+        </span>,
+        total,
+      )}
+      {feeBreakdownOpen &&
+        items.map(([label, value]) => (
+          <Fragment key={label}>{summaryRow(label, value)}</Fragment>
+        ))}
+      {rows}
+    </dl>
+  );
+
+  const pills = <V extends string | boolean>(
+    options: { label: string; value: V }[],
+    value: V,
+    onChange: (v: V) => void,
+  ) => (
+    <span className="inline-flex gap-1">
+      {options.map((o) => (
+        <Button
+          key={o.label}
+          type="button"
+          variant="clean"
+          // hover:!transform-none: overrides.css rotates round buttons in .glass-sub on hover.
+          className={`h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill hover:!transform-none ${
+            value === o.value
+              ? "font-semibold cursor-default"
+              : "opacity-60 hover:opacity-100 transition-opacity"
+          }`}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </Button>
+      ))}
+    </span>
+  );
+
+  const usdOf = (amount: bigint, decimals: number, symbol: string) => {
+    const price =
+      prices[symbol.toUpperCase()] ?? (PEGGED.has(symbol) ? 1 : undefined);
+    return price === undefined
+      ? undefined
+      : Number(formatUnits(amount, decimals)) * price;
+  };
+  // A DOT total with its dollar value; `other` is a fee in another asset, folded
+  // into the dollar value when it can be priced and listed otherwise.
+  const feeTotal = (
+    dot: bigint,
+    other?: { amount: bigint; decimals: number; symbol: string },
+  ) => {
+    const dotUsd = usdOf(dot, DOT_DECIMALS, "DOT");
+    const otherUsd = other
+      ? usdOf(other.amount, other.decimals, other.symbol)
+      : 0;
+    // Every token charged is listed; the dollar value is shown only when all are priced.
+    const text = other
+      ? `${fmt(dot, DOT_DECIMALS)} DOT + ${fmtFee(other.amount, other.decimals)} ${other.symbol}`
+      : `${fmt(dot, DOT_DECIMALS)} DOT`;
+    return dotUsd !== undefined && otherUsd !== undefined
+      ? `${text} (${formatUsdValue(dotUsd + otherUsd)})`
+      : text;
+  };
+
+  // With no stable to send, the top-up is the whole transfer.
+  const topUpVerb = leg1AmountParsed ? "Also send" : "Send only";
+  // Inputs that cannot be read block the step; they are never treated as zero.
+  const leg1InputErrors = [
+    ...(isInvalidAmount(leg1Amount, leg1Stable.decimals)
+      ? [
+          `Enter a valid ${leg1Symbol} amount, with at most ${leg1Stable.decimals} decimals.`,
+        ]
+      : []),
+    ...(topUpEnabled && isInvalidAmount(topUpAmount, DOT_DECIMALS)
+      ? [`Enter a valid DOT amount, with at most ${DOT_DECIMALS} decimals.`]
+      : []),
+  ];
+  const leg2InputErrors = isInvalidAmount(leg2Amount, leg2Stable.decimals)
+    ? [
+        `Enter a valid ${leg2Symbol} amount, with at most ${leg2Stable.decimals} decimals.`,
+      ]
+    : [];
+  // Max leaves the tx fee when Hydration charges it in the stable being swapped.
+  const leg2FeeInSource =
+    leg2TxFee?.assetId === leg2Stable.hydrationAssetId
+      ? (leg2TxFee.amount ?? 0n)
+      : 0n;
+  const setLeg2Percent = (value: bigint) =>
+    setLeg2Value(
+      value === leg2Balance && value > leg2FeeInSource
+        ? value - leg2FeeInSource
+        : value,
+    );
+  const leg1Checking = (!!leg1CheckKey && !leg1Checked) || leg1ServiceLoading;
+  const leg2Checking = !!leg2CheckKey && !leg2Checked;
+  const leg1FeeTotal =
+    leg1NetworkFees && leg1ServiceFee !== null
+      ? feeTotal(
+          leg1AssetHubFee +
+            leg1ServiceFee +
+            (leg1NetworkFees.hydrationDotExecution ?? 0n),
+          leg1NetworkFees.hydrationExecution !== undefined
+            ? {
+                amount: leg1NetworkFees.hydrationExecution,
+                decimals: leg1Stable.decimals,
+                symbol: leg1Symbol,
+              }
+            : undefined,
+        )
+      : pending(leg1Loading || leg1ServiceLoading);
+  const leg2FeeTotal =
+    dotFee !== null
+      ? feeTotal(
+          dotFee + leg2TxFeeInDot,
+          leg2TxFee?.amount !== undefined && leg2TxFeeInDot === 0n
+            ? {
+                amount: leg2TxFee.amount,
+                decimals: leg2TxFee.decimals,
+                symbol: leg2TxFee.symbol,
+              }
+            : undefined,
+        )
+      : pending(leg2QuoteLoading);
+  const surplus =
+    quote && minReceived !== null ? quote.amountOut - minReceived : 0n;
+  // Step 2 is short of DOT on Hydration: size a top-up and send the user to step 1.
+  const sendDotForStep2 = async () => {
+    // Sized from the step 2 fee, which has the volume fee for this amount.
+    let topUp = roundUpToTenthDot(
+      (leg2DotShortfall * (100n + TOP_UP_PAD_PERCENT)) / 100n,
+    );
+    const forAccount = sourceAddress;
+    if (transfer && fee && sourceAddress) {
+      try {
+        const suggested = await suggestTopUp(
+          transfer,
+          sourceAddress,
+          fee,
+          leg2TxFeeInDot > 0n ? leg2TxFeeInDot : STEP2_TX_FEE_BUFFER,
+        );
+        if (suggested > 0n) topUp = suggested;
+      } catch (err) {
+        console.error("Could not size the DOT top-up:", err);
+      }
+    }
+    // The estimate is for the account selected when it started.
+    if (sourceAddressRef.current !== forAccount) return;
+    setStep(1);
+    setLeg1FormOpen(true);
+    setTopUpEnabled(true);
+    topUpTouched.current = true;
+    topUpEdited.current = true;
+    setTopUpAmount(formatUnits(topUp, DOT_DECIMALS));
+    // Send only DOT; the stable is already on Hydration.
+    leg1Prefilled.current = `${sourceAddress}|${leg1Symbol}`;
+    setLeg1Amount("");
+  };
+  const leg2Shortfall =
+    leg2DotShortfall > 0n && balances && dotFee !== null
+      ? `You need ${fmt(dotFee + leg2TxFeeInDot, DOT_DECIMALS)} DOT on Hydration and have ${fmt(balances.hydrationDot, DOT_DECIMALS)}.`
+      : null;
+
+  const routeChain = (image: string, label: string) => (
+    // Styled like /send's chain selects, which get their radius from button[role="combobox"].
+    <div className="fake-dropdown flex-1 min-w-0 flex h-10 items-center rounded-[15px] dropdown-shadow">
+      <SelectItemWithIcon
+        label={label}
+        image={image}
+        altImage="parachain_generic"
+      />
     </div>
   );
 
   return (
     <Card className="w-full max-w-[min(42rem,calc(100vw-2rem))] glass border-white/60">
       <CardContent className="pt-6 space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-medium">Stables to Ethereum</h2>
-          <div className="flex gap-1">
-            {([1, 2] as const).map((n) => (
-              <Button
-                key={n}
-                type="button"
-                variant="clean"
-                className={`h-7 px-3 text-xs rounded-full border-0 glass-pill ${
-                  step === n ? "font-semibold" : "opacity-60"
-                }`}
-                onClick={() => setStep(n)}
-              >
-                {n === 1 ? "1. To Hydration" : "2. To Ethereum"}
-              </Button>
-            ))}
-          </div>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>Step {step} of 2</span>
+          <button
+            type="button"
+            className="underline underline-offset-2 hover:text-primary"
+            onClick={() => setStep(step === 1 ? 2 : 1)}
+          >
+            {step === 1
+              ? "Already on Hydration? Go to step 2"
+              : "Back to step 1"}
+          </button>
         </div>
-
-        {(!polkadotAccounts || polkadotAccounts.length === 0) && (
-          <ConnectPolkadotWalletButton variant="default" className="w-full" />
-        )}
+        <div className="flex flex-row items-center justify-between gap-1 sm:gap-3">
+          {step === 1
+            ? routeChain(`polkadot_${registry.assetHubParaId}`, "Polkadot Hub")
+            : routeChain(`polkadot_${stables.HYDRATION_PARA_ID}`, "Hydration")}
+          <div className="rounded-full bg-white/[0.28] p-1.5 sm:p-2 flex-shrink-0">
+            <LucideArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </div>
+          {step === 1
+            ? routeChain(`polkadot_${stables.HYDRATION_PARA_ID}`, "Hydration")
+            : routeChain(`ethereum_${registry.ethChainId}`, "Ethereum")}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {step === 1
+            ? "Bridge your stables from Polkadot Hub to Hydration."
+            : "Swap your stables on Hydration for USDT or USDC and send them to Ethereum."}
+        </p>
 
         {step === 1 && (
           <>
@@ -1251,10 +1640,10 @@ export const StablesTransferForm: FC = () => {
                   )}
                   <div className="flex justify-between gap-2">
                     <dt className="opacity-70">Route</dt>
-                    <dd>Asset Hub → Hydration</dd>
+                    <dd>Polkadot Hub → Hydration</dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="opacity-70">Asset Hub block</dt>
+                    <dt className="opacity-70">Polkadot Hub block</dt>
                     <dd>
                       <a
                         className="underline"
@@ -1275,14 +1664,30 @@ export const StablesTransferForm: FC = () => {
                     </dd>
                   </div>
                 </dl>
-                {pendingLeg1.status === "received" && (
-                  <button
-                    type="button"
-                    className="underline font-medium"
-                    onClick={() => setStep(2)}
-                  >
-                    Continue to step 2
-                  </button>
+                {!leg1FormOpen && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {pendingLeg1.status === "received" && (
+                      <button
+                        type="button"
+                        className="underline font-medium"
+                        onClick={() => setStep(2)}
+                      >
+                        Continue to step 2
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="underline font-medium"
+                      onClick={() => {
+                        // A finished transfer's card goes; one in flight stays to be tracked.
+                        if (pendingLeg1.status !== "pending")
+                          setPendingLeg1(null);
+                        setLeg1FormOpen(true);
+                      }}
+                    >
+                      Send more
+                    </button>
+                  </div>
                 )}
                 {pendingLeg1.status === "timeout" && (
                   <p>
@@ -1305,12 +1710,12 @@ export const StablesTransferForm: FC = () => {
               </div>
             )}
 
-            {/* Once sent, only the progress card shows until it is dismissed. */}
-            {!pendingLeg1 && (
+            {/* Once sent, the form stays hidden until "Send more". */}
+            {(!pendingLeg1 || leg1FormOpen) && (
               <>
                 <div className="amountContainer flex flex-col w-full px-3 py-3 gap-2">
                   <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <span>Send from Asset Hub</span>
+                    <span>Send from Polkadot Hub</span>
                     {accountButton(
                       leg1Balance,
                       leg1Stable.decimals,
@@ -1321,7 +1726,10 @@ export const StablesTransferForm: FC = () => {
                     <input
                       className="amountInput flex-1 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground min-w-0"
                       value={leg1Amount}
-                      onChange={(e) => setLeg1Amount(e.target.value)}
+                      onChange={(e) => {
+                        setLeg1Exact(null);
+                        setLeg1Amount(e.target.value);
+                      }}
                       placeholder="0.0"
                     />
                     <StableTokenSelector
@@ -1333,195 +1741,116 @@ export const StablesTransferForm: FC = () => {
                       options={stableOptions(balances?.assetHub)}
                     />
                   </div>
-                  {percentPills(
-                    leg1Balance,
-                    leg1Stable.decimals,
-                    setLeg1Amount,
-                  )}
+                  {percentPills(leg1Balance, setLeg1Value)}
                 </div>
 
-                <div className="rounded-lg border border-muted bg-muted/40 px-4 py-3 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <input
-                      id="topUp"
-                      type="checkbox"
-                      className="accent-primary w-5 h-5 rounded focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
-                      checked={topUpEnabled}
-                      onChange={(e) => setTopUpEnabled(e.target.checked)}
-                    />
-                    <Label
-                      htmlFor="topUp"
-                      className="text-base font-medium cursor-pointer select-none"
-                    >
-                      Send DOT to Hydration{" "}
-                      <span className="text-xs font-normal text-muted-foreground">
-                        (for step 2 fees)
-                      </span>
-                    </Label>
-                  </div>
+                <div className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md glass-sub text-primary">
+                  <input
+                    id="topUp"
+                    type="checkbox"
+                    className="accent-primary w-4 h-4 rounded focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
+                    checked={topUpEnabled}
+                    onChange={(e) => {
+                      topUpTouched.current = true;
+                      setTopUpEnabled(e.target.checked);
+                    }}
+                  />
+                  <Label
+                    htmlFor="topUp"
+                    // Overrides the global small-caps label style, which stretches a sentence.
+                    className="!text-sm !normal-case !tracking-normal !text-primary !font-normal cursor-pointer select-none"
+                  >
+                    {topUpEnabled
+                      ? topUpVerb
+                      : `${topUpVerb} DOT for step 2 fees`}
+                  </Label>
                   {topUpEnabled && (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                      <div className="flex items-center gap-1 w-full">
-                        <span className="text-xs text-muted-foreground mr-1">
-                          Step 2 delivery
-                        </span>
-                        {[
-                          { label: "Normal", value: false },
-                          { label: "Accelerated", value: true },
-                        ].map((o) => (
-                          <Button
-                            key={o.label}
-                            type="button"
-                            variant="clean"
-                            className={`h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill ${
-                              accelerated === o.value
-                                ? "font-semibold"
-                                : "opacity-60"
-                            }`}
-                            onClick={() => {
-                              // A new mode needs a new amount; re-apply the suggestion.
-                              topUpEdited.current = false;
-                              setAccelerated(o.value);
-                            }}
-                          >
-                            {o.label}
-                          </Button>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-2 w-full">
-                        <input
-                          aria-label="DOT amount to send to Hydration"
-                          className="amountInput w-24 flex-shrink-0 rounded-lg !px-3 py-1.5 text-sm !bg-[var(--glass-bg)] !text-primary outline-none focus:ring-1 focus:ring-primary"
-                          value={topUpAmount}
-                          onChange={(e) => {
-                            topUpEdited.current = true;
-                            setTopUpAmount(e.target.value);
-                          }}
-                          placeholder="0.0"
-                        />
-                        <span className="text-sm flex-shrink-0">DOT</span>
-                        <div className="flex-1 min-w-0 pl-3 text-xs leading-snug text-muted-foreground">
-                          {step2Estimating ? (
-                            <span className="inline-flex items-center gap-1.5">
-                              <LucideLoaderCircle className="w-3.5 h-3.5 animate-spin" />
-                              Estimating step 2 fees...
-                            </span>
-                          ) : (
-                            step2DotNeeds !== null &&
-                            balances && (
-                              <span>
-                                Step 2 needs about{" "}
-                                {fmt(step2DotNeeds.normal, DOT_DECIMALS)} DOT
-                                (normal) or{" "}
-                                {fmt(step2DotNeeds.accelerated, DOT_DECIMALS)}{" "}
-                                DOT (accelerated); you have{" "}
-                                {fmt(balances.hydrationDot, DOT_DECIMALS)} on
-                                Hydration.
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <>
+                      <input
+                        aria-label="DOT amount to send to Hydration"
+                        inputMode="decimal"
+                        // A visible field: the row behind it has the same glass background.
+                        className="amountInput w-24 rounded-md border border-slate-300 dark:border-slate-600 !bg-white dark:!bg-slate-900 !px-2 py-1 text-right text-sm !text-primary outline-none focus:ring-1 focus:ring-primary"
+                        value={topUpAmount}
+                        onChange={(e) => {
+                          topUpEdited.current = true;
+                          setTopUpAmount(e.target.value);
+                        }}
+                        placeholder="0.0"
+                      />
+                      <span>DOT for step 2 fees</span>
+                    </>
                   )}
                 </div>
-
-                <dl className="glass-sub p-4 space-y-2 card-shadow">
-                  {summaryRow("Destination", "Hydration (same account)")}
-                  {summaryRow(
-                    "Hydration fee",
-                    leg1HydrationFeeText ?? pending(leg1Loading),
-                  )}
-                  {summaryRow(
-                    "Asset Hub fee",
-                    leg1NetworkFees
-                      ? `${fmtFee(leg1AssetHubFee, DOT_DECIMALS)} DOT${
-                          leg1NetworkFees.assetHubDelivery === undefined
-                            ? " + delivery"
-                            : ""
-                        }`
-                      : pending(leg1Loading),
-                  )}
-                  {summaryRow(
-                    "Service fee",
-                    leg1ServiceFee !== null &&
-                      (leg1AmountParsed || dotTopUp > 0n)
-                      ? `${fmt(leg1ServiceFee, DOT_DECIMALS)} DOT`
-                      : pending(leg1ServiceLoading),
-                  )}
-                  {dotTopUp > 0n &&
-                    summaryRow(
-                      "DOT to Hydration",
-                      `${fmt(dotTopUp, DOT_DECIMALS)} DOT`,
-                    )}
-                  <div className="border-t border-white/40 dark:border-slate-700 pt-2 font-medium">
-                    {summaryRow(
-                      "Total fee",
-                      leg1NetworkFees && leg1ServiceFee !== null
-                        ? `${fmt(
-                            leg1AssetHubFee +
-                              leg1ServiceFee +
-                              (leg1NetworkFees.hydrationDotExecution ?? 0n),
-                            DOT_DECIMALS,
-                          )} DOT${
-                            leg1NetworkFees.hydrationExecution !== undefined
-                              ? ` + ${fmtFee(
-                                  leg1NetworkFees.hydrationExecution,
-                                  leg1Stable.decimals,
-                                )} ${leg1Symbol}`
+                {feeSummary(
+                  leg1FeeTotal,
+                  [
+                    [
+                      "Polkadot Hub fee",
+                      leg1NetworkFees
+                        ? `${fmtFee(leg1AssetHubFee, DOT_DECIMALS)} DOT${
+                            leg1NetworkFees.assetHubDelivery === undefined
+                              ? " + delivery"
                               : ""
                           }`
-                        : pending(leg1Loading || leg1ServiceLoading),
-                      balances && leg1NetworkFees && leg1ServiceFee !== null
-                        ? {
-                            balance: balances.assetHubDot,
-                            required:
-                              leg1AssetHubFee + leg1ServiceFee + dotTopUp,
-                            decimals: DOT_DECIMALS,
-                            symbol: "DOT",
-                          }
-                        : null,
-                    )}
-                  </div>
-                </dl>
+                        : pending(leg1Loading),
+                    ],
+                    [
+                      "Hydration fee",
+                      leg1HydrationFeeText ?? pending(leg1Loading),
+                    ],
+                    [
+                      "Service fee",
+                      leg1ServiceFee !== null && sendsLeg1
+                        ? `${fmt(leg1ServiceFee, DOT_DECIMALS)} DOT`
+                        : pending(leg1ServiceLoading),
+                    ],
+                  ],
+                  topUpEnabled &&
+                    summaryRow(
+                      "Step 2 delivery",
+                      pills(DELIVERY_OPTIONS, accelerated, (value) => {
+                        // A new mode needs a new amount; re-apply the suggestion.
+                        topUpEdited.current = false;
+                        setAccelerated(value);
+                      }),
+                    ),
+                )}
 
                 <StatusAlert
                   errors={[
+                    ...leg1InputErrors,
                     ...(balancesError && !balances ? [balancesError] : []),
-                    ...(leg1Checked?.errors ?? []),
+                    // Only while no fee is known; a failed refresh keeps the last one.
+                    ...(leg1FeeError && leg1ServiceFee === null
+                      ? [leg1FeeError]
+                      : []),
+                    // A check of the readable inputs alone would be misleading.
+                    ...(leg1InputErrors.length === 0
+                      ? (leg1Checked?.errors ?? [])
+                      : []),
                   ]}
-                  info={
-                    leg1CheckKey && !leg1Checked
-                      ? "Checking the transfer..."
-                      : null
-                  }
-                  busy={!!leg1CheckKey && !leg1Checked}
                 />
 
-                <Button
-                  className="w-full action-button"
-                  onClick={submitLeg1}
-                  disabled={
-                    !transfer ||
-                    !account ||
-                    (!leg1AmountParsed && dotTopUp === 0n) ||
-                    leg1ServiceFee === null ||
-                    !leg1Checked ||
-                    leg1Checked.errors.length > 0
-                  }
-                >
-                  Send to Hydration
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Already on Hydration?{" "}
-                  <button
-                    type="button"
-                    className="underline"
-                    onClick={() => setStep(2)}
+                {substrateAccounts.length === 0 ? (
+                  <ConnectPolkadotWalletButton variant="default" />
+                ) : (
+                  <Button
+                    className="w-full action-button"
+                    onClick={submitLeg1}
+                    disabled={
+                      !transfer ||
+                      !account ||
+                      leg1InputErrors.length > 0 ||
+                      (!leg1AmountParsed && dotTopUp === 0n) ||
+                      leg1ServiceFee === null ||
+                      !leg1Checked ||
+                      leg1Checked.errors.length > 0
+                    }
                   >
-                    Skip to step 2
-                  </button>
-                </p>
+                    {leg1Checking ? "Checking..." : "Send to Hydration"}
+                  </Button>
+                )}
               </>
             )}
           </>
@@ -1538,7 +1867,10 @@ export const StablesTransferForm: FC = () => {
                 <input
                   className="amountInput flex-1 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground min-w-0"
                   value={leg2Amount}
-                  onChange={(e) => setLeg2Amount(e.target.value)}
+                  onChange={(e) => {
+                    setLeg2Exact(null);
+                    setLeg2Amount(e.target.value);
+                  }}
                   placeholder="0.0"
                 />
                 <StableTokenSelector
@@ -1550,7 +1882,7 @@ export const StablesTransferForm: FC = () => {
                   options={stableOptions(balances?.hydration)}
                 />
               </div>
-              {percentPills(leg2Balance, leg2Stable.decimals, setLeg2Amount)}
+              {percentPills(leg2Balance, setLeg2Percent)}
             </div>
 
             <div className="amountContainer flex flex-col w-full px-3 py-3 gap-2">
@@ -1564,7 +1896,7 @@ export const StablesTransferForm: FC = () => {
                   className="amountInput flex-1 text-left text-2xl sm:text-3xl font-medium bg-transparent border-0 outline-none placeholder:text-muted-foreground min-w-0"
                   value={
                     quote && minReceived !== null
-                      ? formatUnits(minReceived, quote.to.decimals)
+                      ? displayAmount(minReceived, quote.to.decimals)
                       : ""
                   }
                   placeholder={leg2AmountParsed && !quoteError ? "..." : "0.0"}
@@ -1583,190 +1915,118 @@ export const StablesTransferForm: FC = () => {
               allowManualInput={true}
             />
 
-            <div className="rounded-lg border border-muted bg-muted/40 px-4 py-3 flex items-center gap-3">
-              <input
-                id="accelerated"
-                type="checkbox"
-                className="accent-primary w-5 h-5 rounded focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
-                checked={accelerated}
-                onChange={(e) => setAccelerated(e.target.checked)}
-              />
-              <Label
-                htmlFor="accelerated"
-                className="text-base font-medium cursor-pointer select-none"
-              >
-                Accelerated delivery{" "}
-                <span className="text-xs font-normal text-muted-foreground">
-                  (higher fee, faster)
-                </span>
-              </Label>
-            </div>
-
-            <dl className="glass-sub p-4 space-y-2 card-shadow">
-              {summaryRow(
-                "Swap quote",
-                quote
-                  ? `${formatUnits(quote.amountOut, quote.to.decimals)} ${target}`
-                  : pending(leg2QuoteLoading),
-              )}
-              {quote &&
-                minReceived !== null &&
-                quote.amountOut > minReceived &&
-                summaryRow(
-                  "Stays on Hydration",
-                  <span title="The swap sells the full amount but only the minimum is bridged, so the slippage headroom stays in your Hydration account.">
-                    up to{" "}
-                    {fmtFee(quote.amountOut - minReceived, quote.to.decimals)}{" "}
-                    {target}
-                  </span>,
-                )}
-              {summaryRow(
-                "Max slippage",
-                <span className="inline-flex gap-1">
-                  {["0.1", "0.5", "1"].map((v) => (
-                    <Button
-                      key={v}
-                      type="button"
-                      variant="clean"
-                      className={`h-6 px-2 py-0.5 text-xs rounded-full border-0 glass-pill ${
-                        slippage === v ? "font-semibold" : "opacity-60"
-                      }`}
-                      onClick={() => setSlippage(v)}
-                    >
-                      {v}%
-                    </Button>
-                  ))}
-                </span>,
-              )}
-              {summaryRow(
-                "Bridge fee",
-                dotFee !== null
-                  ? `${fmt(dotFee - leg2ServiceFee, DOT_DECIMALS)} DOT`
-                  : pending(leg2QuoteLoading),
-              )}
-              {summaryRow(
-                "Service fee",
-                fee
-                  ? `${fmt(leg2ServiceFee, DOT_DECIMALS)} DOT`
-                  : pending(leg2QuoteLoading),
-              )}
-              {summaryRow(
-                "Hydration tx fee",
-                leg2TxFeeText ??
-                  pending(!!leg2AmountParsed && leg2TxFeeLoading),
-                leg2TxFee?.assetId === HYDRATION_HDX_ID &&
-                  leg2TxFee.amount !== undefined &&
-                  balances
-                  ? {
-                      balance: balances.hydrationNative,
-                      required: leg2TxFee.amount,
-                      decimals: HDX_DECIMALS,
-                      symbol: "HDX",
-                    }
-                  : null,
-              )}
-              <div className="border-t border-white/40 dark:border-slate-700 pt-2 font-medium">
-                {summaryRow(
-                  "Total fee",
+            {feeSummary(
+              leg2FeeTotal,
+              [
+                [
+                  "Bridge fee",
                   dotFee !== null
-                    ? `${fmt(dotFee + leg2TxFeeInDot, DOT_DECIMALS)} DOT${
-                        leg2TxFee?.amount !== undefined && leg2TxFeeInDot === 0n
-                          ? ` + ${leg2TxFeeText}`
-                          : ""
-                      }`
+                    ? `${fmt(dotFee - leg2ServiceFee, DOT_DECIMALS)} DOT`
                     : pending(leg2QuoteLoading),
-                  balances && dotFee !== null
-                    ? {
-                        balance: balances.hydrationDot,
-                        required: dotFee + leg2TxFeeInDot,
-                        decimals: DOT_DECIMALS,
-                        symbol: "DOT",
-                      }
-                    : null,
+                ],
+                [
+                  "Service fee",
+                  fee
+                    ? `${fmt(leg2ServiceFee, DOT_DECIMALS)} DOT`
+                    : pending(leg2QuoteLoading),
+                ],
+                [
+                  "Hydration tx fee",
+                  leg2TxFeeText ??
+                    pending(!!leg2AmountParsed && leg2TxFeeLoading),
+                ],
+              ],
+              <>
+                {summaryRow(
+                  "Delivery",
+                  pills(DELIVERY_OPTIONS, accelerated, setAccelerated),
                 )}
-              </div>
-            </dl>
+                {summaryRow(
+                  "Max slippage",
+                  pills(
+                    ["0.1", "0.5", "1"].map((v) => ({
+                      label: `${v}%`,
+                      value: v,
+                    })),
+                    slippage,
+                    setSlippage,
+                  ),
+                )}
+                {quote &&
+                  surplus > 0n &&
+                  summaryRow(
+                    "Stays on Hydration",
+                    <span
+                      className="inline-flex items-center gap-1 cursor-help"
+                      title={`The swap sells the full amount but bridges only the minimum after slippage, so up to ${fmtFee(surplus, quote.to.decimals)} ${target} stays in your Hydration account.`}
+                    >
+                      <LucideInfo className="w-3.5 h-3.5 text-muted-foreground" />
+                      up to {fmtFee(surplus, quote.to.decimals)} {target}
+                    </span>,
+                  )}
+              </>,
+            )}
 
             <StatusAlert
               errors={[
+                ...leg2InputErrors,
                 ...(balancesError && !balances ? [balancesError] : []),
                 ...(quoteError ? [quoteError] : []),
-                ...(leg2Checked?.errors ?? []),
+                ...(leg2Checked?.errors ?? []).filter(
+                  (e) =>
+                    !(
+                      leg2Shortfall &&
+                      e.startsWith("Insufficient DOT on Hydration")
+                    ),
+                ),
+                ...(leg2Shortfall ? [leg2Shortfall] : []),
               ]}
               warnings={leg2Checked?.warnings}
-              info={
-                leg2AmountParsed && !quote && !quoteError
-                  ? "Getting a quote..."
-                  : leg2CheckKey && !leg2Checked
-                    ? "Checking the transfer..."
-                    : !beneficiaryValid
-                      ? "Choose an Ethereum beneficiary to continue."
-                      : null
-              }
-              busy={
-                (!!leg2AmountParsed && !quote && !quoteError) ||
-                (!!leg2CheckKey && !leg2Checked)
+              action={
+                leg2Shortfall
+                  ? {
+                      label: "Send DOT to Hydration →",
+                      onClick: sendDotForStep2,
+                    }
+                  : undefined
               }
             />
 
-            {leg2DotShortfall > 0n && (
-              <button
-                type="button"
-                className="text-sm underline self-start"
-                onClick={async () => {
-                  // Sized from the step 2 fee, which has the volume fee for this amount.
-                  let topUp = roundUpToTenthDot(
-                    (leg2DotShortfall * (100n + TOP_UP_PAD_PERCENT)) / 100n,
-                  );
-                  if (transfer && fee && sourceAddress) {
-                    try {
-                      const suggested = await suggestTopUp(
-                        transfer,
-                        sourceAddress,
-                        fee,
-                        leg2TxFeeInDot > 0n
-                          ? leg2TxFeeInDot
-                          : STEP2_TX_FEE_BUFFER,
-                      );
-                      if (suggested > 0n) topUp = suggested;
-                    } catch (err) {
-                      console.error("Could not size the DOT top-up:", err);
-                    }
-                  }
-                  setStep(1);
-                  setTopUpEnabled(true);
-                  topUpEdited.current = true;
-                  setTopUpAmount(formatUnits(topUp, DOT_DECIMALS));
-                  // Send only DOT; the stable is already on Hydration.
-                  leg1Prefilled.current = `${sourceAddress}|${leg1Symbol}`;
-                  setLeg1Amount("");
-                }}
+            {substrateAccounts.length === 0 ? (
+              <ConnectPolkadotWalletButton variant="default" />
+            ) : beneficiaries.length === 0 ? (
+              <ConnectEthereumWalletButton
+                variant="default"
+                networkId={registry.ethChainId}
+              />
+            ) : (
+              <Button
+                className="w-full action-button"
+                onClick={submitLeg2}
+                disabled={
+                  !transfer ||
+                  !account ||
+                  !quote ||
+                  !fee ||
+                  slippageBps === null ||
+                  leg2InputErrors.length > 0 ||
+                  !beneficiaryValid ||
+                  leg1InFlight ||
+                  !leg2Checked ||
+                  leg2Checked.errors.length > 0
+                }
               >
-                Send DOT to Hydration
-              </button>
+                {leg1InFlight
+                  ? "Waiting for funds on Hydration..."
+                  : leg2QuoteLoading
+                    ? "Getting quote..."
+                    : leg2Checking
+                      ? "Checking..."
+                      : !beneficiaryValid
+                        ? "Choose a beneficiary"
+                        : "Swap and send to Ethereum"}
+              </Button>
             )}
-            <p className="text-xs text-muted-foreground text-center">
-              Swap and bridge run in one transaction.
-            </p>
-            <Button
-              className="w-full action-button"
-              onClick={submitLeg2}
-              disabled={
-                !transfer ||
-                !account ||
-                !quote ||
-                !fee ||
-                slippageBps === null ||
-                !beneficiaryValid ||
-                leg1InFlight ||
-                !leg2Checked ||
-                leg2Checked.errors.length > 0
-              }
-            >
-              {leg1InFlight
-                ? "Waiting for funds on Hydration..."
-                : "Swap and send to Ethereum"}
-            </Button>
           </>
         )}
       </CardContent>
@@ -1774,12 +2034,12 @@ export const StablesTransferForm: FC = () => {
       <PolkadotAccountDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}
-        accounts={(polkadotAccounts ?? []).filter(
-          filterByAccountType("AccountId32"),
-        )}
+        accounts={substrateAccounts}
         selected={sourceAddress}
         onSelect={(a) => {
           setSourceAddress(a.address);
+          setLeg1Exact(null);
+          setLeg2Exact(null);
           setLeg1Amount("");
           setLeg2Amount("");
           setPendingLeg1(null);
