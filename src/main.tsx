@@ -6,6 +6,7 @@ import { createHashRouter, RouterProvider } from "react-router-dom";
 import "@/styles/globals.css";
 import "@/styles/overrides.css";
 import { RootLayout } from "./RootLayout";
+import { stablesSupported } from "@/lib/snowbridgeEnv";
 
 // Route components are the existing Next page modules (default exports). They
 // remain in app/ for now; next/* imports inside them resolve to the Vite shims
@@ -36,7 +37,9 @@ const router = createHashRouter([
       { path: "/activity", element: <Activity /> },
       { path: "/history", element: <HistoryRedirect /> },
       { path: "/governance", element: <Governance /> },
-      { path: "/stables", element: <Stables /> },
+      ...(stablesSupported()
+        ? [{ path: "/stables", element: <Stables /> }]
+        : []),
       { path: "/txcomplete", element: <TxComplete /> },
       { path: "/localtxcomplete", element: <LocalTxComplete /> },
       { path: "/blocked", element: <Blocked /> },

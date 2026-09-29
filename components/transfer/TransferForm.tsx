@@ -6,7 +6,6 @@ import {
   walletAtom,
   PolkadotAccount,
 } from "@/store/polkadot";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   filterByAccountType,

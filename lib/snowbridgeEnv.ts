@@ -7,6 +7,11 @@ export function getEnvironmentName() {
   return name;
 }
 
+// The stables flow uses Polkadot mainnet asset and pool ids.
+export function stablesSupported() {
+  return getEnvironmentName() === "polkadot_mainnet";
+}
+
 export function getEnvironment() {
   const envName = getEnvironmentName();
   const env: Environment = bridgeInfoFor(envName).environment;

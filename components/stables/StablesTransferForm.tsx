@@ -26,6 +26,7 @@ import { serviceFeeRecipientFromEnv } from "@/hooks/useBridgeFeeInfo";
 import { fetchTokenPrices } from "@/utils/tokenPrices";
 import { BridgeInfoContext } from "@/app/providers";
 import { snowbridgeApiAtom } from "@/store/snowbridge";
+import type { SnowbridgeClient } from "@/lib/snowbridge";
 import { useConnectEthereumWallet } from "@/hooks/useConnectEthereumWallet";
 import {
   polkadotAccountAtom,
@@ -77,6 +78,22 @@ const HYDRATION_DOT_ID = 5;
 const STEP2_TX_FEE_BUFFER = 200_000_000n;
 const roundUpToTenthDot = (planck: bigint) =>
   ((planck + 999_999_999n) / 1_000_000_000n) * 1_000_000_000n;
+const TOP_UP_PAD_PERCENT = 25n;
+
+// DOT to send so step 2 can pay `fee`: the SDK's top-up plus the step 2 tx fee,
+// which the SDK leaves out, rounded up to a tenth of a DOT.
+async function suggestTopUp(
+  transfer: ReturnType<SnowbridgeClient["stables"]>,
+  account: string,
+  fee: toEthereumV2.DeliveryFee,
+  txFee = STEP2_TX_FEE_BUFFER,
+): Promise<bigint> {
+  const topUp = await transfer.dotTopUp(account, fee, {
+    padPercentage: TOP_UP_PAD_PERCENT,
+  });
+  return topUp > 0n ? roundUpToTenthDot(topUp + txFee) : 0n;
+}
+const MAX_SLIPPAGE_PERCENT = 5;
 const DELIVERY_POLL_MS = 6_000;
 const BALANCE_REFRESH_MS = 15_000;
 const DELIVERY_TIMEOUT_MS = 180_000;
@@ -216,12 +233,37 @@ function errorMessages(logs: toEthereumV2.ValidationLog[]): string[] {
   return specific.length > 0 ? specific : errors;
 }
 
+function warningMessages(logs: toEthereumV2.ValidationLog[]): string[] {
+  return logs
+    .filter((l) => l.kind === toEthereumV2.ValidationKind.Warning)
+    .map((l) => l.message);
+}
+
+// The SDK leaves the block number unset when the signer's result omits it. The
+// transaction has already succeeded here, so a failed lookup is not an error.
+async function withBlockNumber(
+  api: SnowbridgeClient,
+  paraId: number,
+  receipt: stables.SubmitReceipt,
+): Promise<stables.SubmitReceipt> {
+  if (receipt.blockNumber !== undefined) return receipt;
+  try {
+    const chain = await api.context.parachain(paraId);
+    const header = await chain.rpc.chain.getHeader(receipt.blockHash);
+    return { ...receipt, blockNumber: header.number.toNumber() };
+  } catch (err) {
+    console.warn("Could not look up the block number:", err);
+    return receipt;
+  }
+}
+
 // One place for everything that blocks or delays the action button.
 const StatusAlert: FC<{
   errors: string[];
+  warnings?: string[];
   info?: string | null;
   busy?: boolean;
-}> = ({ errors, info, busy }) => {
+}> = ({ errors, warnings = [], info, busy }) => {
   if (errors.length > 0) {
     return (
       <div className="w-full rounded-xl bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3">
@@ -240,16 +282,32 @@ const StatusAlert: FC<{
       </div>
     );
   }
-  if (!info) return null;
+  if (!info && warnings.length === 0) return null;
   return (
-    <div className="w-full rounded-xl glass-sub px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
-      {busy ? (
-        <LucideLoaderCircle className="w-4 h-4 animate-spin flex-shrink-0" />
-      ) : (
-        <LucideInfo className="w-4 h-4 flex-shrink-0" />
+    <>
+      {warnings.length > 0 && (
+        <div className="w-full rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 px-4 py-3">
+          <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-200">
+            <LucideTriangleAlert className="flex-shrink-0 mt-0.5 w-4 h-4" />
+            <ul className="space-y-1">
+              {warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       )}
-      <span>{info}</span>
-    </div>
+      {info && (
+        <div className="w-full rounded-xl glass-sub px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
+          {busy ? (
+            <LucideLoaderCircle className="w-4 h-4 animate-spin flex-shrink-0" />
+          ) : (
+            <LucideInfo className="w-4 h-4 flex-shrink-0" />
+          )}
+          <span>{info}</span>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -501,7 +559,7 @@ export const StablesTransferForm: FC = () => {
 
   const slippageBps = useMemo(() => {
     const n = Number(slippage);
-    if (!Number.isFinite(n) || n < 0 || n > 50) return null;
+    if (!Number.isFinite(n) || n < 0 || n > MAX_SLIPPAGE_PERCENT) return null;
     return BigInt(Math.round(n * 100));
   }, [slippage]);
   const minReceived =
@@ -565,7 +623,7 @@ export const StablesTransferForm: FC = () => {
     (leg1AmountParsed || dotTopUp > 0n) &&
     leg1ServiceFee !== null &&
     balances
-      ? `${sourceAddress}|${leg1Symbol}|${leg1AmountParsed ?? 0n}|${dotTopUp}|${leg1ServiceFee}|${balances.assetHub[leg1Symbol]}|${balances.assetHubDot}|${balances.hydrationDot}`
+      ? `${sourceAddress}|${leg1Symbol}|${leg1AmountParsed ?? 0n}|${dotTopUp}|${leg1ServiceFee}|${balances.assetHub[leg1Symbol]}|${balances.hydration[leg1Symbol]}|${balances.assetHubDot}|${balances.hydrationDot}`
       : null;
   const [leg1Check, setLeg1Check] = useState<{
     key: string;
@@ -597,7 +655,7 @@ export const StablesTransferForm: FC = () => {
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const [fees, validated] = await withRetry(
+        const validated = await withRetry(
           async () => {
             const tx = await transfer.moveToHydrationTx(
               sourceAddress,
@@ -608,17 +666,14 @@ export const StablesTransferForm: FC = () => {
                 dotTopUp,
               },
             );
-            return Promise.all([
-              transfer.moveToHydrationFees(tx),
-              transfer.validateMoveToHydration(tx),
-            ]);
+            return transfer.validateMoveToHydration(tx);
           },
           () => cancelled,
         );
         if (!cancelled)
           setLeg1Check({
             key: leg1CheckKey,
-            fees,
+            fees: validated.data.fees,
             errors: errorMessages(validated.logs),
           });
       } catch (err) {
@@ -648,15 +703,12 @@ export const StablesTransferForm: FC = () => {
   const [step2DotNeeds, setStep2DotNeeds] = useState<{
     normal: bigint;
     accelerated: bigint;
+    topUp: { normal: bigint; accelerated: bigint };
   } | null>(null);
-  const step2DotNeed = step2DotNeeds
-    ? accelerated
-      ? step2DotNeeds.accelerated
-      : step2DotNeeds.normal
-    : null;
   const [step2Estimating, setStep2Estimating] = useState(false);
+  const hydrationDotHeld = balances?.hydrationDot;
   useEffect(() => {
-    if (!transfer || !topUpEnabled) return;
+    if (!transfer || !topUpEnabled || !sourceAddress) return;
     let cancelled = false;
     setStep2Estimating(true);
     const timer = setTimeout(async () => {
@@ -665,22 +717,36 @@ export const StablesTransferForm: FC = () => {
           ? await leg2VolumeFee(leg1Symbol, leg1AmountParsed)
           : undefined;
         // Both modes, so switching delivery updates the suggestion without a refetch.
-        const [normal, fast] = await withRetry(
-          () =>
-            Promise.all([
+        const { normal, fast, topUp } = await withRetry(
+          async () => {
+            const [normal, fast] = await Promise.all([
               transfer.swapAndBridgeFee(target, { volumeFee }),
               transfer.swapAndBridgeFee(target, {
                 accelerated: true,
                 volumeFee,
               }),
-            ]),
+            ]);
+            const [topUpNormal, topUpFast] = await Promise.all([
+              suggestTopUp(transfer, sourceAddress, normal),
+              suggestTopUp(transfer, sourceAddress, fast),
+            ]);
+            return {
+              normal,
+              fast,
+              topUp: { normal: topUpNormal, accelerated: topUpFast },
+            };
+          },
           () => cancelled,
         );
         const dot = (f: toEthereumV2.DeliveryFee) =>
           (f.totals.find((t) => t.symbol === "DOT")?.amount ?? 0n) +
           STEP2_TX_FEE_BUFFER;
         if (!cancelled)
-          setStep2DotNeeds({ normal: dot(normal), accelerated: dot(fast) });
+          setStep2DotNeeds({
+            normal: dot(normal),
+            accelerated: dot(fast),
+            topUp,
+          });
       } catch (err) {
         console.error("Could not estimate the step 2 fees:", err);
       } finally {
@@ -691,14 +757,20 @@ export const StablesTransferForm: FC = () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [transfer, topUpEnabled, leg1Symbol, leg1AmountParsed, target]);
-  const suggestedTopUp =
-    step2DotNeed !== null && balances
-      ? (() => {
-          const short = (step2DotNeed * 125n) / 100n - balances.hydrationDot;
-          return short > 0n ? roundUpToTenthDot(short) : 0n;
-        })()
-      : null;
+  }, [
+    transfer,
+    topUpEnabled,
+    sourceAddress,
+    leg1Symbol,
+    leg1AmountParsed,
+    target,
+    hydrationDotHeld,
+  ]);
+  const suggestedTopUp = step2DotNeeds
+    ? accelerated
+      ? step2DotNeeds.topUp.accelerated
+      : step2DotNeeds.topUp.normal
+    : null;
   useEffect(() => {
     if (suggestedTopUp !== null && !topUpEdited.current) {
       setTopUpAmount(formatUnits(suggestedTopUp, DOT_DECIMALS));
@@ -747,11 +819,14 @@ export const StablesTransferForm: FC = () => {
         title: "Send to Hydration",
         message: "Waiting for signature and inclusion...",
       });
-      const receipt = await transfer.signAndSendMoveToHydration(
+      const signed = await transfer.signAndSendMoveToHydration(
         tx,
         account.address,
         { signer: account.signer as any, withSignedTransaction: true },
       );
+      const receipt = api
+        ? await withBlockNumber(api, registry.assetHubParaId, signed)
+        : signed;
       setBusy(null);
       if (!receipt.success) {
         setError(
@@ -799,12 +874,19 @@ export const StablesTransferForm: FC = () => {
   const [leg2Check, setLeg2Check] = useState<{
     key: string;
     errors: string[];
+    warnings?: string[];
     txFee?: stables.ValidatedSwapAndBridge["data"]["txFee"];
   } | null>(null);
   // Paid in DOT, the tx fee draws on the same balance as the bridge fee.
   const leg2TxFee = leg2Check?.txFee ?? null;
   const leg2TxFeeInDot =
-    leg2TxFee?.assetId === HYDRATION_DOT_ID ? leg2TxFee.amount : 0n;
+    leg2TxFee?.assetId === HYDRATION_DOT_ID ? (leg2TxFee.amount ?? 0n) : 0n;
+  // The SDK leaves the amount unset for a fee currency it cannot price.
+  const leg2TxFeeText = leg2TxFee
+    ? leg2TxFee.amount !== undefined
+      ? `${formatBalance({ number: leg2TxFee.amount, decimals: leg2TxFee.decimals, displayDecimals: 6 })} ${leg2TxFee.symbol}`
+      : `Paid in ${leg2TxFee.symbol}`
+    : null;
   const leg2DotShortfall =
     balances && dotFee !== null
       ? dotFee + leg2TxFeeInDot - balances.hydrationDot
@@ -841,6 +923,7 @@ export const StablesTransferForm: FC = () => {
           setLeg2Check({
             key: leg2CheckKey,
             errors: errorMessages(validated.logs),
+            warnings: warningMessages(validated.logs),
             txFee: validated.data.txFee,
           });
       } catch (err) {
@@ -899,11 +982,14 @@ export const StablesTransferForm: FC = () => {
         title: "Swap and send to Ethereum",
         message: "Waiting for signature and inclusion...",
       });
-      const receipt = await transfer.signAndSendSwapAndBridge(
+      const signed = await transfer.signAndSendSwapAndBridge(
         tx,
         account.address,
         { signer: account.signer as any, withSignedTransaction: true },
       );
+      const receipt = api
+        ? await withBlockNumber(api, stables.HYDRATION_PARA_ID, signed)
+        : signed;
       setBusy(null);
       if (!receipt.success) {
         setError(
@@ -929,7 +1015,7 @@ export const StablesTransferForm: FC = () => {
           when: new Date(),
         },
         submitted: {
-          block_num: receipt.blockNumber,
+          block_num: receipt.blockNumber ?? 0,
           block_timestamp: 0,
           messageId: tx.messageId,
           account_id: sourceAddressHex,
@@ -1177,10 +1263,14 @@ export const StablesTransferForm: FC = () => {
                         href={subscanExtrinsicLink(
                           registry.environment,
                           `polkadot_${registry.assetHubParaId}`,
-                          `${pendingLeg1.receipt.blockNumber}-${pendingLeg1.receipt.txIndex}`,
+                          pendingLeg1.receipt.blockNumber !== undefined
+                            ? `${pendingLeg1.receipt.blockNumber}-${pendingLeg1.receipt.txIndex}`
+                            : pendingLeg1.receipt.txHash,
                         )}
                       >
-                        #{pendingLeg1.receipt.blockNumber}
+                        {pendingLeg1.receipt.blockNumber !== undefined
+                          ? `#${pendingLeg1.receipt.blockNumber}`
+                          : trimAccount(pendingLeg1.receipt.txHash, 16)}
                       </a>
                     </dd>
                   </div>
@@ -1519,6 +1609,17 @@ export const StablesTransferForm: FC = () => {
                   ? `${formatUnits(quote.amountOut, quote.to.decimals)} ${target}`
                   : pending(leg2QuoteLoading),
               )}
+              {quote &&
+                minReceived !== null &&
+                quote.amountOut > minReceived &&
+                summaryRow(
+                  "Stays on Hydration",
+                  <span title="The swap sells the full amount but only the minimum is bridged, so the slippage headroom stays in your Hydration account.">
+                    up to{" "}
+                    {fmtFee(quote.amountOut - minReceived, quote.to.decimals)}{" "}
+                    {target}
+                  </span>,
+                )}
               {summaryRow(
                 "Max slippage",
                 <span className="inline-flex gap-1">
@@ -1551,10 +1652,11 @@ export const StablesTransferForm: FC = () => {
               )}
               {summaryRow(
                 "Hydration tx fee",
-                leg2TxFee
-                  ? `${fmtFee(leg2TxFee.amount, leg2TxFee.decimals)} ${leg2TxFee.symbol}`
-                  : pending(!!leg2AmountParsed && leg2TxFeeLoading),
-                leg2TxFee?.assetId === HYDRATION_HDX_ID && balances
+                leg2TxFeeText ??
+                  pending(!!leg2AmountParsed && leg2TxFeeLoading),
+                leg2TxFee?.assetId === HYDRATION_HDX_ID &&
+                  leg2TxFee.amount !== undefined &&
+                  balances
                   ? {
                       balance: balances.hydrationNative,
                       required: leg2TxFee.amount,
@@ -1568,8 +1670,8 @@ export const StablesTransferForm: FC = () => {
                   "Total fee",
                   dotFee !== null
                     ? `${fmt(dotFee + leg2TxFeeInDot, DOT_DECIMALS)} DOT${
-                        leg2TxFee && leg2TxFeeInDot === 0n
-                          ? ` + ${fmtFee(leg2TxFee.amount, leg2TxFee.decimals)} ${leg2TxFee.symbol}`
+                        leg2TxFee?.amount !== undefined && leg2TxFeeInDot === 0n
+                          ? ` + ${leg2TxFeeText}`
                           : ""
                       }`
                     : pending(leg2QuoteLoading),
@@ -1591,6 +1693,7 @@ export const StablesTransferForm: FC = () => {
                 ...(quoteError ? [quoteError] : []),
                 ...(leg2Checked?.errors ?? []),
               ]}
+              warnings={leg2Checked?.warnings}
               info={
                 leg2AmountParsed && !quote && !quoteError
                   ? "Getting a quote..."
@@ -1610,16 +1713,30 @@ export const StablesTransferForm: FC = () => {
               <button
                 type="button"
                 className="text-sm underline self-start"
-                onClick={() => {
+                onClick={async () => {
+                  // Sized from the step 2 fee, which has the volume fee for this amount.
+                  let topUp = roundUpToTenthDot(
+                    (leg2DotShortfall * (100n + TOP_UP_PAD_PERCENT)) / 100n,
+                  );
+                  if (transfer && fee && sourceAddress) {
+                    try {
+                      const suggested = await suggestTopUp(
+                        transfer,
+                        sourceAddress,
+                        fee,
+                        leg2TxFeeInDot > 0n
+                          ? leg2TxFeeInDot
+                          : STEP2_TX_FEE_BUFFER,
+                      );
+                      if (suggested > 0n) topUp = suggested;
+                    } catch (err) {
+                      console.error("Could not size the DOT top-up:", err);
+                    }
+                  }
                   setStep(1);
                   setTopUpEnabled(true);
                   topUpEdited.current = true;
-                  setTopUpAmount(
-                    formatUnits(
-                      roundUpToTenthDot((leg2DotShortfall * 125n) / 100n),
-                      DOT_DECIMALS,
-                    ),
-                  );
+                  setTopUpAmount(formatUnits(topUp, DOT_DECIMALS));
                   // Send only DOT; the stable is already on Hydration.
                   leg1Prefilled.current = `${sourceAddress}|${leg1Symbol}`;
                   setLeg1Amount("");
