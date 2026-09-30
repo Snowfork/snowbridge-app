@@ -192,6 +192,10 @@ export default defineConfig(({ mode, command }) => {
         "@": path.resolve(__dirname, "."),
       },
     },
+    optimizeDeps: {
+      // Pre-bundle the SDK's CommonJS build when it is pnpm-linked.
+      include: ["@snowbridge/api"],
+    },
     build: {
       target: "esnext", // top-level await + wasm in the crypto deps
       outDir: "dist",

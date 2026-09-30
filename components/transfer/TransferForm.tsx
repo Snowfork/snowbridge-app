@@ -6,7 +6,6 @@ import {
   walletAtom,
   PolkadotAccount,
 } from "@/store/polkadot";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { snowbridgeContextAtom } from "@/store/snowbridge";
 import {
   filterByAccountType,
@@ -21,6 +20,7 @@ import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { FeeDisplay } from "../FeeDisplay";
 import { SelectAccount } from "../SelectAccount";
+import { PolkadotAccountDialog } from "../PolkadotAccountDialog";
 import { Button } from "../ui/button";
 import {
   Form,
@@ -1103,78 +1103,24 @@ export const TransferForm: FC<TransferFormProps> = ({
         </div>
       </form>
 
-      {/* Source Account Selector Dialog */}
-      <Dialog
+      <PolkadotAccountDialog
         open={sourceAccountSelectorOpen}
         onOpenChange={setSourceAccountSelectorOpen}
-      >
-        <DialogContent className="glass more-blur">
-          <DialogHeader>
-            <DialogTitle className="text-center font-medium text-primary">
-              Select Source Account
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {polkadotAccounts && polkadotAccounts.length > 0 ? (
-              <div className="space-y-2">
-                <div className="text-sm text-muted-foreground">
-                  Your Accounts
-                </div>
-                <div className="max-h-64 overflow-y-auto ui-slimscroll bg-white/40 dark:bg-slate-800/60 rounded-lg">
-                  {polkadotAccounts
-                    .filter(
-                      filterByAccountType(
-                        source.kind === "polkadot"
-                          ? (assetRegistry.parachains[`polkadot_${source.id}`]
-                              ?.info.accountType ?? "AccountId32")
-                          : "AccountId32",
-                      ),
-                    )
-                    .map((account, i) => (
-                      <button
-                        key={account.address + "-" + i}
-                        type="button"
-                        onClick={() => {
-                          form.setValue("sourceAccount", account.address);
-                          setPolkadotAccount(account.address);
-                          setSourceAccountSelectorOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-3 p-3 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
-                          watchSourceAccount?.toLowerCase() ===
-                          account.address.toLowerCase()
-                            ? "bg-white/60 dark:bg-slate-700/60"
-                            : ""
-                        }`}
-                      >
-                        {polkadotWallet?.logo?.src && (
-                          <Image
-                            src={polkadotWallet.logo.src}
-                            width={24}
-                            height={24}
-                            alt="wallet"
-                            className="rounded-sm flex-shrink-0"
-                          />
-                        )}
-                        <div className="flex flex-col items-start min-w-0">
-                          <span className="font-medium text-primary text-sm">
-                            {account.name || "Account"}
-                          </span>
-                          <span className="text-xs text-muted-foreground truncate w-full">
-                            {trimAccount(account.address, 24)}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-4">
-                No accounts available
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        accounts={(polkadotAccounts ?? []).filter(
+          filterByAccountType(
+            source.kind === "polkadot"
+              ? (assetRegistry.parachains[`polkadot_${source.id}`]?.info
+                  .accountType ?? "AccountId32")
+              : "AccountId32",
+          ),
+        )}
+        selected={watchSourceAccount}
+        onSelect={(account) => {
+          form.setValue("sourceAccount", account.address);
+          setPolkadotAccount(account.address);
+          setSourceAccountSelectorOpen(false);
+        }}
+      />
     </Form>
   );
 };

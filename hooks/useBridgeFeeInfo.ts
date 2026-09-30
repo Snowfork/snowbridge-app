@@ -11,7 +11,7 @@ import { fetchTokenPrices } from "@/utils/tokenPrices";
 import { BridgeDeliveryFee } from "@/utils/deliveryFee";
 
 // "none" builds without a service fee, the same as leaving it unset.
-function serviceFeeRecipientFromEnv(): string | undefined {
+export function serviceFeeRecipientFromEnv(): string | undefined {
   const recipient = process.env.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT;
   return recipient && recipient !== "none" ? recipient : undefined;
 }
