@@ -79,6 +79,7 @@ import { chainName } from "@/utils/chainNames";
 import useSWR from "swr";
 import { useTokenBalances } from "@/hooks/useTokenBalances";
 import { getDeliveryTotalByDisplaySymbol } from "@/utils/deliveryFee";
+import { useTransferUrlSync } from "@/hooks/useTransferUrlSync";
 
 function isValidSubstrateBeneficiary(
   address: string | undefined,
@@ -315,6 +316,13 @@ export const TransferForm: FC<TransferFormProps> = ({
   const watchSourceAccount = form.watch("sourceAccount");
   const watchAmount = form.watch("amount");
   const watchAccelerated = form.watch("accelerated");
+
+  useTransferUrlSync({
+    source: watchSource,
+    destination: watchDestination,
+    token: watchToken,
+    amount: watchAmount,
+  });
 
   // Auto-set sourceAccount when wallet connects or source type changes
   useEffect(() => {
