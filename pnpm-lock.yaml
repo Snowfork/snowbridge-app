@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@snowbridge/api@1.2.1':
+    hash: 27vay7rnxdy5a5thxrsvoitgwu
+    path: patches/@snowbridge__api@1.2.1.patch
+
 importers:
 
   .:
@@ -64,7 +69,7 @@ importers:
         version: 1.7.7(@ethersproject/sha2@5.7.0)(@types/react@18.3.12)(@vercel/functions@3.3.4)(bufferutil@4.0.8)(ethers@6.16.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(react@18.3.1)(typescript@5.6.3)(utf-8-validate@5.0.10)(zod@3.23.8)
       '@snowbridge/api':
         specifier: 1.2.1
-        version: 1.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        version: 1.2.1(patch_hash=27vay7rnxdy5a5thxrsvoitgwu)(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@snowbridge/base-types':
         specifier: 1.2.1
         version: 1.2.1
@@ -7621,7 +7626,7 @@ snapshots:
       '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
 
-  '@snowbridge/api@1.2.1(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
+  '@snowbridge/api@1.2.1(patch_hash=27vay7rnxdy5a5thxrsvoitgwu)(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
       '@polkadot/api': 16.5.4(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       '@polkadot/keyring': 14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)

@@ -1,0 +1,36 @@
+diff --git a/dist/history.js b/dist/history.js
+index 5718ce4aaa2b8e3882e8db6b7a57f1e718f17667..7a75c963d1c8deae178c425711e3a2878154a8b8 100644
+--- a/dist/history.js
++++ b/dist/history.js
+@@ -145,6 +145,13 @@ const buildToEthereumTransferResult = (transfer) => {
+         };
+         result.status = TransferStatus.Complete;
+     }
++    else if (transfer.destinationNetwork === "ethereum_l2" &&
++        result.status === TransferStatus.Pending &&
++        (transfer.status === TransferStatus.Complete ||
++            transfer.status === TransferStatus.Failed)) {
++        // Fill logs are not indexed. Postprocess records the Across result on the status column.
++        result.status = transfer.status;
++    }
+     return result;
+ };
+ exports.buildToEthereumTransferResult = buildToEthereumTransferResult;
+diff --git a/src/history.ts b/src/history.ts
+index 0e2855872cb1b9d6d832128c23690de4242b6a89..1331c10a1a83b2c10820d947e208156e485aeca4 100644
+--- a/src/history.ts
++++ b/src/history.ts
+@@ -295,6 +295,13 @@ export const buildToEthereumTransferResult = (transfer: any): ToEthereumTransfer
+             txHash: toEthereumL2Delivered.txHash,
+         }
+         result.status = TransferStatus.Complete
++    } else if (
++        transfer.destinationNetwork === "ethereum_l2" &&
++        result.status === TransferStatus.Pending &&
++        (transfer.status === TransferStatus.Complete || transfer.status === TransferStatus.Failed)
++    ) {
++        // Fill logs are not indexed. Postprocess records the Across result on the status column.
++        result.status = transfer.status
+     }
+     return result
+ }
