@@ -265,8 +265,19 @@ function TxComponent() {
     return <div>{error}</div>;
   }
 
-  if (txData === undefined || isLoading || isValidating) {
+  if (isLoading || isValidating) {
     return <Loading />;
+  }
+
+  if (txData === undefined) {
+    return (
+      <div className="text-center py-16 text-sm text-muted-foreground">
+        This transfer isn&apos;t indexed for status tracking
+        {messageId ? ` (message ID ${messageId})` : ""}. Polkadot&#8596;Kusama
+        transfers aren&apos;t tracked in the app yet, so verify delivery
+        on-chain.
+      </div>
+    );
   }
 
   return (

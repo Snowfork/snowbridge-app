@@ -13,7 +13,7 @@ import {
   ValidationResult,
 } from "@/utils/types";
 import { historyV2 } from "@snowbridge/api";
-import { track } from "@vercel/analytics";
+import { track } from "@/utils/analytics";
 import { useSetAtom } from "jotai";
 import {
   Dispatch,
@@ -205,8 +205,39 @@ function sendResultToHistory(
       };
       return { ...transfer, isWalletTransaction: true };
     }
+    case "polkadot->kusama":
+    case "kusama->polkadot": {
+      const transfer: historyV2.InterParachainTransfer = {
+        sourceId: data.source.id,
+        sourceKind: data.source.kind as ParachainKind,
+        destinationId: data.destination.id,
+        destinationKind: data.destination.kind as ParachainKind,
+        id: messageId,
+        status: result.success
+          ? historyV2.TransferStatus.Pending
+          : historyV2.TransferStatus.Failed,
+        info: {
+          amount: data.amountInSmallestUnit.toString(),
+          sourceAddress,
+          beneficiaryAddress,
+          tokenAddress: data.formData.token,
+          when: new Date(),
+        },
+        submitted: {
+          block_num: result.blockNumber,
+          block_timestamp: 0,
+          messageId,
+          account_id: sourceAddress,
+          extrinsic_hash: result.txHash,
+          success: result.success,
+          bridgeHubMessageId: "",
+          sourceParachainId: data.source.parachain!.id,
+        },
+      };
+      return { ...transfer, isWalletTransaction: true };
+    }
     default:
-      throw Error(`Does not support type ${result.kind}`);
+      throw Error(`Does not support type ${(result as { kind: string }).kind}`);
   }
 }
 
@@ -272,10 +303,12 @@ export const TransferComponent: FC = () => {
         case "polkadot->ethereum":
         case "polkadot->ethereum_l2":
         case "polkadot->polkadot":
+        case "polkadot->kusama":
+        case "kusama->polkadot":
           setSourceExecutionFee(plan.data.sourceExecutionFee ?? null);
           break;
         default:
-          throw Error(`Does not support ${plan.kind}`);
+          throw Error(`Does not support ${(plan as { kind: string }).kind}`);
       }
 
       const steps = createStepsFromPlan(data, plan);

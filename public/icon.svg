@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="lg">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".5" stop-color="#000"/>
+      <stop offset="1" stop-color="#404040"/>
+    </linearGradient>
+    <linearGradient id="dg">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".5" stop-color="#fff"/>
+      <stop offset="1" stop-color="#d8f1fd"/>
+    </linearGradient>
+    <linearGradient xlink:href="#lg" id="light" x1="100.577" x2="100.577" y1="282.989" y2="169.168" gradientTransform="translate(-12.527 -48.124)scale(.28364)" gradientUnits="userSpaceOnUse"/>
+    <linearGradient xlink:href="#dg" id="dark" x1="105.358" x2="105.358" y1="24.834" y2="138.655" gradientTransform="translate(-13.883 -7.186)scale(.28364)" gradientUnits="userSpaceOnUse"/>
+    <style>
+      .icon{fill:url(#light)}
+      @media(prefers-color-scheme:dark){.icon{fill:url(#dark)}}
+    </style>
+  </defs>
+  <path class="icon" d="M16 0A16 16 0 0 0 0 16a16 16 0 0 0 1.783 7.34c6.428-8.761 17.05-14.22 28.66-14.225A16 16 0 0 0 16 0m14.456 10.088c-9.823 0-18.617 7.375-22.253 19.884A16 16 0 0 0 16 32a16 16 0 0 0 16-16 16 16 0 0 0-1.13-5.908z"/>
+</svg>

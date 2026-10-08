@@ -2,7 +2,7 @@
 
 import { FC, PropsWithChildren } from "react";
 import { useSnowbridgeContext } from "@/hooks/useSnowbridgeContext";
-import { track } from "@vercel/analytics";
+import { track } from "@/utils/analytics";
 import { LucideCircleX } from "lucide-react";
 
 export const ContextComponent: FC<PropsWithChildren> = ({ children }) => {

@@ -1,0 +1,116 @@
+# Build the Vite/PWA bundle on GitHub's runners and deploy to IPFS via Filebase
+# (Fleek's hosting was discontinued Jan 2026). Build minutes are GitHub's, Node
+# + pnpm are pinned here, and the whole dist/ folder is pinned as a single
+# directory CID so paths (and the 404.html SPA fallback) resolve on a gateway.
+#
+# One-time setup before this works (Settings > Secrets and variables > Actions):
+#   1. Create a Filebase account (free tier: 5 GB, 1 GB IPFS egress) and an
+#      IPFS bucket, then generate an IPFS RPC API token (Filebase dashboard).
+#      Add it as repo secret FILEBASE_RPC_TOKEN.
+#   2. Add a repo secret for each NEXT_PUBLIC_* build var (see the Build step
+#      below for the full list), e.g. NEXT_PUBLIC_SNOWBRIDGE_ENV=polkadot_mainnet.
+#   3. Create the "staging" Filebase IPNS name (dashboard > Names) and DNSLink
+#      the staging domain at it (see DEPLOY.md). The deploy republishes it to the
+#      new CID, so the staging domain follows deploys.
+#   4. Prod (polkadot_mainnet) has no IPNS name; its DNSLink TXT is updated in
+#      Route 53 by the "Update prod DNSLink" step. Add three repo secrets:
+#      AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY (an IAM key scoped to
+#      route53:ChangeResourceRecordSets on the zone) and AWS_ROUTE53_HOSTED_ZONE_ID.
+name: Deploy to IPFS (Filebase)
+
+# Manual only for now: the edge box (deploy-edge.yml) serves the live domains,
+# so pushing to an environment branch no longer deploys to IPFS. Run this from
+# main or polkadot_mainnet to publish there by hand; the branch still selects
+# the environment (main -> staging IPNS name, polkadot_mainnet -> prod DNSLink).
+# To re-enable automatic deploys, restore:
+#   push:
+#     branches: [main, polkadot_mainnet]
+on:
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No version here on purpose: pnpm/action-setup reads the pinned version
+      # from package.json's "packageManager" field (specifying both errors).
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Each NEXT_PUBLIC_* is its own repo secret. Vite reads them from the
+      # build env (envPrefix) and bakes them into the static bundle.
+      - name: Build
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+          NEXT_PUBLIC_FORKED_PROVIDER_API_KEY: ${{ secrets.NEXT_PUBLIC_FORKED_PROVIDER_API_KEY }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          NEXT_PUBLIC_SERVICE_FEE_RECIPIENT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT }}
+          NEXT_PUBLIC_SERVICE_FEE_DOT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_DOT }}
+          NEXT_PUBLIC_SERVICE_FEE_KSM: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_KSM }}
+        run: |
+          [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
+          [ -n "$NEXT_PUBLIC_SERVICE_FEE_RECIPIENT" ] || { echo "::error::NEXT_PUBLIC_SERVICE_FEE_RECIPIENT secret is not set; service fees would not be collected."; exit 1; }
+          pnpm build
+
+      # Single source of the pin logic (scripts/deploy-filebase.sh). It pins the
+      # bundle and, when FILEBASE_IPNS_KEY is set, republishes that IPNS name to
+      # the new CID so the DNSLinked domain follows the deploy. main -> "staging"
+      # (the one free-tier IPNS name). polkadot_mainnet pins only: prod's domain
+      # DNSLinks straight at the CID (the next step updates it), so it needs no
+      # IPNS name. The script writes cid=<cid> to $GITHUB_OUTPUT (id: pin).
+      - name: Pin dist/ to IPFS and update IPNS
+        id: pin
+        env:
+          FILEBASE_RPC_TOKEN: ${{ secrets.FILEBASE_RPC_TOKEN }}
+          FILEBASE_IPNS_KEY: ${{ github.ref_name == 'main' && 'staging' || '' }}
+        run: SKIP_BUILD=1 bash scripts/deploy-filebase.sh
+
+      # Prod (polkadot_mainnet) has no IPNS name (free tier allows one, used by
+      # staging), so point app.snowbridge.network's DNSLink TXT straight at the
+      # new CID via Route 53. This makes prod as hands-off as staging: no manual
+      # DNS edit per release. Needs an IAM key scoped to
+      # route53:ChangeResourceRecordSets on the hosted zone (see DEPLOY.md).
+      # Staging skips this (its IPNS name is updated above), so it's prod-only.
+      - name: Update prod DNSLink (Route 53)
+        if: github.ref_name == 'polkadot_mainnet'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          HOSTED_ZONE_ID: ${{ secrets.AWS_ROUTE53_HOSTED_ZONE_ID }}
+          CID: ${{ steps.pin.outputs.cid }}
+        run: |
+          [ -n "$CID" ] || { echo "::error::no CID from the pin step"; exit 1; }
+          [ -n "$HOSTED_ZONE_ID" ] || { echo "::error::AWS_ROUTE53_HOSTED_ZONE_ID secret is not set"; exit 1; }
+          # jq builds the change batch so the TXT value's embedded quotes are
+          # escaped correctly (Route 53 wants the value as "dnslink=/ipfs/<cid>").
+          batch=$(jq -n --arg cid "$CID" '{
+            Comment: "prod DNSLink -> new IPFS CID",
+            Changes: [{
+              Action: "UPSERT",
+              ResourceRecordSet: {
+                Name: "_dnslink.app.snowbridge.network",
+                Type: "TXT",
+                TTL: 60,
+                ResourceRecords: [{ Value: ("\"dnslink=/ipfs/" + $cid + "\"") }]
+              }
+            }]
+          }')
+          aws route53 change-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch "$batch"
+          echo "Updated _dnslink.app.snowbridge.network -> dnslink=/ipfs/${CID}"

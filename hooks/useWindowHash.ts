@@ -1,18 +1,12 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
+// Returns the current URL hash (without the leading '#'), or null when absent.
+// Reads it from React Router's location so it reacts to in-app navigation
+// (router.push("#...")) and browser back/forward, neither of which fires a
+// native `hashchange` event (React Router navigates via history.pushState).
 export const useWindowHash = () => {
-  const [hash, setHash] = useState<string | null>(null);
-  const params = useParams();
-  useEffect(() => {
-    setHash(window.location.hash.replace(/^#/, "") ?? null);
-    const listener = (ev: HashChangeEvent) => {
-      setHash(window.location.hash.replace(/^#/, ""));
-    };
-    window.addEventListener("hashchange", listener, false);
-    return () => window.removeEventListener("hashchange", listener, false);
-  }, [setHash, params]);
-  return hash;
+  const { hash } = useLocation();
+  return hash ? hash.replace(/^#/, "") : null;
 };

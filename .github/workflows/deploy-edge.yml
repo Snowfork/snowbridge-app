@@ -1,0 +1,205 @@
+# Build the Vite/PWA bundle and publish it to the edge box (nginx) as an atomic
+# release. This is the origin behind app.snowbridge.network /
+# staging-app.snowbridge.network; the IPFS pipeline (filebase.yml) still runs in
+# parallel and is unaffected.
+#
+# On-disk layout the edge role owns (per <app>):
+#   /opt/edge/www/<app>/releases/<id>/   one immutable dir per release (rsync target)
+#   /opt/edge/www/<app>/site -> releases/<id>   atomic pointer to the live release
+#   /opt/edge/www/<app>/maintenance/     role-owned placeholder, never touched here
+# nginx serves /var/www/sites/<app>/site read-only with `gzip_static on`, so the
+# build must ship a .gz next to every text asset (vite.config.ts: gzipStatic()).
+#
+# Deliberately NOT done here: pruning old releases (a daily systemd timer keeps
+# the newest 5 and protects the live one), sudo, and reloading nginx (swapping
+# the symlink is live instantly).
+#
+# Required in Settings > Secrets and variables > Actions:
+#   WEBDEPLOY_SSH_KEY     (secret)   private key for webdeploy@, no passphrase
+#   WEBDEPLOY_KNOWN_HOSTS (secret)   ssh-keyscan output for EDGE_SSH_HOST
+#   EDGE_SSH_HOST         (variable) the edge box's IP
+#   plus the NEXT_PUBLIC_* build secrets listed in the Build step
+# The deploy always connects to EDGE_SSH_HOST rather than the vhost name, which
+# only resolves to the box once that domain's DNS has been cut over to it.
+name: Deploy to edge (nginx)
+
+# Push to an environment branch deploys it. The manual trigger must also be run
+# from one of those two branches (see the job's `if`); it either rebuilds and
+# deploys that branch, or — with release_id set — only repoints `site` at an
+# existing release (rollback), building nothing.
+on:
+  push:
+    branches: [main, polkadot_mainnet]
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: "Rollback: existing releases/<id> to point site at. Leave empty to build and deploy this branch."
+        required: false
+        type: string
+
+# One deploy at a time per branch, and never cancel one mid-flight: a cancelled
+# run could leave a half-rsynced release dir behind (harmless, but the swap
+# must not race another run's swap).
+concurrency:
+  group: deploy-edge-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DEPLOY_USER: webdeploy
+  # Each environment is reachable from exactly one branch: polkadot_mainnet ->
+  # prod, main -> staging. Any other ref resolves to empty rather than falling
+  # back to staging, so a branch that slipped past the job guard below cannot
+  # publish anywhere.
+  APP: ${{ github.ref_name == 'polkadot_mainnet' && 'app' || github.ref_name == 'main' && 'staging-app' || '' }}
+  DEPLOY_HOST: ${{ github.ref_name == 'polkadot_mainnet' && 'app.snowbridge.network' || github.ref_name == 'main' && 'staging-app.snowbridge.network' || '' }}
+  # Where to ssh/rsync: the box's IP, never the vhost name. A vhost only points
+  # at the box once its DNS is cut over, so using it here would send the deploy
+  # to whatever else the domain currently resolves to.
+  SSH_HOST: ${{ vars.EDGE_SSH_HOST }}
+
+jobs:
+  deploy:
+    # `push` is already limited to the two environment branches; this covers
+    # workflow_dispatch, which GitHub lets you run from any branch and cannot be
+    # restricted at the trigger level. A run from anywhere else is skipped
+    # before it can check out code or touch a secret.
+    if: github.ref_name == 'main' || github.ref_name == 'polkadot_mainnet'
+    runs-on: ubuntu-latest
+    steps:
+      # Belt and braces: if the mapping above ever gains a branch without
+      # gaining a target, fail here rather than deploying to the wrong vhost.
+      - name: Check the deploy target
+        run: |
+          [ -n "$APP" ] && [ -n "$DEPLOY_HOST" ] || {
+            echo "::error::${GITHUB_REF_NAME} does not map to a deploy environment (main or polkadot_mainnet)."; exit 1; }
+          [ -n "$SSH_HOST" ] || {
+            echo "::error::the EDGE_SSH_HOST repo variable is not set (the edge box's IP)."; exit 1; }
+          echo "${GITHUB_REF_NAME} -> $APP on $SSH_HOST, serving https://$DEPLOY_HOST/"
+
+      - uses: actions/checkout@v4
+
+      # No version here on purpose: pnpm/action-setup reads the pinned version
+      # from package.json's "packageManager" field (specifying both errors).
+      - uses: pnpm/action-setup@v4
+        if: inputs.release_id == ''
+
+      - uses: actions/setup-node@v4
+        if: inputs.release_id == ''
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: inputs.release_id == ''
+        run: pnpm install --frozen-lockfile
+
+      # Each NEXT_PUBLIC_* is its own repo secret. Vite reads them from the
+      # build env (envPrefix) and bakes them into the static bundle.
+      - name: Build
+        if: inputs.release_id == ''
+        env:
+          NEXT_PUBLIC_SNOWBRIDGE_ENV: ${{ secrets.NEXT_PUBLIC_SNOWBRIDGE_ENV }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }}
+          NEXT_PUBLIC_GRAPHQL_API_URL: ${{ secrets.NEXT_PUBLIC_GRAPHQL_API_URL }}
+          NEXT_PUBLIC_ASSET_HUB_URL: ${{ secrets.NEXT_PUBLIC_ASSET_HUB_URL }}
+          NEXT_PUBLIC_BRIDGE_HUB_URL: ${{ secrets.NEXT_PUBLIC_BRIDGE_HUB_URL }}
+          NEXT_PUBLIC_RELAY_CHAIN_URL: ${{ secrets.NEXT_PUBLIC_RELAY_CHAIN_URL }}
+          NEXT_PUBLIC_FORKED_PROVIDER_API_KEY: ${{ secrets.NEXT_PUBLIC_FORKED_PROVIDER_API_KEY }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          NEXT_PUBLIC_SERVICE_FEE_RECIPIENT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_RECIPIENT }}
+          NEXT_PUBLIC_SERVICE_FEE_DOT: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_DOT }}
+          NEXT_PUBLIC_SERVICE_FEE_KSM: ${{ secrets.NEXT_PUBLIC_SERVICE_FEE_KSM }}
+        run: |
+          [ -n "$NEXT_PUBLIC_SNOWBRIDGE_ENV" ] || { echo "::error::NEXT_PUBLIC_SNOWBRIDGE_ENV secret is not set (add the NEXT_PUBLIC_* repo secrets)."; exit 1; }
+          [ -n "$NEXT_PUBLIC_SERVICE_FEE_RECIPIENT" ] || { echo "::error::NEXT_PUBLIC_SERVICE_FEE_RECIPIENT secret is not set; service fees would not be collected."; exit 1; }
+          pnpm build
+
+      # nginx's `gzip_static on` silently falls back to serving the uncompressed
+      # file, so a build that stopped emitting .gz would look fine and quietly
+      # ship megabytes more. Fail here instead.
+      - name: Check the build is publishable
+        if: inputs.release_id == ''
+        run: |
+          set -euo pipefail
+          [ -f dist/index.html ] || { echo "::error::dist/index.html missing"; exit 1; }
+          [ -f dist/index.html.gz ] || { echo "::error::dist/index.html.gz missing (gzipStatic() in vite.config.ts)"; exit 1; }
+          missing=0
+          while IFS= read -r f; do
+            [ -f "$f.gz" ] || { echo "::error::no .gz for $f"; missing=1; }
+          done < <(find dist/assets -type f \( -name '*.js' -o -name '*.css' \) -size +1k)
+          [ "$missing" -eq 0 ] || exit 1
+          echo "dist: $(find dist -type f | wc -l) files, $(find dist -name '*.gz' | wc -l) pre-compressed"
+
+      - name: Configure SSH
+        env:
+          WEBDEPLOY_SSH_KEY: ${{ secrets.WEBDEPLOY_SSH_KEY }}
+          WEBDEPLOY_KNOWN_HOSTS: ${{ secrets.WEBDEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [ -n "$WEBDEPLOY_SSH_KEY" ] || { echo "::error::WEBDEPLOY_SSH_KEY secret is not set."; exit 1; }
+          [ -n "$WEBDEPLOY_KNOWN_HOSTS" ] || { echo "::error::WEBDEPLOY_KNOWN_HOSTS secret is not set."; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$WEBDEPLOY_SSH_KEY" > ~/.ssh/webdeploy
+          chmod 600 ~/.ssh/webdeploy
+          printf '%s\n' "$WEBDEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          # Host keys are pinned by the secret; a mismatch must fail, not prompt.
+          ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$SSH_HOST" "test -d /opt/edge/www/$APP/releases" \
+            || { echo "::error::cannot reach $DEPLOY_USER@$SSH_HOST, or /opt/edge/www/$APP/releases is missing there."; exit 1; }
+
+      - name: Upload release
+        if: inputs.release_id == ''
+        run: |
+          set -euo pipefail
+          REL="$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_SHA::7}"
+          echo "REL=$REL" >> "$GITHUB_ENV"
+          # --delete so a retry of the same release id can't leave stale files.
+          # The trailing slash on dist/ copies the contents, not the directory.
+          rsync -a --delete \
+            -e "ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+            dist/ "$DEPLOY_USER@$SSH_HOST:/opt/edge/www/$APP/releases/$REL/"
+
+      - name: Resolve rollback target
+        if: inputs.release_id != ''
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$SSH_HOST" \
+            "test -f /opt/edge/www/$APP/releases/$RELEASE_ID/index.html" \
+            || { echo "::error::releases/$RELEASE_ID does not exist (or has no index.html) on $SSH_HOST."; exit 1; }
+          echo "REL=$RELEASE_ID" >> "$GITHUB_ENV"
+
+      # The swap: write the new symlink under a temp name, then rename it over
+      # `site`. rename(2) is atomic, so nginx never observes a missing or
+      # half-written `site` and no reload is needed.
+      - name: Point site at the release
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/webdeploy -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$SSH_HOST" \
+            "set -eu; cd /opt/edge/www/$APP && ln -sfn releases/$REL site.tmp && mv -Tf site.tmp site && readlink site"
+
+      # Smoke test, so a broken symlink or a missing index.html shows up as a red
+      # run rather than a white page. --resolve sends the request to the box we
+      # just deployed to while keeping the vhost name for SNI and Host, so it
+      # tests this release even before the domain's DNS points here.
+      - name: Verify
+        run: |
+          set -euo pipefail
+          url="https://$DEPLOY_HOST/"
+          pin=(--resolve "$DEPLOY_HOST:443:$SSH_HOST")
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 2 "${pin[@]}" "$url" || true)
+          enc=$(curl -sS -o /dev/null -H 'Accept-Encoding: gzip' -w '%{content_encoding}' "${pin[@]}" "$url" || true)
+          echo "$url via $SSH_HOST -> HTTP ${code:-none}, content-encoding '${enc:-none}'"
+          [ "$code" = "200" ] || { echo "::error::$url returned ${code:-no response} from $SSH_HOST"; exit 1; }
+          [ "$enc" = "gzip" ] || echo "::warning::served content-encoding '$enc' (expected gzip via gzip_static)"
+          echo "\`$APP\` now serves \`releases/$REL\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the deploy key
+        if: always()
+        run: rm -f ~/.ssh/webdeploy

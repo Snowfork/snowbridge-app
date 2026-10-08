@@ -1,7 +1,11 @@
-import type { AssetRegistry, ERC20Metadata, TransferLocation } from "@snowbridge/base-types";
+import type {
+  AssetRegistry,
+  ERC20Metadata,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import type {
   FeeAsset,
-  forKusama,
+  polkadotKusama,
   forInterParachain,
   toEthereumV2,
   toPolkadotSnowbridgeV2,
@@ -12,9 +16,10 @@ export type BridgeDeliveryFee =
   | toEthereumV2.DeliveryFee
   | toPolkadotV2.DeliveryFee
   | toPolkadotSnowbridgeV2.DeliveryFee
-  | forInterParachain.DeliveryFee;
+  | forInterParachain.DeliveryFee
+  | polkadotKusama.DeliveryFee;
 
-export type KusamaDeliveryFee = forKusama.DeliveryFee;
+export type KusamaDeliveryFee = polkadotKusama.DeliveryFee;
 
 export type ResolvedFeeAsset = FeeAsset & {
   decimals: number;
@@ -66,7 +71,8 @@ export function resolveFeeAsset(
       }
       if (
         context.tokenMetadata &&
-        asset.symbol.toUpperCase() === context.tokenMetadata.symbol.toUpperCase()
+        asset.symbol.toUpperCase() ===
+          context.tokenMetadata.symbol.toUpperCase()
       ) {
         return {
           ...asset,

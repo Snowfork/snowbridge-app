@@ -51,6 +51,7 @@ function TxCard(props: TxCardProps) {
       registry.environment,
       (source as ParachainLocation).key,
       transfer.submitted.extrinsic_hash,
+      transfer.submitted.block_num,
     ),
   });
   if (transfer.destinationReceived) {

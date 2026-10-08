@@ -1,25 +1,12 @@
-import { getEnvironmentName } from "./snowbridgeEnv";
-
-let url = "http://localhost:3000";
-if (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview") {
-  url = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-}
-if (process.env.NEXT_PUBLIC_VERCEL_ENV === "production") {
-  let subdomain = "app";
-  const name = getEnvironmentName();
-  switch (name) {
-    case "polkadot_mainnet":
-      subdomain = "app";
-      break;
-    case "paseo_sepolia":
-      subdomain = "paseo-app";
-      break;
-    case "westend_sepolia":
-      subdomain = "westend-app";
-      break;
-  }
-  url = `https://${subdomain}.snowbridge.network`;
-}
+// Derive the app URL from the actual runtime origin so wallet / dApp metadata
+// (WalletConnect, Polkadot wallet dialog) is correct wherever the app is served
+// - the IPFS custom domain, a gateway, or localhost - instead of the old
+// Vercel-injected env vars (which are undefined off Vercel and left the URL
+// pointing at localhost).
+const url =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "https://app.snowbridge.network";
 
 export const metadata = {
   title: "Snowbridge",

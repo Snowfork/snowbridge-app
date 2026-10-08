@@ -355,11 +355,6 @@ export const Menu: FC = () => {
           <Link href="/" className="flex items-center px-3 py-1.5">
             <p className="glimmer-text">Transfer</p>
           </Link>
-          {envName === "polkadot_mainnet" ? (
-            <Link href="/kusama" className="flex items-center px-3 py-1.5">
-              <p className="glimmer-text">Kusama</p>
-            </Link>
-          ) : null}
           <Link href="/history" className="flex items-center px-3 py-1.5">
             <p className="glimmer-text">History</p>
           </Link>
@@ -390,15 +385,6 @@ export const Menu: FC = () => {
             >
               Transfer
             </Link>
-            {envName === "polkadot_mainnet" ? (
-              <Link
-                href="/kusama"
-                className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Kusama
-              </Link>
-            ) : null}
             <Link
               href="/history"
               className="px-4 py-2 rounded-full bg-white/30 text-primary text-sm font-medium"

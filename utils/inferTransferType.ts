@@ -1,6 +1,11 @@
 import { Transfer } from "@/store/transferActivity";
 import { TransferType } from "./types";
-import { AssetRegistry, TransferLocation } from "@snowbridge/base-types";
+import {
+  AssetRegistry,
+  ChainId,
+  EthereumChain,
+  TransferLocation,
+} from "@snowbridge/base-types";
 import { getTransferLocation } from "@snowbridge/registry";
 
 type TransferDetail = {
@@ -56,16 +61,42 @@ export function inferTransferDetails(
       `Could not infer destination ${destinationKind} ${destinationId} from transfer ${transfer.destinationKind} ${transfer.destinationId} id: ${transfer.id}`,
     );
   }
-  const source = getTransferLocation(registry, {
+  const source = resolveTransferLocation(registry, {
     kind: sourceKind,
     id: sourceId,
   });
-  const destination = getTransferLocation(registry, {
+  const destination = resolveTransferLocation(registry, {
     kind: destinationKind,
     id: destinationId,
   });
 
   return { source, destination, kind: inferTransferType(source, destination) };
+}
+
+// A history row can name an L2 chain the registry does not list (for example chain id 1).
+// getTransferLocation throws, and one such row takes down the activity page.
+function resolveTransferLocation(
+  registry: AssetRegistry,
+  chain: ChainId,
+): TransferLocation {
+  if (chain.kind === "ethereum_l2") {
+    const key = `ethereum_l2_${chain.id}` as EthereumChain["key"];
+    if (!(key in registry.ethereumChains)) {
+      const ethChain: EthereumChain = {
+        kind: "ethereum_l2",
+        id: chain.id,
+        key,
+        assets: {},
+      };
+      return {
+        kind: "ethereum_l2",
+        id: chain.id,
+        key,
+        ethChain,
+      };
+    }
+  }
+  return getTransferLocation(registry, chain);
 }
 
 export function inferTransferType(
