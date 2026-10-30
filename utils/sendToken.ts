@@ -197,6 +197,8 @@ export function createStepsFromPlan(
       };
     }
     default:
-      throw Error(`Cannot infer source type ${(plan as { kind: string }).kind}.`);
+      throw Error(
+        `Cannot infer source type ${(plan as { kind: string }).kind}.`,
+      );
   }
 }

@@ -368,7 +368,10 @@ export const TransferForm: FC<TransferFormProps> = ({
       if (!isValidEthAddress) {
         form.setValue("beneficiary", ethereumAccount ?? "");
       }
-    } else if (destination.kind === "polkadot" || destination.kind === "kusama") {
+    } else if (
+      destination.kind === "polkadot" ||
+      destination.kind === "kusama"
+    ) {
       const accountType =
         destination.parachain?.info.accountType ?? "AccountId32";
       const validEthereumAccounts =
