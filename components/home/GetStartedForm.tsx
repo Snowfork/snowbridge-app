@@ -35,6 +35,9 @@ import { z } from "zod";
 import { formatUsdValue } from "@/utils/formatting";
 import { chainName } from "@/utils/chainNames";
 import useSWR from "swr";
+import { useAtomValue } from "jotai";
+import { ethereumAccountAtom } from "@/store/ethereum";
+import { polkadotAccountAtom } from "@/store/polkadot";
 
 interface GetStartedFormProps {
   routes: readonly TransferRoute[];
@@ -59,6 +62,8 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
   assetRegistry,
   routes,
 }) => {
+  const ethereumAccount = useAtomValue(ethereumAccountAtom);
+  const polkadotAccount = useAtomValue(polkadotAccountAtom);
   const locations = useMemo(() => getTransferLocations(routes), [routes]);
 
   const firstSource =
@@ -285,6 +290,12 @@ export const GetStartedForm: FC<GetStartedFormProps> = ({
                                   assetRegistry,
                                   source,
                                 )}
+                                sourceAccount={
+                                  source.kind === "ethereum" ||
+                                  source.kind === "ethereum_l2"
+                                    ? (ethereumAccount ?? undefined)
+                                    : polkadotAccount?.address
+                                }
                                 destination={destination}
                               />
                             </FormControl>
